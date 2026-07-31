@@ -20,6 +20,7 @@ public enum ErrorCode {
     UNAUTHORIZED(1002, "未登录或登录已过期"),
     FORBIDDEN(1003, "无权限访问"),
     SYSTEM_ERROR(500, "系统繁忙"),
+    RATE_LIMIT_EXCEEDED(429, "请求过于频繁，请稍后再试"),
 
     // 用户相关
     USERNAME_OR_PASSWORD_ERROR(1003, "用户名或密码错误"),
@@ -30,6 +31,7 @@ public enum ErrorCode {
     USER_NOT_FOUND(1008, "用户不存在"),
     PASSWORD_NOT_MATCH(1009, "两次密码不一致"),
     LOGIN_LOCKED(1010, "登录失败次数过多，账户已锁定30分钟"),
+    REPLAY_DETECTED(1011, "请求签名校验失败"),
 
     // 秒杀相关
     SECKILL_NOT_FOUND(2001, "秒杀活动不存在"),

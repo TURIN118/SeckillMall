@@ -7,6 +7,9 @@ import com.seckill.mall.entity.enums.OrderStatus;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 /**
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
@@ -23,4 +26,6 @@ public interface SeckillOrderMapper extends BaseMapper<SeckillOrder> {
                                         @Param("userId") Long userId,
                                         @Param("seckillId") Long seckillId,
                                         @Param("status") OrderStatus status);
+
+    BigDecimal sumSalesAmount(@Param("statuses") List<OrderStatus> statuses);
 }

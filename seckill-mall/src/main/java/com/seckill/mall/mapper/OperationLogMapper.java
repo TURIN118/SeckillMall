@@ -3,6 +3,7 @@ package com.seckill.mall.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.seckill.mall.entity.OperationLog;
+import com.seckill.mall.vo.OperationLogVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -18,4 +19,8 @@ public interface OperationLogMapper extends BaseMapper<OperationLog> {
     IPage<OperationLog> selectOperationLogPage(IPage<OperationLog> page,
                                                @Param("module") String module,
                                                @Param("operatorId") Long operatorId);
+
+    IPage<OperationLogVO> selectOperationLogVOPage(IPage<OperationLogVO> page,
+                                                   @Param("module") String module,
+                                                   @Param("operatorId") Long operatorId);
 }

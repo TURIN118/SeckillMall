@@ -74,6 +74,8 @@ public class AuthServiceImpl implements AuthService {
         user.setRole(UserRole.BUYER);
         user.setStatus(UserStatus.ACTIVE);
         userMapper.insert(user);
+        // TODO M9: 注册成功后可调用 emailService.sendRegisterVerify(user.getEmail(), verifyCode)
+        //  当前注册流程未启用邮箱验证码，待邮箱字段接入注册接口后集成
         return toUserVO(user);
     }
 
@@ -177,6 +179,8 @@ public class AuthServiceImpl implements AuthService {
         update.setId(user.getId());
         update.setPassword(passwordEncoder.encode(req.getNewPassword()));
         userMapper.updateById(update);
+        // TODO M9: 密码重置/修改成功后可调用 emailService.sendPasswordReset(user.getEmail(), resetToken)
+        //  当前重置流程未独立成接口，待密码重置 API 落地后集成
     }
 
     private int getFailCount(String failKey) {

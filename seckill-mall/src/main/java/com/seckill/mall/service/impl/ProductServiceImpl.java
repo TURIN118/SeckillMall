@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seckill.mall.common.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
+import com.seckill.mall.common.XssCleanUtil;
 import com.seckill.mall.dto.ProductCreateRequest;
 import com.seckill.mall.dto.ProductQueryRequest;
 import com.seckill.mall.dto.ProductUpdateRequest;
@@ -169,7 +170,7 @@ public class ProductServiceImpl implements ProductService {
         Product product = new Product();
         product.setName(req.getProductName());
         product.setCategoryId(req.getCategoryId());
-        product.setDescription(req.getDescription());
+        product.setDescription(XssCleanUtil.clean(req.getDescription()));
         product.setOriginalPrice(req.getOriginalPrice());
         product.setStock(req.getStock());
         product.setSalesCount(0);
@@ -196,7 +197,7 @@ public class ProductServiceImpl implements ProductService {
             product.setName(req.getProductName());
         }
         if (req.getDescription() != null) {
-            product.setDescription(req.getDescription());
+            product.setDescription(XssCleanUtil.clean(req.getDescription()));
         }
         if (req.getOriginalPrice() != null) {
             product.setOriginalPrice(req.getOriginalPrice());

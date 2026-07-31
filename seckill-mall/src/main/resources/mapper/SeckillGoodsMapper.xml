@@ -34,4 +34,18 @@
         ORDER BY start_time ASC
     </select>
 
+    <!--
+      乐观锁扣减库存：
+      以 available_count > 0 作为乐观条件，单条 UPDATE 在 InnoDB 行锁下保证原子性。
+      表结构未引入 version 列，故用 available_count 自身充当版本判定字段。
+    -->
+    <update id="deductStockOptimistic">
+        UPDATE t_seckill_goods
+        SET available_count = available_count - 1,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND is_deleted = 0
+          AND available_count > 0
+    </update>
+
 </mapper>

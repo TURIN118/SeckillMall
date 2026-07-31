@@ -10,10 +10,13 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.SeckillOrder;
+import com.seckill.mall.entity.User;
 import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
+import com.seckill.mall.mapper.UserMapper;
+import com.seckill.mall.service.EmailService;
 import com.seckill.mall.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +42,10 @@ import java.util.concurrent.ThreadLocalRandom;
 public class OrderServiceImpl implements OrderService {
 
     private static final DateTimeFormatter ORDER_NO_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+    private static final DateTimeFormatter PAY_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private static final String CANCEL_REASON_USER = "用户主动取消";
+    private static final String CANCEL_REASON_TIMEOUT = "超时未支付，自动取消";
 
     // 一人一单：当前表结构 uk_user_seckill 约束限购 1 件
     private static final int SECKILL_QUANTITY = 1;
@@ -47,6 +54,8 @@ public class OrderServiceImpl implements OrderService {
     private final SeckillGoodsMapper seckillGoodsMapper;
     private final ProductMapper productMapper;
     private final RedisService redisService;
+    private final UserMapper userMapper;
+    private final EmailService emailService;
 
     @Value("${seckill.pay-timeout-minutes:15}")
     private long payTimeoutMinutes;
@@ -124,6 +133,13 @@ public class OrderServiceImpl implements OrderService {
         order.setPayMethod(payMethod);
         order.setTransactionId(generateTransactionId());
         seckillOrderMapper.updateById(order);
+
+        // 支付成功邮件：异步发送，失败不影响主流程
+        String email = getUserEmail(userId);
+        if (email != null) {
+            emailService.sendPaySuccess(email, order.getOrderNo(), order.getTotalAmount(),
+                    order.getPayTime().format(PAY_TIME_FORMATTER));
+        }
         return order;
     }
 
@@ -137,11 +153,17 @@ public class OrderServiceImpl implements OrderService {
 
         order.setStatus(OrderStatus.CANCELLED);
         order.setCancelTime(LocalDateTime.now());
-        order.setCancelReason("用户主动取消");
+        order.setCancelReason(CANCEL_REASON_USER);
         seckillOrderMapper.updateById(order);
 
         // 回补 Redis 库存 + 移除已购标记，保证缓存与可售库存一致
         rollbackStock(order.getSeckillId(), userId);
+
+        // 订单取消邮件：异步发送，失败不影响主流程
+        String email = getUserEmail(userId);
+        if (email != null) {
+            emailService.sendOrderCancel(email, order.getOrderNo(), CANCEL_REASON_USER);
+        }
         return order;
     }
 
@@ -165,9 +187,15 @@ public class OrderServiceImpl implements OrderService {
         }
         order.setStatus(OrderStatus.TIMEOUT);
         order.setCancelTime(LocalDateTime.now());
-        order.setCancelReason("超时未支付，自动取消");
+        order.setCancelReason(CANCEL_REASON_TIMEOUT);
         seckillOrderMapper.updateById(order);
         rollbackStock(order.getSeckillId(), order.getUserId());
+
+        // 超时取消邮件：异步发送，失败不影响主流程
+        String email = getUserEmail(order.getUserId());
+        if (email != null) {
+            emailService.sendOrderCancel(email, order.getOrderNo(), CANCEL_REASON_TIMEOUT);
+        }
         return true;
     }
 
@@ -187,6 +215,14 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
         }
         return order;
+    }
+
+    private String getUserEmail(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        User user = userMapper.selectById(userId);
+        return user == null ? null : user.getEmail();
     }
 
     private OrderStatus parseStatus(Integer status) {

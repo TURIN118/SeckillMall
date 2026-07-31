@@ -1,5 +1,6 @@
 package com.seckill.mall.controller;
 
+import com.seckill.mall.annotation.RateLimit;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.SeckillCreateRequest;
@@ -69,6 +70,7 @@ public class SeckillController {
 
     @Operation(summary = "执行秒杀")
     @PostMapping("/{seckillId}")
+    @RateLimit(key = "seckill", capacity = 1, rate = 1)
     public Result<SeckillResultVO> doSeckill(
             @PathVariable Long seckillId,
             @RequestHeader(value = "X-Seckill-Token", required = false) String headerToken,

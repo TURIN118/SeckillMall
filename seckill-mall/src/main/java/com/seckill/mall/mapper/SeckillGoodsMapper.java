@@ -23,4 +23,10 @@ public interface SeckillGoodsMapper extends BaseMapper<SeckillGoods> {
                                           @Param("keyword") String keyword);
 
     List<SeckillGoods> selectActiveList();
+
+    /**
+     * 乐观锁扣减库存：以 available_count>0 作为乐观条件，原子减一。
+     * 返回受影响行数（1=成功，0=库存不足或活动不存在）。
+     */
+    int deductStockOptimistic(@Param("id") Long id);
 }

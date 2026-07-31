@@ -32,6 +32,7 @@ spring:
     port: ${SMTP_PORT:465}
     username: ${SMTP_USERNAME:}
     password: ${SMTP_PASSWORD:}
+    default-encoding: UTF-8
     properties:
       mail:
         smtp:
@@ -50,6 +51,9 @@ seckill:
   pay-timeout-minutes: 15
   rate-limit-per-user: 1
   rate-limit-per-ip: 30
+  security:
+    sign-secret: ${SECKILL_SIGN_SECRET:wnj-seckill-sign-secret-2024}
+    replay-window-seconds: 60
 
 logging:
   level:

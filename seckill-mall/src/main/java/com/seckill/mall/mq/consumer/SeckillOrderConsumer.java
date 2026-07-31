@@ -6,10 +6,17 @@ import com.seckill.mall.cache.RedisKeyConstants;
 import com.seckill.mall.cache.RedisService;
 import com.seckill.mall.common.BusinessException;
 import com.seckill.mall.config.RabbitMQConfig;
+import com.seckill.mall.entity.Product;
+import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.SeckillOrder;
+import com.seckill.mall.entity.User;
+import com.seckill.mall.mapper.ProductMapper;
+import com.seckill.mall.mapper.SeckillGoodsMapper;
+import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.mq.message.OrderDelayMessage;
 import com.seckill.mall.mq.message.SeckillOrderMessage;
 import com.seckill.mall.mq.message.SeckillResultMessage;
+import com.seckill.mall.service.EmailService;
 import com.seckill.mall.service.OrderService;
 import com.seckill.mall.vo.SeckillResultVO;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +49,10 @@ public class SeckillOrderConsumer {
     private final RabbitTemplate rabbitTemplate;
     private final RedisService redisService;
     private final ObjectMapper objectMapper;
+    private final EmailService emailService;
+    private final UserMapper userMapper;
+    private final SeckillGoodsMapper seckillGoodsMapper;
+    private final ProductMapper productMapper;
 
     @RabbitListener(queues = RabbitMQConfig.SECKILL_ORDER_QUEUE)
     public void handleSeckillOrder(SeckillOrderMessage message,
@@ -67,6 +78,8 @@ public class SeckillOrderConsumer {
             writeSuccessResult(message, order);
             sendDelayMessage(order);
             sendResultBroadcast(order, message.getSeckillId());
+            // 秒杀成功邮件：异步发送，失败由 @Recover 兜底，不影响下单主流程
+            sendSeckillSuccessEmail(order);
             channel.basicAck(deliveryTag, false);
         } catch (BusinessException e) {
             // 业务异常（如重复下单）：写失败结果后 ACK，避免无限重试
@@ -131,5 +144,32 @@ public class SeckillOrderConsumer {
         result.setOrderNo(order.getOrderNo());
         result.setTotalAmount(order.getTotalAmount());
         rabbitTemplate.convertAndSend(RabbitMQConfig.SECKILL_RESULT_EXCHANGE, "", result);
+    }
+
+    /**
+     * 发送秒杀成功邮件：获取用户邮箱与商品名称，异步发送。
+     * 任何异常均吞掉，确保不影响下单主流程。
+     */
+    private void sendSeckillSuccessEmail(SeckillOrder order) {
+        try {
+            User user = userMapper.selectById(order.getUserId());
+            if (user == null || user.getEmail() == null || user.getEmail().isBlank()) {
+                return;
+            }
+            String goodsName = resolveGoodsName(order.getSeckillId());
+            emailService.sendSeckillSuccess(user.getEmail(), order.getOrderNo(),
+                    goodsName, order.getTotalAmount());
+        } catch (Exception e) {
+            log.warn("秒杀成功邮件触发失败 orderNo={}", order.getOrderNo(), e);
+        }
+    }
+
+    private String resolveGoodsName(Long seckillId) {
+        SeckillGoods goods = seckillGoodsMapper.selectById(seckillId);
+        if (goods == null) {
+            return "秒杀商品";
+        }
+        Product product = productMapper.selectById(goods.getProductId());
+        return product == null ? "秒杀商品" : product.getName();
     }
 }

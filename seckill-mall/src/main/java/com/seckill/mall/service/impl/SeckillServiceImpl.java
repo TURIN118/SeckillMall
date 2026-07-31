@@ -1,15 +1,20 @@
 package com.seckill.mall.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.seckill.mall.cache.CacheDegradeService;
 import com.seckill.mall.cache.RedisKeyConstants;
 import com.seckill.mall.cache.RedisService;
 import com.seckill.mall.cache.SeckillLuaService;
 import com.seckill.mall.common.BusinessException;
 import com.seckill.mall.common.ErrorCode;
+import com.seckill.mall.entity.SeckillGoods;
+import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.enums.SeckillStatus;
+import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mq.message.SeckillOrderMessage;
 import com.seckill.mall.mq.producer.SeckillOrderProducer;
 import com.seckill.mall.security.SecurityUtils;
+import com.seckill.mall.service.SeckillDbStrategy;
 import com.seckill.mall.service.SeckillGoodsService;
 import com.seckill.mall.service.SeckillService;
 import com.seckill.mall.service.SeckillTokenService;
@@ -47,10 +52,19 @@ public class SeckillServiceImpl implements SeckillService {
     private final RedissonClient redissonClient;
     private final ObjectMapper objectMapper;
     private final SeckillOrderProducer seckillOrderProducer;
+    private final CacheDegradeService cacheDegradeService;
+    private final SeckillDbStrategy seckillDbStrategy;
+    private final SeckillGoodsMapper seckillGoodsMapper;
 
     @Override
     public SeckillResultVO doSeckill(Long seckillId, String seckillToken) {
         Long userId = SecurityUtils.getCurrentUserId();
+
+        // 容错降级：Redis 不可用时切换为数据库直降模式，跳过缓存校验与 Lua 预减
+        if (!cacheDegradeService.isRedisAvailable()) {
+            log.warn("Redis 不可用，秒杀降级为数据库模式 seckillId={} userId={}", seckillId, userId);
+            return doSeckillViaDb(seckillId, userId);
+        }
 
         // 1. 校验秒杀令牌
         if (!seckillTokenService.validateSeckillToken(seckillId, userId, seckillToken)) {
@@ -120,9 +134,61 @@ public class SeckillServiceImpl implements SeckillService {
         message.setUserId(userId);
         message.setRequestId(requestId);
         message.setTimestamp(System.currentTimeMillis());
-        seckillOrderProducer.sendSeckillOrder(message);
+
+        // MQ 宕机降级：sendSeckillOrder 返回非空表示已同步创建订单，需回写成功结果
+        SeckillOrder syncOrder = seckillOrderProducer.sendSeckillOrder(message);
+        if (syncOrder != null) {
+            return writeSyncSuccessResult(seckillId, userId, requestId, syncOrder);
+        }
 
         return vo;
+    }
+
+    /**
+     * 数据库直降模式：Redis 不可用时，从 DB 校验活动状态并执行乐观锁扣减 + 同步下单。
+     * 令牌校验依赖 Redis，降级模式下跳过（库存与唯一索引仍可保证安全）。
+     */
+    private SeckillResultVO doSeckillViaDb(Long seckillId, Long userId) {
+        SeckillGoods goods = seckillGoodsMapper.selectById(seckillId);
+        if (goods == null) {
+            throw new BusinessException(ErrorCode.SECKILL_NOT_FOUND);
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (SeckillStatus.CANCELLED.equals(goods.getStatus())) {
+            throw new BusinessException(ErrorCode.SECKILL_TOO_MANY);
+        }
+        if (now.isBefore(goods.getStartTime()) || SeckillStatus.PENDING.equals(goods.getStatus())) {
+            throw new BusinessException(ErrorCode.SECKILL_NOT_STARTED);
+        }
+        if (now.isAfter(goods.getEndTime()) || SeckillStatus.ENDED.equals(goods.getStatus())) {
+            throw new BusinessException(ErrorCode.SECKILL_ENDED);
+        }
+
+        String requestId = UUID.randomUUID().toString().replace("-", "");
+        SeckillOrder order = seckillDbStrategy.executeDbModeSeckill(seckillId, userId, requestId);
+        return writeSyncSuccessResult(seckillId, userId, requestId, order);
+    }
+
+    /**
+     * 同步下单成功后回写结果到 Redis（若 Redis 可用）并返回成功 VO。
+     */
+    private SeckillResultVO writeSyncSuccessResult(Long seckillId, Long userId, String requestId, SeckillOrder order) {
+        SeckillResultVO successVo = new SeckillResultVO();
+        successVo.setStatus(1);
+        successVo.setRequestId(requestId);
+        successVo.setOrderId(order.getId());
+        successVo.setOrderNo(order.getOrderNo());
+        successVo.setTotalAmount(order.getTotalAmount());
+        successVo.setPayExpireTime(order.getPayExpireTime());
+        try {
+            String json = objectMapper.writeValueAsString(successVo);
+            redisService.set(RedisKeyConstants.seckillResult(seckillId, userId), json,
+                    RESULT_TTL_MINUTES, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            // Redis 异常不影响已下单结果返回
+            log.error("同步下单结果回写 Redis 失败 seckillId={} userId={}", seckillId, userId, e);
+        }
+        return successVo;
     }
 
     @Override

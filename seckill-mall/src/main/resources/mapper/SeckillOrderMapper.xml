@@ -33,4 +33,14 @@
         ORDER BY create_time DESC
     </select>
 
+    <select id="sumSalesAmount" resultType="java.math.BigDecimal">
+        SELECT IFNULL(SUM(total_amount), 0)
+        FROM t_seckill_order
+        WHERE is_deleted = 0
+        AND status IN
+        <foreach collection="statuses" item="s" open="(" separator="," close=")">
+            #{s}
+        </foreach>
+    </select>
+
 </mapper>

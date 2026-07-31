@@ -37,7 +37,7 @@ public class ProductController {
 
     @Operation(summary = "商品列表分页")
     @GetMapping
-    public Result<PageResult<ProductVO>> list(ProductQueryRequest req) {
+    public Result<PageResult<ProductVO>> list(@Valid ProductQueryRequest req) {
         return Result.success(productService.listProducts(req));
     }
 

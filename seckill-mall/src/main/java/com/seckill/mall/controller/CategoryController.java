@@ -18,7 +18,7 @@ import java.util.List;
  * 文件名称：CategoryController.java
  * 邮箱：nj651217@163.com
  */
-@Tag(name = "分类管理")
+@Tag(name = "分类管理", description = "分类树")
 @RestController
 @RequestMapping("/api/v1/categories")
 @RequiredArgsConstructor

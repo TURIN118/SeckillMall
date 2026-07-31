@@ -59,6 +59,7 @@ public class SecurityConfig {
                                 "/api/v1/seckill/list",
                                 "/api/v1/seckill/*/stock",
                                 "/doc.html",
+                                "/swagger-ui/**",
                                 "/webjars/**",
                                 "/swagger-resources/**",
                                 "/v3/api-docs/**",

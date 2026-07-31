@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 文件名称：AdminUserController.java
  * 邮箱：nj651217@163.com
  */
-@Tag(name = "后台用户管理")
+@Tag(name = "后台用户管理", description = "用户列表/启禁用/改角色")
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor

@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 文件名称：ProductController.java
  * 邮箱：nj651217@163.com
  */
-@Tag(name = "商品管理")
+@Tag(name = "商品管理", description = "商品 CRUD 与分页")
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor

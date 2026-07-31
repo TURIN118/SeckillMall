@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 文件名称：OrderController.java
  * 邮箱：nj651217@163.com
  */
-@Tag(name = "秒杀订单")
+@Tag(name = "订单管理", description = "订单查询/支付/取消")
 @RestController
 @RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor

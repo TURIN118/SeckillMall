@@ -112,7 +112,7 @@
   - 验证：支付后订单 PAID，重复支付返回 3002
 
 ## M7 安全防御与限流（P1）
-- [ ] Task 7.1: 实现接口限流（Lua 令牌桶）
+- [x] Task 7.1: 实现接口限流（Lua 令牌桶）
   - `resources/lua/rate_limit.lua`：令牌桶限流脚本
   - `aspect/RateLimitAspect.java` 或 `security/RateLimitFilter.java`：用户级 rate:seckill:{userId} 1次/秒，IP 级 rate:ip:{ip}:{path} 30次/60s
   - `annotation/RateLimit.java` 注解
@@ -131,7 +131,7 @@
   - `service/AdminUserService.java`(/Impl)、`controller/AdminUserController.java`：用户列表/启禁用/改角色/登录日志
   - 操作日志 AOP `aspect/OperationLogAspect.java`：记录到 t_operation_log
   - 验证：后台接口仅 ADMIN 可访问
-- [ ] Task 8.2: 实现系统管理
+- [x] Task 8.2: 实现系统管理
   - `service/SystemService.java`：dashboard 统计（用户数/订单数/销售额/活动数）、操作日志列表、系统健康检查（Redis/MQ/DB）
   - `controller/SystemController.java`：3 个接口
   - 验证：仪表盘数据正确
@@ -143,29 +143,29 @@
   - `config/RetryConfig.java`：Spring Retry（3 次指数退避 1s/2s/4s）
   - Thymeleaf 模板：templates/email/register-verify.html、seckill-success.html、pay-success.html、order-cancel.html、password-reset.html
   - 验证：秒杀成功/支付成功触发邮件
-- [ ] Task 9.2: 实现容错降级
+- [x] Task 9.2: 实现容错降级
   - `cache/CacheDegradeService.java`：Redis 健康检查，宕机切换数据库模式
   - `service/SeckillService` 策略模式：缓存模式(Redis Lua) / 数据库模式(乐观锁 UPDATE WHERE stock>0)
   - MQ 宕机降级：同步下单 + 补偿任务
   - 验证：停 Redis 后秒杀降级到 DB 模式不超卖
 
 ## M10 测试、文档与部署（P2）
-- [ ] Task 10.1: 编写单元测试
+- [x] Task 10.1: 编写单元测试
   - Service 层测试（Mockito Mock Mapper）：SeckillService/OrderService/AuthService 核心方法，覆盖率 > 80%
   - Mapper 层测试（@MybatisTest）：CRUD 与自定义查询
   - 验证：mvn test 通过，JaCoCo 覆盖率达标
-- [ ] Task 10.2: 编写集成测试
+- [x] Task 10.2: 编写集成测试
   - Testcontainers 拉起 MySQL/Redis/RabbitMQ
   - 秒杀完整链路 E2E 测试：注册→登录→秒杀→轮询结果→支付
   - 验证：集成测试通过
-- [ ] Task 10.3: 配置 Knife4j API 文档
+- [x] Task 10.3: 配置 Knife4j API 文档
   - `config/Knife4jConfig.java`，所有 Controller 添加 @Tag/@Operation 注解
   - 验证：访问 /doc.html 查看完整文档
-- [ ] Task 10.4: 编写 Docker Compose 与 Dockerfile
+- [x] Task 10.4: 编写 Docker Compose 与 Dockerfile
   - `docker-compose.yml`：MySQL 8.0 + Redis 7 + RabbitMQ 3.13 + 应用
   - `Dockerfile`：多阶段构建（Maven 编译 + JRE 运行）
   - 验证：docker-compose up 一键启动
-- [ ] Task 10.5: 配置 Actuator 健康检查
+- [x] Task 10.5: 配置 Actuator 健康检查
   - 暴露 health/info 端点，自定义 Redis/MQ/DB 健康指示器
   - 验证：/actuator/health 返回 UP
 

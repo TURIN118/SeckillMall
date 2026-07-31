@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 文件名称：SeckillController.java
  * 邮箱：nj651217@163.com
  */
-@Tag(name = "秒杀活动")
+@Tag(name = "秒杀活动", description = "秒杀活动与下单")
 @RestController
 @RequestMapping("/api/v1/seckill")
 @RequiredArgsConstructor

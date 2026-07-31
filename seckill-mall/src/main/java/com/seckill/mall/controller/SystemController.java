@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 文件名称：SystemController.java
  * 邮箱：nj651217@163.com
  */
-@Tag(name = "系统管理")
+@Tag(name = "系统管理", description = "仪表盘/日志/健康检查")
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor

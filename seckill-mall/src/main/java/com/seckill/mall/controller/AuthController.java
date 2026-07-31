@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 文件名称：AuthController.java
  * 邮箱：nj651217@163.com
  */
-@Tag(name = "用户认证")
+@Tag(name = "用户认证", description = "注册/登录/登出/Token 刷新")
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor

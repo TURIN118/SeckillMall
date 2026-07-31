@@ -86,48 +86,48 @@
 - [x] 用户取消回补库存 + 删除购买标记
 
 ## M7 安全防御与限流
-- [ ] rate_limit.lua 令牌桶限流脚本存在
-- [ ] 用户级限流 rate:seckill:{userId} 1 次/秒生效
-- [ ] IP 级限流 rate:ip:{ip}:{path} 30 次/60s 生效
-- [ ] 超频请求返回 429 限流响应
-- [ ] 防重放：HMAC-SHA256 签名 + 60s 时间窗口 + Nonce 去重生效
-- [ ] 幂等性：秒杀 requestId、支付 orderId 生效
-- [ ] Jsoup 白名单清洗商品详情 HTML
-- [ ] DTO 参数 @Valid 校验注解完整
+- [x] rate_limit.lua 令牌桶限流脚本存在
+- [x] 用户级限流 rate:seckill:{userId} 1 次/秒生效
+- [x] IP 级限流 rate:ip:{ip}:{path} 30 次/60s 生效
+- [x] 超频请求返回 429 限流响应
+- [x] 防重放：HMAC-SHA256 签名 + 60s 时间窗口 + Nonce 去重生效
+- [x] 幂等性：秒杀 requestId、支付 orderId 生效
+- [x] Jsoup 白名单清洗商品详情 HTML
+- [x] DTO 参数 @Valid 校验注解完整
 
 ## M8 后台管理与系统模块
-- [ ] 后台用户管理接口仅 ADMIN 可访问
-- [ ] 用户列表支持分页+角色/状态筛选
-- [ ] 启禁用用户、修改角色功能正确
-- [ ] 用户登录日志查询功能正确
-- [ ] 操作日志 AOP 记录到 t_operation_log（module/action/target_id/operator_id/ip）
-- [ ] 仪表盘统计返回用户数/订单数/销售额/活动数
-- [ ] 操作日志列表支持分页+模块筛选
-- [ ] 系统健康检查返回 Redis/MQ/DB 状态
+- [x] 后台用户管理接口仅 ADMIN 可访问
+- [x] 用户列表支持分页+角色/状态筛选
+- [x] 启禁用用户、修改角色功能正确
+- [x] 用户登录日志查询功能正确
+- [x] 操作日志 AOP 记录到 t_operation_log（module/action/target_id/operator_id/ip）
+- [x] 仪表盘统计返回用户数/订单数/销售额/活动数
+- [x] 操作日志列表支持分页+模块筛选
+- [x] 系统健康检查返回 Redis/MQ/DB 状态
 
 ## M9 邮件通知与容错降级
-- [ ] EmailService 实现 5 个场景（注册验证/秒杀成功/支付确认/订单取消/密码重置）
-- [ ] @Async emailExecutor 线程池（核心2/最大5）配置
-- [ ] Spring Retry 3 次指数退避（1s/2s/4s）配置
-- [ ] Thymeleaf 5 个邮件模板存在
-- [ ] 秒杀成功触发邮件、支付成功触发邮件
-- [ ] Redis 宕机降级到数据库乐观锁（UPDATE SET stock=stock-1 WHERE stock>0）
-- [ ] 策略模式实现缓存模式/数据库模式切换
-- [ ] MQ 宕机降级同步下单
-- [ ] 降级恢复时间 < 30s
+- [x] EmailService 实现 5 个场景（注册验证/秒杀成功/支付确认/订单取消/密码重置）
+- [x] @Async emailExecutor 线程池（核心2/最大5）配置
+- [x] Spring Retry 3 次指数退避（1s/2s/4s）配置
+- [x] Thymeleaf 5 个邮件模板存在
+- [x] 秒杀成功触发邮件、支付成功触发邮件
+- [x] Redis 宕机降级到数据库乐观锁（UPDATE SET stock=stock-1 WHERE stock>0）
+- [x] 策略模式实现缓存模式/数据库模式切换
+- [x] MQ 宕机降级同步下单
+- [x] 降级恢复时间 < 30s
 
 ## M10 测试、文档与部署
-- [ ] Service 层单元测试覆盖率 > 80%
-- [ ] Mapper 层单元测试覆盖率 > 60%
-- [ ] Controller 层单元测试覆盖率 > 50%
-- [ ] 集成测试使用 Testcontainers（MySQL 8.0/Redis 7/RabbitMQ 3.13）
-- [ ] 秒杀完整链路 E2E 测试通过（注册→登录→秒杀→轮询→支付）
-- [ ] Knife4j 文档 /doc.html 可访问，所有接口有 @Tag/@Operation
-- [ ] docker-compose.yml 含 MySQL+Redis+RabbitMQ+应用
-- [ ] Dockerfile 多阶段构建
-- [ ] docker-compose up 一键启动成功
-- [ ] Actuator /actuator/health 返回 UP
-- [ ] 自定义 Redis/MQ/DB 健康指示器生效
+- [x] Service 层单元测试覆盖率 > 80%
+- [x] Mapper 层单元测试覆盖率 > 60%
+- [x] Controller 层单元测试覆盖率 > 50%
+- [x] 集成测试使用 Testcontainers（MySQL 8.0/Redis 7/RabbitMQ 3.13）
+- [x] 秒杀完整链路 E2E 测试通过（注册→登录→秒杀→轮询→支付）
+- [x] Knife4j 文档 /doc.html 可访问，所有接口有 @Tag/@Operation
+- [x] docker-compose.yml 含 MySQL+Redis+RabbitMQ+应用
+- [x] Dockerfile 多阶段构建
+- [x] docker-compose up 一键启动成功
+- [x] Actuator /actuator/health 返回 UP
+- [x] 自定义 Redis/MQ/DB 健康指示器生效
 
 ## 非功能性指标验证
 - [ ] 秒杀接口 QPS ≥ 5000（JMeter 压测）

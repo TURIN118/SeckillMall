@@ -6,6 +6,7 @@ import com.seckill.mall.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -63,6 +64,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/actuator/**"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/seckill/{seckillId}").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

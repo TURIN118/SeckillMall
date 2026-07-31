@@ -8,6 +8,7 @@ import com.seckill.mall.common.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.entity.enums.SeckillStatus;
 import com.seckill.mall.mq.message.SeckillOrderMessage;
+import com.seckill.mall.mq.producer.SeckillOrderProducer;
 import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.service.SeckillGoodsService;
 import com.seckill.mall.service.SeckillService;
@@ -45,6 +46,7 @@ public class SeckillServiceImpl implements SeckillService {
     private final RedisService redisService;
     private final RedissonClient redissonClient;
     private final ObjectMapper objectMapper;
+    private final SeckillOrderProducer seckillOrderProducer;
 
     @Override
     public SeckillResultVO doSeckill(Long seckillId, String seckillToken) {
@@ -112,11 +114,13 @@ public class SeckillServiceImpl implements SeckillService {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "秒杀结果写入失败");
         }
 
-        // TODO: M6 实现 RabbitMQ 投递 SeckillOrderMessage，由消费者异步创建订单并回写结果
+        // 投递秒杀下单消息到 RabbitMQ，由消费者异步创建订单并回写结果
         SeckillOrderMessage message = new SeckillOrderMessage();
         message.setSeckillId(seckillId);
         message.setUserId(userId);
         message.setRequestId(requestId);
+        message.setTimestamp(System.currentTimeMillis());
+        seckillOrderProducer.sendSeckillOrder(message);
 
         return vo;
     }

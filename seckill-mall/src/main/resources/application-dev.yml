@@ -25,6 +25,8 @@ spring:
         acknowledge-mode: manual
         prefetch: 1
         concurrency: 3
+        retry:
+          enabled: false
   mail:
     host: ${SMTP_HOST:smtp.qq.com}
     port: ${SMTP_PORT:465}

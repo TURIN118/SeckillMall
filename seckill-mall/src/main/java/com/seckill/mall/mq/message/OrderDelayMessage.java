@@ -7,19 +7,17 @@ import java.io.Serializable;
 /**
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
- * 文件名称：SeckillOrderMessage.java
+ * 文件名称：OrderDelayMessage.java
  * 邮箱：nj651217@163.com
  */
 @Data
-public class SeckillOrderMessage implements Serializable {
+public class OrderDelayMessage implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private Long seckillId;
+    private Long orderId;
 
-    private Long userId;
+    private String orderNo;
 
-    private String requestId;
-
-    private Long timestamp;
+    private Long expireTime;
 }

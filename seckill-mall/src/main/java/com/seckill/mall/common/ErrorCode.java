@@ -40,6 +40,11 @@ public enum ErrorCode {
     SECKILL_TOKEN_INVALID(2006, "秒杀令牌无效或已过期"),
     SECKILL_TOO_MANY(2007, "秒杀活动已取消"),
 
+    // 商品与分类相关
+    PRODUCT_NOT_FOUND(4001, "商品不存在"),
+    CATEGORY_NOT_FOUND(4002, "分类不存在"),
+    CATEGORY_DISABLED(4003, "分类已禁用"),
+
     // 订单相关
     ORDER_NOT_FOUND(3001, "订单不存在"),
     ORDER_ALREADY_PAID(3002, "订单已支付，请勿重复操作"),

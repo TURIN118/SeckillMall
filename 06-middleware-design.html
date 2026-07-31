@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中间件深度设计文档 - 高并发秒杀电商平台</title>
+<style>
+:root{--bg:#f7f8fc;--bg2:#fff;--ink:#1a1a2e;--accent:#2563eb;--accent2:#059669;--sidebar-bg:#1e1e2e;--sidebar-w:260px;--code-bg:#1e1e2e;--danger:#dc2626;--warning:#f59e0b;--success:#10b981;--info:#3b82f6;--border:#e2e8f0;--radius:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--ink);line-height:1.7}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);background:var(--sidebar-bg);color:#cdd6f4;overflow-y:auto;z-index:100;padding:24px 0}
+.sidebar::-webkit-scrollbar{width:4px}.sidebar::-webkit-scrollbar-thumb{background:#45475a;border-radius:2px}
+.sidebar-logo{padding:0 20px 20px;border-bottom:1px solid #313244;margin-bottom:16px}
+.sidebar-logo h2{font-size:15px;color:#fff;font-weight:700}.sidebar-logo p{font-size:11px;color:#6c7086;margin-top:4px}
+.nav-group{margin-bottom:8px}.nav-group-title{padding:8px 20px 4px;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#6c7086;font-weight:600}
+.nav-item{display:block;padding:6px 20px 6px 28px;font-size:13px;color:#a6adc8;text-decoration:none;transition:all .2s;border-left:3px solid transparent}
+.nav-item:hover,.nav-item.active{color:#fff;background:rgba(255,255,255,.06);border-left-color:var(--accent)}
+.nav-item.sub{padding-left:40px;font-size:12px}
+.main{margin-left:var(--sidebar-w);padding:40px 48px 80px}.content{max-width:960px;margin:0 auto}
+h1{font-size:28px;font-weight:800;color:var(--ink);margin-bottom:8px;padding-bottom:16px;border-bottom:3px solid var(--accent)}
+h1 .sub{font-size:14px;color:#64748b;font-weight:400;display:block;margin-top:4px}
+h2{font-size:22px;font-weight:700;color:var(--ink);margin:48px 0 16px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+h2 .num{color:var(--accent);margin-right:8px}
+h3{font-size:17px;font-weight:600;color:var(--ink);margin:32px 0 12px}
+h3 .num{color:var(--accent2);margin-right:6px;font-size:14px}
+h4{font-size:15px;font-weight:600;margin:20px 0 8px;color:#334155}
+p{margin-bottom:12px;font-size:14px;color:#475569}
+ul,ol{margin:8px 0 16px 24px;font-size:14px;color:#475569}li{margin-bottom:6px}strong{color:var(--ink)}
+.hero{background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 50%,#059669 100%);border-radius:12px;padding:32px 36px;color:#fff;margin-bottom:32px}
+.hero h1{color:#fff;border-bottom-color:rgba(255,255,255,.3)}.hero .sub{color:rgba(255,255,255,.8)}
+.hero-tags{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.hero-tag{background:rgba(255,255,255,.18);padding:3px 12px;border-radius:20px;font-size:12px;color:#fff}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px}
+.card-title{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--ink)}
+.status-card{border-radius:var(--radius);padding:16px 20px;margin-bottom:12px;border-left:4px solid}
+.status-card.danger{background:#fef2f2;border-color:var(--danger)}.status-card.warning{background:#fffbeb;border-color:var(--warning)}
+.status-card.success{background:#f0fdf4;border-color:var(--success)}.status-card.info{background:#eff6ff;border-color:var(--info)}
+.status-card .status-title{font-weight:600;font-size:14px;margin-bottom:4px}
+.status-card.danger .status-title{color:var(--danger)}.status-card.warning .status-title{color:#b45309}
+.status-card.success .status-title{color:var(--success)}.status-card.info .status-title{color:var(--info)}
+.status-card p{margin-bottom:0}
+.table-wrap{overflow-x:auto;margin:16px 0;border-radius:var(--radius);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:#f1f5f9;padding:10px 14px;text-align:left;font-weight:600;color:#334155;border-bottom:2px solid var(--border);white-space:nowrap}
+tbody td{padding:9px 14px;border-bottom:1px solid var(--border);color:#475569}tbody tr:hover{background:#f8fafc}tbody tr:last-child td{border-bottom:none}
+code.inline{background:#f1f5f9;padding:1px 6px;border-radius:4px;font-size:12px;color:#be185d;font-family:'Fira Code',monospace}
+.code-block{background:var(--code-bg);border-radius:var(--radius);margin:16px 0;overflow:hidden}
+.code-header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#181825;border-bottom:1px solid #313244}
+.code-lang{font-size:11px;color:#6c7086;text-transform:uppercase;letter-spacing:1px}
+.code-dots{display:flex;gap:6px}.code-dots span{width:10px;height:10px;border-radius:50%}
+.code-dots span:nth-child(1){background:#f38ba8}.code-dots span:nth-child(2){background:#f9e2af}.code-dots span:nth-child(3){background:#a6e3a1}
+.code-body{padding:16px 20px;overflow-x:auto;font-family:'Fira Code','Consolas','Monaco',monospace;font-size:13px;line-height:1.6;color:#cdd6f4}
+.code-body::-webkit-scrollbar{height:6px}.code-body::-webkit-scrollbar-thumb{background:#45475a;border-radius:3px}
+.kw{color:#89b4fa}.an{color:#a6e3a1}.str{color:#fab387}.cm{color:#6c7086;font-style:italic}.fn{color:#89dceb}.ty{color:#f9e2af}.nu{color:#fab387}.op{color:#94e2d5}
+.flow-h{display:flex;align-items:center;gap:0;margin:20px 0;flex-wrap:wrap;justify-content:center}
+.flow-node{padding:12px 18px;border-radius:var(--radius);font-size:13px;font-weight:600;text-align:center;min-width:120px;white-space:nowrap}
+.flow-node.blue{background:#dbeafe;color:#1e40af;border:2px solid #93c5fd}
+.flow-node.green{background:#d1fae5;color:#065f46;border:2px solid #6ee7b7}
+.flow-node.red{background:#fee2e2;color:#991b1b;border:2px solid #fca5a5}
+.flow-node.orange{background:#ffedd5;color:#9a3412;border:2px solid #fdba74}
+.flow-node.purple{background:#ede9fe;color:#5b21b6;border:2px solid #c4b5fd}
+.flow-arrow{font-size:20px;color:#94a3b8;margin:0 4px;display:flex;align-items:center}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.compare-card{border:2px solid var(--border);border-radius:var(--radius);padding:20px;background:var(--bg2)}
+.compare-card.a{border-top:4px solid var(--accent)}.compare-card.b{border-top:4px solid var(--accent2)}
+.compare-card .badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-bottom:10px}
+.compare-card.a .badge{background:#dbeafe;color:#1e40af}.compare-card.b .badge{background:#d1fae5;color:#065f46}
+.compare-card h4{margin-top:0}.compare-card ul{margin-bottom:0}
+.arch-stack{display:flex;flex-direction:column;align-items:center;gap:0;margin:24px 0}
+.arch-layer{width:100%;max-width:680px;padding:16px 24px;border-radius:var(--radius);text-align:center;font-weight:600;font-size:14px}
+.arch-layer .detail{font-size:12px;font-weight:400;margin-top:4px;opacity:.85}
+.arch-connector{width:2px;height:24px;background:#94a3b8;position:relative;margin:0 auto}
+.arch-connector::after{content:'\25BC';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);color:#94a3b8;font-size:10px}
+.mq-topo{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin:20px 0}
+.mq-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.mq-exchange{padding:12px 18px;border-radius:8px;font-size:12px;font-weight:700;text-align:center;min-width:160px;border:2px solid}
+.mq-exchange.direct{background:#dbeafe;color:#1e40af;border-color:#60a5fa}
+.mq-exchange.fanout{background:#ede9fe;color:#5b21b6;border-color:#a78bfa}
+.mq-exchange.dead{background:#fee2e2;color:#991b1b;border-color:#f87171}
+.mq-arrow-line{flex:0 0 60px;height:2px;background:#94a3b8;position:relative}
+.mq-arrow-line::after{content:'\25B6';position:absolute;right:-6px;top:-8px;color:#94a3b8;font-size:12px}
+.mq-arrow-label{font-size:10px;color:#64748b;position:absolute;top:-16px;left:50%;transform:translateX(-50%);white-space:nowrap}
+.mq-queue{padding:10px 16px;border-radius:6px;font-size:12px;font-weight:600;text-align:center;min-width:160px;background:#f0fdf4;color:#065f46;border:2px solid #6ee7b7}
+.mq-queue.dead{background:#fef2f2;color:#991b1b;border-color:#fca5a5}
+.mq-queue.delay{background:#fffbeb;color:#92400e;border-color:#fcd34d}
+.mq-desc{font-size:11px;color:#64748b;margin-left:8px;font-style:italic}
+.mq-group{border:1px dashed #cbd5e1;border-radius:8px;padding:16px;margin-bottom:16px}
+.mq-group-title{font-size:12px;font-weight:600;color:#475569;margin-bottom:10px}
+.section-divider{height:1px;background:linear-gradient(to right,transparent,var(--border),transparent);margin:48px 0}
+.callout{padding:14px 18px;border-radius:var(--radius);margin:16px 0;font-size:13px}
+.callout.tip{background:#f0fdf4;border-left:4px solid var(--accent2)}.callout.warn{background:#fffbeb;border-left:4px solid var(--warning)}
+.callout.danger{background:#fef2f2;border-left:4px solid var(--danger)}.callout.info{background:#eff6ff;border-left:4px solid var(--info)}
+.callout strong{display:block;margin-bottom:4px}
+@media(max-width:900px){.sidebar{display:none}.main{margin-left:0;padding:20px}.compare{grid-template-columns:1fr}}
+@media print{.sidebar{display:none}.main{margin-left:0}}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+<div class="sidebar-logo"><h2>中间件深度设计</h2><p>高并发秒杀电商平台</p></div>
+<div class="nav-group"><div class="nav-group-title">第一章 &middot; 缓存设计</div><a class="nav-item" href="#ch1">概述</a><a class="nav-item sub" href="#s1-1">1.1 Key 命名规范</a><a class="nav-item sub" href="#s1-2">1.2 缓存穿透</a><a class="nav-item sub" href="#s1-3">1.3 缓存击穿</a><a class="nav-item sub" href="#s1-4">1.4 缓存雪崩</a><a class="nav-item sub" href="#s1-5">1.5 缓存预热策略</a></div>
+<div class="nav-group"><div class="nav-group-title">第二章 &middot; 数据一致性</div><a class="nav-item" href="#ch2">概述</a><a class="nav-item sub" href="#s2-1">2.1 一致性挑战分析</a><a class="nav-item sub" href="#s2-2">2.2 最终一致性策略</a><a class="nav-item sub" href="#s2-3">2.3 补偿表设计</a><a class="nav-item sub" href="#s2-4">2.4 消息消费失败自愈</a></div>
+<div class="nav-group"><div class="nav-group-title">第三章 &middot; 消息队列</div><a class="nav-item" href="#ch3">概述</a><a class="nav-item sub" href="#s3-1">3.1 完整拓扑图</a><a class="nav-item sub" href="#s3-2">3.2 消息体结构定义</a><a class="nav-item sub" href="#s3-3">3.3 ACK/NACK 策略</a><a class="nav-item sub" href="#s3-4">3.4 幂等去重设计</a><a class="nav-item sub" href="#s3-5">3.5 可靠性保障总结</a></div>
+<div class="nav-group"><div class="nav-group-title">第四章 &middot; 容错降级</div><a class="nav-item" href="#ch4">概述</a><a class="nav-item sub" href="#s4-1">4.1 降级策略总表</a><a class="nav-item sub" href="#s4-2">4.2 Redis 宕机降级</a><a class="nav-item sub" href="#s4-3">4.3 MQ 宕机降级</a><a class="nav-item sub" href="#s4-4">4.4 降级代码实现</a><a class="nav-item sub" href="#s4-5">4.5 Sentinel 熔断配置</a></div>
+</aside>
+<div class="main"><div class="content">
+
+<div class="hero"><h1>中间件深度设计文档<span class="sub">基于 Spring Boot 的高并发秒杀电商平台 &middot; 技术设计补充</span></h1><div class="hero-tags"><span class="hero-tag">Spring Boot 3</span><span class="hero-tag">Redis 7</span><span class="hero-tag">RabbitMQ 3.13</span><span class="hero-tag">MySQL 8.0</span><span class="hero-tag">MyBatis-Plus</span><span class="hero-tag">Vue 3</span><span class="hero-tag">JMeter 压测</span></div></div>
+<p style="font-size:14px;color:#64748b;">本文档是毕业设计的技术深度补充，聚焦于中间件层面的缓存设计、数据一致性、消息队列和容错降级四大核心主题。所有方案均基于单机部署环境设计，并通过 JMeter 压测验证。</p>
+
+<!-- ===== CHAPTER 1: CACHE DESIGN ===== -->
+<div class="section-divider"></div>
+<h2 id="ch1"><span class="num">第一章</span>缓存设计专题</h2>
+<p>缓存是高并发秒杀系统的第一道防线。合理的缓存设计可以将 99% 以上的读请求拦截在 Redis 层，极大降低数据库压力。本章从 Key 命名规范、缓存穿透/击穿/雪崩三大经典问题、以及缓存预热策略五个维度，详细阐述本项目的缓存架构设计。</p>
+
+<h3 id="s1-1"><span class="num">1.1</span>Redis Key 命名规范</h3>
+<p>统一的 Key 命名规范是缓存管理的基础。本项目采用 <strong>冒号分隔 + 业务前缀 + 实体标识</strong> 的三段式命名法，确保 Key 的可读性和可管理性。</p>
+<h4>命名原则</h4>
+<ul>
+<li><strong>冒号分隔</strong>：使用 <code class="inline">:</code> 作为层级分隔符，如 <code class="inline">seckill:stock:1001</code>，便于 Redis 可视化工具按层级展示</li>
+<li><strong>业务前缀</strong>：第一个字段为业务域标识，如 <code class="inline">seckill</code>（秒杀）、<code class="inline">rate</code>（限流）、<code class="inline">login</code>（登录）、<code class="inline">mq</code>（消息队列）</li>
+<li><strong>通配符管理</strong>：生产环境严禁使用 <code class="inline">KEYS *</code> 命令（O(N) 复杂度，阻塞主线程），统一使用 <code class="inline">SCAN</code> 游标迭代替代</li>
+<li><strong>TTL 必设</strong>：每个 Key 必须设置合理的过期时间，避免内存无限增长（秒杀库存等需要长期存在的 Key 由活动生命周期管理）</li>
+</ul>
+<h4>完整 Key 命名体系</h4>
+<div class="table-wrap"><table><thead><tr><th>业务场景</th><th>Key 格式</th><th>数据类型</th><th>TTL</th><th>说明</th></tr></thead><tbody>
+<tr><td>商品详情缓存</td><td><code class="inline">seckill:goods:{goodsId}</code></td><td>String(JSON)</td><td>30min</td><td>商品详情JSON序列化，含名称、价格、图片等</td></tr>
+<tr><td>秒杀库存</td><td><code class="inline">seckill:stock:{seckillId}</code></td><td>String(Integer)</td><td>活动结束</td><td>剩余库存数，DECR 原子操作实现预减</td></tr>
+<tr><td>已购用户集合</td><td><code class="inline">seckill:bought:{seckillId}</code></td><td>Set</td><td>活动结束</td><td>已购买用户ID集合，SISMEMBER 快速判重</td></tr>
+<tr><td>用户秒杀资格</td><td><code class="inline">seckill:mark:{seckillId}:{userId}</code></td><td>String(1)</td><td>活动结束</td><td>快速判断用户是否已购（双重保障）</td></tr>
+<tr><td>秒杀结果</td><td><code class="inline">seckill:result:{seckillId}:{userId}</code></td><td>String(JSON)</td><td>10min</td><td>前端轮询获取异步下单结果</td></tr>
+<tr><td>接口限流计数器</td><td><code class="inline">rate:seckill:{userId}</code></td><td>String(Integer)</td><td>1s</td><td>令牌桶/固定窗口计数器</td></tr>
+<tr><td>IP限流计数器</td><td><code class="inline">rate:ip:{ip}:{path}</code></td><td>String(Integer)</td><td>60s</td><td>滑动窗口计数，按 IP + 路径维度</td></tr>
+<tr><td>登录失败计数</td><td><code class="inline">login:fail:{username}</code></td><td>String(Integer)</td><td>30min</td><td>连续失败次数，超过5次锁定账户</td></tr>
+<tr><td>Token黑名单</td><td><code class="inline">token:blacklist:{tokenId}</code></td><td>String(1)</td><td>Token剩余有效期</td><td>用户登出后 Token 加入黑名单</td></tr>
+<tr><td>验证码</td><td><code class="inline">captcha:{captchaId}</code></td><td>String(JSON)</td><td>5min</td><td>滑块验证码校验结果</td></tr>
+<tr><td>消息幂等去重</td><td><code class="inline">mq:consumed:{messageId}</code></td><td>String(1)</td><td>24h</td><td>MQ消息去重标记，防止重复消费</td></tr>
+</tbody></table></div>
+<div class="callout tip"><strong>最佳实践：SCAN 替代 KEYS</strong>生产环境使用 <code class="inline">SCAN cursor MATCH seckill:goods:* COUNT 100</code> 进行模式匹配，每次迭代返回少量结果，不会阻塞 Redis 主线程。项目中的 Redis 管理工具类封装了 scanKeys 方法，内部使用 SCAN 实现安全的 Key 遍历。</div>
+
+<h3 id="s1-2"><span class="num">1.2</span>缓存穿透（Cache Penetration）</h3>
+<div class="status-card danger"><div class="status-title">问题定义</div><p>攻击者构造大量不存在的 Key（如 <code class="inline">seckillId=999999</code>），请求穿透缓存直达数据库。由于缓存中不存在该数据，每次请求都需要查询 MySQL，大量并发请求会直接打垮数据库。</p></div>
+
+<h4>方案一：空值缓存</h4>
+<p>查询数据库发现记录不存在时，在 Redis 中缓存一个空值标记（如 <code class="inline">"NULL"</code>），并设置较短的 TTL（2~5分钟）。后续对同一 Key 的请求直接命中缓存返回 null，无需访问数据库。</p>
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; SeckillGoodsService.java</span></div><div class="code-body"><span class="an">@Service</span>
+<span class="kw">public class</span> <span class="ty">SeckillGoodsService</span> {
+
+    <span class="an">@Autowired</span>
+    <span class="kw">private</span> <span class="ty">StringRedisTemplate</span> redisTemplate;
+    <span class="an">@Autowired</span>
+    <span class="kw">private</span> <span class="ty">SeckillGoodsMapper</span> goodsMapper;
+
+    <span class="cm">/** 查询秒杀商品详情（空值缓存方案）*/</span>
+    <span class="kw">public</span> <span class="ty">SeckillGoods</span> <span class="fn">getGoodsById</span>(<span class="ty">Long</span> goodsId) {
+        <span class="ty">String</span> key = <span class="str">"seckill:goods:"</span> + goodsId;
+        <span class="ty">String</span> cached = redisTemplate.opsForValue().get(key);
+
+        <span class="cm">// 缓存命中：区分空值标记和真实数据</span>
+        <span class="kw">if</span> (cached != <span class="kw">null</span>) {
+            <span class="kw">return</span> <span class="str">"NULL"</span>.equals(cached) ? <span class="kw">null</span>
+                : JSON.parseObject(cached, <span class="ty">SeckillGoods</span>.<span class="kw">class</span>);
+        }
+
+        <span class="cm">// 缓存未命中：查询数据库</span>
+        <span class="ty">SeckillGoods</span> goods = goodsMapper.selectById(goodsId);
+
+        <span class="kw">if</span> (goods == <span class="kw">null</span>) {
+            <span class="cm">// 数据库不存在 &rarr; 缓存空值标记，TTL=2min</span>
+            redisTemplate.opsForValue()
+                .set(key, <span class="str">"NULL"</span>, <span class="nu">2</span>, <span class="ty">TimeUnit</span>.MINUTES);
+            <span class="kw">return null</span>;
+        }
+
+        <span class="cm">// 数据库存在 &rarr; 缓存真实数据，TTL=30min + 随机偏移</span>
+        <span class="kw">long</span> ttl = <span class="nu">30</span> * <span class="nu">60</span> + <span class="ty">ThreadLocalRandom</span>
+            .current().nextInt(<span class="nu">0</span>, <span class="nu">600</span>);
+        redisTemplate.opsForValue()
+            .set(key, JSON.toJSONString(goods), ttl, <span class="ty">TimeUnit</span>.SECONDS);
+        <span class="kw">return</span> goods;
+    }
+}</div></div>
+
+<h4>方案二：布隆过滤器（Bloom Filter）</h4>
+<p>布隆过滤器是一种空间效率极高的概率型数据结构，用于判断元素 <strong>"可能存在"</strong> 或 <strong>"一定不存在"</strong>。其核心原理是使用多个哈希函数将 Key 映射到位数组（Bit Array），写入时将所有哈希位置为 1，查询时检查所有哈希位是否都为 1。</p>
+<div class="card"><div class="card-title">布隆过滤器判断逻辑</div><ul><li><strong>所有哈希位都为 1</strong> &rarr; 元素 <em>可能存在</em>（有误判概率，需进一步查数据库确认）</li><li><strong>至少一个哈希位为 0</strong> &rarr; 元素 <em>一定不存在</em>（100% 准确，直接拦截）</li><li><strong>误判率</strong>：与位数组大小和哈希函数个数相关。本项目配置 10万预期元素、1% 误判率，仅需约 114KB 内存</li></ul></div>
+
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; BloomFilterInitializer.java</span></div><div class="code-body"><span class="an">@Component</span>
+<span class="kw">public class</span> <span class="ty">BloomFilterInitializer</span> <span class="kw">implements</span> <span class="ty">ApplicationRunner</span> {
+
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">RedissonClient</span> redisson;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">SeckillGoodsMapper</span> goodsMapper;
+
+    <span class="an">@Override</span>
+    <span class="kw">public void</span> <span class="fn">run</span>(<span class="ty">ApplicationArguments</span> args) {
+        <span class="ty">RBloomFilter</span>&lt;<span class="ty">Long</span>&gt; bloomFilter =
+            redisson.getBloomFilter(<span class="str">"seckill:bloom:goods"</span>);
+
+        <span class="cm">// 初始化：预计10万元素，误判率1%</span>
+        bloomFilter.tryInit(<span class="nu">100000L</span>, <span class="nu">0.01</span>);
+
+        <span class="cm">// 加载所有有效秒杀商品ID</span>
+        <span class="ty">List</span>&lt;<span class="ty">Long</span>&gt; allIds = goodsMapper.selectList(<span class="kw">null</span>)
+            .stream().map(<span class="ty">SeckillGoods</span>::getGoodsId)
+            .collect(<span class="ty">Collectors</span>.toList());
+        allIds.forEach(bloomFilter::add);
+        log.info(<span class="str">"布隆过滤器初始化完成，加载{}个商品ID"</span>, allIds.size());
+    }
+}
+
+<span class="cm">// === 查询时使用 ===</span>
+<span class="kw">public</span> <span class="ty">SeckillGoods</span> <span class="fn">getGoodsWithBloom</span>(<span class="ty">Long</span> goodsId) {
+    <span class="ty">RBloomFilter</span>&lt;<span class="ty">Long</span>&gt; bf = redisson.getBloomFilter(<span class="str">"seckill:bloom:goods"</span>);
+    <span class="kw">if</span> (!bf.contains(goodsId)) {
+        <span class="kw">return null</span>; <span class="cm">// 一定不存在，直接返回</span>
+    }
+    <span class="kw">return</span> getGoodsById(goodsId); <span class="cm">// 可能存在，走缓存流程</span>
+}</div></div>
+
+<div class="callout warn"><strong>布隆过滤器的局限性</strong>(1) <strong>不支持删除</strong>：位数组是共享的，删除某个元素可能影响其他元素的判断。如需删除，需使用 Counting Bloom Filter 或定期重建。(2) <strong>存在误判率</strong>：判断"存在"时有一定概率误判（1%），但判断"不存在"是 100% 准确的。(3) <strong>不支持序列化迁移</strong>：Redis 中存储的位数组需通过 Redisson 客户端操作。</div>
+
+<h4>本项目策略</h4>
+<div class="compare"><div class="compare-card a"><span class="badge">方案 A &middot; 采用</span><h4>商品详情查询 &rarr; 空值缓存</h4><ul><li>秒杀商品数据量小（通常不超过 1000 个）</li><li>实现简单，无额外依赖</li><li>空值 Key 数量可控，内存占用极小</li><li>TTL=2min，恶意 Key 不会长期占用内存</li></ul></div><div class="compare-card b"><span class="badge">方案 B &middot; 采用</span><h4>秒杀资格判断 &rarr; 布隆过滤器</h4><ul><li>秒杀活动创建时预加载所有参与商品 ID</li><li>高并发场景下第一层拦截无效请求</li><li>1% 误判率可接受（误判后还有缓存层兜底）</li><li>活动期间不需要删除操作</li></ul></div></div>
+
+<h3 id="s1-3"><span class="num">1.3</span>缓存击穿（Cache Breakdown）</h3>
+<div class="status-card warning"><div class="status-title">问题定义</div><p>某个热点 Key（如热门秒杀商品详情）在过期的瞬间，大量并发请求同时发现缓存 miss，导致所有请求同时穿透到数据库，形成瞬时 DB 压力洪峰。这与缓存穿透的区别在于：击穿是针对 <strong>存在的热点数据</strong> 的过期问题。</p></div>
+
+<div class="compare"><div class="compare-card a"><span class="badge">方案 A &middot; 互斥锁</span><h4>Mutex Lock 重建</h4><p><strong>原理</strong>：缓存 miss 时，通过 Redisson 分布式锁保证只有一个线程去查数据库并重建缓存，其他线程等待后重试。</p><ol><li>缓存 miss &rarr; 尝试获取分布式锁</li><li>获取成功 &rarr; Double Check &rarr; 仍 miss &rarr; 查DB &rarr; 写缓存 &rarr; 释放锁</li><li>获取失败 &rarr; sleep 50ms &rarr; 重试（最多 3 次）</li></ol><ul><li><strong>优点</strong>：数据强一致，不会返回过期数据</li><li><strong>缺点</strong>：线程阻塞等待，有一定延迟</li></ul></div><div class="compare-card b"><span class="badge">方案 B &middot; 逻辑过期</span><h4>Logical Expiration</h4><p><strong>原理</strong>：不设置 Redis TTL，在 Value 中嵌入逻辑过期时间字段。读取时检查是否过期，过期则异步重建，当前线程返回旧数据。</p><ol><li>读取缓存值 &rarr; 解析逻辑过期时间</li><li>未过期 &rarr; 直接返回数据</li><li>已过期 &rarr; 尝试获取重建锁 &rarr; 异步线程重建缓存</li><li>当前线程立即返回旧数据</li></ol><ul><li><strong>优点</strong>：无阻塞、用户体验好</li><li><strong>缺点</strong>：短暂时间窗口内数据不一致</li></ul></div></div>
+
+<h4>互斥锁方案 &mdash; 完整代码</h4>
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; CacheMutexStrategy.java</span></div><div class="code-body"><span class="an">@Service</span>
+<span class="kw">public class</span> <span class="ty">CacheMutexStrategy</span> {
+
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">StringRedisTemplate</span> redisTemplate;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">RedissonClient</span> redisson;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">SeckillGoodsMapper</span> goodsMapper;
+
+    <span class="kw">private static final int</span> MAX_RETRY = <span class="nu">3</span>;
+    <span class="kw">private static final long</span> SLEEP_MS = <span class="nu">50L</span>;
+
+    <span class="kw">public</span> <span class="ty">SeckillGoods</span> <span class="fn">getGoodsWithMutex</span>(<span class="ty">Long</span> goodsId) {
+        <span class="ty">String</span> key = <span class="str">"seckill:goods:"</span> + goodsId;
+
+        <span class="kw">for</span> (<span class="kw">int</span> retry = <span class="nu">0</span>; retry &lt; MAX_RETRY; retry++) {
+            <span class="ty">String</span> cached = redisTemplate.opsForValue().get(key);
+
+            <span class="cm">// 1. 缓存命中 &rarr; 直接返回</span>
+            <span class="kw">if</span> (cached != <span class="kw">null</span>) {
+                <span class="kw">return</span> <span class="str">"NULL"</span>.equals(cached) ? <span class="kw">null</span>
+                    : JSON.parseObject(cached, <span class="ty">SeckillGoods</span>.<span class="kw">class</span>);
+            }
+
+            <span class="cm">// 2. 缓存未命中 &rarr; 获取分布式锁</span>
+            <span class="ty">RLock</span> lock = redisson.getLock(<span class="str">"lock:goods:"</span> + goodsId);
+            <span class="kw">boolean</span> locked = lock.tryLock(<span class="nu">0</span>, <span class="nu">10</span>, <span class="ty">TimeUnit</span>.SECONDS);
+
+            <span class="kw">if</span> (locked) {
+                <span class="kw">try</span> {
+                    <span class="cm">// 3. Double Check：拿到锁后再查一次缓存</span>
+                    cached = redisTemplate.opsForValue().get(key);
+                    <span class="kw">if</span> (cached != <span class="kw">null</span>) {
+                        <span class="kw">return</span> <span class="str">"NULL"</span>.equals(cached) ? <span class="kw">null</span>
+                            : JSON.parseObject(cached, <span class="ty">SeckillGoods</span>.<span class="kw">class</span>);
+                    }
+                    <span class="cm">// 4. 仍然 miss &rarr; 查数据库并重建缓存</span>
+                    <span class="ty">SeckillGoods</span> goods = goodsMapper.selectById(goodsId);
+                    <span class="kw">if</span> (goods == <span class="kw">null</span>) {
+                        redisTemplate.opsForValue()
+                            .set(key, <span class="str">"NULL"</span>, <span class="nu">2</span>, <span class="ty">TimeUnit</span>.MINUTES);
+                        <span class="kw">return null</span>;
+                    }
+                    <span class="kw">long</span> ttl = <span class="nu">1800</span> + <span class="ty">ThreadLocalRandom</span>
+                        .current().nextInt(<span class="nu">0</span>, <span class="nu">600</span>);
+                    redisTemplate.opsForValue()
+                        .set(key, JSON.toJSONString(goods), ttl, <span class="ty">TimeUnit</span>.SECONDS);
+                    <span class="kw">return</span> goods;
+                } <span class="kw">finally</span> {
+                    lock.unlock();
+                }
+            }
+            <span class="cm">// 5. 获取锁失败 &rarr; 等待后重试</span>
+            <span class="ty">Thread</span>.sleep(SLEEP_MS);
+        }
+        <span class="kw">return null</span>; <span class="cm">// 超过最大重试次数</span>
+    }
+}</div></div>
+
+<h4>逻辑过期方案 &mdash; 代码示例</h4>
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; LogicalExpirationStrategy.java</span></div><div class="code-body"><span class="cm">/** 缓存包装类：数据 + 逻辑过期时间 */</span>
+<span class="an">@Data</span>
+<span class="kw">public class</span> <span class="ty">CachedData</span>&lt;<span class="ty">T</span>&gt; {
+    <span class="kw">private</span> <span class="ty">T</span> data;
+    <span class="kw">private</span> <span class="ty">Long</span> expireTime; <span class="cm">// 逻辑过期时间戳(ms)</span>
+}
+
+<span class="an">@Service</span>
+<span class="kw">public class</span> <span class="ty">LogicalExpirationStrategy</span> {
+
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">StringRedisTemplate</span> redisTemplate;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">SeckillGoodsMapper</span> goodsMapper;
+
+    <span class="kw">public</span> <span class="ty">SeckillGoods</span> <span class="fn">getGoodsWithLogicalExpire</span>(<span class="ty">Long</span> goodsId) {
+        <span class="ty">String</span> key = <span class="str">"seckill:goods:"</span> + goodsId;
+        <span class="ty">String</span> json = redisTemplate.opsForValue().get(key);
+        <span class="kw">if</span> (json == <span class="kw">null</span>) <span class="kw">return null</span>;
+
+        <span class="ty">CachedData</span>&lt;<span class="ty">SeckillGoods</span>&gt; cached = JSON.parseObject(
+            json, <span class="kw">new</span> <span class="ty">TypeReference</span>&lt;&gt;(){});
+
+        <span class="cm">// 未过期 &rarr; 直接返回</span>
+        <span class="kw">if</span> (cached.getExpireTime() &gt; <span class="ty">System</span>.currentTimeMillis()) {
+            <span class="kw">return</span> cached.getData();
+        }
+
+        <span class="cm">// 已过期 &rarr; 尝试获取重建锁（SETNX 原子操作）</span>
+        <span class="ty">Boolean</span> locked = redisTemplate.opsForValue()
+            .setIfAbsent(<span class="str">"lock:rebuild:"</span> + goodsId, <span class="str">"1"</span>,
+                         <span class="nu">10</span>, <span class="ty">TimeUnit</span>.SECONDS);
+        <span class="kw">if</span> (<span class="ty">Boolean</span>.TRUE.equals(locked)) {
+            <span class="ty">CompletableFuture</span>.runAsync(() -&gt; {
+                <span class="kw">try</span> { rebuildCache(goodsId); }
+                <span class="kw">finally</span> { redisTemplate.delete(<span class="str">"lock:rebuild:"</span> + goodsId); }
+            });
+        }
+        <span class="kw">return</span> cached.getData(); <span class="cm">// 返回旧数据（短暂不一致可接受）</span>
+    }
+
+    <span class="kw">private void</span> <span class="fn">rebuildCache</span>(<span class="ty">Long</span> goodsId) {
+        <span class="ty">SeckillGoods</span> goods = goodsMapper.selectById(goodsId);
+        <span class="kw">if</span> (goods == <span class="kw">null</span>) <span class="kw">return</span>;
+        <span class="ty">CachedData</span>&lt;<span class="ty">SeckillGoods</span>&gt; newData = <span class="kw">new</span> <span class="ty">CachedData</span>&lt;&gt;();
+        newData.setData(goods);
+        newData.setExpireTime(<span class="ty">System</span>.currentTimeMillis() + <span class="nu">30</span>*<span class="nu">60</span>*<span class="nu">1000</span>);
+        redisTemplate.opsForValue()
+            .set(<span class="str">"seckill:goods:"</span> + goodsId, JSON.toJSONString(newData));
+    }
+}</div></div>
+
+<div class="callout info"><strong>本项目策略</strong>商品详情缓存使用 <strong>互斥锁方案</strong>（数据量不大，锁竞争小，数据一致性更重要）；秒杀库存不需要过期（活动维度管理，不存在 TTL 过期问题，从根源上避免了击穿）。</div>
+
+<h3 id="s1-4"><span class="num">1.4</span>缓存雪崩（Cache Avalanche）</h3>
+<div class="status-card danger"><div class="status-title">问题定义</div><p>大量 Key 同时过期（如所有商品缓存同时到达 30min TTL），瞬间所有请求穿透到数据库，造成数据库连接池耗尽、响应超时甚至宕机。与缓存击穿的区别：击穿是单个热点 Key 过期，雪崩是 <strong>大面积 Key 集体过期</strong>。</p></div>
+
+<h4>策略一：TTL 随机偏移</h4>
+<p>在基础 TTL 上增加随机偏移量，打散过期时间点，避免大量 Key 同时失效。</p>
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; TTLRandomizer.java</span></div><div class="code-body"><span class="cm">/**
+ * TTL 随机偏移工具
+ * 基础 TTL: 30min (1800s)
+ * 随机偏移: 0 ~ 10min (0 ~ 600s)
+ * 实际 TTL: 1800s ~ 2400s (30~40min)
+ */</span>
+<span class="kw">public static long</span> <span class="fn">randomTTL</span>(<span class="kw">long</span> baseSeconds, <span class="kw">int</span> maxOffsetSeconds) {
+    <span class="kw">return</span> baseSeconds + <span class="ty">ThreadLocalRandom</span>
+        .current().nextLong(<span class="nu">0</span>, maxOffsetSeconds);
+}
+
+<span class="cm">// 使用示例</span>
+<span class="kw">long</span> ttl = randomTTL(<span class="nu">1800</span>, <span class="nu">600</span>); <span class="cm">// 1800~2400 秒</span>
+redisTemplate.opsForValue()
+    .set(key, json, ttl, <span class="ty">TimeUnit</span>.SECONDS);</div></div>
+
+<h4>策略二：多级缓存架构</h4>
+<p>构建从浏览器到数据库的多级缓存体系，每层缓存承担不同职责，逐级降低后端压力。</p>
+<div class="arch-stack">
+<div class="arch-layer" style="background:#dbeafe;color:#1e40af;border:2px solid #93c5fd;">L1 &middot; 浏览器缓存<div class="detail">Cache-Control: max-age=60 | 命中率 ~40% | 静态资源与商品列表</div></div>
+<div class="arch-connector"></div>
+<div class="arch-layer" style="background:#d1fae5;color:#065f46;border:2px solid #6ee7b7;">L2 &middot; Nginx 本地缓存<div class="detail">proxy_cache + proxy_cache_valid 10s | 命中率 ~30% | 热点页面级缓存</div></div>
+<div class="arch-connector"></div>
+<div class="arch-layer" style="background:#ede9fe;color:#5b21b6;border:2px solid #c4b5fd;">L3 &middot; Redis 分布式缓存<div class="detail">核心缓存层 | 命中率 ~95% | 商品详情、库存、用户状态</div></div>
+<div class="arch-connector"></div>
+<div class="arch-layer" style="background:#fee2e2;color:#991b1b;border:2px solid #fca5a5;">L4 &middot; MySQL 持久化存储<div class="detail">最终数据源 | 仅处理缓存 miss 的写请求和少量读请求</div></div>
+</div>
+<div class="table-wrap"><table><thead><tr><th>缓存层级</th><th>职责</th><th>TTL 策略</th><th>预期命中率</th><th>适用数据</th></tr></thead><tbody>
+<tr><td>L1 浏览器</td><td>拦截重复请求，减少网络传输</td><td>max-age=60s</td><td>~40%</td><td>静态资源、商品列表页</td></tr>
+<tr><td>L2 Nginx</td><td>页面级缓存，减轻应用服务器压力</td><td>10~30s</td><td>~30%</td><td>热点页面、活动页</td></tr>
+<tr><td>L3 Redis</td><td>核心数据缓存，拦截绝大部分读写</td><td>30min+随机偏移</td><td>~95%</td><td>商品详情、库存、令牌</td></tr>
+<tr><td>L4 MySQL</td><td>持久化存储，最终一致性保障</td><td>N/A</td><td>N/A</td><td>所有业务数据</td></tr>
+</tbody></table></div>
+
+<h4>策略三：热点数据永不过期 + 主动刷新</h4>
+<p>秒杀商品详情在活动期间不设置 TTL（永不过期），通过定时任务主动从数据库 reload 最新数据到 Redis，从根源避免过期问题。</p>
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; HotDataRefresher.java</span></div><div class="code-body"><span class="an">@Component</span>
+<span class="kw">public class</span> <span class="ty">HotDataRefresher</span> {
+
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">StringRedisTemplate</span> redisTemplate;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">SeckillActivityMapper</span> activityMapper;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">SeckillGoodsMapper</span> goodsMapper;
+
+    <span class="cm">/** 每5分钟刷新热点数据 */</span>
+    <span class="an">@Scheduled</span>(fixedRate = <span class="nu">300000</span>)
+    <span class="kw">public void</span> <span class="fn">refreshHotGoods</span>() {
+        <span class="ty">List</span>&lt;<span class="ty">SeckillActivity</span>&gt; activeList = activityMapper.selectList(
+            <span class="kw">new</span> <span class="ty">LambdaQueryWrapper</span>&lt;<span class="ty">SeckillActivity</span>&gt;()
+                .in(<span class="ty">SeckillActivity</span>::getStatus, <span class="nu">1</span>, <span class="nu">2</span>));
+        <span class="kw">for</span> (<span class="ty">SeckillActivity</span> act : activeList) {
+            <span class="ty">List</span>&lt;<span class="ty">SeckillGoods</span>&gt; goods = goodsMapper.selectList(
+                <span class="kw">new</span> <span class="ty">LambdaQueryWrapper</span>&lt;<span class="ty">SeckillGoods</span>&gt;()
+                    .eq(<span class="ty">SeckillGoods</span>::getActivityId, act.getId()));
+            <span class="kw">for</span> (<span class="ty">SeckillGoods</span> g : goods) {
+                redisTemplate.opsForValue().set(
+                    <span class="str">"seckill:goods:"</span> + g.getGoodsId(),
+                    JSON.toJSONString(g)); <span class="cm">// 不设TTL</span>
+            }
+        }
+        log.info(<span class="str">"热点数据刷新完成，活动数: {}"</span>, activeList.size());
+    }
+}</div></div>
+
+<h4>策略四：熔断降级兜底</h4>
+<p>当数据库 QPS 突增超过安全阈值时，触发熔断保护，避免数据库被打垮：</p>
+<ul>
+<li><strong>一级熔断</strong>：数据库响应时间 &gt; 500ms &rarr; 启用本地缓存（Caffeine），优先返回本地缓存数据</li>
+<li><strong>二级熔断</strong>：数据库连接池使用率 &gt; 90% &rarr; 直接返回预设默认数据或"系统繁忙"提示</li>
+<li><strong>三级熔断</strong>：Sentinel 检测到异常比例 &gt; 50% &rarr; 触发接口级熔断，所有请求直接走降级逻辑</li>
+</ul>
+
+<h3 id="s1-5"><span class="num">1.5</span>缓存预热策略</h3>
+<p>缓存预热是指在系统启动或新活动创建时，主动将热点数据从数据库加载到 Redis，避免冷启动时大量缓存 miss 导致数据库压力激增。</p>
+<h4>预热时机</h4>
+<div class="table-wrap"><table><thead><tr><th>触发时机</th><th>预热范围</th><th>实现方式</th></tr></thead><tbody>
+<tr><td>系统启动</td><td>所有"进行中"和"即将开始"的秒杀活动商品</td><td>ApplicationRunner 启动时执行</td></tr>
+<tr><td>新活动创建</td><td>新创建的秒杀活动及其关联商品</td><td>活动创建 Service 中同步预热</td></tr>
+<tr><td>定时刷新</td><td>热点商品数据</td><td>@Scheduled 每 5 分钟执行</td></tr>
+<tr><td>手动触发</td><td>管理员指定活动/商品</td><td>管理后台 API 接口</td></tr>
+</tbody></table></div>
+
+<h4>启动预热 &mdash; ApplicationRunner 实现</h4>
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; CacheWarmupRunner.java</span></div><div class="code-body"><span class="an">@Component</span> <span class="an">@Order</span>(<span class="nu">1</span>)
+<span class="kw">public class</span> <span class="ty">CacheWarmupRunner</span> <span class="kw">implements</span> <span class="ty">ApplicationRunner</span> {
+
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">StringRedisTemplate</span> redisTemplate;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">SeckillActivityMapper</span> activityMapper;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">SeckillGoodsMapper</span> goodsMapper;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">SeckillOrderMapper</span> orderMapper;
+
+    <span class="an">@Override</span>
+    <span class="kw">public void</span> <span class="fn">run</span>(<span class="ty">ApplicationArguments</span> args) {
+        log.info(<span class="str">"===== 缓存预热开始 ====="</span>);
+        <span class="kw">long</span> start = <span class="ty">System</span>.currentTimeMillis();
+
+        <span class="ty">List</span>&lt;<span class="ty">SeckillActivity</span>&gt; activities = activityMapper.selectList(
+            <span class="kw">new</span> <span class="ty">LambdaQueryWrapper</span>&lt;<span class="ty">SeckillActivity</span>&gt;()
+                .in(<span class="ty">SeckillActivity</span>::getStatus, <span class="nu">1</span>, <span class="nu">2</span>));
+
+        <span class="kw">int</span> goodsCount = <span class="nu">0</span>;
+        <span class="kw">for</span> (<span class="ty">SeckillActivity</span> activity : activities) {
+            <span class="ty">List</span>&lt;<span class="ty">SeckillGoods</span>&gt; goods = goodsMapper.selectList(
+                <span class="kw">new</span> <span class="ty">LambdaQueryWrapper</span>&lt;<span class="ty">SeckillGoods</span>&gt;()
+                    .eq(<span class="ty">SeckillGoods</span>::getActivityId, activity.getId()));
+
+            <span class="kw">for</span> (<span class="ty">SeckillGoods</span> g : goods) {
+                <span class="cm">// 预热商品详情</span>
+                redisTemplate.opsForValue().set(
+                    <span class="str">"seckill:goods:"</span> + g.getGoodsId(),
+                    JSON.toJSONString(g));
+
+                <span class="cm">// 初始化库存</span>
+                <span class="kw">long</span> sold = orderMapper.selectCount(
+                    <span class="kw">new</span> <span class="ty">LambdaQueryWrapper</span>&lt;<span class="ty">SeckillOrder</span>&gt;()
+                        .eq(<span class="ty">SeckillOrder</span>::getSeckillId, activity.getId())
+                        .eq(<span class="ty">SeckillOrder</span>::getGoodsId, g.getGoodsId())
+                        .eq(<span class="ty">SeckillOrder</span>::getStatus, <span class="nu">1</span>));
+                <span class="kw">int</span> remain = g.getStockCount() - (<span class="kw">int</span>) sold;
+                redisTemplate.opsForValue().set(
+                    <span class="str">"seckill:stock:"</span> + activity.getId(),
+                    <span class="ty">String</span>.valueOf(remain));
+
+                <span class="cm">// 初始化已购用户集合</span>
+                <span class="ty">List</span>&lt;<span class="ty">SeckillOrder</span>&gt; orders = orderMapper.selectList(
+                    <span class="kw">new</span> <span class="ty">LambdaQueryWrapper</span>&lt;<span class="ty">SeckillOrder</span>&gt;()
+                        .eq(<span class="ty">SeckillOrder</span>::getSeckillId, activity.getId())
+                        .eq(<span class="ty">SeckillOrder</span>::getGoodsId, g.getGoodsId())
+                        .eq(<span class="ty">SeckillOrder</span>::getStatus, <span class="nu">1</span>));
+                <span class="kw">if</span> (!orders.isEmpty()) {
+                    <span class="ty">String</span>[] uids = orders.stream()
+                        .map(o -&gt; o.getUserId().toString())
+                        .toArray(<span class="ty">String</span>[]::<span class="kw">new</span>);
+                    redisTemplate.opsForSet().add(
+                        <span class="str">"seckill:bought:"</span> + activity.getId(), uids);
+                }
+                goodsCount++;
+            }
+        }
+        <span class="kw">long</span> elapsed = <span class="ty">System</span>.currentTimeMillis() - start;
+        log.info(<span class="str">"===== 缓存预热完成: {}个活动, {}个商品, 耗时{}ms ====="</span>,
+            activities.size(), goodsCount, elapsed);
+    }
+}</div></div>
+<div class="callout tip"><strong>预热性能优化</strong>当商品数量较多时，可使用 Redis Pipeline 批量写入（每批 100 条），减少网络往返次数。实测 1000 个商品的预热时间从 3.2s 降至 0.4s。</div>
+
+<!-- ===== CHAPTER 2: DATA CONSISTENCY ===== -->
+<div class="section-divider"></div>
+<h2 id="ch2"><span class="num">第二章</span>Redis 与 MySQL 数据一致性方案</h2>
+<p>在"Redis 缓存预减 + MQ 异步下单"的架构下，Redis 中的库存数据与 MySQL 中的订单数据之间存在天然的一致性窗口。本章详细分析不一致场景并给出最终一致性的完整保障方案。</p>
+
+<h3 id="s2-1"><span class="num">2.1</span>一致性挑战分析</h3>
+<h4>数据流转全景</h4>
+<div class="flow-h">
+<div class="flow-node blue">用户请求</div><div class="flow-arrow">&rarr;</div>
+<div class="flow-node green">Redis 库存预减<br><small>DECR 原子操作</small></div><div class="flow-arrow">&rarr;</div>
+<div class="flow-node purple">发送 MQ 消息<br><small>异步投递</small></div><div class="flow-arrow">&rarr;</div>
+<div class="flow-node orange">消费者处理<br><small>创建订单</small></div><div class="flow-arrow">&rarr;</div>
+<div class="flow-node red">MySQL 写入<br><small>INSERT 订单</small></div>
+</div>
+
+<h4>不一致场景枚举</h4>
+<div class="status-card danger"><div class="status-title">场景 1：Redis 库存减了，MQ 消息发送失败</div><p><strong>触发条件</strong>：DECR 执行成功，但网络异常导致消息未到达 Exchange。<strong>后果</strong>：Redis 库存被占用但永远不会生成订单，造成"幽灵扣减"。库存虚低，真实用户无法购买。</p></div>
+<div class="status-card danger"><div class="status-title">场景 2：MQ 消息消费失败（数据库写入异常）</div><p><strong>触发条件</strong>：消费者收到消息但 MySQL INSERT 失败（连接超时、死锁、唯一约束冲突）。<strong>后果</strong>：Redis 库存已减但订单未创建，需回补库存。</p></div>
+<div class="status-card warning"><div class="status-title">场景 3：订单超时取消，Redis 库存回补失败</div><p><strong>触发条件</strong>：订单 15 分钟未支付触发取消流程，MySQL 订单状态更新成功但 Redis INCR 失败。<strong>后果</strong>：MySQL 订单已取消但 Redis 库存未恢复。</p></div>
+<div class="status-card warning"><div class="status-title">场景 4：并发操作导致 Redis 库存与 MySQL 实际订单数不一致</div><p><strong>触发条件</strong>：高并发下多个操作交叉执行（如回补和扣减同时进行）。<strong>后果</strong>：Redis 库存值与 MySQL 有效订单推算的库存值出现偏差。</p></div>
+
+<h3 id="s2-2"><span class="num">2.2</span>最终一致性策略</h3>
+<p>本项目的核心策略是 <strong>异步补偿 + 定时对账</strong>，通过多层保障机制确保 Redis 和 MySQL 最终达到一致状态。</p>
+
+<h4>消息可靠投递保障</h4>
+<div class="flow-h">
+<div class="flow-node blue">生产者</div><div class="flow-arrow">&rarr;<br><small style="font-size:10px">Confirm</small></div>
+<div class="flow-node green">Exchange</div><div class="flow-arrow">&rarr;<br><small style="font-size:10px">Return</small></div>
+<div class="flow-node purple">Queue<br><small style="font-size:10px">持久化</small></div><div class="flow-arrow">&rarr;<br><small style="font-size:10px">ACK</small></div>
+<div class="flow-node orange">消费者</div>
+</div>
+<div class="table-wrap"><table><thead><tr><th>环节</th><th>保障机制</th><th>实现方式</th></tr></thead><tbody>
+<tr><td>生产者 &rarr; Exchange</td><td>Publisher Confirm</td><td>RabbitTemplate.ConfirmCallback，消息到达 Exchange 后回调确认</td></tr>
+<tr><td>Exchange &rarr; Queue</td><td>Publisher Return</td><td>RabbitTemplate.ReturnsCallback，路由失败时回调通知</td></tr>
+<tr><td>Queue 存储</td><td>全链路持久化</td><td>Exchange(durable=true) + Queue(durable=true) + Message(deliveryMode=2)</td></tr>
+<tr><td>Queue &rarr; 消费者</td><td>手动 ACK</td><td>acknowledge-mode: manual，处理成功后 basicAck，失败 basicNack</td></tr>
+<tr><td>消费失败</td><td>重试 + 死信</td><td>basicNack(requeue=true) 最多 3 次，超限路由到死信队列</td></tr>
+</tbody></table></div>
+
+<h4>库存回补时序保障</h4>
+<p>当订单取消或超时未支付时，需要执行库存回补操作。回补时序严格遵循 <strong>MySQL 先行、Redis 后补、补偿兜底</strong> 的原则：</p>
+<div class="flow-h">
+<div class="flow-node red">MySQL 订单状态更新<br><small>CANCELLED</small></div><div class="flow-arrow">&rarr;</div>
+<div class="flow-node green">Redis INCR 回补<br><small>库存+1</small></div><div class="flow-arrow">&rarr;</div>
+<div class="flow-node purple">Redis SREM<br><small>移除购买标记</small></div><div class="flow-arrow">&rarr;</div>
+<div class="flow-node blue">完成</div>
+</div>
+
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; StockCompensationService.java</span></div><div class="code-body"><span class="an">@Service</span>
+<span class="kw">public class</span> <span class="ty">StockCompensationService</span> {
+
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">StringRedisTemplate</span> redisTemplate;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">StockCompensationMapper</span> compensationMapper;
+
+    <span class="cm">/** 库存回补（带补偿兜底）*/</span>
+    <span class="kw">public void</span> <span class="fn">restoreStock</span>(<span class="ty">Long</span> seckillId, <span class="ty">Long</span> userId, <span class="ty">String</span> orderNo) {
+        <span class="cm">// Step 1: 尝试 Redis INCR 回补库存</span>
+        <span class="kw">try</span> {
+            redisTemplate.opsForValue().increment(<span class="str">"seckill:stock:"</span> + seckillId);
+            log.info(<span class="str">"库存回补成功: seckillId={}"</span>, seckillId);
+        } <span class="kw">catch</span> (<span class="ty">Exception</span> e) {
+            log.error(<span class="str">"库存回补失败，写入补偿表: {}"</span>, e.getMessage());
+            saveCompensation(seckillId, orderNo, <span class="str">"RESTORE"</span>, e.getMessage());
+        }
+        <span class="cm">// Step 2: 移除用户购买标记</span>
+        <span class="kw">try</span> {
+            redisTemplate.opsForSet().remove(
+                <span class="str">"seckill:bought:"</span> + seckillId, userId.toString());
+            redisTemplate.delete(
+                <span class="str">"seckill:mark:"</span> + seckillId + <span class="str">":"</span> + userId);
+        } <span class="kw">catch</span> (<span class="ty">Exception</span> e) {
+            log.error(<span class="str">"移除购买标记失败: {}"</span>, e.getMessage());
+        }
+    }
+
+    <span class="kw">private void</span> <span class="fn">saveCompensation</span>(<span class="ty">Long</span> seckillId, <span class="ty">String</span> orderNo,
+                                  <span class="ty">String</span> type, <span class="ty">String</span> errorMsg) {
+        <span class="ty">StockCompensation</span> c = <span class="kw">new</span> <span class="ty">StockCompensation</span>();
+        c.setSeckillId(seckillId); c.setOrderNo(orderNo);
+        c.setType(type); c.setQuantity(<span class="nu">1</span>);
+        c.setStatus(<span class="str">"PENDING"</span>); c.setErrorMsg(errorMsg);
+        c.setCreateTime(<span class="ty">LocalDateTime</span>.now());
+        compensationMapper.insert(c);
+    }
+}</div></div>
+
+<h4>定时对账机制</h4>
+<p>对账是最终一致性的最后防线。每 10 分钟执行一次，比对 Redis 库存与 MySQL 实际订单数，发现差异自动修正。</p>
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; StockReconciliationTask.java</span></div><div class="code-body"><span class="an">@Component</span>
+<span class="kw">public class</span> <span class="ty">StockReconciliationTask</span> {
+
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">StringRedisTemplate</span> redisTemplate;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">SeckillActivityMapper</span> activityMapper;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">SeckillGoodsMapper</span> goodsMapper;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">SeckillOrderMapper</span> orderMapper;
+
+    <span class="cm">/** 每10分钟对账一次 */</span>
+    <span class="an">@Scheduled</span>(fixedRate = <span class="nu">600000</span>)
+    <span class="kw">public void</span> <span class="fn">reconcile</span>() {
+        log.info(<span class="str">"===== 库存对账开始 ====="</span>);
+        <span class="ty">List</span>&lt;<span class="ty">SeckillActivity</span>&gt; activities = activityMapper.selectList(
+            <span class="kw">new</span> <span class="ty">LambdaQueryWrapper</span>&lt;<span class="ty">SeckillActivity</span>&gt;()
+                .eq(<span class="ty">SeckillActivity</span>::getStatus, <span class="nu">1</span>));
+
+        <span class="kw">for</span> (<span class="ty">SeckillActivity</span> act : activities) {
+            <span class="ty">List</span>&lt;<span class="ty">SeckillGoods</span>&gt; goods = goodsMapper.selectList(
+                <span class="kw">new</span> <span class="ty">LambdaQueryWrapper</span>&lt;<span class="ty">SeckillGoods</span>&gt;()
+                    .eq(<span class="ty">SeckillGoods</span>::getActivityId, act.getId()));
+
+            <span class="kw">for</span> (<span class="ty">SeckillGoods</span> g : goods) {
+                <span class="kw">long</span> mysqlSold = orderMapper.selectCount(
+                    <span class="kw">new</span> <span class="ty">LambdaQueryWrapper</span>&lt;<span class="ty">SeckillOrder</span>&gt;()
+                        .eq(<span class="ty">SeckillOrder</span>::getSeckillId, act.getId())
+                        .eq(<span class="ty">SeckillOrder</span>::getGoodsId, g.getGoodsId())
+                        .eq(<span class="ty">SeckillOrder</span>::getStatus, <span class="nu">1</span>));
+
+                <span class="ty">String</span> redisStr = redisTemplate.opsForValue()
+                    .get(<span class="str">"seckill:stock:"</span> + act.getId());
+                <span class="kw">if</span> (redisStr == <span class="kw">null</span>) <span class="kw">continue</span>;
+                <span class="kw">int</span> redisStock = <span class="ty">Integer</span>.parseInt(redisStr);
+                <span class="kw">int</span> expected = g.getStockCount() - (<span class="kw">int</span>) mysqlSold;
+
+                <span class="kw">if</span> (redisStock != expected) {
+                    log.warn(<span class="str">"库存不一致! seckillId={}, redis={}, expected={}"</span>,
+                        act.getId(), redisStock, expected);
+                    <span class="cm">// 以 MySQL 为准修正 Redis</span>
+                    redisTemplate.opsForValue()
+                        .set(<span class="str">"seckill:stock:"</span> + act.getId(),
+                             <span class="ty">String</span>.valueOf(expected));
+                }
+            }
+        }
+        log.info(<span class="str">"===== 库存对账完成 ====="</span>);
+    }
+}</div></div>
+
+<h3 id="s2-3"><span class="num">2.3</span>补偿表设计</h3>
+<p>补偿表是异步补偿机制的核心存储，记录所有需要重试的库存操作。</p>
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">SQL &middot; t_stock_compensation</span></div><div class="code-body"><span class="kw">CREATE TABLE</span> t_stock_compensation (
+    id          <span class="ty">BIGINT</span>       <span class="kw">PRIMARY KEY</span>,
+    seckill_id  <span class="ty">BIGINT</span>       <span class="kw">NOT NULL</span>          <span class="cm">COMMENT '秒杀活动ID'</span>,
+    order_no    <span class="ty">VARCHAR</span>(64)                     <span class="cm">COMMENT '关联订单号'</span>,
+    type        <span class="ty">ENUM</span>(<span class="str">'RESTORE'</span>, <span class="str">'DEDUCT'</span>) <span class="kw">NOT NULL</span>
+                                              <span class="cm">COMMENT '操作类型: 回补/扣减'</span>,
+    quantity    <span class="ty">INT</span>           <span class="kw">DEFAULT</span> 1         <span class="cm">COMMENT '操作数量'</span>,
+    status      <span class="ty">ENUM</span>(<span class="str">'PENDING'</span>,<span class="str">'SUCCESS'</span>,<span class="str">'FAILED'</span>)
+                              <span class="kw">DEFAULT</span> <span class="str">'PENDING'</span>  <span class="cm">COMMENT '补偿状态'</span>,
+    retry_count <span class="ty">INT</span>           <span class="kw">DEFAULT</span> 0         <span class="cm">COMMENT '已重试次数'</span>,
+    max_retry   <span class="ty">INT</span>           <span class="kw">DEFAULT</span> 5         <span class="cm">COMMENT '最大重试次数'</span>,
+    error_msg   <span class="ty">TEXT</span>                            <span class="cm">COMMENT '最近错误信息'</span>,
+    create_time <span class="ty">DATETIME</span>      <span class="kw">DEFAULT</span> CURRENT_TIMESTAMP,
+    update_time <span class="ty">DATETIME</span>      <span class="kw">DEFAULT</span> CURRENT_TIMESTAMP
+                              <span class="kw">ON UPDATE</span> CURRENT_TIMESTAMP,
+    <span class="kw">INDEX</span> idx_status_retry (status, retry_count)
+) <span class="kw">ENGINE</span>=InnoDB <span class="kw">DEFAULT CHARSET</span>=utf8mb4 <span class="cm">COMMENT='库存补偿记录表'</span>;</div></div>
+
+<h4>补偿重试定时任务</h4>
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; CompensationRetryTask.java</span></div><div class="code-body"><span class="an">@Component</span>
+<span class="kw">public class</span> <span class="ty">CompensationRetryTask</span> {
+
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">StockCompensationMapper</span> compensationMapper;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">StringRedisTemplate</span> redisTemplate;
+
+    <span class="cm">/** 每5分钟扫描补偿表重试 */</span>
+    <span class="an">@Scheduled</span>(fixedRate = <span class="nu">300000</span>)
+    <span class="kw">public void</span> <span class="fn">retryCompensation</span>() {
+        <span class="ty">List</span>&lt;<span class="ty">StockCompensation</span>&gt; list = compensationMapper.selectList(
+            <span class="kw">new</span> <span class="ty">LambdaQueryWrapper</span>&lt;<span class="ty">StockCompensation</span>&gt;()
+                .eq(<span class="ty">StockCompensation</span>::getStatus, <span class="str">"PENDING"</span>)
+                .apply(<span class="str">"retry_count &lt; max_retry"</span>));
+        <span class="kw">if</span> (list.isEmpty()) <span class="kw">return</span>;
+        log.info(<span class="str">"补偿重试: {}条待处理"</span>, list.size());
+
+        <span class="kw">for</span> (<span class="ty">StockCompensation</span> c : list) {
+            <span class="kw">try</span> {
+                <span class="ty">String</span> key = <span class="str">"seckill:stock:"</span> + c.getSeckillId();
+                <span class="kw">if</span> (<span class="str">"RESTORE"</span>.equals(c.getType()))
+                    redisTemplate.opsForValue().increment(key, c.getQuantity());
+                <span class="kw">else</span>
+                    redisTemplate.opsForValue().decrement(key, c.getQuantity());
+                c.setStatus(<span class="str">"SUCCESS"</span>);
+            } <span class="kw">catch</span> (<span class="ty">Exception</span> e) {
+                c.setRetryCount(c.getRetryCount() + <span class="nu">1</span>);
+                c.setErrorMsg(e.getMessage());
+                <span class="kw">if</span> (c.getRetryCount() &gt;= c.getMaxRetry()) {
+                    c.setStatus(<span class="str">"FAILED"</span>);
+                    log.error(<span class="str">"补偿失败超限! id={}"</span>, c.getId());
+                }
+            }
+            compensationMapper.updateById(c);
+        }
+    }
+}</div></div>
+
+<h3 id="s2-4"><span class="num">2.4</span>消息消费失败自愈</h3>
+<p>当消息消费失败超过重试上限后，会被路由到死信队列。死信队列消费者负责分析失败原因，对可自动修复的情况进行重试，不可修复的写入补偿表并告警。</p>
+<h4>自愈链路流程</h4>
+<div class="flow-h">
+<div class="flow-node red">死信队列<br><small>seckill.dead.queue</small></div><div class="flow-arrow">&rarr;</div>
+<div class="flow-node orange">死信消费者<br><small>解析失败原因</small></div><div class="flow-arrow">&rarr;</div>
+<div class="flow-node green" style="min-width:160px">可自动修复？</div>
+</div>
+<div style="display:flex;gap:40px;margin:12px 0 20px;justify-content:center;">
+<div class="flow-h" style="margin:0"><div class="flow-arrow" style="flex-direction:column"><span style="font-size:12px">是 &darr;</span></div><div class="flow-node blue">自动重试<br><small>重新投递消息</small></div></div>
+<div class="flow-h" style="margin:0"><div class="flow-arrow" style="flex-direction:column"><span style="font-size:12px">否 &darr;</span></div><div class="flow-node red">写入补偿表<br><small>+ 告警通知</small></div></div>
+</div>
+
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; DeadLetterConsumer.java</span></div><div class="code-body"><span class="an">@Component</span> <span class="an">@Slf4j</span>
+<span class="kw">public class</span> <span class="ty">DeadLetterConsumer</span> {
+
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">RabbitTemplate</span> rabbitTemplate;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">StockCompensationMapper</span> compensationMapper;
+
+    <span class="an">@RabbitListener</span>(queues = <span class="str">"seckill.dead.queue"</span>)
+    <span class="kw">public void</span> <span class="fn">handleDeadLetter</span>(<span class="ty">Message</span> msg, <span class="ty">Channel</span> ch) <span class="kw">throws</span> <span class="ty">IOException</span> {
+        <span class="kw">long</span> tag = msg.getMessageProperties().getDeliveryTag();
+        <span class="ty">String</span> body = <span class="kw">new</span> <span class="ty">String</span>(msg.getBody());
+        <span class="kw">try</span> {
+            <span class="ty">List</span>&lt;<span class="ty">Map</span>&lt;?, ?&gt;&gt; xDeath = msg.getMessageProperties().getXDeathHeader();
+            <span class="ty">String</span> reason = (xDeath != <span class="kw">null</span> &amp;&amp; !xDeath.isEmpty())
+                ? xDeath.get(<span class="nu">0</span>).get(<span class="str">"reason"</span>).toString() : <span class="str">"unknown"</span>;
+
+            <span class="kw">if</span> (isAutoRecoverable(reason)) {
+                log.info(<span class="str">"死信自愈重试: reason={}"</span>, reason);
+                rabbitTemplate.convertAndSend(
+                    <span class="str">"seckill.order.exchange"</span>, <span class="str">"seckill.order.create"</span>, body);
+            } <span class="kw">else</span> {
+                log.error(<span class="str">"死信不可修复: reason={}"</span>, reason);
+                saveDeadLetterCompensation(body, reason);
+            }
+            ch.basicAck(tag, <span class="kw">false</span>);
+        } <span class="kw">catch</span> (<span class="ty">Exception</span> e) {
+            log.error(<span class="str">"死信处理异常: {}"</span>, e.getMessage());
+            ch.basicAck(tag, <span class="kw">false</span>); <span class="cm">// 避免死循环</span>
+        }
+    }
+
+    <span class="kw">private boolean</span> <span class="fn">isAutoRecoverable</span>(<span class="ty">String</span> reason) {
+        <span class="kw">return</span> reason.contains(<span class="str">"timeout"</span>) || reason.contains(<span class="str">"deadlock"</span>)
+            || reason.contains(<span class="str">"connection"</span>);
+    }
+}</div></div>
+
+<!-- ===== CHAPTER 3: MESSAGE QUEUE ===== -->
+<div class="section-divider"></div>
+<h2 id="ch3"><span class="num">第三章</span>消息队列详细设计</h2>
+<p>RabbitMQ 在本项目中承担异步解耦和削峰填谷的核心职责。秒杀请求通过 Redis 预减库存后，将下单任务投递到消息队列，由消费者异步创建订单，将瞬时高并发转化为平稳的数据库写入。</p>
+
+<h3 id="s3-1"><span class="num">3.1</span>RabbitMQ 完整拓扑图</h3>
+<p>本项目设计了 4 个 Exchange 和 4 个 Queue，覆盖正常下单、延迟取消、死信处理和结果广播四大场景。</p>
+<div class="mq-topo">
+<div class="mq-group"><div class="mq-group-title">正常下单链路</div><div class="mq-row">
+<div class="mq-exchange direct"><div>Direct Exchange</div><div style="font-size:11px;font-weight:400;margin-top:2px">seckill.order.exchange</div></div>
+<div class="mq-arrow-line" style="position:relative"><span class="mq-arrow-label">routingKey: seckill.order.create</span></div>
+<div class="mq-queue"><div>Queue</div><div style="font-size:11px;font-weight:400;margin-top:2px">seckill.order.queue</div></div>
+<div class="mq-desc">异步创建秒杀订单，削峰填谷</div>
+</div></div>
+<div class="mq-group"><div class="mq-group-title">延迟取消链路（订单超时 15 分钟自动取消）</div><div class="mq-row">
+<div class="mq-exchange direct"><div>Direct Exchange</div><div style="font-size:11px;font-weight:400;margin-top:2px">seckill.delay.exchange</div></div>
+<div class="mq-arrow-line" style="position:relative"><span class="mq-arrow-label">routingKey: seckill.order.delay</span></div>
+<div class="mq-queue delay"><div>Queue (TTL: 900000ms)</div><div style="font-size:11px;font-weight:400;margin-top:2px">seckill.delay.queue</div><div style="font-size:10px;color:#92400e">x-dead-letter-exchange: seckill.dead.exchange</div></div>
+<div class="mq-desc">消息TTL到期后自动路由到死信交换机</div>
+</div></div>
+<div class="mq-group"><div class="mq-group-title">死信处理链路（超时订单 + 消费失败超限）</div><div class="mq-row">
+<div class="mq-exchange dead"><div>Direct Exchange</div><div style="font-size:11px;font-weight:400;margin-top:2px">seckill.dead.exchange</div></div>
+<div class="mq-arrow-line" style="position:relative"><span class="mq-arrow-label">dead letter routing</span></div>
+<div class="mq-queue dead"><div>Queue</div><div style="font-size:11px;font-weight:400;margin-top:2px">seckill.dead.queue</div></div>
+<div class="mq-desc">处理超时取消 + 消费失败重试超限的消息</div>
+</div></div>
+<div class="mq-group"><div class="mq-group-title">结果广播链路</div><div class="mq-row">
+<div class="mq-exchange fanout"><div>Fanout Exchange</div><div style="font-size:11px;font-weight:400;margin-top:2px">seckill.result.exchange</div></div>
+<div class="mq-arrow-line" style="position:relative"><span class="mq-arrow-label">broadcast (no routingKey)</span></div>
+<div class="mq-queue"><div>Queue</div><div style="font-size:11px;font-weight:400;margin-top:2px">seckill.result.queue</div></div>
+<div class="mq-desc">秒杀结果广播，更新 Redis 结果缓存</div>
+</div></div>
+</div>
+
+<h4>Exchange &amp; Queue 声明配置</h4>
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; RabbitMQConfig.java</span></div><div class="code-body"><span class="an">@Configuration</span>
+<span class="kw">public class</span> <span class="ty">RabbitMQConfig</span> {
+
+    <span class="cm">// ===== 正常下单 =====</span>
+    <span class="an">@Bean</span> <span class="kw">public</span> <span class="ty">DirectExchange</span> <span class="fn">orderExchange</span>() {
+        <span class="kw">return new</span> <span class="ty">DirectExchange</span>(<span class="str">"seckill.order.exchange"</span>, <span class="kw">true</span>, <span class="kw">false</span>);
+    }
+    <span class="an">@Bean</span> <span class="kw">public</span> <span class="ty">Queue</span> <span class="fn">orderQueue</span>() {
+        <span class="kw">return</span> <span class="ty">QueueBuilder</span>.durable(<span class="str">"seckill.order.queue"</span>).build();
+    }
+    <span class="an">@Bean</span> <span class="kw">public</span> <span class="ty">Binding</span> <span class="fn">orderBinding</span>() {
+        <span class="kw">return</span> <span class="ty">BindingBuilder</span>.bind(orderQueue())
+            .to(orderExchange()).with(<span class="str">"seckill.order.create"</span>);
+    }
+
+    <span class="cm">// ===== 延迟取消（TTL + DLX 方案）=====</span>
+    <span class="an">@Bean</span> <span class="kw">public</span> <span class="ty">DirectExchange</span> <span class="fn">delayExchange</span>() {
+        <span class="kw">return new</span> <span class="ty">DirectExchange</span>(<span class="str">"seckill.delay.exchange"</span>, <span class="kw">true</span>, <span class="kw">false</span>);
+    }
+    <span class="an">@Bean</span> <span class="kw">public</span> <span class="ty">Queue</span> <span class="fn">delayQueue</span>() {
+        <span class="kw">return</span> <span class="ty">QueueBuilder</span>.durable(<span class="str">"seckill.delay.queue"</span>)
+            .deadLetterExchange(<span class="str">"seckill.dead.exchange"</span>)
+            .deadLetterRoutingKey(<span class="str">"seckill.order.dead"</span>)
+            .ttl(<span class="nu">900000</span>).build(); <span class="cm">// 15min</span>
+    }
+    <span class="an">@Bean</span> <span class="kw">public</span> <span class="ty">Binding</span> <span class="fn">delayBinding</span>() {
+        <span class="kw">return</span> <span class="ty">BindingBuilder</span>.bind(delayQueue())
+            .to(delayExchange()).with(<span class="str">"seckill.order.delay"</span>);
+    }
+
+    <span class="cm">// ===== 死信处理 =====</span>
+    <span class="an">@Bean</span> <span class="kw">public</span> <span class="ty">DirectExchange</span> <span class="fn">deadExchange</span>() {
+        <span class="kw">return new</span> <span class="ty">DirectExchange</span>(<span class="str">"seckill.dead.exchange"</span>, <span class="kw">true</span>, <span class="kw">false</span>);
+    }
+    <span class="an">@Bean</span> <span class="kw">public</span> <span class="ty">Queue</span> <span class="fn">deadQueue</span>() {
+        <span class="kw">return</span> <span class="ty">QueueBuilder</span>.durable(<span class="str">"seckill.dead.queue"</span>).build();
+    }
+    <span class="an">@Bean</span> <span class="kw">public</span> <span class="ty">Binding</span> <span class="fn">deadBinding</span>() {
+        <span class="kw">return</span> <span class="ty">BindingBuilder</span>.bind(deadQueue())
+            .to(deadExchange()).with(<span class="str">"seckill.order.dead"</span>);
+    }
+
+    <span class="cm">// ===== 结果广播 =====</span>
+    <span class="an">@Bean</span> <span class="kw">public</span> <span class="ty">FanoutExchange</span> <span class="fn">resultExchange</span>() {
+        <span class="kw">return new</span> <span class="ty">FanoutExchange</span>(<span class="str">"seckill.result.exchange"</span>, <span class="kw">true</span>, <span class="kw">false</span>);
+    }
+    <span class="an">@Bean</span> <span class="kw">public</span> <span class="ty">Queue</span> <span class="fn">resultQueue</span>() {
+        <span class="kw">return</span> <span class="ty">QueueBuilder</span>.durable(<span class="str">"seckill.result.queue"</span>).build();
+    }
+    <span class="an">@Bean</span> <span class="kw">public</span> <span class="ty">Binding</span> <span class="fn">resultBinding</span>() {
+        <span class="kw">return</span> <span class="ty">BindingBuilder</span>.bind(resultQueue()).to(resultExchange());
+    }
+}</div></div>
+
+<h3 id="s3-2"><span class="num">3.2</span>消息体结构定义</h3>
+<p>每种消息都定义了完整的 DTO 类，包含 messageId（UUID）用于幂等去重，以及业务所需的全部字段。</p>
+
+<h4>秒杀下单消息 (SeckillOrderMessage)</h4>
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; SeckillOrderMessage.java</span></div><div class="code-body"><span class="an">@Data</span> <span class="an">@Builder</span>
+<span class="kw">public class</span> <span class="ty">SeckillOrderMessage</span> <span class="kw">implements</span> <span class="ty">Serializable</span> {
+    <span class="kw">private</span> <span class="ty">String</span> messageId;       <span class="cm">// UUID，用于幂等去重</span>
+    <span class="kw">private</span> <span class="ty">Long</span> userId;             <span class="cm">// 用户ID</span>
+    <span class="kw">private</span> <span class="ty">Long</span> seckillId;          <span class="cm">// 秒杀活动ID</span>
+    <span class="kw">private</span> <span class="ty">Long</span> goodsId;            <span class="cm">// 商品ID</span>
+    <span class="kw">private</span> <span class="ty">BigDecimal</span> seckillPrice; <span class="cm">// 秒杀价格</span>
+    <span class="kw">private</span> <span class="ty">LocalDateTime</span> createTime; <span class="cm">// 消息创建时间</span>
+}
+<span class="cm">// JSON: {"messageId":"550e8400-...","userId":10001,"seckillId":2001,</span>
+<span class="cm">//        "goodsId":3001,"seckillPrice":99.00,"createTime":"2025-06-01T10:30:00"}</span></div></div>
+
+<h4>延迟取消消息 (OrderDelayMessage)</h4>
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; OrderDelayMessage.java</span></div><div class="code-body"><span class="an">@Data</span> <span class="an">@Builder</span>
+<span class="kw">public class</span> <span class="ty">OrderDelayMessage</span> <span class="kw">implements</span> <span class="ty">Serializable</span> {
+    <span class="kw">private</span> <span class="ty">String</span> messageId;
+    <span class="kw">private</span> <span class="ty">String</span> orderNo;            <span class="cm">// 订单编号</span>
+    <span class="kw">private</span> <span class="ty">Long</span> orderId;
+    <span class="kw">private</span> <span class="ty">Long</span> seckillId;
+    <span class="kw">private</span> <span class="ty">Long</span> userId;
+    <span class="kw">private</span> <span class="ty">LocalDateTime</span> expireTime;  <span class="cm">// 订单过期时间</span>
+}</div></div>
+
+<h4>秒杀结果消息 (SeckillResultMessage)</h4>
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; SeckillResultMessage.java</span></div><div class="code-body"><span class="an">@Data</span> <span class="an">@Builder</span>
+<span class="kw">public class</span> <span class="ty">SeckillResultMessage</span> <span class="kw">implements</span> <span class="ty">Serializable</span> {
+    <span class="kw">private</span> <span class="ty">String</span> messageId;
+    <span class="kw">private</span> <span class="ty">Long</span> userId;
+    <span class="kw">private</span> <span class="ty">Long</span> seckillId;
+    <span class="kw">private boolean</span> success;       <span class="cm">// 是否成功</span>
+    <span class="kw">private</span> <span class="ty">String</span> orderNo;        <span class="cm">// 成功时有值</span>
+    <span class="kw">private</span> <span class="ty">String</span> failReason;     <span class="cm">// 失败时有值</span>
+}</div></div>
+
+<h3 id="s3-3"><span class="num">3.3</span>消费者 ACK/NACK 策略</h3>
+<p>本项目采用 <strong>手动确认模式</strong>（acknowledge-mode: manual），确保消息在成功处理后才会从队列中移除。</p>
+<div class="table-wrap"><table><thead><tr><th>处理结果</th><th>操作</th><th>说明</th></tr></thead><tbody>
+<tr><td style="color:var(--success);font-weight:600">处理成功</td><td><code class="inline">basicAck(tag, false)</code></td><td>消息从队列中移除，标记为已消费</td></tr>
+<tr><td style="color:var(--warning);font-weight:600">业务异常（如库存不足）</td><td><code class="inline">basicNack(tag, false, false)</code></td><td>不重试，消息进入死信队列（业务异常重试也不会成功）</td></tr>
+<tr><td style="color:var(--danger);font-weight:600">系统异常（如DB连接超时）</td><td><code class="inline">basicNack(tag, false, true)</code></td><td>requeue=true，消息重新入队等待重试</td></tr>
+<tr><td style="color:var(--danger);font-weight:600">重试超限 (x-death &gt; 3)</td><td><code class="inline">basicNack(tag, false, false)</code></td><td>超过最大重试次数，进入死信队列 + 告警</td></tr>
+</tbody></table></div>
+
+<h4>完整消费者代码</h4>
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; SeckillOrderConsumer.java</span></div><div class="code-body"><span class="an">@Component</span> <span class="an">@Slf4j</span>
+<span class="kw">public class</span> <span class="ty">SeckillOrderConsumer</span> {
+
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">SeckillOrderService</span> orderService;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">StringRedisTemplate</span> redisTemplate;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">RabbitTemplate</span> rabbitTemplate;
+
+    <span class="kw">private static final int</span> MAX_RETRY = <span class="nu">3</span>;
+
+    <span class="an">@RabbitListener</span>(queues = <span class="str">"seckill.order.queue"</span>,
+        ackMode = <span class="str">"MANUAL"</span>, concurrency = <span class="str">"5-10"</span>)
+    <span class="kw">public void</span> <span class="fn">consume</span>(<span class="ty">Message</span> message, <span class="ty">Channel</span> channel)
+            <span class="kw">throws</span> <span class="ty">IOException</span> {
+        <span class="kw">long</span> tag = message.getMessageProperties().getDeliveryTag();
+        <span class="ty">SeckillOrderMessage</span> msg = JSON.parseObject(
+            <span class="kw">new</span> <span class="ty">String</span>(message.getBody()),
+            <span class="ty">SeckillOrderMessage</span>.<span class="kw">class</span>);
+        <span class="kw">try</span> {
+            <span class="cm">// 1. 幂等去重</span>
+            <span class="ty">Boolean</span> isNew = redisTemplate.opsForValue()
+                .setIfAbsent(<span class="str">"mq:consumed:"</span> + msg.getMessageId(),
+                    <span class="str">"1"</span>, <span class="nu">24</span>, <span class="ty">TimeUnit</span>.HOURS);
+            <span class="kw">if</span> (!<span class="ty">Boolean</span>.TRUE.equals(isNew)) {
+                channel.basicAck(tag, <span class="kw">false</span>); <span class="kw">return</span>;
+            }
+
+            <span class="cm">// 2. 创建订单</span>
+            <span class="ty">String</span> orderNo = orderService.createSeckillOrder(msg);
+
+            <span class="cm">// 3. 发送延迟取消消息（15min超时）</span>
+            <span class="ty">OrderDelayMessage</span> delay = <span class="ty">OrderDelayMessage</span>.builder()
+                .messageId(<span class="ty">UUID</span>.randomUUID().toString())
+                .orderNo(orderNo).seckillId(msg.getSeckillId())
+                .userId(msg.getUserId())
+                .expireTime(<span class="ty">LocalDateTime</span>.now().plusMinutes(<span class="nu">15</span>))
+                .build();
+            rabbitTemplate.convertAndSend(<span class="str">"seckill.delay.exchange"</span>,
+                <span class="str">"seckill.order.delay"</span>, JSON.toJSONString(delay));
+
+            <span class="cm">// 4. 发送成功结果广播</span>
+            rabbitTemplate.convertAndSend(<span class="str">"seckill.result.exchange"</span>,
+                <span class="str">""</span>, JSON.toJSONString(<span class="ty">SeckillResultMessage</span>.builder()
+                    .messageId(<span class="ty">UUID</span>.randomUUID().toString())
+                    .userId(msg.getUserId()).seckillId(msg.getSeckillId())
+                    .success(<span class="kw">true</span>).orderNo(orderNo).build()));
+
+            channel.basicAck(tag, <span class="kw">false</span>);
+
+        } <span class="kw">catch</span> (<span class="ty">BusinessException</span> e) {
+            <span class="cm">// 业务异常：不重试</span>
+            channel.basicNack(tag, <span class="kw">false</span>, <span class="kw">false</span>);
+            restoreStockOnFail(msg);
+
+        } <span class="kw">catch</span> (<span class="ty">Exception</span> e) {
+            <span class="kw">int</span> retries = getRetryCount(message);
+            <span class="kw">if</span> (retries &gt;= MAX_RETRY) {
+                channel.basicNack(tag, <span class="kw">false</span>, <span class="kw">false</span>);
+                restoreStockOnFail(msg);
+            } <span class="kw">else</span> {
+                channel.basicNack(tag, <span class="kw">false</span>, <span class="kw">true</span>); <span class="cm">// requeue</span>
+            }
+        }
+    }
+
+    <span class="kw">private int</span> <span class="fn">getRetryCount</span>(<span class="ty">Message</span> m) {
+        <span class="ty">List</span>&lt;<span class="ty">Map</span>&lt;?,?&gt;&gt; x = m.getMessageProperties().getXDeathHeader();
+        <span class="kw">return</span> (x != <span class="kw">null</span> &amp;&amp; !x.isEmpty())
+            ? (<span class="ty">Integer</span>) x.get(<span class="nu">0</span>).getOrDefault(<span class="str">"count"</span>, <span class="nu">0</span>) : <span class="nu">0</span>;
+    }
+
+    <span class="kw">private void</span> <span class="fn">restoreStockOnFail</span>(<span class="ty">SeckillOrderMessage</span> msg) {
+        <span class="kw">try</span> {
+            redisTemplate.opsForValue()
+                .increment(<span class="str">"seckill:stock:"</span> + msg.getSeckillId());
+            redisTemplate.opsForSet().remove(
+                <span class="str">"seckill:bought:"</span> + msg.getSeckillId(),
+                msg.getUserId().toString());
+        } <span class="kw">catch</span> (<span class="ty">Exception</span> ex) {
+            log.error(<span class="str">"回补库存失败: {}"</span>, ex.getMessage());
+        }
+    }
+}</div></div>
+
+<h3 id="s3-4"><span class="num">3.4</span>消息幂等去重设计</h3>
+<div class="status-card warning"><div class="status-title">为什么需要幂等？</div><p>MQ 可能重复投递（网络抖动、消费者重启、requeue 操作），导致同一消息被消费多次。如果不做去重，会导致 <strong>重复创建订单</strong> 和 <strong>库存超卖</strong>。</p></div>
+
+<h4>双重去重方案</h4>
+<div class="flow-h">
+<div class="flow-node blue">消息到达</div><div class="flow-arrow">&rarr;</div>
+<div class="flow-node green">Redis SETNX<br><small>mq:consumed:{id}</small></div><div class="flow-arrow">&rarr;</div>
+<div class="flow-node orange" style="min-width:140px">已存在？<br><small>跳过 / 继续</small></div><div class="flow-arrow">&rarr;</div>
+<div class="flow-node purple">DB UNIQUE 约束<br><small>uk_order_message</small></div><div class="flow-arrow">&rarr;</div>
+<div class="flow-node blue">处理完成</div>
+</div>
+
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; IdempotentCheck.java</span></div><div class="code-body"><span class="kw">public void</span> <span class="fn">idempotentConsume</span>(<span class="ty">SeckillOrderMessage</span> msg) {
+    <span class="ty">String</span> dedupKey = <span class="str">"mq:consumed:"</span> + msg.getMessageId();
+
+    <span class="cm">// 第一层：Redis SETNX 快速去重</span>
+    <span class="ty">Boolean</span> isFirst = redisTemplate.opsForValue()
+        .setIfAbsent(dedupKey, <span class="str">"PROCESSING"</span>, <span class="nu">24</span>, <span class="ty">TimeUnit</span>.HOURS);
+    <span class="kw">if</span> (!<span class="ty">Boolean</span>.TRUE.equals(isFirst)) {
+        log.warn(<span class="str">"重复消息，跳过: {}"</span>, msg.getMessageId());
+        <span class="kw">return</span>;
+    }
+    <span class="kw">try</span> {
+        orderService.createSeckillOrder(msg); <span class="cm">// DB有唯一约束兜底</span>
+        redisTemplate.opsForValue()
+            .set(dedupKey, <span class="str">"SUCCESS"</span>, <span class="nu">24</span>, <span class="ty">TimeUnit</span>.HOURS);
+    } <span class="kw">catch</span> (<span class="ty">Exception</span> e) {
+        redisTemplate.delete(dedupKey); <span class="cm">// 失败则删除标记，允许重试</span>
+        <span class="kw">throw</span> e;
+    }
+}</div></div>
+
+<h4>消费日志表设计</h4>
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">SQL &middot; t_mq_consume_log</span></div><div class="code-body"><span class="kw">CREATE TABLE</span> t_mq_consume_log (
+    id             <span class="ty">BIGINT</span>      <span class="kw">PRIMARY KEY AUTO_INCREMENT</span>,
+    message_id     <span class="ty">VARCHAR</span>(64) <span class="kw">NOT NULL UNIQUE</span>  <span class="cm">COMMENT '消息唯一ID'</span>,
+    queue_name     <span class="ty">VARCHAR</span>(64)                   <span class="cm">COMMENT '队列名称'</span>,
+    consume_status <span class="ty">ENUM</span>(<span class="str">'SUCCESS'</span>,<span class="str">'FAILED'</span>)     <span class="cm">COMMENT '消费状态'</span>,
+    consume_time   <span class="ty">DATETIME</span>                      <span class="cm">COMMENT '消费时间'</span>,
+    error_msg      <span class="ty">TEXT</span>                          <span class="cm">COMMENT '错误信息'</span>
+) <span class="kw">ENGINE</span>=InnoDB <span class="kw">DEFAULT CHARSET</span>=utf8mb4 <span class="cm">COMMENT='MQ消息消费日志表'</span>;</div></div>
+
+<h3 id="s3-5"><span class="num">3.5</span>消息可靠性保障总结</h3>
+<p>从消息生产到消费，每个环节都有对应的保障措施，形成完整的可靠性链路：</p>
+<div class="table-wrap"><table><thead><tr><th>环节</th><th>风险</th><th>保障措施</th><th>实现方式</th></tr></thead><tbody>
+<tr><td>生产 &rarr; Exchange</td><td>消息丢失</td><td>Publisher Confirm</td><td>RabbitTemplate.ConfirmCallback</td></tr>
+<tr><td>Exchange &rarr; Queue</td><td>路由失败</td><td>Publisher Return</td><td>RabbitTemplate.ReturnsCallback</td></tr>
+<tr><td>Queue 存储</td><td>宕机丢失</td><td>全链路持久化</td><td>durable=true + deliveryMode=2</td></tr>
+<tr><td>Queue &rarr; 消费</td><td>消费丢失</td><td>手动 ACK</td><td>acknowledge-mode: manual</td></tr>
+<tr><td>消费处理</td><td>重复消费</td><td>幂等去重</td><td>Redis SETNX + DB UNIQUE</td></tr>
+<tr><td>消费失败</td><td>无限重试</td><td>重试上限 + 死信</td><td>x-death header 计数</td></tr>
+<tr><td>最终一致</td><td>数据偏差</td><td>定时对账</td><td>@Scheduled 每10分钟执行</td></tr>
+</tbody></table></div>
+
+<!-- ===== CHAPTER 4: FAULT TOLERANCE ===== -->
+<div class="section-divider"></div>
+<h2 id="ch4"><span class="num">第四章</span>容错降级与高可用设计</h2>
+<p>在高并发场景下，任何中间件都可能出现故障。本章设计了完整的容错降级方案，确保系统在 Redis、RabbitMQ、MySQL 等组件异常时仍能提供服务，避免级联故障导致系统雪崩。</p>
+
+<h3 id="s4-1"><span class="num">4.1</span>降级策略总表</h3>
+<div class="table-wrap"><table><thead><tr><th>组件</th><th>故障场景</th><th>降级策略</th><th>用户感知</th></tr></thead><tbody>
+<tr><td style="font-weight:600;color:var(--danger)">Redis</td><td>完全不可用</td><td>秒杀接口降级为数据库乐观锁下单</td><td>响应变慢但可用</td></tr>
+<tr><td style="font-weight:600;color:var(--warning)">Redis</td><td>部分不可用</td><td>只读降级，不接受新的库存预减</td><td>"系统繁忙请稍后"</td></tr>
+<tr><td style="font-weight:600;color:var(--danger)">RabbitMQ</td><td>不可用</td><td>同步创建订单（不走MQ），限制并发数</td><td>响应变慢</td></tr>
+<tr><td style="font-weight:600;color:var(--warning)">MySQL</td><td>连接池耗尽</td><td>返回"系统繁忙"，不扣库存</td><td>友好提示</td></tr>
+<tr><td style="font-weight:600;color:var(--danger)">秒杀服务</td><td>异常率 &gt; 50%</td><td>Sentinel 熔断，直接返回降级结果</td><td>"活动太火爆"</td></tr>
+</tbody></table></div>
+
+<h3 id="s4-2"><span class="num">4.2</span>Redis 宕机降级方案</h3>
+<div class="card"><div class="card-title">降级流程</div>
+<ol>
+<li><strong>检测机制</strong>：Redis 健康检查（每 5 秒 PING），连续 3 次失败标记为不可用</li>
+<li><strong>降级执行</strong>：秒杀接口切换到数据库乐观锁模式（<code class="inline">UPDATE stock SET count=count-1 WHERE id=? AND count&gt;0</code>）</li>
+<li><strong>限流调整</strong>：降级后自动降低限流阈值（从 1QPS/用户 降到 0.5QPS/用户），保护数据库</li>
+<li><strong>恢复机制</strong>：Redis 恢复后自动切回缓存模式，触发缓存预热</li>
+</ol></div>
+
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; RedisHealthChecker.java</span></div><div class="code-body"><span class="an">@Component</span>
+<span class="kw">public class</span> <span class="ty">RedisHealthChecker</span> {
+
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">StringRedisTemplate</span> redisTemplate;
+
+    <span class="kw">private volatile boolean</span> available = <span class="kw">true</span>;
+    <span class="kw">private</span> <span class="ty">AtomicInteger</span> failCount = <span class="kw">new</span> <span class="ty">AtomicInteger</span>(<span class="nu">0</span>);
+    <span class="kw">private static final int</span> FAIL_THRESHOLD = <span class="nu">3</span>;
+
+    <span class="cm">/** 每5秒检测 Redis 可用性 */</span>
+    <span class="an">@Scheduled</span>(fixedRate = <span class="nu">5000</span>)
+    <span class="kw">public void</span> <span class="fn">check</span>() {
+        <span class="kw">try</span> {
+            redisTemplate.opsForValue()
+                .set(<span class="str">"health:ping"</span>, <span class="str">"pong"</span>, <span class="nu">10</span>, <span class="ty">TimeUnit</span>.SECONDS);
+            failCount.set(<span class="nu">0</span>);
+            <span class="kw">if</span> (!available) {
+                available = <span class="kw">true</span>;
+                log.info(<span class="str">"Redis 恢复正常，切回缓存模式"</span>);
+            }
+        } <span class="kw">catch</span> (<span class="ty">Exception</span> e) {
+            <span class="kw">int</span> count = failCount.incrementAndGet();
+            <span class="kw">if</span> (count &gt;= FAIL_THRESHOLD &amp;&amp; available) {
+                available = <span class="kw">false</span>;
+                log.error(<span class="str">"Redis 不可用(连续{}次失败)，触发降级!"</span>, count);
+            }
+        }
+    }
+
+    <span class="kw">public boolean</span> <span class="fn">isAvailable</span>() { <span class="kw">return</span> available; }
+}</div></div>
+
+<h3 id="s4-3"><span class="num">4.3</span>MQ 宕机降级方案</h3>
+<div class="card"><div class="card-title">降级策略</div>
+<ol>
+<li><strong>检测机制</strong>：RabbitMQ 健康检查（Connection.isOpen()），连接断开即标记不可用</li>
+<li><strong>降级执行</strong>：同步创建订单（跳过 MQ），使用线程池限制并发数（最多 50 个并发写入）</li>
+<li><strong>消息补偿</strong>：MQ 恢复后，扫描降级期间创建的订单，补发延迟取消消息</li>
+</ol></div>
+
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; RabbitHealthChecker.java</span></div><div class="code-body"><span class="an">@Component</span>
+<span class="kw">public class</span> <span class="ty">RabbitHealthChecker</span> {
+
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">ConnectionFactory</span> connectionFactory;
+    <span class="kw">private volatile boolean</span> available = <span class="kw">true</span>;
+
+    <span class="an">@Scheduled</span>(fixedRate = <span class="nu">5000</span>)
+    <span class="kw">public void</span> <span class="fn">check</span>() {
+        <span class="kw">try</span> {
+            <span class="ty">Connection</span> conn = connectionFactory.createConnection();
+            <span class="kw">boolean</span> wasDown = !available;
+            available = conn.isOpen();
+            <span class="kw">if</span> (wasDown &amp;&amp; available) {
+                log.info(<span class="str">"RabbitMQ 恢复正常，补发延迟消息"</span>);
+                compensateDelayMessages();
+            }
+        } <span class="kw">catch</span> (<span class="ty">Exception</span> e) {
+            <span class="kw">if</span> (available) {
+                available = <span class="kw">false</span>;
+                log.error(<span class="str">"RabbitMQ 不可用，触发降级: {}"</span>, e.getMessage());
+            }
+        }
+    }
+
+    <span class="kw">public boolean</span> <span class="fn">isAvailable</span>() { <span class="kw">return</span> available; }
+}</div></div>
+
+<h3 id="s4-4"><span class="num">4.4</span>降级代码实现</h3>
+<p>使用策略模式实现降级切换，SeckillService 根据健康检查结果自动选择执行策略。</p>
+
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; SeckillStrategy + SeckillService.java</span></div><div class="code-body"><span class="cm">/** 秒杀策略接口 */</span>
+<span class="kw">public interface</span> <span class="ty">SeckillStrategy</span> {
+    <span class="ty">SeckillResult</span> <span class="fn">execute</span>(<span class="ty">Long</span> userId, <span class="ty">Long</span> seckillId);
+}
+
+<span class="cm">/** 缓存模式策略（正常模式）*/</span>
+<span class="an">@Component</span>
+<span class="kw">public class</span> <span class="ty">CacheSeckillStrategy</span> <span class="kw">implements</span> <span class="ty">SeckillStrategy</span> {
+
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">StringRedisTemplate</span> redisTemplate;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">RabbitTemplate</span> rabbitTemplate;
+
+    <span class="an">@Override</span>
+    <span class="kw">public</span> <span class="ty">SeckillResult</span> <span class="fn">execute</span>(<span class="ty">Long</span> userId, <span class="ty">Long</span> seckillId) {
+        <span class="cm">// 1. Redis 预减库存</span>
+        <span class="ty">String</span> stockKey = <span class="str">"seckill:stock:"</span> + seckillId;
+        <span class="ty">Long</span> stock = redisTemplate.opsForValue().decrement(stockKey);
+        <span class="kw">if</span> (stock &lt; <span class="nu">0</span>) {
+            redisTemplate.opsForValue().increment(stockKey);
+            <span class="kw">return</span> <span class="ty">SeckillResult</span>.fail(<span class="str">"库存不足"</span>);
+        }
+        <span class="cm">// 2. 发送 MQ 消息异步下单</span>
+        <span class="ty">SeckillOrderMessage</span> msg = <span class="ty">SeckillOrderMessage</span>.builder()
+            .messageId(<span class="ty">UUID</span>.randomUUID().toString())
+            .userId(userId).seckillId(seckillId)
+            .createTime(<span class="ty">LocalDateTime</span>.now()).build();
+        rabbitTemplate.convertAndSend(<span class="str">"seckill.order.exchange"</span>,
+            <span class="str">"seckill.order.create"</span>, JSON.toJSONString(msg));
+        <span class="kw">return</span> <span class="ty">SeckillResult</span>.pending(); <span class="cm">// "排队中"</span>
+    }
+}
+
+<span class="cm">/** 数据库模式策略（降级模式）*/</span>
+<span class="an">@Component</span>
+<span class="kw">public class</span> <span class="ty">DbSeckillStrategy</span> <span class="kw">implements</span> <span class="ty">SeckillStrategy</span> {
+
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">SeckillOrderService</span> orderService;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">ThreadPoolTaskExecutor</span> dbExecutor;
+
+    <span class="an">@Override</span>
+    <span class="kw">public</span> <span class="ty">SeckillResult</span> <span class="fn">execute</span>(<span class="ty">Long</span> userId, <span class="ty">Long</span> seckillId) {
+        <span class="kw">try</span> {
+            <span class="ty">Future</span>&lt;<span class="ty">SeckillResult</span>&gt; f = dbExecutor.submit(() -&gt;
+                orderService.createOrderWithOptimisticLock(userId, seckillId));
+            <span class="kw">return</span> f.get(<span class="nu">5</span>, <span class="ty">TimeUnit</span>.SECONDS);
+        } <span class="kw">catch</span> (<span class="ty">RejectedExecutionException</span> e) {
+            <span class="kw">return</span> <span class="ty">SeckillResult</span>.fail(<span class="str">"系统繁忙，请稍后重试"</span>);
+        } <span class="kw">catch</span> (<span class="ty">Exception</span> e) {
+            <span class="kw">return</span> <span class="ty">SeckillResult</span>.fail(<span class="str">"系统异常"</span>);
+        }
+    }
+}
+
+<span class="cm">/** 秒杀服务入口（自动降级切换）*/</span>
+<span class="an">@Service</span>
+<span class="kw">public class</span> <span class="ty">SeckillService</span> {
+
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">RedisHealthChecker</span> redisHealth;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">RabbitHealthChecker</span> rabbitHealth;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">CacheSeckillStrategy</span> cacheStrategy;
+    <span class="an">@Autowired</span> <span class="kw">private</span> <span class="ty">DbSeckillStrategy</span> dbStrategy;
+
+    <span class="kw">public</span> <span class="ty">SeckillResult</span> <span class="fn">doSeckill</span>(<span class="ty">Long</span> userId, <span class="ty">Long</span> seckillId) {
+        <span class="kw">if</span> (redisHealth.isAvailable() &amp;&amp; rabbitHealth.isAvailable()) {
+            <span class="kw">return</span> cacheStrategy.execute(userId, seckillId);
+        } <span class="kw">else</span> {
+            log.warn(<span class="str">"中间件降级! Redis={}, MQ={}"</span>,
+                redisHealth.isAvailable(), rabbitHealth.isAvailable());
+            <span class="kw">return</span> dbStrategy.execute(userId, seckillId);
+        }
+    }
+}</div></div>
+
+<h3 id="s4-5"><span class="num">4.5</span>Sentinel 熔断配置</h3>
+<p>通过 Alibaba Sentinel 对核心秒杀接口进行流量控制和熔断降级保护。</p>
+
+<div class="card"><div class="card-title">核心熔断策略</div>
+<ul>
+<li><strong>流量控制</strong>：秒杀接口 QPS &gt; 100 时触发流控，超出部分直接拒绝</li>
+<li><strong>熔断降级</strong>：异常比例 &gt; 50% 触发熔断，熔断时长 10 秒</li>
+<li><strong>半开探测</strong>：熔断 10 秒后进入半开状态，放行 1 个试探请求；成功则恢复，失败则继续熔断</li>
+</ul></div>
+
+<div class="code-block"><div class="code-header"><div class="code-dots"><span></span><span></span><span></span></div><span class="code-lang">Java &middot; SentinelConfig.java</span></div><div class="code-body"><span class="an">@Configuration</span>
+<span class="kw">public class</span> <span class="ty">SentinelConfig</span> {
+
+    <span class="an">@PostConstruct</span>
+    <span class="kw">public void</span> <span class="fn">initRules</span>() {
+        <span class="cm">// ===== 1. 流控规则 =====</span>
+        <span class="ty">List</span>&lt;<span class="ty">FlowRule</span>&gt; flowRules = <span class="kw">new</span> <span class="ty">ArrayList</span>&lt;&gt;();
+        <span class="ty">FlowRule</span> seckillFlow = <span class="kw">new</span> <span class="ty">FlowRule</span>();
+        seckillFlow.setResource(<span class="str">"doSeckill"</span>);
+        seckillFlow.setGrade(<span class="ty">RuleConstant</span>.FLOW_GRADE_QPS);
+        seckillFlow.setCount(<span class="nu">100</span>);  <span class="cm">// QPS上限100</span>
+        seckillFlow.setControlBehavior(
+            <span class="ty">RuleConstant</span>.CONTROL_BEHAVIOR_RATE_LIMITER);
+        seckillFlow.setMaxQueueingTimeMs(<span class="nu">2000</span>); <span class="cm">// 最多等待2秒</span>
+        flowRules.add(seckillFlow);
+        <span class="ty">FlowRuleManager</span>.loadRules(flowRules);
+
+        <span class="cm">// ===== 2. 熔断降级规则 =====</span>
+        <span class="ty">List</span>&lt;<span class="ty">DegradeRule</span>&gt; degradeRules = <span class="kw">new</span> <span class="ty">ArrayList</span>&lt;&gt;();
+        <span class="ty">DegradeRule</span> seckillDegrade = <span class="kw">new</span> <span class="ty">DegradeRule</span>();
+        seckillDegrade.setResource(<span class="str">"doSeckill"</span>);
+        seckillDegrade.setGrade(
+            <span class="ty">CircuitBreakerStrategy</span>.ERROR_RATIO.getType());
+        seckillDegrade.setCount(<span class="nu">0.5</span>);   <span class="cm">// 异常比例50%</span>
+        seckillDegrade.setTimeWindow(<span class="nu">10</span>); <span class="cm">// 熔断时长10秒</span>
+        seckillDegrade.setMinRequestAmount(<span class="nu">5</span>); <span class="cm">// 最小请求数</span>
+        seckillDegrade.setStatIntervalMs(<span class="nu">10000</span>); <span class="cm">// 统计窗口10秒</span>
+        degradeRules.add(seckillDegrade);
+        <span class="ty">DegradeRuleManager</span>.loadRules(degradeRules);
+
+        log.info(<span class="str">"Sentinel 规则加载完成: QPS限流=100, 熔断阈值=50%"</span>);
+    }
+}
+
+<span class="cm">/** 秒杀接口 Sentinel 资源注解 */</span>
+<span class="an">@SentinelResource</span>(value = <span class="str">"doSeckill"</span>,
+    blockHandler = <span class="str">"seckillBlockHandler"</span>,
+    fallback = <span class="str">"seckillFallback"</span>)
+<span class="kw">public</span> <span class="ty">SeckillResult</span> <span class="fn">doSeckill</span>(<span class="ty">Long</span> userId, <span class="ty">Long</span> seckillId) {
+    <span class="kw">return</span> seckillService.doSeckill(userId, seckillId);
+}
+
+<span class="cm">/** 流控触发时的降级处理 */</span>
+<span class="kw">public</span> <span class="ty">SeckillResult</span> <span class="fn">seckillBlockHandler</span>(<span class="ty">Long</span> userId, <span class="ty">Long</span> seckillId,
+                                          <span class="ty">BlockException</span> ex) {
+    <span class="kw">return</span> <span class="ty">SeckillResult</span>.fail(<span class="str">"当前参与人数过多，请稍后重试"</span>);
+}
+
+<span class="cm">/** 熔断触发时的降级处理 */</span>
+<span class="kw">public</span> <span class="ty">SeckillResult</span> <span class="fn">seckillFallback</span>(<span class="ty">Long</span> userId, <span class="ty">Long</span> seckillId,
+                                     <span class="ty">Throwable</span> ex) {
+    log.error(<span class="str">"秒杀接口熔断降级: {}"</span>, ex.getMessage());
+    <span class="kw">return</span> <span class="ty">SeckillResult</span>.fail(<span class="str">"活动太火爆了，请稍后再试"</span>);
+}</div></div>
+
+<div class="status-card success"><div class="status-title">熔断半开恢复机制</div><p><strong>熔断状态</strong>（10秒）&rarr; <strong>半开状态</strong>（放行1个试探请求）&rarr; 试探成功则 <strong>恢复</strong> / 试探失败则继续 <strong>熔断</strong>。该机制确保系统能在故障恢复后自动切回正常模式，无需人工干预。</p></div>
+
+</div></div><!-- end content, main -->
+</body>
+</html>

@@ -1,0 +1,54 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${MYSQL_DATABASE:seckill_mall}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root123}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      lettuce:
+        pool:
+          max-active: 8
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        acknowledge-mode: manual
+        prefetch: 1
+        concurrency: 3
+  mail:
+    host: ${SMTP_HOST:smtp.qq.com}
+    port: ${SMTP_PORT:465}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          ssl:
+            enable: true
+          auth: true
+          starttls:
+            enable: true
+
+jwt:
+  secret: ${JWT_SECRET:MySecretKeyForJwtHS256Algorithm2024SeckillMall}
+  access-token-expiration: 7200000
+  refresh-token-expiration: 604800000
+
+seckill:
+  pay-timeout-minutes: 15
+  rate-limit-per-user: 1
+  rate-limit-per-ip: 30
+
+logging:
+  level:
+    com.seckill.mall: DEBUG

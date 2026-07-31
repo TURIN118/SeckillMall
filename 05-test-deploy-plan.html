@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>测试、部署与项目计划 — 高并发秒杀电商平台</title>
+<style>
+  :root {
+    --bg: #f7f8fc;
+    --bg2: #fff;
+    --ink: #1a1a2e;
+    --accent: #2563eb;
+    --accent2: #059669;
+    --sidebar-bg: #1e1e2e;
+    --sidebar-w: 260px;
+    --danger: #dc2626;
+    --warning: #f59e0b;
+    --success: #16a34a;
+    --code-bg: #0d1117;
+    --code-fg: #c9d1d9;
+    --border: #e2e8f0;
+    --card-shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--ink); line-height: 1.7; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh;
+    background: var(--sidebar-bg); color: #cdd6f4; overflow-y: auto; z-index: 100;
+    padding: 24px 0;
+  }
+  .sidebar h2 { color: #fff; font-size: 15px; padding: 0 20px 16px; border-bottom: 1px solid #313244; margin-bottom: 8px; }
+  .sidebar .logo { font-size: 18px; font-weight: 700; color: #89b4fa; padding: 0 20px 20px; display: block; text-decoration: none; }
+  .sidebar a { display: block; padding: 6px 20px; color: #a6adc8; text-decoration: none; font-size: 13.5px; transition: .15s; border-left: 3px solid transparent; }
+  .sidebar a:hover, .sidebar a.active { color: #fff; background: rgba(137,180,250,.1); border-left-color: #89b4fa; }
+  .sidebar a.l2 { padding-left: 36px; font-size: 12.5px; }
+  .sidebar a.l3 { padding-left: 52px; font-size: 12px; color: #7f849c; }
+
+  /* ── Main ── */
+  .main { margin-left: var(--sidebar-w); padding: 40px 48px 80px; }
+  .main > .container { max-width: 960px; margin: 0 auto; }
+
+  /* ── Typography ── */
+  h1 { font-size: 28px; margin-bottom: 8px; color: var(--ink); }
+  .subtitle { color: #64748b; font-size: 15px; margin-bottom: 40px; }
+  h2 { font-size: 22px; margin: 48px 0 20px; padding-bottom: 10px; border-bottom: 2px solid var(--accent); color: var(--ink); }
+  h3 { font-size: 18px; margin: 32px 0 14px; color: var(--accent); }
+  h4 { font-size: 15px; margin: 20px 0 10px; color: var(--ink); }
+  p, li { font-size: 14.5px; }
+  p { margin-bottom: 12px; }
+  ul, ol { padding-left: 22px; margin-bottom: 14px; }
+  li { margin-bottom: 4px; }
+  strong { color: var(--ink); }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin: 14px 0 24px; font-size: 13.5px; background: var(--bg2); border-radius: 8px; overflow: hidden; box-shadow: var(--card-shadow); }
+  th { background: var(--accent); color: #fff; padding: 10px 12px; text-align: left; font-weight: 600; }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f1f5f9; }
+
+  /* ── Code ── */
+  pre { background: var(--code-bg); color: var(--code-fg); padding: 18px 20px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.6; margin: 14px 0 24px; }
+  code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; }
+  :not(pre) > code { background: #eef2ff; color: #4338ca; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+
+  /* ── Cards ── */
+  .card { background: var(--bg2); border-radius: 10px; padding: 24px; margin: 18px 0; box-shadow: var(--card-shadow); border: 1px solid var(--border); }
+  .card h4 { margin-top: 0; color: var(--accent); font-size: 16px; }
+  .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 14px 0 24px; }
+  @media (max-width: 800px) { .card-grid { grid-template-columns: 1fr; } }
+
+  /* ── Scenario cards ── */
+  .scenario-card { background: var(--bg2); border-radius: 10px; padding: 24px; margin: 20px 0; box-shadow: var(--card-shadow); border-left: 4px solid var(--accent); }
+  .scenario-card h4 { color: var(--accent); margin: 0 0 10px; font-size: 16px; }
+  .scenario-card .badge { display: inline-block; background: #eff6ff; color: var(--accent); padding: 2px 10px; border-radius: 12px; font-size: 12px; margin-right: 6px; margin-bottom: 6px; }
+
+  /* ── Architecture diagram ── */
+  .arch-diagram { background: var(--bg2); border-radius: 12px; padding: 32px; margin: 20px 0 28px; box-shadow: var(--card-shadow); overflow-x: auto; }
+  .arch-row { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 12px 0; flex-wrap: wrap; }
+  .arch-box { border: 2px solid var(--accent); border-radius: 8px; padding: 14px 20px; text-align: center; min-width: 130px; background: #eff6ff; position: relative; }
+  .arch-box.green { border-color: var(--accent2); background: #ecfdf5; }
+  .arch-box.orange { border-color: #ea580c; background: #fff7ed; }
+  .arch-box.purple { border-color: #7c3aed; background: #f5f3ff; }
+  .arch-box .box-title { font-weight: 700; font-size: 14px; }
+  .arch-box .box-sub { font-size: 11.5px; color: #64748b; margin-top: 2px; }
+  .arch-box .box-port { font-size: 11px; color: var(--accent); font-weight: 600; }
+  .arch-arrow { text-align: center; color: #94a3b8; font-size: 22px; margin: 4px 0; }
+  .arch-label { font-size: 11px; color: #64748b; text-align: center; }
+
+  /* ── Timeline ── */
+  .timeline { position: relative; margin: 24px 0 32px; padding-left: 32px; }
+  .timeline::before { content: ''; position: absolute; left: 12px; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, var(--accent), var(--accent2)); border-radius: 2px; }
+  .tl-item { position: relative; margin-bottom: 24px; }
+  .tl-item::before { content: ''; position: absolute; left: -26px; top: 4px; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: 3px solid var(--bg); }
+  .tl-item:nth-child(even)::before { background: var(--accent2); }
+  .tl-item .tl-date { font-size: 12px; color: var(--accent); font-weight: 600; }
+  .tl-item .tl-title { font-weight: 700; font-size: 15px; margin: 2px 0 4px; }
+  .tl-item .tl-desc { font-size: 13.5px; color: #475569; }
+
+  /* ── Risk badges ── */
+  .risk-high { background: #fef2f2; color: var(--danger); padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .risk-mid { background: #fffbeb; color: #b45309; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .risk-low { background: #f0fdf4; color: var(--success); padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+
+  /* ── WBS tree ── */
+  .wbs-table td.indent-1 { padding-left: 32px; }
+  .wbs-table td.indent-2 { padding-left: 52px; }
+  .wbs-table tr.parent-row { cursor: pointer; }
+  .wbs-table tr.parent-row td:first-child::before { content: '▶ '; font-size: 10px; color: var(--accent); }
+  .wbs-table tr.parent-row.open td:first-child::before { content: '▼ '; }
+  .wbs-table tr.child-row { display: none; }
+  .wbs-table tr.child-row.show { display: table-row; }
+
+  /* ── Utility ── */
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; margin-right: 4px; }
+  .tag-blue { background: #dbeafe; color: #1d4ed8; }
+  .tag-green { background: #dcfce7; color: #15803d; }
+  .tag-red { background: #fee2e2; color: #b91c1c; }
+  .tag-gray { background: #f1f5f9; color: #475569; }
+  .note { background: #fffbeb; border-left: 4px solid var(--warning); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 14px 0; font-size: 13.5px; }
+  .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 14px 0 24px; }
+  .metric-box { background: var(--bg2); border-radius: 8px; padding: 16px; text-align: center; box-shadow: var(--card-shadow); border: 1px solid var(--border); }
+  .metric-box .mv { font-size: 26px; font-weight: 800; color: var(--accent); }
+  .metric-box .ml { font-size: 12px; color: #64748b; margin-top: 2px; }
+  @media (max-width: 800px) { .metric-grid { grid-template-columns: repeat(2, 1fr); } .main { padding: 24px 16px 60px; } .sidebar { display: none; } }
+
+  .budget-bar { display: flex; height: 32px; border-radius: 6px; overflow: hidden; margin: 10px 0 6px; }
+  .budget-bar span { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 600; }
+  .budget-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; margin-bottom: 16px; }
+  .budget-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: middle; }
+
+  .toc-chapter { font-weight: 700; font-size: 13.5px; color: #e2e8f0; padding: 8px 20px 4px; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<nav class="sidebar">
+  <span class="logo">Seckill Platform</span>
+  <h2>测试 · 部署 · 计划</h2>
+
+  <div class="toc-chapter">第一章 测试策略</div>
+  <a href="#s1-1" class="l2">1.1 单元测试</a>
+  <a href="#s1-2" class="l2">1.2 集成测试</a>
+  <a href="#s1-3" class="l2">1.3 性能压测</a>
+  <a href="#s1-3-scenarios" class="l3">压测场景设计</a>
+  <a href="#s1-3-budget" class="l3">性能指标预算</a>
+
+  <div class="toc-chapter">第二章 部署架构</div>
+  <a href="#s2-1" class="l2">2.1 单机部署架构</a>
+  <a href="#s2-2" class="l2">2.2 Docker Compose</a>
+  <a href="#s2-3" class="l2">2.3 环境管理</a>
+
+  <div class="toc-chapter">第三章 监控与告警</div>
+  <a href="#s3-1" class="l2">3.1 应用监控</a>
+  <a href="#s3-2" class="l2">3.2 日志管理</a>
+
+  <div class="toc-chapter">第四章 CI/CD</div>
+  <a href="#s4" class="l2">4.1 GitHub Actions</a>
+
+  <div class="toc-chapter">第五章 项目计划</div>
+  <a href="#s5-1" class="l2">5.1 里程碑计划</a>
+  <a href="#s5-2" class="l2">5.2 任务拆解 (WBS)</a>
+  <a href="#s5-3" class="l2">5.3 风险管理</a>
+</nav>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<div class="main"><div class="container">
+
+<h1>测试、部署与项目计划文档</h1>
+<p class="subtitle">基于 Spring Boot 的高并发秒杀电商平台 · 本科毕业设计 · 2026 年 8 月 — 11 月</p>
+
+<div class="metric-grid">
+  <div class="metric-box"><div class="mv">5</div><div class="ml">章节</div></div>
+  <div class="metric-box"><div class="mv">4 个月</div><div class="ml">开发周期</div></div>
+  <div class="metric-box"><div class="mv">5000+</div><div class="ml">目标 QPS</div></div>
+  <div class="metric-box"><div class="mv">P99&lt;200ms</div><div class="ml">秒杀响应</div></div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════╗
+     ║         第一章：测试策略                          ║
+     ╚══════════════════════════════════════════════════╝ -->
+<h2 id="ch1">第一章 测试策略</h2>
+
+<p>本项目采用三层测试金字塔：<strong>单元测试</strong>（快速、大量）→ <strong>集成测试</strong>（端到端验证）→ <strong>性能压测</strong>（高并发场景模拟）。覆盖率工具使用 JaCoCo，CI 中强制门禁检查。</p>
+
+<!-- ── 1.1 单元测试 ── -->
+<h3 id="s1-1">1.1 单元测试</h3>
+
+<p><strong>框架</strong>：JUnit 5 + Mockito + Spring Boot Test<br>
+<strong>覆盖率目标</strong>：Service 层 &gt; 80%、Mapper 层 &gt; 60%、Controller 层 &gt; 50%<br>
+<strong>Mock 策略</strong>：Service 测试 Mock 掉 Mapper 和外部依赖；Mapper 测试使用 H2 内存数据库或 @MybatisTest 切片</p>
+
+<h4>重点测试类与用例清单</h4>
+
+<!-- SeckillServiceTest -->
+<div class="card">
+<h4>SeckillServiceTest — 秒杀核心服务</h4>
+<table>
+<tr><th>测试方法名</th><th>测试场景</th><th>输入</th><th>预期输出</th></tr>
+<tr><td><code>testPreDecrStock_success</code></td><td>库存预减成功</td><td>goodsId=1, userId=100, 库存=50</td><td>返回 true，Redis 库存 -1</td></tr>
+<tr><td><code>testPreDecrStock_insufficientStock</code></td><td>库存不足时预减</td><td>goodsId=1, userId=100, 库存=0</td><td>返回 false，抛出 SeckillException(STOCK_EMPTY)</td></tr>
+<tr><td><code>testDuplicateSeckillOrder</code></td><td>重复下单拦截</td><td>userId=100 对 goodsId=1 第二次秒杀</td><td>抛出 SeckillException(REPEAT_ORDER)</td></tr>
+<tr><td><code>testLuaScriptAtomicDecr</code></td><td>Lua 脚本原子库存扣减</td><td>并发调用 Lua DECR_STOCK 100 次（库存=50）</td><td>恰好 50 次成功、50 次返回 0</td></tr>
+</table>
+</div>
+
+<!-- OrderServiceTest -->
+<div class="card">
+<h4>OrderServiceTest — 订单服务</h4>
+<table>
+<tr><th>测试方法名</th><th>测试场景</th><th>输入</th><th>预期输出</th></tr>
+<tr><td><code>testCreateOrder_success</code></td><td>创建订单成功</td><td>userId=100, goodsId=1, 库存充足</td><td>返回 OrderInfo，状态 PAYING</td></tr>
+<tr><td><code>testPayOrder_success</code></td><td>支付成功</td><td>orderId=1, payAmount=99.00</td><td>订单状态 → PAID，发送支付成功消息</td></tr>
+<tr><td><code>testPayOrder_amountMismatch</code></td><td>支付金额不匹配</td><td>orderId=1, payAmount=50.00（应为99）</td><td>抛出 PayException(AMOUNT_MISMATCH)</td></tr>
+<tr><td><code>testTimeoutCancel</code></td><td>超时自动取消</td><td>订单创建后超过 15 分钟未支付</td><td>订单状态 → CANCELLED，库存回补</td></tr>
+<tr><td><code>testCancelOrder_restoreStock</code></td><td>手动取消回补库存</td><td>userId=100 取消未支付订单</td><td>订单 CANCELLED + Redis 库存 +1 + MySQL 库存 +1</td></tr>
+</table>
+</div>
+
+<!-- UserServiceTest -->
+<div class="card">
+<h4>UserServiceTest — 用户服务</h4>
+<table>
+<tr><th>测试方法名</th><th>测试场景</th><th>输入</th><th>预期输出</th></tr>
+<tr><td><code>testRegister_success</code></td><td>注册成功</td><td>username="newUser", password="Abc@1234"</td><td>返回 UserDTO，密码已 BCrypt 加密存储</td></tr>
+<tr><td><code>testRegister_duplicateUsername</code></td><td>用户名重复</td><td>username="existingUser"</td><td>抛出 BizException(USER_EXISTS)</td></tr>
+<tr><td><code>testRegister_weakPassword</code></td><td>密码强度校验失败</td><td>password="123"</td><td>抛出 BizException(WEAK_PASSWORD)</td></tr>
+<tr><td><code>testLogin_success</code></td><td>登录成功</td><td>正确用户名 + 密码</td><td>返回 JWT Token，Redis 中缓存用户信息</td></tr>
+<tr><td><code>testLogin_lockAfterFail</code></td><td>连续失败 5 次锁定</td><td>连续 5 次错误密码</td><td>第 6 次抛出 BizException(ACCOUNT_LOCKED)，锁定 30 分钟</td></tr>
+</table>
+</div>
+
+<!-- RedisStockManagerTest -->
+<div class="card">
+<h4>RedisStockManagerTest — Redis 库存管理</h4>
+<table>
+<tr><th>测试方法名</th><th>测试场景</th><th>输入</th><th>预期输出</th></tr>
+<tr><td><code>testLuaScriptAtomic</code></td><td>Lua 脚本原子性</td><td>10 线程并发执行 DECR 脚本（库存=5）</td><td>恰好 5 次返回 1、5 次返回 0</td></tr>
+<tr><td><code>testRestoreStock</code></td><td>库存回补</td><td>先扣减再调用 INCR_STOCK</td><td>Redis 库存恢复原值</td></tr>
+<tr><td><code>testConcurrentSafety</code></td><td>高并发安全</td><td>100 线程同时扣减（库存=50）</td><td>最终库存=0，无超卖</td></tr>
+</table>
+</div>
+
+<!-- SeckillOrderMessageConsumerTest -->
+<div class="card">
+<h4>SeckillOrderMessageConsumerTest — MQ 消费者</h4>
+<table>
+<tr><th>测试方法名</th><th>测试场景</th><th>输入</th><th>预期输出</th></tr>
+<tr><td><code>testConsumeSuccess</code></td><td>MQ 消费成功</td><td>正常 SeckillOrderMessage</td><td>订单创建成功，ACK 确认</td></tr>
+<tr><td><code>testConsumeFailRetry</code></td><td>消费失败重试</td><td>模拟 DB 异常</td><td>NACK，消息重新入队，重试 3 次后进死信</td></tr>
+<tr><td><code>testDeadLetterHandle</code></td><td>死信队列处理</td><td>消息进入死信队列</td><td>记录告警日志，库存回补，通知管理员</td></tr>
+</table>
+</div>
+
+<!-- ── 1.2 集成测试 ── -->
+<h3 id="s1-2">1.2 集成测试</h3>
+
+<p><strong>框架</strong>：Spring Boot Test + Testcontainers（自动拉起 MySQL 8.0 / Redis 7 / RabbitMQ 3.13 容器）<br>
+<strong>测试范围</strong>：API 端到端测试——从 HTTP 请求到数据库验证，覆盖完整业务链路<br>
+<strong>数据准备</strong>：使用 @Sql 注解在测试前插入种子数据，测试后自动回滚</p>
+
+<h4>重点集成测试用例</h4>
+
+<table>
+<tr><th>#</th><th>测试场景</th><th>流程</th><th>验证点</th></tr>
+<tr><td>1</td><td>秒杀完整链路</td><td>POST /login → GET /goods/{id} → POST /seckill/{id} → GET /order/{id} → POST /pay → GET /order/{id}</td><td>登录返回 Token；商品详情正常；秒杀返回成功；订单状态 PAYING → PAID</td></tr>
+<tr><td>2</td><td>并发安全 — 100 线程抢 10 件</td><td>100 个线程携带不同 Token 同时 POST /seckill/{id}（库存=10）</td><td>恰好 10 个成功、90 个返回"库存不足"；MySQL 订单数 = 10；Redis 库存 = 0</td></tr>
+<tr><td>3</td><td>超时取消 + 库存回补</td><td>POST /seckill → 等待超时（测试中加速为 5 秒）→ 检查订单和库存</td><td>订单状态 CANCELLED；Redis 库存 +1；MySQL 库存 +1</td></tr>
+<tr><td>4</td><td>权限控制 — 买家访问管理接口</td><td>用普通买家 Token 访问 GET /admin/orders</td><td>返回 HTTP 403 Forbidden</td></tr>
+<tr><td>5</td><td>限流验证</td><td>单 IP 在 1 秒内发送 20 次 POST /seckill/{id}（限流阈值 10/s）</td><td>前 10 次正常响应，后续返回 HTTP 429 Too Many Requests</td></tr>
+<tr><td>6</td><td>Redis 与 MySQL 库存一致性</td><td>执行多次秒杀 + 取消操作后对比 Redis GET stock:{id} 与 MySQL stock 字段</td><td>两者数值一致</td></tr>
+<tr><td>7</td><td>JWT 过期拒绝访问</td><td>使用过期 Token 访问需鉴权接口</td><td>返回 HTTP 401 Unauthorized</td></tr>
+<tr><td>8</td><td>商品详情缓存命中</td><td>首次 GET /goods/{id}（缓存穿透）→ 第二次 GET（缓存命中）</td><td>第二次响应时间 &lt; 首次的 50%；Redis key 存在且 TTL &gt; 0</td></tr>
+</table>
+
+<div class="note">
+  <strong>Testcontainers 配置要点：</strong>在 <code>src/test/resources</code> 下创建 <code>application-test.yml</code>，通过 <code>@ActiveProfiles("test")</code> 激活；使用 <code>@ServiceConnection</code>（Spring Boot 3.1+）自动注入容器连接信息，无需手动配置端口映射。
+</div>
+
+<!-- ── 1.3 性能压测 ── -->
+<h3 id="s1-3">1.3 性能压测（重点章节）</h3>
+
+<p><strong>工具</strong>：Apache JMeter 5.6<br>
+<strong>压测环境</strong>：单机部署（4 核 8G 云服务器 / 2 核 4G 备用），JDK 17，MySQL 8.0，Redis 7，RabbitMQ 3.13<br>
+<strong>JVM 参数</strong>：<code>-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+HeapDumpOnOutOfMemoryError</code></p>
+
+<div class="metric-grid">
+  <div class="metric-box"><div class="mv">5000+</div><div class="ml">目标 QPS</div></div>
+  <div class="metric-box"><div class="mv">&lt;200ms</div><div class="ml">P99 延迟</div></div>
+  <div class="metric-box"><div class="mv">&lt;1%</div><div class="ml">错误率</div></div>
+  <div class="metric-box"><div class="mv">0</div><div class="ml">超卖数</div></div>
+</div>
+
+<h4 id="s1-3-scenarios">压测场景设计</h4>
+
+<!-- 场景1 -->
+<div class="scenario-card">
+<h4>场景 1 — 秒杀接口极限压测</h4>
+<div>
+  <span class="badge">核心场景</span>
+  <span class="badge">阶梯加压</span>
+  <span class="badge">写操作</span>
+</div>
+<p><strong>目标</strong>：验证秒杀接口在高并发下的吞吐量、延迟和库存准确性</p>
+<table>
+<tr><th>参数</th><th>配置</th></tr>
+<tr><td>请求</td><td>HTTP POST /api/v1/seckill/{goodsId}，每个线程携带不同 userId + JWT</td></tr>
+<tr><td>并发模型</td><td>阶梯加压：100 → 500 → 1000 → 2000 → 5000 并发用户</td></tr>
+<tr><td>每阶段持续</td><td>60 秒，阶段间 Ramp-up 30 秒</td></tr>
+<tr><td>JMeter 线程组</td><td>Thread Group: 5000 threads, Ramp-up 150s, Loop Count = Forever, Duration = 300s</td></tr>
+<tr><td>定时器</td><td>Constant Throughput Timer 控制发送速率</td></tr>
+<tr><td>断言</td><td>Response Code = 200 或 4001(库存不足)；响应体包含有效 JSON</td></tr>
+<tr><td>数据准备</td><td>库存预设为 10000 件，5000 个用户 CSV 数据文件</td></tr>
+</table>
+<p><strong>预期指标</strong>：</p>
+<table>
+<tr><th>指标</th><th>目标值</th></tr>
+<tr><td>QPS（峰值）</td><td>≥ 5000</td></tr>
+<tr><td>平均响应时间</td><td>&lt; 80ms</td></tr>
+<tr><td>P99 响应时间</td><td>&lt; 200ms</td></tr>
+<tr><td>错误率</td><td>&lt; 1%（仅允许"库存不足"业务错误）</td></tr>
+<tr><td>超卖数</td><td>= 0（严格零超卖）</td></tr>
+<tr><td>Redis 库存 = MySQL 已售数</td><td>压测结束后一致</td></tr>
+</table>
+</div>
+
+<!-- 场景2 -->
+<div class="scenario-card">
+<h4>场景 2 — 商品详情页读压测</h4>
+<div>
+  <span class="badge">读操作</span>
+  <span class="badge">缓存命中</span>
+</div>
+<p><strong>目标</strong>：验证 Redis 缓存下商品详情页的极限读吞吐</p>
+<table>
+<tr><th>参数</th><th>配置</th></tr>
+<tr><td>请求</td><td>HTTP GET /api/v1/goods/{id}，随机访问 100 个商品</td></tr>
+<tr><td>并发模型</td><td>5000 并发用户持续 5 分钟</td></tr>
+<tr><td>JMeter 线程组</td><td>Thread Group: 5000 threads, Ramp-up 60s, Duration = 300s</td></tr>
+<tr><td>断言</td><td>Response Code = 200；JSON 包含 goodsName、price、stock</td></tr>
+</table>
+<p><strong>预期指标</strong>：</p>
+<table>
+<tr><th>指标</th><th>目标值</th></tr>
+<tr><td>QPS</td><td>≥ 10000（Redis 缓存命中场景）</td></tr>
+<tr><td>P99 响应时间</td><td>&lt; 50ms</td></tr>
+<tr><td>缓存命中率</td><td>&gt; 99%</td></tr>
+<tr><td>错误率</td><td>&lt; 0.1%</td></tr>
+</table>
+</div>
+
+<!-- 场景3 -->
+<div class="scenario-card">
+<h4>场景 3 — 完整下单链路压测</h4>
+<div>
+  <span class="badge">端到端</span>
+  <span class="badge">混合读写</span>
+</div>
+<p><strong>目标</strong>：模拟真实用户完整购物行为的端到端性能</p>
+<table>
+<tr><th>参数</th><th>配置</th></tr>
+<tr><td>流程</td><td>浏览商品列表 → 查看商品详情 → 执行秒杀 → 查看订单 → 模拟支付</td></tr>
+<tr><td>并发</td><td>500 并发用户，每用户完成完整流程</td></tr>
+<tr><td>思考时间</td><td>步骤间随机 1-3 秒（Uniform Random Timer）</td></tr>
+<tr><td>JMeter 配置</td><td>Transaction Controller 包裹整条链路；使用 CSV Data Set Config 提供用户数据</td></tr>
+<tr><td>断言</td><td>每步 Response Code = 200；最终订单状态 = PAID</td></tr>
+</table>
+<p><strong>预期指标</strong>：</p>
+<table>
+<tr><th>指标</th><th>目标值</th></tr>
+<tr><td>端到端 P99</td><td>&lt; 2s（含思考时间）</td></tr>
+<tr><td>秒杀步骤 P99</td><td>&lt; 200ms</td></tr>
+<tr><td>支付步骤 P99</td><td>&lt; 500ms</td></tr>
+<tr><td>事务成功率</td><td>&gt; 99%</td></tr>
+</table>
+</div>
+
+<!-- 场景4 -->
+<div class="scenario-card">
+<h4>场景 4 — 混合场景压测</h4>
+<div>
+  <span class="badge">真实模拟</span>
+  <span class="badge">混合负载</span>
+</div>
+<p><strong>目标</strong>：模拟真实生产环境的混合读写负载</p>
+<table>
+<tr><th>参数</th><th>配置</th></tr>
+<tr><td>流量分配</td><td>80% 读（浏览商品列表/详情）+ 15% 写（秒杀下单）+ 5% 管理（后台查询/操作）</td></tr>
+<tr><td>并发</td><td>1000 用户持续 10 分钟</td></tr>
+<tr><td>JMeter 实现</td><td>3 个 Thread Group 按 800/150/50 线程分配；使用 Throughput Controller 控制比例</td></tr>
+<tr><td>断言</td><td>所有接口 Response Code ∈ {200, 4001}；无 500 错误</td></tr>
+</table>
+<p><strong>预期指标</strong>：</p>
+<table>
+<tr><th>指标</th><th>目标值</th></tr>
+<tr><td>整体 P99</td><td>&lt; 500ms</td></tr>
+<tr><td>系统可用性</td><td>100%（无崩溃、无 OOM）</td></tr>
+<tr><td>CPU 使用率</td><td>&lt; 85%</td></tr>
+<tr><td>GC 暂停</td><td>Full GC = 0 次</td></tr>
+</table>
+</div>
+
+<!-- 场景5 -->
+<div class="scenario-card">
+<h4>场景 5 — 优化前后对比压测</h4>
+<div>
+  <span class="badge">对比验证</span>
+  <span class="badge">性能收益</span>
+</div>
+<p><strong>目标</strong>：量化高并发优化（Redis 缓存 + MQ 异步 + Lua 脚本）带来的性能提升</p>
+<table>
+<tr><th>参数</th><th>配置</th></tr>
+<tr><td>测试场景</td><td>使用场景 1 的阶梯加压方案</td></tr>
+<tr><td>v1.0 版本</td><td>无缓存、无 MQ、直接操作 MySQL（原始版本）</td></tr>
+<tr><td>v4.0 版本</td><td>Redis 预扣库存 + Lua 原子操作 + RabbitMQ 异步下单 + 限流</td></tr>
+<tr><td>对比维度</td><td>QPS、平均 RT、P99 RT、错误率、MySQL QPS、CPU 使用率</td></tr>
+</table>
+<p><strong>预期对比结果</strong>：</p>
+<table>
+<tr><th>指标</th><th>v1.0（无优化）</th><th>v4.0（全优化）</th><th>提升倍数</th></tr>
+<tr><td>QPS（峰值）</td><td>~500</td><td>≥ 5000</td><td>10x+</td></tr>
+<tr><td>平均 RT</td><td>~200ms</td><td>~30ms</td><td>6x+</td></tr>
+<tr><td>P99 RT</td><td>~800ms</td><td>&lt; 200ms</td><td>4x+</td></tr>
+<tr><td>错误率</td><td>~15%（超时/死锁）</td><td>&lt; 1%</td><td>—</td></tr>
+<tr><td>MySQL QPS（峰值）</td><td>~500（瓶颈）</td><td>~50（MQ 削峰后）</td><td>降低 90%</td></tr>
+<tr><td>CPU 使用率</td><td>~95%</td><td>~70%</td><td>—</td></tr>
+</table>
+</div>
+
+<!-- 性能指标预算 -->
+<h4 id="s1-3-budget">性能指标分解预算表</h4>
+<p>将秒杀接口的端到端响应时间拆解为各环节时间预算，指导开发过程中的性能优化：</p>
+
+<div class="budget-bar">
+  <span style="width:5%;background:#6366f1;">5ms</span>
+  <span style="width:15%;background:#2563eb;">15ms</span>
+  <span style="width:20%;background:#059669;">20ms</span>
+  <span style="width:10%;background:#f59e0b;">10ms</span>
+  <span style="width:8%;background:#ef4444;">8ms</span>
+  <span style="width:42%;background:#64748b;">42ms 余量</span>
+</div>
+<div class="budget-legend">
+  <span><i style="background:#6366f1;"></i>网络延迟 5ms</span>
+  <span><i style="background:#2563eb;"></i>应用处理 15ms</span>
+  <span><i style="background:#059669;"></i>Redis 操作 20ms</span>
+  <span><i style="background:#f59e0b;"></i>MQ 发送 10ms</span>
+  <span><i style="background:#ef4444;"></i>数据库操作 8ms</span>
+  <span><i style="background:#64748b;"></i>余量/缓冲 42ms</span>
+</div>
+
+<table>
+<tr><th>环节</th><th>时间预算</th><th>说明</th><th>优化手段</th></tr>
+<tr><td>网络延迟</td><td>5ms</td><td>客户端 → Nginx → 应用服务器（同机房/本机）</td><td>Nginx keep-alive、HTTP/2</td></tr>
+<tr><td>应用处理</td><td>15ms</td><td>Controller → Service 业务逻辑（参数校验、Token 解析）</td><td>减少序列化开销、对象池复用</td></tr>
+<tr><td>Redis 操作</td><td>20ms</td><td>Lua 脚本执行（预扣库存 + 判重）</td><td>单次 RTT、Pipeline 合并、Lua 原子性</td></tr>
+<tr><td>MQ 发送</td><td>10ms</td><td>发送订单创建消息到 RabbitMQ</td><td>异步 Confirm、Publisher 连接复用</td></tr>
+<tr><td>数据库操作</td><td>8ms</td><td>异步消费端写入订单（不计入同步 RT）</td><td>批量 INSERT、索引优化</td></tr>
+<tr><td>余量 / 缓冲</td><td>42ms</td><td>GC 暂停、线程调度、网络抖动等不可控因素</td><td>G1GC 调优、线程池参数优化</td></tr>
+<tr style="font-weight:700;background:#eff6ff;"><td>合计</td><td>≤ 100ms</td><td>同步链路总预算（不含 MQ 异步消费）</td><td>P99 目标 &lt; 200ms</td></tr>
+</table>
+
+
+<!-- ╔══════════════════════════════════════════════════╗
+     ║         第二章：部署架构                          ║
+     ╚══════════════════════════════════════════════════╝ -->
+<h2 id="ch2">第二章 部署架构</h2>
+
+<!-- ── 2.1 单机部署架构 ── -->
+<h3 id="s2-1">2.1 单机部署架构</h3>
+
+<p>本项目为毕业设计演示场景，采用单机部署方案。所有中间件通过 Docker Compose 统一管理，降低环境搭建成本。</p>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>开发环境（最低）</h4>
+    <ul>
+      <li>CPU：2 核</li>
+      <li>内存：4 GB</li>
+      <li>磁盘：40 GB SSD</li>
+      <li>系统：Ubuntu 22.04 / CentOS 7</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>压测/演示环境（推荐）</h4>
+    <ul>
+      <li>CPU：4 核</li>
+      <li>内存：8 GB</li>
+      <li>磁盘：80 GB SSD</li>
+      <li>系统：Ubuntu 22.04</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Architecture Diagram -->
+<div class="arch-diagram">
+  <p style="text-align:center;font-weight:700;font-size:16px;margin-bottom:20px;">单机部署架构图</p>
+
+  <!-- Client -->
+  <div class="arch-row">
+    <div class="arch-box" style="border-color:#64748b;background:#f8fafc;min-width:200px;">
+      <div class="box-title">用户浏览器</div>
+      <div class="box-sub">Vue 3 SPA（已构建为静态文件）</div>
+    </div>
+  </div>
+  <div class="arch-arrow">↓ HTTP / HTTPS</div>
+
+  <!-- Nginx -->
+  <div class="arch-row">
+    <div class="arch-box orange" style="min-width:320px;">
+      <div class="box-title">Nginx (Alpine)</div>
+      <div class="box-port">Port 80 / 443</div>
+      <div class="box-sub">静态文件：/usr/share/nginx/html<br>反向代理：/api/* → 127.0.0.1:8080<br>限流：limit_req_zone 10r/s</div>
+    </div>
+  </div>
+  <div class="arch-arrow">↓ 反向代理 /api/*</div>
+
+  <!-- Spring Boot -->
+  <div class="arch-row">
+    <div class="arch-box" style="min-width:320px;">
+      <div class="box-title">Spring Boot 3.x (JDK 17)</div>
+      <div class="box-port">Port 8080</div>
+      <div class="box-sub">-Xms512m -Xmx1024m -XX:+UseG1GC<br>Actuator: /actuator/*<br>JAR: seckill-platform.jar</div>
+    </div>
+  </div>
+  <div class="arch-arrow" style="font-size:16px;">↙ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↙ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↙</div>
+
+  <!-- Middleware -->
+  <div class="arch-row">
+    <div class="arch-box green">
+      <div class="box-title">Redis 7</div>
+      <div class="box-port">Port 6379</div>
+      <div class="box-sub">缓存 + Lua 脚本<br>库存 + Session</div>
+    </div>
+    <div class="arch-box purple">
+      <div class="box-title">RabbitMQ 3.13</div>
+      <div class="box-port">Port 5672 / 15672</div>
+      <div class="box-sub">异步下单<br>Management UI</div>
+    </div>
+    <div class="arch-box orange">
+      <div class="box-title">MySQL 8.0</div>
+      <div class="box-port">Port 3306</div>
+      <div class="box-sub">主数据库<br>数据持久化</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:16px;font-size:12px;color:#94a3b8;">
+    所有服务通过 Docker Compose 编排，运行在同一台服务器的 Docker 网络中
+  </div>
+</div>
+
+<!-- ── 2.2 Docker Compose ── -->
+<h3 id="s2-2">2.2 Docker Compose 配置</h3>
+
+<h4>docker-compose.yml</h4>
+<pre><code>version: '3.8'
+
+services:
+  # ── MySQL 8.0 ──
+  mysql:
+    image: mysql:8.0
+    container_name: seckill-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: seckill_db
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./sql/data.sql:/docker-entrypoint-initdb.d/data.sql
+      - ./conf/my.cnf:/etc/mysql/conf.d/custom.cnf
+    command: >
+      --default-authentication-plugin=caching_sha2_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --max-connections=500
+    networks:
+      - seckill-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis 7 ──
+  redis:
+    image: redis:7-alpine
+    container_name: seckill-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+      - ./conf/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - seckill-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ── RabbitMQ 3.13 ──
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: seckill-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"
+      - "15672:15672"    # Management UI
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - seckill-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ── Spring Boot 应用 ──
+  seckill-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: seckill-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: seckill_db
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JAVA_OPTS: "-Xms512m -Xmx1024m -XX:+UseG1GC"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - seckill-net
+
+  # ── Nginx（前端 + 反向代理）──
+  nginx:
+    image: nginx:alpine
+    container_name: seckill-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./conf/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./conf/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - seckill-app
+    networks:
+      - seckill-net
+
+  # ── JMeter 压测容器（可选）──
+  jmeter:
+    image: justb4/jmeter:5.6
+    container_name: seckill-jmeter
+    volumes:
+      - ./jmeter:/jmeter
+    command: >
+      -n -t /jmeter/seckill-test.jmx
+      -l /jmeter/results/result.jtl
+      -e -o /jmeter/results/report
+    networks:
+      - seckill-net
+    profiles:
+      - loadtest    # 仅 docker compose --profile loadtest up 时启动
+
+volumes:
+  mysql-data:
+  redis-data:
+  rabbitmq-data:
+
+networks:
+  seckill-net:
+    driver: bridge</code></pre>
+
+<h4>Dockerfile（Spring Boot 多阶段构建）</h4>
+<pre><code># ── Stage 1: Build ──
+FROM maven:3.9-eclipse-temurin-17 AS builder
+WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+COPY src ./src
+RUN mvn package -DskipTests -B
+
+# ── Stage 2: Runtime ──
+FROM eclipse-temurin:17-jre-alpine
+LABEL maintainer="seckill-team"
+
+RUN addgroup -S app && adduser -S app -G app
+WORKDIR /app
+
+COPY --from=builder /app/target/*.jar app.jar
+
+# JVM 参数通过环境变量注入
+ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+
+EXPOSE 8080
+
+USER app
+
+ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar app.jar --spring.profiles.active=${SPRING_PROFILES_ACTIVE:prod}"]</code></pre>
+
+<h4>nginx.conf（动静分离 + 反向代理 + 限流）</h4>
+<pre><code>worker_processes auto;
+events {
+    worker_connections 4096;
+    use epoll;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    # ── 日志格式 ──
+    log_format main '$remote_addr - $remote_user [$time_local] '
+                    '"$request" $status $body_bytes_sent '
+                    '"$http_referer" "$http_user_agent" '
+                    'rt=$request_time';
+    access_log /var/log/nginx/access.log main;
+
+    # ── 性能优化 ──
+    sendfile        on;
+    tcp_nopush      on;
+    tcp_nodelay     on;
+    keepalive_timeout 65;
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml;
+    gzip_min_length 1024;
+
+    # ── 限流配置 ──
+    limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+    limit_req_zone $binary_remote_addr zone=seckill_limit:10m rate=5r/s;
+
+    # ── 上游服务 ──
+    upstream seckill_backend {
+        server seckill-app:8080;
+        keepalive 64;
+    }
+
+    server {
+        listen 80;
+        server_name _;
+
+        # ── 前端静态文件 ──
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+            try_files $uri $uri/ /index.html;    # Vue Router history 模式
+            expires 7d;
+            add_header Cache-Control "public, immutable";
+        }
+
+        # ── API 反向代理（普通接口）──
+        location /api/ {
+            limit_req zone=api_limit burst=20 nodelay;
+            proxy_pass http://seckill_backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_connect_timeout 5s;
+            proxy_read_timeout 30s;
+        }
+
+        # ── 秒杀接口（更严格限流）──
+        location /api/v1/seckill/ {
+            limit_req zone=seckill_limit burst=10 nodelay;
+            proxy_pass http://seckill_backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+        # ── Actuator（仅内网可访问）──
+        location /actuator/ {
+            allow 172.0.0.0/8;
+            allow 10.0.0.0/8;
+            deny all;
+            proxy_pass http://seckill_backend;
+        }
+
+        # ── 健康检查 ──
+        location /health {
+            access_log off;
+            return 200 'OK';
+        }
+    }
+}</code></pre>
+
+<!-- ── 2.3 环境管理 ── -->
+<h3 id="s2-3">2.3 环境管理</h3>
+
+<p>通过 Spring Profiles 机制管理三套环境配置，使用 <code>${ENV_VAR}</code> 引用环境变量，避免硬编码敏感信息。</p>
+
+<table>
+<tr><th>环境</th><th>Profile</th><th>配置文件</th><th>用途</th><th>激活方式</th></tr>
+<tr><td><span class="tag tag-blue">DEV</span></td><td>dev</td><td>application-dev.yml</td><td>本地开发调试</td><td><code>-Dspring.profiles.active=dev</code></td></tr>
+<tr><td><span class="tag tag-green">TEST</span></td><td>test</td><td>application-test.yml</td><td>自动化测试（Testcontainers）</td><td><code>@ActiveProfiles("test")</code></td></tr>
+<tr><td><span class="tag tag-red">PROD</span></td><td>prod</td><td>application-prod.yml</td><td>演示/压测环境</td><td>环境变量 <code>SPRING_PROFILES_ACTIVE=prod</code></td></tr>
+</table>
+
+<h4>环境变量清单</h4>
+<table>
+<tr><th>变量名</th><th>说明</th><th>示例值（开发）</th><th>生产建议</th></tr>
+<tr><td><code>MYSQL_HOST</code></td><td>MySQL 主机地址</td><td>localhost</td><td>Docker 内网 mysql</td></tr>
+<tr><td><code>MYSQL_PORT</code></td><td>MySQL 端口</td><td>3306</td><td>3306</td></tr>
+<tr><td><code>MYSQL_DATABASE</code></td><td>数据库名</td><td>seckill_db</td><td>seckill_db</td></tr>
+<tr><td><code>MYSQL_USER</code></td><td>数据库用户名</td><td>dev_user</td><td>由运维分配</td></tr>
+<tr><td><code>MYSQL_PASSWORD</code></td><td>数据库密码</td><td>dev123456</td><td>强密码 + Vault 管理</td></tr>
+<tr><td><code>MYSQL_ROOT_PASSWORD</code></td><td>MySQL root 密码</td><td>root123</td><td>强密码，仅限初始化</td></tr>
+<tr><td><code>REDIS_HOST</code></td><td>Redis 主机地址</td><td>localhost</td><td>Docker 内网 redis</td></tr>
+<tr><td><code>REDIS_PORT</code></td><td>Redis 端口</td><td>6379</td><td>6379</td></tr>
+<tr><td><code>REDIS_PASSWORD</code></td><td>Redis 密码</td><td>（空）</td><td>设置强密码</td></tr>
+<tr><td><code>RABBITMQ_HOST</code></td><td>RabbitMQ 主机</td><td>localhost</td><td>Docker 内网 rabbitmq</td></tr>
+<tr><td><code>RABBITMQ_PORT</code></td><td>RabbitMQ 端口</td><td>5672</td><td>5672</td></tr>
+<tr><td><code>RABBITMQ_USER</code></td><td>RabbitMQ 用户名</td><td>guest</td><td>创建专用账号</td></tr>
+<tr><td><code>RABBITMQ_PASSWORD</code></td><td>RabbitMQ 密码</td><td>guest</td><td>强密码</td></tr>
+<tr><td><code>JWT_SECRET</code></td><td>JWT 签名密钥</td><td>dev-secret-key</td><td>256 位随机密钥</td></tr>
+<tr><td><code>JWT_EXPIRATION</code></td><td>JWT 过期时间（秒）</td><td>86400</td><td>3600（1 小时）</td></tr>
+</table>
+
+<div class="note">
+  <strong>安全提示</strong>：生产环境的 <code>.env</code> 文件不应提交到 Git 仓库。在 <code>.gitignore</code> 中排除 <code>.env</code>，使用 <code>.env.example</code> 提供模板。演示答辩时使用 Docker Secrets 或环境变量注入，不在配置文件中明文写入密码。
+</div>
+
+
+<!-- ╔══════════════════════════════════════════════════╗
+     ║         第三章：监控与告警                        ║
+     ╚══════════════════════════════════════════════════╝ -->
+<h2 id="ch3">第三章 监控与告警</h2>
+
+<!-- ── 3.1 应用监控 ── -->
+<h3 id="s3-1">3.1 应用监控</h3>
+
+<h4>Spring Boot Actuator 端点</h4>
+<table>
+<tr><th>端点</th><th>用途</th><th>访问方式</th></tr>
+<tr><td><code>/actuator/health</code></td><td>应用健康状态（UP / DOWN）</td><td>GET，公开</td></tr>
+<tr><td><code>/actuator/metrics</code></td><td>应用性能指标（JVM、HTTP、自定义）</td><td>GET，内网</td></tr>
+<tr><td><code>/actuator/info</code></td><td>应用版本、构建信息</td><td>GET，公开</td></tr>
+<tr><td><code>/actuator/env</code></td><td>环境变量（脱敏）</td><td>GET，仅管理 IP</td></tr>
+<tr><td><code>/actuator/loggers</code></td><td>运行时修改日志级别</td><td>GET/POST，仅管理 IP</td></tr>
+</table>
+
+<h4>自定义健康检查指示器</h4>
+<table>
+<tr><th>HealthIndicator</th><th>检查逻辑</th><th>DOWN 条件</th></tr>
+<tr><td>RedisHealthIndicator</td><td>执行 PING 命令，检查返回值</td><td>连接超时或返回非 PONG</td></tr>
+<tr><td>RabbitMQHealthIndicator</td><td>检查 Connection 状态 + 队列可用性</td><td>连接断开或目标队列不存在</td></tr>
+<tr><td>MySQLHealthIndicator</td><td>执行 SELECT 1 验证连接池</td><td>连接池耗尽或查询超时 &gt; 3s</td></tr>
+</table>
+
+<h4>后台仪表盘数据采集方案</h4>
+<table>
+<tr><th>数据类别</th><th>采集方式</th><th>采集频率</th><th>存储</th></tr>
+<tr><td>订单统计（今日订单数、成交额）</td><td>定时任务 @Scheduled 聚合查询</td><td>每 30 秒</td><td>Redis Hash + MySQL 归档</td></tr>
+<tr><td>Redis 指标（命中率、连接数、内存）</td><td>INFO 命令解析</td><td>每 15 秒</td><td>Redis Hash（保留最近 24h）</td></tr>
+<tr><td>RabbitMQ 指标（队列深度、消费速率）</td><td>Management HTTP API /api/queues</td><td>每 15 秒</td><td>Redis Hash</td></tr>
+<tr><td>系统指标（CPU、内存、磁盘）</td><td>OperatingSystemMXBean + Runtime</td><td>每 10 秒</td><td>Redis Hash</td></tr>
+<tr><td>接口调用统计（QPS、RT、错误率）</td><td>Spring Boot Actuator Metrics + 自定义拦截器</td><td>实时</td><td>Micrometer + 内存环形缓冲</td></tr>
+</table>
+
+<!-- ── 3.2 日志管理 ── -->
+<h3 id="s3-2">3.2 日志管理</h3>
+
+<p><strong>日志框架</strong>：Logback（Spring Boot 默认集成）</p>
+
+<h4>日志分级策略</h4>
+<table>
+<tr><th>级别</th><th>使用场景</th><th>示例</th></tr>
+<tr><td><span class="tag tag-red">ERROR</span></td><td>异常告警，需要立即关注</td><td>数据库连接失败、MQ 消费异常、NPE</td></tr>
+<tr><td><span class="tag" style="background:#fff3cd;color:#856404;">WARN</span></td><td>安全事件、业务异常</td><td>登录失败、权限不足、限流触发、重复下单</td></tr>
+<tr><td><span class="tag tag-blue">INFO</span></td><td>业务流水、关键操作记录</td><td>订单创建/支付/取消、用户注册/登录、库存变更</td></tr>
+<tr><td><span class="tag tag-gray">DEBUG</span></td><td>开发调试、方法调用详情</td><td>SQL 参数、Redis 命令、MQ 消息体</td></tr>
+</table>
+
+<h4>日志文件滚动策略</h4>
+<pre><code>&lt;!-- logback-spring.xml 关键配置 --&gt;
+&lt;appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender"&gt;
+    &lt;file&gt;logs/seckill.log&lt;/file&gt;
+    &lt;rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy"&gt;
+        &lt;!-- 按日期 + 大小滚动 --&gt;
+        &lt;fileNamePattern&gt;logs/seckill.%d{yyyy-MM-dd}.%i.log.gz&lt;/fileNamePattern&gt;
+        &lt;maxFileSize&gt;100MB&lt;/maxFileSize&gt;          &lt;!-- 单文件 &gt; 100MB 滚动 --&gt;
+        &lt;maxHistory&gt;30&lt;/maxHistory&gt;                &lt;!-- 保留 30 天 --&gt;
+        &lt;totalSizeCap&gt;3GB&lt;/totalSizeCap&gt;           &lt;!-- 总大小上限 3GB --&gt;
+    &lt;/rollingPolicy&gt;
+&lt;/appender&gt;</code></pre>
+
+<h4>日志格式</h4>
+<pre><code>&lt;pattern&gt;[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%level] [%X{traceId}] [%thread] [%logger{36}] - %msg%n&lt;/pattern&gt;</code></pre>
+
+<p>格式示例：</p>
+<pre><code>[2026-09-15 14:23:45.123] [INFO]  [a1b2c3d4e5] [http-nio-8080-exec-12] [c.s.s.SeckillService] - 秒杀成功 userId=10086, goodsId=1, orderId=20260915001
+[2026-09-15 14:23:45.456] [WARN]  [a1b2c3d4e5] [http-nio-8080-exec-12] [c.s.s.SeckillService] - 库存不足 userId=10087, goodsId=1, stock=0
+[2026-09-15 14:23:46.789] [ERROR] [f6g7h8i9j0] [rabbit-listener-1]     [c.s.m.SeckillOrderConsumer] - MQ消费异常 messageId=msg_001, error=DB timeout</code></pre>
+
+<p><strong>TraceId 链路追踪</strong>：通过 MDC（Mapped Diagnostic Context）在请求入口拦截器中生成 UUID 作为 traceId，贯穿整个请求链路，便于排查问题。</p>
+
+
+<!-- ╔══════════════════════════════════════════════════╗
+     ║         第四章：CI/CD 流程                        ║
+     ╚══════════════════════════════════════════════════╝ -->
+<h2 id="ch4">第四章 CI/CD 流程</h2>
+
+<h3 id="s4">4.1 GitHub Actions 工作流</h3>
+
+<p>本项目使用 GitHub Actions 实现自动化构建、测试和部署。</p>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>Push 触发（CI）</h4>
+    <ol>
+      <li>代码检出</li>
+      <li>JDK 17 + Maven 缓存</li>
+      <li>编译 <code>mvn compile</code></li>
+      <li>单元测试 <code>mvn test</code></li>
+      <li>JaCoCo 覆盖率检查（门禁 ≥ 70%）</li>
+      <li>Checkstyle 代码风格检查</li>
+      <li>SpotBugs 静态分析</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h4>Tag 触发（CD）</h4>
+    <ol>
+      <li>完成 CI 全部步骤</li>
+      <li>Maven 打包 <code>mvn package</code></li>
+      <li>Docker 多阶段构建镜像</li>
+      <li>推送镜像到 Docker Hub / ACR</li>
+      <li>SSH 到服务器执行 <code>docker compose up -d</code></li>
+      <li>健康检查验证部署成功</li>
+    </ol>
+  </div>
+</div>
+
+<h4>.github/workflows/ci.yml</h4>
+<pre><code>name: Seckill CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths-ignore: ['**.md', 'docs/**']
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]    # Tag 发布触发 CD
+
+env:
+  JAVA_VERSION: '17'
+  DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/seckill-platform
+
+jobs:
+  # ── CI: 编译 + 测试 + 代码质量 ──
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root123
+          MYSQL_DATABASE: seckill_test
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-retries=5
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Compile
+        run: mvn compile -B
+
+      - name: Unit Tests + Coverage
+        run: mvn test -B -Ptest
+        env:
+          SPRING_PROFILES_ACTIVE: test
+
+      - name: JaCoCo Coverage Check
+        run: |
+          mvn jacoco:check -B \
+            -Djacoco.checks.rule.limit=0.70 \
+            -Djacoco.checks.rule.counter=LINE
+
+      - name: Checkstyle
+        run: mvn checkstyle:check -B
+
+      - name: SpotBugs
+        run: mvn spotbugs:check -B
+
+      - name: Upload Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: target/surefire-reports/
+
+  # ── CD: 构建镜像 + 部署（仅 Tag 触发）──
+  build-and-deploy:
+    needs: build-and-test
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:${{ github.ref_name }}
+            ${{ env.DOCKER_IMAGE }}:latest
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/seckill
+            docker compose pull
+            docker compose up -d --remove-orphans
+            sleep 10
+            curl -f http://localhost:8080/actuator/health || exit 1
+            echo "Deployment successful!"</code></pre>
+
+<h4>代码质量工具配置</h4>
+<table>
+<tr><th>工具</th><th>用途</th><th>配置要点</th></tr>
+<tr><td>Checkstyle</td><td>代码风格统一</td><td>基于 Google Java Style，行宽 120 字符</td></tr>
+<tr><td>SpotBugs</td><td>静态缺陷分析</td><td>排除测试代码，Fail on HIGH priority bugs</td></tr>
+<tr><td>JaCoCo</td><td>代码覆盖率</td><td>行覆盖率 ≥ 70%（CI 门禁），Service 层 ≥ 80%</td></tr>
+</table>
+
+
+<!-- ╔══════════════════════════════════════════════════╗
+     ║         第五章：项目计划与排期                     ║
+     ╚══════════════════════════════════════════════════╝ -->
+<h2 id="ch5">第五章 项目计划与排期</h2>
+
+<!-- ── 5.1 里程碑计划 ── -->
+<h3 id="s5-1">5.1 里程碑计划</h3>
+
+<p>项目总周期 4 个月（2026 年 8 月 — 11 月），按周拆分为 5 个阶段、16 个工作周。</p>
+
+<!-- Timeline -->
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-date">W1 — W2 | 8.1 — 8.14</div>
+    <div class="tl-title">阶段一：需求与设计</div>
+    <div class="tl-desc">需求分析、技术选型、架构设计、数据库设计、接口设计<br><span class="tag tag-blue">交付</span> 开题报告 + 技术方案文档 + 数据库 DDL + API 设计文档</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-date">W3 — W6 | 8.15 — 9.11</div>
+    <div class="tl-title">阶段二：基础开发</div>
+    <div class="tl-desc">用户认证（注册/登录/JWT）、商品 CRUD、普通下单流程、前后端联调<br><span class="tag tag-green">交付</span> 基础系统 v1.0（可运行的最小可用版本）</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-date">W7 — W10 | 9.12 — 10.9</div>
+    <div class="tl-title">阶段三：高并发改造</div>
+    <div class="tl-desc">Redis 缓存 + 库存预扣、RabbitMQ 异步下单、Lua 脚本原子操作、分布式锁、接口限流<br><span class="tag tag-red">交付</span> 高并发版本 v2.0 → v3.0</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-date">W11 — W13 | 10.10 — 10.30</div>
+    <div class="tl-title">阶段四：压测与优化</div>
+    <div class="tl-desc">JMeter 压测脚本编写、多场景性能测试、性能调优（JVM/SQL/Redis）、Bug 修复<br><span class="tag tag-green">交付</span> 压测报告 + 优化版 v4.0</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-date">W14 — W16 | 11.1 — 11.21</div>
+    <div class="tl-title">阶段五：论文与答辩</div>
+    <div class="tl-desc">毕业论文撰写、答辩 PPT 制作、答辩演练、系统演示准备<br><span class="tag tag-blue">交付</span> 论文终稿 + 答辩 PPT + 系统演示视频</div>
+  </div>
+</div>
+
+<!-- Milestone Table -->
+<table>
+<tr><th>阶段</th><th>周次</th><th>日期</th><th>核心任务</th><th>交付物</th></tr>
+<tr><td>需求与设计</td><td>W1-W2</td><td>8.1 — 8.14</td><td>需求分析、技术选型、架构设计、数据库设计</td><td>开题报告 + 技术方案文档</td></tr>
+<tr><td>基础开发</td><td>W3-W6</td><td>8.15 — 9.11</td><td>用户认证、商品 CRUD、普通下单、前后端联调</td><td>基础系统 v1.0</td></tr>
+<tr><td>高并发改造</td><td>W7-W10</td><td>9.12 — 10.9</td><td>Redis 缓存、MQ 异步、分布式锁、限流</td><td>高并发版本 v2.0—v3.0</td></tr>
+<tr><td>压测与优化</td><td>W11-W13</td><td>10.10 — 10.30</td><td>JMeter 压测、性能调优、Bug 修复</td><td>压测报告 + v4.0</td></tr>
+<tr><td>论文与答辩</td><td>W14-W16</td><td>11.1 — 11.21</td><td>论文撰写、PPT 制作、答辩演练</td><td>论文终稿 + 答辩 PPT</td></tr>
+</table>
+
+<!-- ── 5.2 任务拆解（WBS）── -->
+<h3 id="s5-2">5.2 任务拆解（WBS）</h3>
+
+<p>将项目按阶段 → 模块 → 任务三级拆解，点击阶段行可展开/折叠子任务。共 48 个可执行任务。</p>
+
+<table class="wbs-table" id="wbs-table">
+<tr>
+  <th style="width:30%">任务名称</th>
+  <th>任务ID</th>
+  <th>阶段</th>
+  <th>工时(h)</th>
+  <th>前置依赖</th>
+  <th>优先级</th>
+</tr>
+<!-- 阶段1: 需求与设计 -->
+<tr class="parent-row" data-group="phase1">
+  <td><strong>阶段一：需求与设计</strong></td><td>—</td><td>W1-W2</td><td>56</td><td>—</td><td>—</td>
+</tr>
+<tr class="child-row" data-group="phase1"><td class="indent-1">竞品分析 & 需求调研</td><td>T01</td><td>W1</td><td>8</td><td>—</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase1"><td class="indent-1">功能需求文档编写</td><td>T02</td><td>W1</td><td>6</td><td>T01</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase1"><td class="indent-1">技术选型论证</td><td>T03</td><td>W1</td><td>4</td><td>T01</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase1"><td class="indent-1">系统架构设计</td><td>T04</td><td>W1-W2</td><td>8</td><td>T03</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase1"><td class="indent-1">数据库表设计 (ER 图 + DDL)</td><td>T05</td><td>W2</td><td>10</td><td>T04</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase1"><td class="indent-1">API 接口设计 (RESTful)</td><td>T06</td><td>W2</td><td>8</td><td>T04</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase1"><td class="indent-1">UI 原型设计 (Figma/Axure)</td><td>T07</td><td>W2</td><td>8</td><td>T02</td><td><span class="risk-mid">P1</span></td></tr>
+<tr class="child-row" data-group="phase1"><td class="indent-1">开题报告撰写</td><td>T08</td><td>W2</td><td>4</td><td>T02,T03</td><td><span class="risk-high">P0</span></td></tr>
+
+<!-- 阶段2: 基础开发 -->
+<tr class="parent-row" data-group="phase2">
+  <td><strong>阶段二：基础开发</strong></td><td>—</td><td>W3-W6</td><td>144</td><td>—</td><td>—</td>
+</tr>
+<tr class="child-row" data-group="phase2"><td class="indent-1">开发环境搭建 (Spring Boot + Vue)</td><td>T09</td><td>W3</td><td>6</td><td>T04</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase2"><td class="indent-1">Docker Compose 中间件编排</td><td>T10</td><td>W3</td><td>4</td><td>T09</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase2"><td class="indent-1">用户模块 — 注册/登录</td><td>T11</td><td>W3</td><td>12</td><td>T09,T05</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase2"><td class="indent-1">JWT 认证 + Spring Security 集成</td><td>T12</td><td>W3-W4</td><td>10</td><td>T11</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase2"><td class="indent-1">商品模块 — CRUD + 分类</td><td>T13</td><td>W4</td><td>14</td><td>T05,T09</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase2"><td class="indent-1">商品图片上传 (MinIO/本地存储)</td><td>T14</td><td>W4</td><td>6</td><td>T13</td><td><span class="risk-mid">P1</span></td></tr>
+<tr class="child-row" data-group="phase2"><td class="indent-1">普通下单流程（无并发优化）</td><td>T15</td><td>W4-W5</td><td>16</td><td>T11,T13</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase2"><td class="indent-1">订单状态机 (创建/支付/取消/超时)</td><td>T16</td><td>W5</td><td>10</td><td>T15</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase2"><td class="indent-1">模拟支付接口</td><td>T17</td><td>W5</td><td>6</td><td>T16</td><td><span class="risk-mid">P1</span></td></tr>
+<tr class="child-row" data-group="phase2"><td class="indent-1">前端 — 用户页面 (登录/注册)</td><td>T18</td><td>W5</td><td>12</td><td>T11,T07</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase2"><td class="indent-1">前端 — 商品列表/详情页</td><td>T19</td><td>W5-W6</td><td>14</td><td>T13,T07</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase2"><td class="indent-1">前端 — 下单/支付/订单页</td><td>T20</td><td>W6</td><td>14</td><td>T15,T07</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase2"><td class="indent-1">前后端联调 + Bug 修复</td><td>T21</td><td>W6</td><td>12</td><td>T18,T19,T20</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase2"><td class="indent-1">后台管理 — 商品/订单管理</td><td>T22</td><td>W6</td><td>10</td><td>T13,T16</td><td><span class="risk-mid">P1</span></td></tr>
+<tr class="child-row" data-group="phase2"><td class="indent-1">单元测试编写（Service 层）</td><td>T23</td><td>W6</td><td>8</td><td>T15,T16</td><td><span class="risk-mid">P1</span></td></tr>
+
+<!-- 阶段3: 高并发改造 -->
+<tr class="parent-row" data-group="phase3">
+  <td><strong>阶段三：高并发改造</strong></td><td>—</td><td>W7-W10</td><td>128</td><td>—</td><td>—</td>
+</tr>
+<tr class="child-row" data-group="phase3"><td class="indent-1">Redis 缓存层 — 商品详情缓存</td><td>T24</td><td>W7</td><td>8</td><td>T13</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase3"><td class="indent-1">Redis 库存预扣 — Lua 脚本编写</td><td>T25</td><td>W7</td><td>12</td><td>T24</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase3"><td class="indent-1">Redis 缓存一致性方案（双写/延迟删除）</td><td>T26</td><td>W7</td><td>8</td><td>T24</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase3"><td class="indent-1">RabbitMQ 异步下单 — 消息生产/消费</td><td>T27</td><td>W8</td><td>14</td><td>T25</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase3"><td class="indent-1">MQ 死信队列 + 重试机制</td><td>T28</td><td>W8</td><td>8</td><td>T27</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase3"><td class="indent-1">Redisson 分布式锁（防重复下单）</td><td>T29</td><td>W8-W9</td><td>10</td><td>T25</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase3"><td class="indent-1">接口限流 — 令牌桶 / 滑动窗口</td><td>T30</td><td>W9</td><td>10</td><td>T29</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase3"><td class="indent-1">用户接口防刷（验证码 + IP 限流）</td><td>T31</td><td>W9</td><td>8</td><td>T30</td><td><span class="risk-mid">P1</span></td></tr>
+<tr class="child-row" data-group="phase3"><td class="indent-1">订单超时自动取消（延迟队列）</td><td>T32</td><td>W9</td><td>8</td><td>T28</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase3"><td class="indent-1">秒杀倒计时 + 服务端时间校验</td><td>T33</td><td>W9-W10</td><td>6</td><td>T24</td><td><span class="risk-mid">P1</span></td></tr>
+<tr class="child-row" data-group="phase3"><td class="indent-1">前端秒杀交互优化（防抖/Loading）</td><td>T34</td><td>W10</td><td>8</td><td>T30,T33</td><td><span class="risk-mid">P1</span></td></tr>
+<tr class="child-row" data-group="phase3"><td class="indent-1">SQL 索引优化 + 慢查询分析</td><td>T35</td><td>W10</td><td>8</td><td>T15</td><td><span class="risk-mid">P1</span></td></tr>
+<tr class="child-row" data-group="phase3"><td class="indent-1">集成测试编写（Testcontainers）</td><td>T36</td><td>W10</td><td>12</td><td>T27,T29</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase3"><td class="indent-1">系统安全防护（XSS/SQL注入/CSRF）</td><td>T37</td><td>W10</td><td>8</td><td>T12</td><td><span class="risk-mid">P1</span></td></tr>
+
+<!-- 阶段4: 压测与优化 -->
+<tr class="parent-row" data-group="phase4">
+  <td><strong>阶段四：压测与优化</strong></td><td>—</td><td>W11-W13</td><td>80</td><td>—</td><td>—</td>
+</tr>
+<tr class="child-row" data-group="phase4"><td class="indent-1">JMeter 压测脚本编写</td><td>T38</td><td>W11</td><td>10</td><td>T36</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase4"><td class="indent-1">场景1 — 秒杀接口极限压测</td><td>T39</td><td>W11</td><td>8</td><td>T38</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase4"><td class="indent-1">场景2 — 商品详情读压测</td><td>T40</td><td>W11</td><td>4</td><td>T38</td><td><span class="risk-mid">P1</span></td></tr>
+<tr class="child-row" data-group="phase4"><td class="indent-1">场景3-5 — 链路/混合/对比压测</td><td>T41</td><td>W11-W12</td><td>10</td><td>T39,T40</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase4"><td class="indent-1">JVM 调优（GC 参数/内存分析）</td><td>T42</td><td>W12</td><td>10</td><td>T39</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase4"><td class="indent-1">Redis 调优（连接池/持久化策略）</td><td>T43</td><td>W12</td><td>6</td><td>T39</td><td><span class="risk-mid">P1</span></td></tr>
+<tr class="child-row" data-group="phase4"><td class="indent-1">MySQL 调优（连接池/索引/参数）</td><td>T44</td><td>W12</td><td>6</td><td>T39</td><td><span class="risk-mid">P1</span></td></tr>
+<tr class="child-row" data-group="phase4"><td class="indent-1">Bug 修复 + 回归测试</td><td>T45</td><td>W12-W13</td><td>12</td><td>T41,T42</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase4"><td class="indent-1">压测报告撰写（数据 + 图表 + 分析）</td><td>T46</td><td>W13</td><td>10</td><td>T41,T42,T43,T44</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase4"><td class="indent-1">监控仪表盘集成（Actuator + 自定义）</td><td>T47</td><td>W13</td><td>4</td><td>T45</td><td><span class="risk-low">P2</span></td></tr>
+
+<!-- 阶段5: 论文与答辩 -->
+<tr class="parent-row" data-group="phase5">
+  <td><strong>阶段五：论文与答辩</strong></td><td>—</td><td>W14-W16</td><td>88</td><td>—</td><td>—</td>
+</tr>
+<tr class="child-row" data-group="phase5"><td class="indent-1">论文大纲 & 框架搭建</td><td>T48</td><td>W14</td><td>4</td><td>T46</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase5"><td class="indent-1">论文 — 绪论/需求分析/系统设计</td><td>T49</td><td>W14</td><td>16</td><td>T48</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase5"><td class="indent-1">论文 — 系统实现/测试/总结</td><td>T50</td><td>W14-W15</td><td>16</td><td>T49</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase5"><td class="indent-1">论文 — 摘要/参考文献/格式调整</td><td>T51</td><td>W15</td><td>8</td><td>T50</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase5"><td class="indent-1">导师审阅 + 修改</td><td>T52</td><td>W15</td><td>8</td><td>T51</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase5"><td class="indent-1">答辩 PPT 制作</td><td>T53</td><td>W15-W16</td><td>10</td><td>T52</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase5"><td class="indent-1">系统演示视频录制</td><td>T54</td><td>W16</td><td>6</td><td>T47</td><td><span class="risk-mid">P1</span></td></tr>
+<tr class="child-row" data-group="phase5"><td class="indent-1">答辩演练（模拟 Q&A）</td><td>T55</td><td>W16</td><td>8</td><td>T53</td><td><span class="risk-high">P0</span></td></tr>
+<tr class="child-row" data-group="phase5"><td class="indent-1">代码整理 + GitHub 仓库完善</td><td>T56</td><td>W16</td><td>6</td><td>T45</td><td><span class="risk-low">P2</span></td></tr>
+<tr class="child-row" data-group="phase5"><td class="indent-1">最终提交 & 归档</td><td>T57</td><td>W16</td><td>6</td><td>T55</td><td><span class="risk-high">P0</span></td></tr>
+</table>
+
+<div class="note" style="margin-top:16px;">
+  <strong>工时汇总</strong>：需求与设计 56h + 基础开发 144h + 高并发改造 128h + 压测与优化 80h + 论文与答辩 88h = <strong>总计 496 小时</strong>（约 62 个工作日）
+</div>
+
+<!-- ── 5.3 风险管理 ── -->
+<h3 id="s5-3">5.3 风险管理</h3>
+
+<table>
+<tr>
+  <th>风险ID</th><th>风险描述</th><th>概率</th><th>影响</th><th>应对策略</th><th>责任人</th>
+</tr>
+<tr>
+  <td>R01</td>
+  <td><strong>Redis 宕机导致数据丢失</strong><br>库存预扣数据仅存 Redis，宕机后库存状态不一致</td>
+  <td><span class="risk-mid">中</span></td>
+  <td><span class="risk-high">高</span></td>
+  <td>开启 AOF 持久化（appendonly yes）；MySQL 定时对账任务；库存回补兜底机制</td>
+  <td>开发</td>
+</tr>
+<tr>
+  <td>R02</td>
+  <td><strong>MQ 消息堆积</strong><br>秒杀高峰期消息量超过消费速度，队列堆积</td>
+  <td><span class="risk-mid">中</span></td>
+  <td><span class="risk-high">高</span></td>
+  <td>增加消费者实例数；设置队列最大长度 + 溢出到死信；监控队列深度告警</td>
+  <td>开发</td>
+</tr>
+<tr>
+  <td>R03</td>
+  <td><strong>性能达不到目标 QPS</strong><br>单机性能瓶颈，无法达到 5000 QPS</td>
+  <td><span class="risk-mid">中</span></td>
+  <td><span class="risk-mid">中</span></td>
+  <td>分阶段压测定位瓶颈；优化热路径（缓存/MQ/SQL）；适当降低目标并说明原因</td>
+  <td>开发</td>
+</tr>
+<tr>
+  <td>R04</td>
+  <td><strong>技术难点卡壳</strong><br>Lua 脚本编写、分布式锁实现等技术难点耗时超预期</td>
+  <td><span class="risk-high">高</span></td>
+  <td><span class="risk-mid">中</span></td>
+  <td>提前 POC 验证；准备降级方案（如用数据库乐观锁替代分布式锁）；预留 20% 缓冲时间</td>
+  <td>开发</td>
+</tr>
+<tr>
+  <td>R05</td>
+  <td><strong>论文写作时间不足</strong><br>开发周期占用了论文时间，导致最后赶工</td>
+  <td><span class="risk-high">高</span></td>
+  <td><span class="risk-high">高</span></td>
+  <td>开发阶段同步记录技术笔记；W14 前完成论文框架；每周固定 2 天写论文</td>
+  <td>本人</td>
+</tr>
+<tr>
+  <td>R06</td>
+  <td><strong>云服务器资源不足</strong><br>压测时 CPU/内存耗尽，影响测试结果</td>
+  <td><span class="risk-mid">中</span></td>
+  <td><span class="risk-mid">中</span></td>
+  <td>提前申请 4 核 8G 服务器；JMeter 在独立机器运行避免资源竞争；设置资源告警阈值</td>
+  <td>开发</td>
+</tr>
+<tr>
+  <td>R07</td>
+  <td><strong>前后端联调延迟</strong><br>接口变更频繁导致前端适配困难</td>
+  <td><span class="risk-low">低</span></td>
+  <td><span class="risk-mid">中</span></td>
+  <td>先定 API 契约（Swagger/Knife4j）；Mock 数据并行开发；接口变更及时通知</td>
+  <td>开发</td>
+</tr>
+<tr>
+  <td>R08</td>
+  <td><strong>数据库数据量不足影响压测</strong><br>测试数据太少无法模拟真实场景</td>
+  <td><span class="risk-low">低</span></td>
+  <td><span class="risk-low">低</span></td>
+  <td>编写数据生成脚本（10 万用户 + 1 万商品 + 历史订单）；使用 JMeter CSV 数据驱动</td>
+  <td>开发</td>
+</tr>
+<tr>
+  <td>R09</td>
+  <td><strong>答辩准备不充分</strong><br>系统演示出现 Bug 或无法回答评委问题</td>
+  <td><span class="risk-mid">中</span></td>
+  <td><span class="risk-high">高</span></td>
+  <td>提前录制演示视频作为备份；准备 FAQ 文档；至少进行 3 次模拟答辩</td>
+  <td>本人</td>
+</tr>
+<tr>
+  <td>R10</td>
+  <td><strong>开发环境兼容性问题</strong><br>JDK 17 / Spring Boot 3 与部分依赖不兼容</td>
+  <td><span class="risk-low">低</span></td>
+  <td><span class="risk-mid">中</span></td>
+  <td>项目初期验证所有依赖的 JDK 17 兼容性；关注 Spring Boot 3 迁移指南；锁定依赖版本</td>
+  <td>开发</td>
+</tr>
+</table>
+
+<div class="note" style="margin-top:20px;">
+  <strong>风险应对原则</strong>：<br>
+  1. <strong>高概率 + 高影响</strong>：提前制定预案，分配额外时间缓冲<br>
+  2. <strong>高概率 + 低影响</strong>：接受风险，准备快速响应方案<br>
+  3. <strong>低概率 + 高影响</strong>：购买保险（备份方案），定期检查触发条件<br>
+  4. <strong>低概率 + 低影响</strong>：记录在案，出现时快速处理
+</div>
+
+<!-- Footer -->
+<div style="margin-top:60px;padding-top:24px;border-top:1px solid var(--border);text-align:center;color:#94a3b8;font-size:13px;">
+  <p>高并发秒杀电商平台 · 测试、部署与项目计划文档 · 毕业设计</p>
+  <p>技术栈：Spring Boot 3 + Vue 3 + Redis + RabbitMQ + MySQL 8.0 + Nginx + Docker</p>
+  <p>文档版本 v1.0 · 2026 年</p>
+</div>
+
+</div></div><!-- /.container /.main -->
+
+<script>
+// WBS 树形表格展开/折叠
+document.querySelectorAll('.wbs-table .parent-row').forEach(row => {
+  row.addEventListener('click', () => {
+    const group = row.dataset.group;
+    const isOpen = row.classList.toggle('open');
+    document.querySelectorAll(`.wbs-table .child-row[data-group="${group}"]`).forEach(child => {
+      child.classList.toggle('show', isOpen);
+    });
+  });
+});
+
+// Sidebar active state
+const links = document.querySelectorAll('.sidebar a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      links.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.sidebar a[href="#${id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+document.querySelectorAll('[id^="s"], [id^="ch"]').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>安全设计文档 — 高并发秒杀电商平台</title>
+<style>
+  :root {
+    --bg: #f7f8fc;
+    --bg2: #fff;
+    --ink: #1a1a2e;
+    --accent: #2563eb;
+    --accent2: #059669;
+    --sidebar-bg: #1e1e2e;
+    --sidebar-w: 280px;
+    --danger: #dc2626;
+    --warn: #ea580c;
+    --safe: #16a34a;
+    --code-bg: #1e1e2e;
+    --border: #e2e8f0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif; background: var(--bg); color: var(--ink); line-height: 1.7; }
+
+  /* ===== Sidebar ===== */
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; width: var(--sidebar-w);
+    background: var(--sidebar-bg); color: #cdd6f4; overflow-y: auto;
+    padding: 32px 0; z-index: 100;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: #45475a; border-radius: 2px; }
+  .sidebar-logo { padding: 0 24px 28px; border-bottom: 1px solid #313244; margin-bottom: 16px; }
+  .sidebar-logo h2 { font-size: 15px; color: #cdd6f4; font-weight: 600; letter-spacing: 0.5px; }
+  .sidebar-logo span { font-size: 11px; color: #6c7086; display: block; margin-top: 4px; }
+  .nav-group { padding: 8px 0; }
+  .nav-group-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #6c7086; padding: 8px 24px 4px; }
+  .nav-link {
+    display: block; padding: 7px 24px 7px 32px; font-size: 13px; color: #a6adc8;
+    text-decoration: none; transition: all 0.15s; border-left: 3px solid transparent;
+  }
+  .nav-link:hover, .nav-link.active { color: #fff; background: rgba(137,180,250,0.08); border-left-color: var(--accent); }
+  .nav-link .badge { font-size: 9px; padding: 1px 6px; border-radius: 8px; margin-left: 6px; vertical-align: middle; }
+  .badge-core { background: #f38ba8; color: #1e1e2e; }
+
+  /* ===== Main ===== */
+  .main { margin-left: var(--sidebar-w); padding: 48px 48px 80px; max-width: calc(var(--sidebar-w) + 960px + 96px); }
+  .doc-header { margin-bottom: 48px; padding-bottom: 32px; border-bottom: 2px solid var(--border); }
+  .doc-header h1 { font-size: 28px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+  .doc-header .meta { font-size: 13px; color: #64748b; }
+  .doc-header .meta span { margin-right: 24px; }
+
+  section { margin-bottom: 56px; }
+  h2.chapter { font-size: 22px; font-weight: 700; color: var(--ink); margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 10px; }
+  h2.chapter .num { background: var(--accent); color: #fff; font-size: 13px; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  h3 { font-size: 17px; font-weight: 600; color: var(--ink); margin: 28px 0 14px; padding-left: 12px; border-left: 3px solid var(--accent); }
+  h4 { font-size: 14px; font-weight: 600; color: #334155; margin: 18px 0 8px; }
+  p, li { font-size: 14px; color: #334155; }
+  p { margin-bottom: 12px; }
+  ul, ol { padding-left: 22px; margin-bottom: 14px; }
+  li { margin-bottom: 6px; }
+
+  /* ===== Cards & Boxes ===== */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin-bottom: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .card-title { font-size: 14px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .info-box { background: #eff6ff; border-left: 4px solid var(--accent); padding: 14px 18px; border-radius: 0 8px 8px 0; margin-bottom: 16px; }
+  .info-box p { color: #1e40af; margin: 0; font-size: 13px; }
+  .warn-box { background: #fef3c7; border-left: 4px solid #d97706; padding: 14px 18px; border-radius: 0 8px 8px 0; margin-bottom: 16px; }
+  .warn-box p { color: #92400e; margin: 0; font-size: 13px; }
+
+  /* ===== Code ===== */
+  pre { background: var(--code-bg); color: #cdd6f4; padding: 18px 20px; border-radius: 8px; overflow-x: auto; font-size: 12.5px; line-height: 1.65; margin-bottom: 16px; font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace; }
+  code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; }
+  .kw { color: #cba6f7; }
+  .str { color: #a6e3a1; }
+  .cm { color: #6c7086; font-style: italic; }
+  .fn { color: #89b4fa; }
+  .num { color: #fab387; }
+  .ann { color: #f9e2af; }
+  .tag { color: #f38ba8; }
+  .attr { color: #89dceb; }
+  .var { color: #f5c2e7; }
+  .op { color: #94e2d5; }
+  .type { color: #89dceb; }
+  code.inline { background: #f1f5f9; color: #be185d; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+
+  /* ===== Tables ===== */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 18px; font-size: 13px; background: var(--bg2); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  th { background: #f1f5f9; font-weight: 600; text-align: left; padding: 10px 14px; color: #475569; border-bottom: 2px solid var(--border); }
+  td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+
+  /* ===== Threat Level Badges ===== */
+  .level { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .level-high { background: #fee2e2; color: #dc2626; }
+  .level-mid { background: #ffedd5; color: #ea580c; }
+  .level-low { background: #dcfce7; color: #16a34a; }
+
+  /* ===== Architecture Diagram ===== */
+  .arch-diagram { display: flex; flex-direction: column; gap: 0; margin: 20px 0; }
+  .arch-layer {
+    display: flex; align-items: stretch; min-height: 80px; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .arch-label {
+    width: 120px; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: #fff; flex-shrink: 0; text-align: center; padding: 12px 8px;
+  }
+  .arch-content { flex: 1; display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 18px; align-items: center; }
+  .arch-item {
+    background: rgba(255,255,255,0.85); border-radius: 6px; padding: 6px 12px;
+    font-size: 12px; font-weight: 500; color: #334155; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .arch-arrow { text-align: center; padding: 6px 0; color: #94a3b8; font-size: 18px; }
+  .l-net .arch-label { background: #2563eb; }
+  .l-net .arch-content { background: #eff6ff; }
+  .l-app .arch-label { background: #7c3aed; }
+  .l-app .arch-content { background: #f5f3ff; }
+  .l-data .arch-label { background: #0891b2; }
+  .l-data .arch-content { background: #ecfeff; }
+  .l-biz .arch-label { background: #059669; }
+  .l-biz .arch-content { background: #ecfdf5; }
+
+  /* ===== 5-Layer Defense Cards ===== */
+  .defense-layers { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+  .defense-card {
+    display: flex; align-items: flex-start; gap: 16px; padding: 18px 20px;
+    border-radius: 10px; border: 1px solid var(--border); background: var(--bg2);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04); position: relative; overflow: hidden;
+  }
+  .defense-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+  }
+  .defense-card.d1::before { background: #93c5fd; }
+  .defense-card.d2::before { background: #60a5fa; }
+  .defense-card.d3::before { background: #3b82f6; }
+  .defense-card.d4::before { background: #2563eb; }
+  .defense-card.d5::before { background: #1d4ed8; }
+  .defense-num {
+    width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px; color: #fff; flex-shrink: 0;
+  }
+  .d1 .defense-num { background: #93c5fd; color: #1e3a5f; }
+  .d2 .defense-num { background: #60a5fa; }
+  .d3 .defense-num { background: #3b82f6; }
+  .d4 .defense-num { background: #2563eb; }
+  .d5 .defense-num { background: #1d4ed8; }
+  .defense-body { flex: 1; }
+  .defense-body h4 { margin: 0 0 6px; font-size: 14px; }
+  .defense-body p { margin: 0; font-size: 13px; color: #475569; }
+
+  /* ===== Checklist ===== */
+  .checklist { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--bg2); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .checklist th { background: #f1f5f9; font-weight: 600; padding: 10px 12px; text-align: left; color: #475569; border-bottom: 2px solid var(--border); }
+  .checklist td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  .checklist tr:hover td { background: #f8fafc; }
+  .checklist input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent2); }
+  .checklist .checked-row td { background: #f0fdf4; text-decoration: line-through; color: #94a3b8; }
+
+  /* ===== Token Diagram ===== */
+  .token-flow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+  .token-box {
+    padding: 10px 18px; border-radius: 8px; font-size: 12px; font-weight: 600; text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .token-arrow { color: #94a3b8; font-size: 20px; }
+
+  /* ===== Grid ===== */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* ===== Print ===== */
+  @media print {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 24px; }
+    pre { white-space: pre-wrap; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Sidebar ===== -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <h2>&#128274; 安全设计文档</h2>
+    <span>高并发秒杀电商平台 v1.0</span>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">文档导航</div>
+    <a class="nav-link active" href="#ch1">一、安全架构总览</a>
+    <a class="nav-link" href="#ch2">二、身份认证与授权安全</a>
+    <a class="nav-link" href="#ch3">三、秒杀业务安全 <span class="badge badge-core">核心</span></a>
+    <a class="nav-link" href="#ch4">四、接口安全</a>
+    <a class="nav-link" href="#ch5">五、系统防护与监控</a>
+    <a class="nav-link" href="#ch6">六、安全自检清单</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">技术栈</div>
+    <a class="nav-link" href="#">Spring Boot 3</a>
+    <a class="nav-link" href="#">Spring Security + JWT</a>
+    <a class="nav-link" href="#">Redis + Lua</a>
+    <a class="nav-link" href="#">RabbitMQ</a>
+    <a class="nav-link" href="#">MySQL 8.0</a>
+    <a class="nav-link" href="#">Vue 3</a>
+  </div>
+</nav>
+
+<!-- ===== Main Content ===== -->
+<div class="main">
+
+<div class="doc-header">
+  <h1>安全设计文档</h1>
+  <div class="meta">
+    <span><strong>项目：</strong>基于 Spring Boot 的高并发秒杀电商平台</span>
+    <span><strong>版本：</strong>v1.0</span>
+    <span><strong>日期：</strong>2025-01</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- CHAPTER 1 -->
+<!-- ============================================================ -->
+<section id="ch1">
+<h2 class="chapter"><span class="num">1</span> 安全架构总览</h2>
+
+<h3>1.1 安全设计目标 — CIA 三要素</h3>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">&#128274; 机密性 (Confidentiality)</div>
+    <p>确保用户密码、支付信息、手机号等敏感数据不被未授权访问。本项目通过 JWT 认证、HTTPS 传输加密、BCrypt 密码哈希、API 返回脱敏等手段实现。</p>
+  </div>
+  <div class="card">
+    <div class="card-title">&#9989; 完整性 (Integrity)</div>
+    <p>确保订单数据、库存数据在传输和存储过程中不被篡改。通过请求签名（HMAC-SHA256）、数据库乐观锁、Redis Lua 原子操作、接口幂等性设计保障。</p>
+  </div>
+  <div class="card" style="grid-column: span 2;">
+    <div class="card-title">&#9889; 可用性 (Availability)</div>
+    <p>确保在高并发秒杀场景下系统稳定可用。通过 Nginx 限流、Redis + Lua 令牌桶限流、Sentinel 熔断降级、RabbitMQ 异步削峰等手段，保证系统在万级 QPS 下仍能正常服务。</p>
+  </div>
+</div>
+
+<h3>1.2 威胁模型分析</h3>
+<table>
+  <thead>
+    <tr><th style="width:40px">#</th><th>威胁类别</th><th>攻击向量</th><th>影响级别</th><th>防御措施</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td><td><strong>身份伪造</strong></td>
+      <td>伪造/窃取 JWT Token、暴力破解密码、撞库攻击</td>
+      <td><span class="level level-high">高</span></td>
+      <td>双 Token + 黑名单 + BCrypt + 登录锁定</td>
+    </tr>
+    <tr>
+      <td>2</td><td><strong>接口滥用</strong></td>
+      <td>脚本高频调用 API、重放攻击、参数篡改</td>
+      <td><span class="level level-high">高</span></td>
+      <td>令牌桶限流 + 请求签名 + Nonce 去重</td>
+    </tr>
+    <tr>
+      <td>3</td><td><strong>数据篡改</strong></td>
+      <td>SQL 注入、XSS 攻击、前端传值篡改（价格/数量）</td>
+      <td><span class="level level-high">高</span></td>
+      <td>参数化查询 + XSS Filter + 服务端校验</td>
+    </tr>
+    <tr>
+      <td>4</td><td><strong>恶意抢购</strong></td>
+      <td>黄牛脚本批量秒杀、多账号并发抢购、设备农场</td>
+      <td><span class="level level-high">高</span></td>
+      <td>五层防御体系 + 验证码 + 设备指纹</td>
+    </tr>
+    <tr>
+      <td>5</td><td><strong>信息泄露</strong></td>
+      <td>日志明文泄露、API 过度返回、HTTPS 中间人攻击</td>
+      <td><span class="level level-mid">中</span></td>
+      <td>日志脱敏 + 字段级脱敏 + HTTPS 强制</td>
+    </tr>
+    <tr>
+      <td>6</td><td><strong>拒绝服务</strong></td>
+      <td>CC 攻击、恶意大请求体、慢连接攻击</td>
+      <td><span class="level level-mid">中</span></td>
+      <td>Nginx 限流 + Sentinel 熔断 + 请求体大小限制</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>1.3 安全分层架构 — 防御纵深</h3>
+<p>系统采用四层纵深防御架构，从外到内逐层拦截威胁，任何单一层被突破时后续层仍能继续提供保护：</p>
+
+<div class="arch-diagram">
+  <div class="arch-layer l-net">
+    <div class="arch-label">网络层<br><small>Network</small></div>
+    <div class="arch-content">
+      <div class="arch-item">Nginx SSL 终止 (HTTPS)</div>
+      <div class="arch-item">Nginx limit_req 全局限流</div>
+      <div class="arch-item">IP 黑名单 / 白名单</div>
+      <div class="arch-item">请求体大小限制 (client_max_body_size)</div>
+      <div class="arch-item">DDoS 防护 (云厂商)</div>
+    </div>
+  </div>
+  <div class="arch-arrow">&#9660;</div>
+  <div class="arch-layer l-app">
+    <div class="arch-label">应用层<br><small>Application</small></div>
+    <div class="arch-content">
+      <div class="arch-item">Spring Security + JWT 认证</div>
+      <div class="arch-item">CORS / CSRF 策略</div>
+      <div class="arch-item">全局 XSS Filter</div>
+      <div class="arch-item">参数校验 (Spring Validation)</div>
+      <div class="arch-item">接口级令牌桶限流</div>
+      <div class="arch-item">请求签名验证 (HMAC)</div>
+      <div class="arch-item">Sentinel 熔断降级</div>
+    </div>
+  </div>
+  <div class="arch-arrow">&#9660;</div>
+  <div class="arch-layer l-data">
+    <div class="arch-label">数据层<br><small>Data</small></div>
+    <div class="arch-content">
+      <div class="arch-item">Redis Lua 原子操作</div>
+      <div class="arch-item">Token 黑名单 (Redis)</div>
+      <div class="arch-item">数据库乐观锁</div>
+      <div class="arch-item">唯一约束防重复</div>
+      <div class="arch-item">BCrypt 密码哈希</div>
+      <div class="arch-item">MyBatis 参数化查询</div>
+    </div>
+  </div>
+  <div class="arch-arrow">&#9660;</div>
+  <div class="arch-layer l-biz">
+    <div class="arch-label">业务层<br><small>Business</small></div>
+    <div class="arch-content">
+      <div class="arch-item">滑块验证码拦截</div>
+      <div class="arch-item">设备指纹识别</div>
+      <div class="arch-item">库存对账定时任务</div>
+      <div class="arch-item">订单号防枚举 (雪花算法)</div>
+      <div class="arch-item">支付金额服务端校验</div>
+      <div class="arch-item">幂等性保障</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- CHAPTER 2 -->
+<!-- ============================================================ -->
+<section id="ch2">
+<h2 class="chapter"><span class="num">2</span> 身份认证与授权安全</h2>
+
+<h3>2.1 JWT 安全设计</h3>
+
+<h4>2.1.1 Token 结构</h4>
+<p>JWT Token 由 Header、Payload（Claims）、Signature 三部分组成：</p>
+<pre><span class="cm">// ===== Header =====</span>
+{
+  <span class="str">"alg"</span>: <span class="str">"HS256"</span>,
+  <span class="str">"typ"</span>: <span class="str">"JWT"</span>
+}
+
+<span class="cm">// ===== Payload (Claims) =====</span>
+{
+  <span class="str">"userId"</span>: <span class="num">100001</span>,            <span class="cm">// 用户ID</span>
+  <span class="str">"username"</span>: <span class="str">"buyer_zhang"</span>,    <span class="cm">// 用户名</span>
+  <span class="str">"role"</span>: <span class="str">"BUYER"</span>,              <span class="cm">// 角色: BUYER / SELLER / ADMIN</span>
+  <span class="str">"iat"</span>: <span class="num">1706774400</span>,            <span class="cm">// 签发时间 (Issued At)</span>
+  <span class="str">"exp"</span>: <span class="num">1706781600</span>,            <span class="cm">// 过期时间 (Expiration = iat + 2h)</span>
+  <span class="str">"tokenType"</span>: <span class="str">"access"</span>         <span class="cm">// token 类型标识</span>
+}</pre>
+
+<h4>2.1.2 双 Token 方案</h4>
+<div class="token-flow">
+  <div class="token-box" style="background:#eff6ff; color:#1d4ed8; border:2px solid #93c5fd;">
+    <div>AccessToken</div>
+    <div style="font-size:11px; font-weight:400; margin-top:4px;">有效期 2 小时<br>每次请求携带</div>
+  </div>
+  <div class="token-arrow">&#10132;</div>
+  <div class="token-box" style="background:#fef3c7; color:#92400e; border:2px solid #fbbf24;">
+    <div>过期前 5 分钟</div>
+    <div style="font-size:11px; font-weight:400; margin-top:4px;">前端检测 exp 字段<br>触发续期流程</div>
+  </div>
+  <div class="token-arrow">&#10132;</div>
+  <div class="token-box" style="background:#ecfdf5; color:#065f46; border:2px solid #6ee7b7;">
+    <div>RefreshToken</div>
+    <div style="font-size:11px; font-weight:400; margin-top:4px;">有效期 7 天<br>仅用于换取新 AccessToken</div>
+  </div>
+  <div class="token-arrow">&#10132;</div>
+  <div class="token-box" style="background:#eff6ff; color:#1d4ed8; border:2px solid #93c5fd;">
+    <div>新 AccessToken</div>
+    <div style="font-size:11px; font-weight:400; margin-top:4px;">静默续期<br>用户无感知</div>
+  </div>
+</div>
+
+<div class="info-box">
+  <p><strong>安全要点：</strong>RefreshToken 仅存储于 HttpOnly Cookie（防 XSS 窃取），AccessToken 存储于内存变量（不用 localStorage）。RefreshToken 使用后旧 Token 立即失效（一次性轮换）。</p>
+</div>
+
+<h4>2.1.3 签名算法</h4>
+<pre><span class="cm"># application.yml</span>
+<span class="attr">jwt</span>:
+  <span class="attr">secret</span>: <span class="str">${JWT_SECRET}</span>           <span class="cm"># 256位随机密钥，存储于环境变量，绝不硬编码</span>
+  <span class="attr">access-token-expiration</span>: <span class="num">7200</span>    <span class="cm"># 2小时 (秒)</span>
+  <span class="attr">refresh-token-expiration</span>: <span class="num">604800</span> <span class="cm"># 7天 (秒)</span>
+  <span class="attr">algorithm</span>: <span class="str">HS256</span></pre>
+
+<div class="warn-box">
+  <p><strong>为什么密钥不能硬编码？</strong>密钥硬编码在代码中会随代码仓库泄露。攻击者获取密钥后可伪造任意用户的 JWT Token，直接绕过认证。应通过环境变量或配置中心（如 Nacos）注入。</p>
+</div>
+
+<h4>2.1.4 Token 黑名单</h4>
+<pre><span class="cm">// 用户登出时，将 Token 加入 Redis 黑名单</span>
+<span class="kw">public void</span> <span class="fn">logout</span>(<span class="type">String</span> token) {
+    <span class="type">Claims</span> claims = jwtUtil.<span class="fn">parseToken</span>(token);
+    <span class="kw">long</span> remainingMs = claims.<span class="fn">getExpiration</span>().<span class="fn">getTime</span>() - <span class="type">System</span>.<span class="fn">currentTimeMillis</span>();
+
+    <span class="kw">if</span> (remainingMs > <span class="num">0</span>) {
+        <span class="cm">// TTL = Token 剩余有效期，过期后自动清理</span>
+        <span class="kw">String</span> jti = claims.<span class="fn">getId</span>();
+        redisTemplate.<span class="fn">opsForValue</span>().<span class="fn">set</span>(
+            <span class="str">"token:blacklist:"</span> + jti,
+            <span class="str">"1"</span>,
+            remainingMs,
+            <span class="type">TimeUnit</span>.MILLISECONDS
+        );
+    }
+}
+
+<span class="cm">// 请求拦截时校验黑名单</span>
+<span class="kw">public boolean</span> <span class="fn">isTokenBlacklisted</span>(<span class="type">String</span> token) {
+    <span class="type">Claims</span> claims = jwtUtil.<span class="fn">parseToken</span>(token);
+    <span class="kw">return</span> Boolean.<span class="fn">TRUE</span>.<span class="fn">equals</span>(
+        redisTemplate.<span class="fn">hasKey</span>(<span class="str">"token:blacklist:"</span> + claims.<span class="fn">getId</span>())
+    );
+}</pre>
+
+<h3>2.2 Spring Security 配置</h3>
+
+<h4>2.2.1 密码加密 — BCrypt</h4>
+<pre><span class="ann">@Bean</span>
+<span class="kw">public</span> <span class="type">PasswordEncoder</span> <span class="fn">passwordEncoder</span>() {
+    <span class="cm">// strength=10，每次加密约 100ms，有效防止暴力破解</span>
+    <span class="kw">return new</span> <span class="type">BCryptPasswordEncoder</span>(<span class="num">10</span>);
+}
+
+<span class="cm">// 注册时加密</span>
+<span class="type">String</span> encodedPassword = passwordEncoder.<span class="fn">encode</span>(rawPassword);
+
+<span class="cm">// 登录时校验</span>
+<span class="kw">boolean</span> matches = passwordEncoder.<span class="fn">matches</span>(rawPassword, storedHash);</pre>
+
+<div class="info-box">
+  <p><strong>为什么不用 MD5 / SHA256？</strong>MD5 和 SHA256 是快速哈希算法，专为数据校验设计，计算速度极快（每秒可计算数十亿次），极易被彩虹表和 GPU 暴力破解。BCrypt 是慢速哈希算法，内置随机盐（Salt），且 strength 参数可调（每增加 1 计算时间翻倍），使得暴力破解成本极高。</p>
+</div>
+
+<h4>2.2.2 角色权限模型 — RBAC 三级</h4>
+<pre><span class="cm">// 角色定义</span>
+<span class="kw">public enum</span> <span class="type">Role</span> {
+    <span class="var">BUYER</span>,    <span class="cm">// 买家：浏览商品、参与秒杀、下单支付</span>
+    <span class="var">SELLER</span>,   <span class="cm">// 卖家：发布商品、管理库存、查看订单</span>
+    <span class="var">ADMIN</span>     <span class="cm">// 管理员：用户管理、商品审核、系统配置</span>
+}
+
+<span class="cm">// 接口权限控制</span>
+<span class="ann">@RestController</span>
+<span class="ann">@RequestMapping</span>(<span class="str">"/api/admin"</span>)
+<span class="kw">public class</span> <span class="type">AdminController</span> {
+
+    <span class="ann">@PreAuthorize</span>(<span class="str">"hasRole('ADMIN')"</span>)
+    <span class="ann">@DeleteMapping</span>(<span class="str">"/users/{id}"</span>)
+    <span class="kw">public</span> <span class="type">Result</span> <span class="fn">deleteUser</span>(<span class="ann">@PathVariable</span> <span class="type">Long</span> id) { ... }
+}
+
+<span class="ann">@PreAuthorize</span>(<span class="str">"hasAnyRole('BUYER', 'SELLER', 'ADMIN')"</span>)
+<span class="ann">@GetMapping</span>(<span class="str">"/api/seckill/{id}"</span>)
+<span class="kw">public</span> <span class="type">Result</span> <span class="fn">getSeckillDetail</span>(<span class="ann">@PathVariable</span> <span class="type">Long</span> id) { ... }</pre>
+
+<h4>2.2.3 CORS 配置</h4>
+<pre><span class="ann">@Bean</span>
+<span class="kw">public</span> <span class="type">CorsConfigurationSource</span> <span class="fn">corsConfigurationSource</span>() {
+    <span class="type">CorsConfiguration</span> config = <span class="kw">new</span> <span class="type">CorsConfiguration</span>();
+    config.<span class="fn">setAllowedOrigins</span>(<span class="type">List</span>.<span class="fn">of</span>(
+        <span class="str">"https://seckill.example.com"</span>,   <span class="cm">// 仅允许前端正式域名</span>
+        <span class="str">"https://admin.example.com"</span>
+    ));
+    config.<span class="fn">setAllowedMethods</span>(<span class="type">List</span>.<span class="fn">of</span>(<span class="str">"GET"</span>, <span class="str">"POST"</span>, <span class="str">"PUT"</span>, <span class="str">"DELETE"</span>));
+    config.<span class="fn">setAllowedHeaders</span>(<span class="type">List</span>.<span class="fn">of</span>(<span class="str">"Authorization"</span>, <span class="str">"Content-Type"</span>, <span class="str">"X-Request-Sign"</span>));
+    config.<span class="fn">setAllowCredentials</span>(<span class="kw">true</span>);
+    config.<span class="fn">setMaxAge</span>(<span class="num">3600L</span>);
+
+    <span class="type">UrlBasedCorsConfigurationSource</span> source = <span class="kw">new</span> <span class="type">UrlBasedCorsConfigurationSource</span>();
+    source.<span class="fn">registerCorsConfiguration</span>(<span class="str">"/api/**"</span>, config);
+    <span class="kw">return</span> source;
+}</pre>
+
+<h4>2.2.4 CSRF 策略</h4>
+<pre><span class="ann">@Bean</span>
+<span class="kw">public</span> <span class="type">SecurityFilterChain</span> <span class="fn">filterChain</span>(<span class="type">HttpSecurity</span> http) <span class="kw">throws</span> <span class="type">Exception</span> {
+    http
+        .<span class="fn">csrf</span>(csrf -> csrf.<span class="fn">disable</span>())  <span class="cm">// 禁用 CSRF</span>
+        .<span class="fn">sessionManagement</span>(s -> s.<span class="fn">sessionCreationPolicy</span>(
+            <span class="type">SessionCreationPolicy</span>.STATELESS  <span class="cm">// 无状态会话</span>
+        ))
+        .<span class="fn">authorizeHttpRequests</span>(auth -> auth
+            .<span class="fn">requestMatchers</span>(<span class="str">"/api/auth/**"</span>).<span class="fn">permitAll</span>()
+            .<span class="fn">anyRequest</span>().<span class="fn">authenticated</span>()
+        );
+    <span class="kw">return</span> http.<span class="fn">build</span>();
+}</pre>
+
+<div class="info-box">
+  <p><strong>为什么禁用 CSRF？</strong>CSRF 攻击依赖浏览器自动携带 Cookie 的机制。本系统使用 JWT（存于 Authorization Header），不依赖 Cookie 进行身份认证，浏览器不会自动附加 JWT，因此不存在 CSRF 风险。禁用 CSRF 可减少不必要的 Token 校验开销。</p>
+</div>
+
+<h3>2.3 登录安全</h3>
+
+<h4>2.3.1 连续登录失败锁定</h4>
+<pre><span class="cm">// Redis 计数器实现：5 次失败后锁定 30 分钟</span>
+<span class="kw">public</span> <span class="type">LoginResult</span> <span class="fn">login</span>(<span class="type">LoginRequest</span> request) {
+    <span class="type">String</span> lockKey = <span class="str">"login:lock:"</span> + request.<span class="fn">getUsername</span>();
+    <span class="type">String</span> failKey = <span class="str">"login:fail:"</span> + request.<span class="fn">getUsername</span>();
+
+    <span class="cm">// 1. 检查是否已锁定</span>
+    <span class="kw">if</span> (Boolean.<span class="fn">TRUE</span>.<span class="fn">equals</span>(redisTemplate.<span class="fn">hasKey</span>(lockKey))) {
+        <span class="kw">return</span> <span class="type">LoginResult</span>.<span class="fn">locked</span>(<span class="str">"账号已锁定，请30分钟后重试"</span>);
+    }
+
+    <span class="cm">// 2. 验证密码</span>
+    <span class="kw">if</span> (!passwordEncoder.<span class="fn">matches</span>(request.<span class="fn">getPassword</span>(), user.<span class="fn">getPassword</span>())) {
+        <span class="type">Long</span> failCount = redisTemplate.<span class="fn">opsForValue</span>().<span class="fn">increment</span>(failKey);
+        redisTemplate.<span class="fn">expire</span>(failKey, <span class="num">30</span>, <span class="type">TimeUnit</span>.MINUTES);
+
+        <span class="kw">if</span> (failCount >= <span class="num">5</span>) {
+            redisTemplate.<span class="fn">opsForValue</span>().<span class="fn">set</span>(lockKey, <span class="str">"1"</span>, <span class="num">30</span>, <span class="type">TimeUnit</span>.MINUTES);
+        }
+        <span class="kw">return</span> <span class="type">LoginResult</span>.<span class="fn">fail</span>(<span class="str">"用户名或密码错误"</span>);  <span class="cm">// 统一提示，防枚举</span>
+    }
+
+    <span class="cm">// 3. 登录成功，清除失败计数</span>
+    redisTemplate.<span class="fn">delete</span>(failKey);
+    <span class="kw">return</span> <span class="type">LoginResult</span>.<span class="fn">success</span>(jwtService.<span class="fn">generateTokens</span>(user));
+}</pre>
+
+<h4>2.3.2 图形验证码触发</h4>
+<p>当同一用户连续登录失败 <strong>3 次</strong>后，登录接口要求额外提交滑块验证码（集成 hCaptcha），验证通过后才进行密码校验。</p>
+
+<h4>2.3.3 登录日志</h4>
+<pre><span class="cm">-- 登录日志表</span>
+<span class="kw">CREATE TABLE</span> t_login_log (
+    id          <span class="type">BIGINT</span>       <span class="kw">PRIMARY KEY AUTO_INCREMENT</span>,
+    username    <span class="type">VARCHAR</span>(<span class="num">64</span>)  <span class="kw">NOT NULL</span>,
+    login_ip    <span class="type">VARCHAR</span>(<span class="num">45</span>)  <span class="kw">NOT NULL</span>,        <span class="cm">-- 支持 IPv6</span>
+    user_agent  <span class="type">VARCHAR</span>(<span class="num">512</span>),
+    login_time  <span class="type">DATETIME</span>     <span class="kw">NOT NULL</span>,
+    result      <span class="type">TINYINT</span>      <span class="kw">NOT NULL</span>,        <span class="cm">-- 1=成功 0=失败</span>
+    fail_reason <span class="type">VARCHAR</span>(<span class="num">128</span>),
+    <span class="kw">INDEX</span> idx_username (username),
+    <span class="kw">INDEX</span> idx_login_time (login_time)
+) <span class="kw">ENGINE</span>=InnoDB <span class="kw">DEFAULT CHARSET</span>=utf8mb4;</pre>
+
+<h4>2.3.4 防枚举攻击</h4>
+<div class="warn-box">
+  <p><strong>规则：</strong>所有登录失败场景统一返回 <code class="inline">"用户名或密码错误"</code>，不区分"用户不存在"和"密码错误"。避免攻击者通过不同的错误提示枚举有效用户名。</p>
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- CHAPTER 3 -->
+<!-- ============================================================ -->
+<section id="ch3">
+<h2 class="chapter"><span class="num">3</span> 秒杀业务安全 <span class="badge badge-core" style="font-size:11px;">核心重点</span></h2>
+
+<h3>3.1 防黄牛 / 防刷策略 — 五层防御体系</h3>
+<p>秒杀场景面临的核心安全威胁是黄牛利用自动化脚本批量抢购。本系统设计了从前端到后端的五层递进式防御体系，每层独立生效、层层过滤：</p>
+
+<div class="defense-layers">
+  <div class="defense-card d1">
+    <div class="defense-num">1</div>
+    <div class="defense-body">
+      <h4>第一层 · 前端限流（节流阀）</h4>
+      <p>秒杀按钮点击后 <strong>1 秒内</strong>禁止重复提交（前端 throttle）。按钮置灰 + Loading 状态，防止用户疯狂点击。此为最轻量的第一道防线，仅防君子不防小人。</p>
+    </div>
+  </div>
+  <div class="defense-card d2">
+    <div class="defense-num">2</div>
+    <div class="defense-body">
+      <h4>第二层 · 接口限流（令牌桶）</h4>
+      <p>基于 <strong>Redis + Lua 令牌桶算法</strong>，每用户每秒仅允许 <strong>1 次</strong>秒杀请求。超出部分直接返回"请求过于频繁"。令牌桶允许小量突发但严格控制速率。</p>
+    </div>
+  </div>
+  <div class="defense-card d3">
+    <div class="defense-num">3</div>
+    <div class="defense-body">
+      <h4>第三层 · IP 限流（滑动窗口）</h4>
+      <p>单 IP 每分钟最多 <strong>30 次</strong>秒杀请求（Redis 滑动窗口算法）。有效防御单 IP 多账号并发刷单。超限后临时封禁该 IP 5 分钟。</p>
+    </div>
+  </div>
+  <div class="defense-card d4">
+    <div class="defense-num">4</div>
+    <div class="defense-body">
+      <h4>第四层 · 验证码拦截</h4>
+      <p>秒杀前需完成<strong>滑块验证码</strong>（集成 hCaptcha / Geetest）。验证码在秒杀活动开始前弹出，有效阻挡自动化脚本。验证码服务端校验 token 有效性及完成时间。</p>
+    </div>
+  </div>
+  <div class="defense-card d5">
+    <div class="defense-num">5</div>
+    <div class="defense-body">
+      <h4>第五层 · 设备指纹</h4>
+      <p>采集浏览器指纹（Canvas 指纹 + WebGL + 字体列表 + User-Agent + 屏幕分辨率），生成设备唯一标识。异常设备（同一指纹关联多个账号、请求频率异常）自动加入<strong>设备黑名单</strong>，后续请求直接拒绝。</p>
+    </div>
+  </div>
+</div>
+
+<h4>令牌桶限流 — Redis + Lua 实现</h4>
+<pre><span class="cm">-- rate_limiter.lua: 令牌桶限流脚本</span>
+<span class="cm">-- KEYS[1] = 限流 key (如 rate:seckill:{userId})</span>
+<span class="cm">-- ARGV[1] = 桶容量, ARGV[2] = 每秒填充速率, ARGV[3] = 当前时间戳(秒)</span>
+
+<span class="kw">local</span> key = KEYS[<span class="num">1</span>]
+<span class="kw">local</span> capacity = <span class="fn">tonumber</span>(ARGV[<span class="num">1</span>])
+<span class="kw">local</span> rate = <span class="fn">tonumber</span>(ARGV[<span class="num">2</span>])
+<span class="kw">local</span> now = <span class="fn">tonumber</span>(ARGV[<span class="num">3</span>])
+
+<span class="kw">local</span> bucket = redis.<span class="fn">call</span>(<span class="str">'HMGET'</span>, key, <span class="str">'tokens'</span>, <span class="str">'last_time'</span>)
+<span class="kw">local</span> tokens = <span class="fn">tonumber</span>(bucket[<span class="num">1</span>]) <span class="kw">or</span> capacity
+<span class="kw">local</span> last_time = <span class="fn">tonumber</span>(bucket[<span class="num">2</span>]) <span class="kw">or</span> now
+
+<span class="cm">-- 补充令牌</span>
+<span class="kw">local</span> delta = math.<span class="fn">max</span>(<span class="num">0</span>, now - last_time)
+tokens = math.<span class="fn">min</span>(capacity, tokens + delta * rate)
+
+<span class="kw">if</span> tokens >= <span class="num">1</span> <span class="kw">then</span>
+    tokens = tokens - <span class="num">1</span>
+    redis.<span class="fn">call</span>(<span class="str">'HMSET'</span>, key, <span class="str">'tokens'</span>, tokens, <span class="str">'last_time'</span>, now)
+    redis.<span class="fn">call</span>(<span class="str">'EXPIRE'</span>, key, <span class="num">10</span>)
+    <span class="kw">return</span> <span class="num">1</span>  <span class="cm">-- 允许</span>
+<span class="kw">else</span>
+    redis.<span class="fn">call</span>(<span class="str">'HMSET'</span>, key, <span class="str">'tokens'</span>, tokens, <span class="str">'last_time'</span>, now)
+    redis.<span class="fn">call</span>(<span class="str">'EXPIRE'</span>, key, <span class="num">10</span>)
+    <span class="kw">return</span> <span class="num">0</span>  <span class="cm">-- 拒绝</span>
+<span class="kw">end</span></pre>
+
+<h3>3.2 库存安全</h3>
+
+<h4>3.2.1 Redis Lua 原子操作</h4>
+<p>库存预减和资格校验必须在<strong>同一个 Lua 脚本</strong>中完成，确保原子性，避免并发导致的超卖问题：</p>
+<pre><span class="cm">-- seckill_deduct.lua: 原子化库存预减</span>
+<span class="cm">-- KEYS[1] = 库存 key (seckill:stock:{seckillId})</span>
+<span class="cm">-- KEYS[2] = 已购集合 key (seckill:bought:{seckillId})</span>
+<span class="cm">-- ARGV[1] = userId</span>
+
+<span class="cm">-- 1. 检查是否已购买（防重复下单）</span>
+<span class="kw">if</span> redis.<span class="fn">call</span>(<span class="str">'SISMEMBER'</span>, KEYS[<span class="num">2</span>], ARGV[<span class="num">1</span>]) == <span class="num">1</span> <span class="kw">then</span>
+    <span class="kw">return</span> -<span class="num">2</span>  <span class="cm">-- 重复购买</span>
+<span class="kw">end</span>
+
+<span class="cm">-- 2. 检查库存</span>
+<span class="kw">local</span> stock = <span class="fn">tonumber</span>(redis.<span class="fn">call</span>(<span class="str">'GET'</span>, KEYS[<span class="num">1</span>]))
+<span class="kw">if</span> stock == <span class="kw">nil</span> <span class="kw">or</span> stock <= <span class="num">0</span> <span class="kw">then</span>
+    <span class="kw">return</span> -<span class="num">1</span>  <span class="cm">-- 库存不足</span>
+<span class="kw">end</span>
+
+<span class="cm">-- 3. 扣减库存 + 记录已购</span>
+redis.<span class="fn">call</span>(<span class="str">'DECR'</span>, KEYS[<span class="num">1</span>])
+redis.<span class="fn">call</span>(<span class="str">'SADD'</span>, KEYS[<span class="num">2</span>], ARGV[<span class="num">1</span>])
+<span class="kw">return</span> <span class="num">1</span>  <span class="cm">-- 扣减成功</span></pre>
+
+<h4>3.2.2 数据库乐观锁兜底</h4>
+<pre><span class="cm">-- MySQL 乐观锁：WHERE stock > 0 防止超卖</span>
+<span class="kw">UPDATE</span> t_seckill_goods
+<span class="kw">SET</span> stock = stock - <span class="num">1</span>
+<span class="kw">WHERE</span> id = #{seckillId}
+  <span class="kw">AND</span> stock > <span class="num">0</span>;
+
+<span class="cm">-- 检查 affected rows，若为 0 则说明库存已尽</span></pre>
+
+<h4>3.2.3 唯一约束兜底</h4>
+<pre><span class="cm">-- 联合唯一索引：防止并发导致同一用户重复下单</span>
+<span class="kw">ALTER TABLE</span> t_seckill_order
+<span class="kw">ADD UNIQUE INDEX</span> uk_user_seckill (user_id, seckill_id);</pre>
+
+<h4>3.2.4 库存对账</h4>
+<pre><span class="cm">// 定时任务：每 10 分钟比对 Redis 与 MySQL 库存</span>
+<span class="ann">@Scheduled</span>(fixedRate = <span class="num">600000</span>)
+<span class="kw">public void</span> <span class="fn">reconcileStock</span>() {
+    <span class="type">List</span>&lt;<span class="type">SeckillGoods</span>&gt; goods = seckillMapper.<span class="fn">selectAllActive</span>();
+    <span class="kw">for</span> (<span class="type">SeckillGoods</span> g : goods) {
+        <span class="type">Long</span> redisStock = redisTemplate.<span class="fn">opsForValue</span>()
+            .<span class="fn">get</span>(<span class="str">"seckill:stock:"</span> + g.<span class="fn">getId</span>());
+        <span class="kw">if</span> (redisStock != <span class="kw">null</span> && !redisStock.<span class="fn">equals</span>(g.<span class="fn">getStock</span>())) {
+            log.<span class="fn">warn</span>(<span class="str">"库存不一致! seckillId={}, redis={}, mysql={}"</span>,
+                g.<span class="fn">getId</span>(), redisStock, g.<span class="fn">getStock</span>());
+            <span class="cm">// 触发告警通知</span>
+            alertService.<span class="fn">sendAlert</span>(<span class="str">"STOCK_MISMATCH"</span>, g.<span class="fn">getId</span>());
+        }
+    }
+}</pre>
+
+<h3>3.3 订单安全</h3>
+
+<h4>3.3.1 订单号生成 — 雪花算法 + 随机混淆</h4>
+<pre><span class="cm">/**
+ * 改进版雪花算法：在标准 Snowflake 基础上增加随机数混淆，
+ * 防止订单号被枚举推算。
+ * 结构：1位符号 + 41位时间戳 + 10位机器ID + 6位随机数 + 6位序列号
+ */</span>
+<span class="kw">public long</span> <span class="fn">nextOrderId</span>() {
+    <span class="kw">long</span> timestamp = <span class="type">System</span>.<span class="fn">currentTimeMillis</span>() - EPOCH;
+    <span class="kw">long</span> randomBits = ThreadLocalRandom.<span class="fn">current</span>().<span class="fn">nextLong</span>(<span class="num">64</span>); <span class="cm">// 6位随机</span>
+    <span class="kw">long</span> seq = sequence++ & <span class="num">0x3F</span>;  <span class="cm">// 6位序列</span>
+    <span class="kw">return</span> (timestamp << <span class="num">22</span>) | (workerId << <span class="num">12</span>) | (randomBits << <span class="num">6</span>) | seq;
+}</pre>
+
+<h4>3.3.2 支付金额校验</h4>
+<div class="warn-box">
+  <p><strong>核心原则：绝不信任前端传值。</strong>支付金额由服务端根据 orderId 查询数据库获取，前端传递的金额仅作为预校验比对，实际支付金额以服务端数据为准。</p>
+</div>
+
+<h4>3.3.3 幂等性保障</h4>
+<pre><span class="cm">// 支付接口幂等：同一 orderId 只处理一次</span>
+<span class="kw">public</span> <span class="type">PayResult</span> <span class="fn">pay</span>(<span class="type">PayRequest</span> request) {
+    <span class="type">String</span> orderId = request.<span class="fn">getOrderId</span>();
+    <span class="type">String</span> idempotentKey = <span class="str">"pay:idempotent:"</span> + orderId;
+
+    <span class="cm">// Redis SETNX：仅第一个请求成功</span>
+    <span class="type">Boolean</span> acquired = redisTemplate.<span class="fn">opsForValue</span>()
+        .<span class="fn">setIfAbsent</span>(idempotentKey, <span class="str">"1"</span>, <span class="num">30</span>, <span class="type">TimeUnit</span>.MINUTES);
+
+    <span class="kw">if</span> (!Boolean.<span class="fn">TRUE</span>.<span class="fn">equals</span>(acquired)) {
+        <span class="cm">// 已处理过，返回之前的结果</span>
+        <span class="kw">return</span> <span class="type">PayResult</span>.<span class="fn">duplicate</span>(<span class="str">"请勿重复支付"</span>);
+    }
+
+    <span class="cm">// 正常支付逻辑...</span>
+}</pre>
+
+<h4>3.3.4 操作权限校验</h4>
+<pre><span class="cm">// 用户只能操作自己的订单</span>
+<span class="kw">public</span> <span class="type">Order</span> <span class="fn">getUserOrder</span>(<span class="type">String</span> orderId, <span class="type">Long</span> currentUserId) {
+    <span class="type">Order</span> order = orderMapper.<span class="fn">selectById</span>(orderId);
+    <span class="kw">if</span> (order == <span class="kw">null</span> || !order.<span class="fn">getUserId</span>().<span class="fn">equals</span>(currentUserId)) {
+        <span class="kw">throw new</span> <span class="type">AccessDeniedException</span>(<span class="str">"无权操作此订单"</span>);
+    }
+    <span class="kw">return</span> order;
+}</pre>
+</section>
+
+<!-- ============================================================ -->
+<!-- CHAPTER 4 -->
+<!-- ============================================================ -->
+<section id="ch4">
+<h2 class="chapter"><span class="num">4</span> 接口安全</h2>
+
+<h3>4.1 防重放攻击</h3>
+
+<h4>4.1.1 请求签名</h4>
+<pre><span class="cm">/**
+ * 请求签名生成：HMAC-SHA256(timestamp + nonce + body)
+ * 客户端在请求头中携带：
+ *   X-Request-Timestamp: 请求时间戳(秒)
+ *   X-Request-Nonce:     随机字符串(16-32位)
+ *   X-Request-Sign:      签名值
+ */</span>
+<span class="kw">public static</span> <span class="type">String</span> <span class="fn">generateSign</span>(<span class="type">String</span> timestamp, <span class="type">String</span> nonce, <span class="type">String</span> body) {
+    <span class="type">String</span> data = timestamp + nonce + body;
+    <span class="kw">return</span> HmacUtils.<span class="fn">hmacSha256Hex</span>(SECRET_KEY, data);
+}</pre>
+
+<h4>4.1.2 时间窗口校验</h4>
+<pre><span class="cm">// 服务端校验：timestamp 与当前时间差 < 60 秒</span>
+<span class="kw">long</span> serverTime = <span class="type">System</span>.<span class="fn">currentTimeMillis</span>() / <span class="num">1000</span>;
+<span class="kw">long</span> requestTime = <span class="type">Long</span>.<span class="fn">parseLong</span>(timestamp);
+
+<span class="kw">if</span> (<span class="type">Math</span>.<span class="fn">abs</span>(serverTime - requestTime) > <span class="num">60</span>) {
+    <span class="kw">throw new</span> <span class="type">SecurityException</span>(<span class="str">"请求已过期，拒绝处理"</span>);
+}</pre>
+
+<h4>4.1.3 Nonce 去重</h4>
+<pre><span class="cm">// Redis Set 存储已使用的 nonce，TTL 60秒</span>
+<span class="type">String</span> nonceKey = <span class="str">"api:nonce:"</span> + nonce;
+<span class="type">Boolean</span> isNew = redisTemplate.<span class="fn">opsForValue</span>()
+    .<span class="fn">setIfAbsent</span>(nonceKey, <span class="str">"1"</span>, <span class="num">60</span>, <span class="type">TimeUnit</span>.SECONDS);
+
+<span class="kw">if</span> (!Boolean.<span class="fn">TRUE</span>.<span class="fn">equals</span>(isNew)) {
+    <span class="kw">throw new</span> <span class="type">SecurityException</span>(<span class="str">"重复请求（Nonce 已使用）"</span>);
+}</pre>
+
+<h3>4.2 输入校验</h3>
+
+<h4>4.2.1 全局参数校验 — Spring Validation</h4>
+<pre><span class="kw">public class</span> <span class="type">SeckillRequest</span> {
+
+    <span class="ann">@NotNull</span>(message = <span class="str">"秒杀ID不能为空"</span>)
+    <span class="kw">private</span> <span class="type">Long</span> seckillId;
+
+    <span class="ann">@NotNull</span>(message = <span class="str">"商品ID不能为空"</span>)
+    <span class="kw">private</span> <span class="type">Long</span> goodsId;
+
+    <span class="ann">@Min</span>(value = <span class="num">1</span>, message = <span class="str">"数量最小为1"</span>)
+    <span class="ann">@Max</span>(value = <span class="num">1</span>, message = <span class="str">"秒杀限购1件"</span>)
+    <span class="kw">private</span> <span class="type">Integer</span> count;
+}
+
+<span class="cm">// Controller 中使用 @Valid 触发校验</span>
+<span class="ann">@PostMapping</span>(<span class="str">"/seckill"</span>)
+<span class="kw">public</span> <span class="type">Result</span> <span class="fn">seckill</span>(<span class="ann">@Valid</span> <span class="ann">@RequestBody</span> <span class="type">SeckillRequest</span> request) { ... }</pre>
+
+<h4>4.2.2 SQL 注入防护</h4>
+<div class="grid-2">
+  <div class="card" style="border-left: 4px solid #dc2626;">
+    <div class="card-title" style="color:#dc2626;">&#10060; 错误写法 — ${} 拼接</div>
+<pre style="margin:0; font-size:12px;"><span class="cm">-- 存在 SQL 注入风险!</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> t_user
+<span class="kw">WHERE</span> username = <span class="tag">'${username}'</span></pre>
+  </div>
+  <div class="card" style="border-left: 4px solid #16a34a;">
+    <div class="card-title" style="color:#16a34a;">&#9989; 正确写法 — #{} 参数化</div>
+<pre style="margin:0; font-size:12px;"><span class="cm">-- 参数化查询，安全</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> t_user
+<span class="kw">WHERE</span> username = <span class="str">#{username}</span></pre>
+  </div>
+</div>
+<div class="warn-box">
+  <p><strong>规则：</strong>MyBatis-Plus 中始终使用 <code class="inline">#{} 占位符</code>（预编译参数），禁止使用 <code class="inline">${}</code>（字符串拼接）。仅在动态表名、ORDER BY 字段等极少数场景使用 ${}，且必须做白名单校验。</p>
+</div>
+
+<h4>4.2.3 XSS 防护</h4>
+<pre><span class="cm">/**
+ * 全局 XSS Filter — 基于 Jsoup 白名单模式清洗 HTML 输入
+ */</span>
+<span class="ann">@Component</span>
+<span class="kw">public class</span> <span class="type">XssFilter</span> <span class="kw">implements</span> <span class="type">Filter</span> {
+
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">doFilter</span>(<span class="type">ServletRequest</span> req, <span class="type">ServletResponse</span> res, <span class="type">FilterChain</span> chain) {
+        <span class="type">HttpServletRequest</span> request = (<span class="type">HttpServletRequest</span>) req;
+        chain.<span class="fn">doFilter</span>(<span class="kw">new</span> <span class="type">XssHttpServletRequestWrapper</span>(request), res);
+    }
+}
+
+<span class="cm">// 清洗逻辑：Jsoup 白名单模式</span>
+<span class="kw">public static</span> <span class="type">String</span> <span class="fn">clean</span>(<span class="type">String</span> input) {
+    <span class="cm">// 普通字段：移除所有 HTML 标签</span>
+    <span class="kw">return</span> Jsoup.<span class="fn">clean</span>(input, <span class="type">Safelist</span>.<span class="fn">none</span>());
+}
+
+<span class="kw">public static</span> <span class="type">String</span> <span class="fn">cleanRichText</span>(<span class="type">String</span> input) {
+    <span class="cm">// 富文本字段：仅允许安全标签</span>
+    <span class="kw">return</span> Jsoup.<span class="fn">clean</span>(input, <span class="type">Safelist</span>.<span class="fn">relaxed</span>());
+}</pre>
+
+<h4>4.2.4 文件上传安全</h4>
+<pre><span class="cm">// 文件上传安全策略</span>
+<span class="kw">private static final</span> <span class="type">Set</span>&lt;<span class="type">String</span>&gt; ALLOWED_TYPES = <span class="type">Set</span>.<span class="fn">of</span>(
+    <span class="str">"image/jpeg"</span>, <span class="str">"image/png"</span>, <span class="str">"image/gif"</span>
+);
+<span class="kw">private static final long</span> MAX_SIZE = <span class="num">5</span> * <span class="num">1024</span> * <span class="num">1024</span>; <span class="cm">// 5MB</span>
+
+<span class="kw">public</span> <span class="type">String</span> <span class="fn">upload</span>(<span class="type">MultipartFile</span> file) {
+    <span class="cm">// 1. 校验 MIME 类型（白名单）</span>
+    <span class="kw">if</span> (!ALLOWED_TYPES.<span class="fn">contains</span>(file.<span class="fn">getContentType</span>())) {
+        <span class="kw">throw new</span> <span class="type">SecurityException</span>(<span class="str">"不允许的文件类型"</span>);
+    }
+    <span class="cm">// 2. 校验文件大小</span>
+    <span class="kw">if</span> (file.<span class="fn">getSize</span>() > MAX_SIZE) {
+        <span class="kw">throw new</span> <span class="type">SecurityException</span>(<span class="str">"文件大小不能超过5MB"</span>);
+    }
+    <span class="cm">// 3. UUID 重命名（防止路径穿越和文件名冲突）</span>
+    <span class="type">String</span> ext = <span class="type">FilenameUtils</span>.<span class="fn">getExtension</span>(file.<span class="fn">getOriginalFilename</span>());
+    <span class="type">String</span> newName = <span class="type">UUID</span>.<span class="fn">randomUUID</span>().<span class="fn">toString</span>() + <span class="str">"."</span> + ext;
+    <span class="cm">// 4. 存储到指定目录（非 Web 可访问目录）</span>
+    file.<span class="fn">transferTo</span>(<span class="kw">new</span> <span class="type">File</span>(uploadDir, newName));
+    <span class="kw">return</span> newName;
+}</pre>
+
+<h3>4.3 接口幂等性</h3>
+
+<table>
+  <thead>
+    <tr><th>接口类型</th><th>幂等策略</th><th>实现方式</th><th>Key 设计</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>秒杀接口 (POST)</td>
+      <td>requestId 标记</td>
+      <td>Redis SETNX</td>
+      <td><code class="inline">seckill:idempotent:{userId}:{requestId}</code></td>
+    </tr>
+    <tr>
+      <td>支付接口 (POST)</td>
+      <td>orderId 幂等</td>
+      <td>Redis SETNX</td>
+      <td><code class="inline">pay:idempotent:{orderId}</code></td>
+    </tr>
+    <tr>
+      <td>通用写接口 (PUT/DELETE)</td>
+      <td>Token 幂等</td>
+      <td>前端传递 idempotent-token</td>
+      <td><code class="inline">api:idempotent:{token}</code></td>
+    </tr>
+    <tr>
+      <td>查询接口 (GET)</td>
+      <td>天然幂等</td>
+      <td>无需额外处理</td>
+      <td>—</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>4.4 敏感数据处理</h3>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">&#128274; 密码</div>
+    <p>BCrypt 哈希存储，<strong>永不明文</strong>。API 返回中不包含密码字段。日志中不输出密码参数。</p>
+  </div>
+  <div class="card">
+    <div class="card-title">&#128241; 手机号</div>
+    <p>数据库存储明文（业务需要展示），API 返回时<strong>脱敏处理</strong>：<code class="inline">138****1234</code>。</p>
+  </div>
+  <div class="card">
+    <div class="card-title">&#128196; 日志脱敏</div>
+    <p>全局日志脱敏拦截器：密码、Token、手机号在写入日志前自动替换为 <code class="inline">***</code>。</p>
+  </div>
+  <div class="card">
+    <div class="card-title">&#128272; HTTPS</div>
+    <p>生产环境<strong>全站 HTTPS</strong>（Nginx SSL 终止），HTTP 请求 301 重定向到 HTTPS。TLS 1.2+ 协议。</p>
+  </div>
+</div>
+
+<pre><span class="cm">// 手机号脱敏工具</span>
+<span class="kw">public static</span> <span class="type">String</span> <span class="fn">maskPhone</span>(<span class="type">String</span> phone) {
+    <span class="kw">if</span> (phone == <span class="kw">null</span> || phone.<span class="fn">length</span>() != <span class="num">11</span>) <span class="kw">return</span> phone;
+    <span class="kw">return</span> phone.<span class="fn">substring</span>(<span class="num">0</span>, <span class="num">3</span>) + <span class="str">"****"</span> + phone.<span class="fn">substring</span>(<span class="num">7</span>);
+    <span class="cm">// 13812341234 → 138****1234</span>
+}
+
+<span class="cm">// Jackson 全局序列化脱敏</span>
+<span class="kw">public class</span> <span class="type">PhoneMaskSerializer</span> <span class="kw">extends</span> <span class="type">JsonSerializer</span>&lt;<span class="type">String</span>&gt; {
+    <span class="ann">@Override</span>
+    <span class="kw">public void</span> <span class="fn">serialize</span>(<span class="type">String</span> value, <span class="type">JsonGenerator</span> gen, <span class="type">SerializerProvider</span> sp) {
+        gen.<span class="fn">writeString</span>(<span class="type">DesensitizeUtil</span>.<span class="fn">maskPhone</span>(value));
+    }
+}
+
+<span class="cm">// 在 VO 中使用</span>
+<span class="ann">@JsonSerialize</span>(using = <span class="type">PhoneMaskSerializer</span>.<span class="kw">class</span>)
+<span class="kw">private</span> <span class="type">String</span> phone;</pre>
+</section>
+
+<!-- ============================================================ -->
+<!-- CHAPTER 5 -->
+<!-- ============================================================ -->
+<section id="ch5">
+<h2 class="chapter"><span class="num">5</span> 系统防护与监控</h2>
+
+<h3>5.1 限流熔断</h3>
+
+<h4>5.1.1 全局限流 — Nginx</h4>
+<pre><span class="cm"># nginx.conf: 全局限流配置</span>
+<span class="cm"># 定义限流区域：每秒 1000 请求（基于客户端 IP）</span>
+<span class="fn">limit_req_zone</span> $binary_remote_addr zone=global_limit:<span class="num">10</span>m rate=<span class="num">1000</span>r/s;
+
+<span class="fn">server</span> {
+    <span class="fn">location</span> /api/ {
+        <span class="cm"># burst=200: 允许突发 200 个请求排队</span>
+        <span class="cm"># nodelay: 突发请求不延迟处理</span>
+        <span class="fn">limit_req</span> zone=global_limit burst=<span class="num">200</span> nodelay;
+        <span class="fn">limit_req_status</span> <span class="num">429</span>;
+
+        <span class="cm"># 请求体大小限制</span>
+        <span class="fn">client_max_body_size</span> <span class="num">5</span>m;
+
+        <span class="fn">proxy_pass</span> http://backend;
+    }
+}</pre>
+
+<h4>5.1.2 接口级限流 — Redis + Lua</h4>
+<p>秒杀接口采用令牌桶算法（详见 3.1 节 Lua 脚本），每用户每秒仅允许 <strong>1 次</strong>请求。普通写接口采用固定窗口限流，每用户每秒 <strong>10 次</strong>。</p>
+
+<h4>5.1.3 Sentinel 熔断</h4>
+<pre><span class="cm">// Sentinel 核心接口熔断规则配置</span>
+<span class="type">List</span>&lt;<span class="type">DegradeRule</span>&gt; rules = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+
+<span class="cm">// 秒杀接口：异常比例 > 50% 触发熔断</span>
+<span class="type">DegradeRule</span> seckillRule = <span class="kw">new</span> <span class="type">DegradeRule</span>();
+seckillRule.<span class="fn">setResource</span>(<span class="str">"seckill_api"</span>);
+seckillRule.<span class="fn">setGrade</span>(<span class="type">RuleConstant</span>.DEGRADE_GRADE_EXCEPTION_RATIO);
+seckillRule.<span class="fn">setCount</span>(<span class="num">0.5</span>);         <span class="cm">// 异常比例阈值 50%</span>
+seckillRule.<span class="fn">setTimeWindow</span>(<span class="num">10</span>);     <span class="cm">// 熔断时长 10 秒</span>
+seckillRule.<span class="fn">setMinRequestAmount</span>(<span class="num">5</span>); <span class="cm">// 最小请求数</span>
+rules.<span class="fn">add</span>(seckillRule);
+
+<span class="cm">// 熔断后的降级处理</span>
+<span class="ann">@SentinelResource</span>(
+    value = <span class="str">"seckill_api"</span>,
+    fallback = <span class="str">"seckillFallback"</span>
+)
+<span class="kw">public</span> <span class="type">Result</span> <span class="fn">seckill</span>(<span class="type">SeckillRequest</span> request) { ... }
+
+<span class="kw">public</span> <span class="type">Result</span> <span class="fn">seckillFallback</span>(<span class="type">SeckillRequest</span> request, <span class="type">Throwable</span> e) {
+    <span class="kw">return</span> <span class="type">Result</span>.<span class="fn">fail</span>(<span class="str">"系统繁忙，请稍后再试"</span>);
+}</pre>
+
+<h3>5.2 日志与审计</h3>
+
+<h4>5.2.1 操作日志</h4>
+<pre><span class="cm">-- 操作日志表：后台所有增删改操作</span>
+<span class="kw">CREATE TABLE</span> t_operation_log (
+    id           <span class="type">BIGINT</span>       <span class="kw">PRIMARY KEY AUTO_INCREMENT</span>,
+    user_id      <span class="type">BIGINT</span>       <span class="kw">NOT NULL</span>,
+    username     <span class="type">VARCHAR</span>(<span class="num">64</span>),
+    module       <span class="type">VARCHAR</span>(<span class="num">64</span>)  <span class="kw">NOT NULL</span>,   <span class="cm">-- 模块名</span>
+    operation    <span class="type">VARCHAR</span>(<span class="num">128</span>) <span class="kw">NOT NULL</span>,   <span class="cm">-- 操作描述</span>
+    method       <span class="type">VARCHAR</span>(<span class="num">16</span>),             <span class="cm">-- HTTP 方法</span>
+    request_url  <span class="type">VARCHAR</span>(<span class="num">256</span>),
+    request_ip   <span class="type">VARCHAR</span>(<span class="num">45</span>),
+    request_body <span class="type">TEXT</span>,                     <span class="cm">-- 脱敏后的请求体</span>
+    response_code <span class="type">INT</span>,
+    duration_ms  <span class="type">INT</span>,
+    created_at   <span class="type">DATETIME</span>     <span class="kw">DEFAULT</span> CURRENT_TIMESTAMP,
+    <span class="kw">INDEX</span> idx_user_id (user_id),
+    <span class="kw">INDEX</span> idx_created_at (created_at)
+) <span class="kw">ENGINE</span>=InnoDB <span class="kw">DEFAULT CHARSET</span>=utf8mb4;</pre>
+
+<h4>5.2.2 安全日志</h4>
+<pre><span class="cm">// 安全事件独立日志（AOP 切面 + 手动埋点）</span>
+<span class="kw">public enum</span> <span class="type">SecurityEvent</span> {
+    <span class="var">LOGIN_FAIL</span>,          <span class="cm">// 登录失败</span>
+    <span class="var">LOGIN_LOCKED</span>,        <span class="cm">// 账号锁定</span>
+    <span class="var">ACCESS_DENIED</span>,       <span class="cm">// 权限拒绝</span>
+    <span class="var">RATE_LIMITED</span>,        <span class="cm">// 限流触发</span>
+    <span class="var">INVALID_TOKEN</span>,       <span class="cm">// 无效Token</span>
+    <span class="var">SIGNATURE_FAIL</span>,      <span class="cm">// 签名验证失败</span>
+    <span class="var">REPLAY_DETECTED</span>,     <span class="cm">// 重放攻击检测</span>
+    <span class="var">XSS_BLOCKED</span>,         <span class="cm">// XSS 攻击拦截</span>
+    <span class="var">SQL_INJECTION</span>,       <span class="cm">// SQL 注入尝试</span>
+    <span class="var">STOCK_MISMATCH</span>       <span class="cm">// 库存不一致</span>
+}
+
+<span class="cm">// 使用示例</span>
+securityLogger.<span class="fn">log</span>(<span class="type">SecurityEvent</span>.<span class="var">RATE_LIMITED</span>,
+    <span class="str">"用户 {} IP {} 触发秒杀限流"</span>, userId, clientIp);</pre>
+
+<h4>5.2.3 日志分级</h4>
+<table>
+  <thead>
+    <tr><th>级别</th><th>场景</th><th>示例</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><span class="level" style="background:#dbeafe;color:#1d4ed8;">INFO</span></td><td>正常业务操作</td><td>用户登录成功、订单创建、支付完成</td></tr>
+    <tr><td><span class="level" style="background:#fef3c7;color:#92400e;">WARN</span></td><td>安全事件</td><td>登录失败、限流触发、Token 过期、权限拒绝</td></tr>
+    <tr><td><span class="level" style="background:#fee2e2;color:#dc2626;">ERROR</span></td><td>系统异常</td><td>数据库异常、Redis 连接失败、库存不一致</td></tr>
+  </tbody>
+</table>
+
+<h3>5.3 异常监控与告警</h3>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-title">&#128200; 关键监控指标</div>
+    <table style="margin:0; box-shadow:none;">
+      <tbody>
+        <tr><td><strong>登录失败率</strong></td><td>失败次数 / 总登录次数</td></tr>
+        <tr><td><strong>限流触发率</strong></td><td>被限流请求 / 总请求数</td></tr>
+        <tr><td><strong>异常订单率</strong></td><td>异常订单 / 总订单数</td></tr>
+        <tr><td><strong>单 IP 请求频率</strong></td><td>每 IP 每分钟请求数</td></tr>
+        <tr><td><strong>Token 黑名单命中率</strong></td><td>黑名单命中 / 总认证请求</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <div class="card-title">&#128680; 告警阈值</div>
+    <table style="margin:0; box-shadow:none;">
+      <tbody>
+        <tr><td><strong>登录失败率</strong></td><td><span class="level level-high">&gt; 20%</span> 触发告警</td></tr>
+        <tr><td><strong>单 IP 请求</strong></td><td><span class="level level-high">&gt; 100次/分钟</span> 临时封禁</td></tr>
+        <tr><td><strong>限流触发率</strong></td><td><span class="level level-mid">&gt; 30%</span> 关注</td></tr>
+        <tr><td><strong>异常订单率</strong></td><td><span class="level level-mid">&gt; 5%</span> 人工介入</td></tr>
+        <tr><td><strong>接口响应 P99</strong></td><td><span class="level level-mid">&gt; 3秒</span> 性能告警</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- CHAPTER 6 -->
+<!-- ============================================================ -->
+<section id="ch6">
+<h2 class="chapter"><span class="num">6</span> 安全自检清单</h2>
+
+<p>以下清单涵盖本系统所有安全设计项。点击复选框可标记完成状态，状态会保存在浏览器本地存储中。</p>
+
+<table class="checklist" id="securityChecklist">
+  <thead>
+    <tr>
+      <th style="width:36px; text-align:center;">&#10003;</th>
+      <th style="width:40px;">#</th>
+      <th>检查项</th>
+      <th style="width:70px;">风险等级</th>
+      <th>防御措施</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="1"></td><td>1</td><td>JWT Token 签名密钥不硬编码</td><td><span class="level level-high">高</span></td><td>密钥存储于环境变量或配置中心</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="2"></td><td>2</td><td>密码使用 BCrypt 加密存储</td><td><span class="level level-high">高</span></td><td>BCryptPasswordEncoder(strength=10)</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="3"></td><td>3</td><td>Token 黑名单机制（登出失效）</td><td><span class="level level-high">高</span></td><td>Redis 黑名单 + TTL = 剩余有效期</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="4"></td><td>4</td><td>双 Token 方案（Access + Refresh）</td><td><span class="level level-mid">中</span></td><td>AccessToken 2h + RefreshToken 7d</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="5"></td><td>5</td><td>登录连续失败锁定</td><td><span class="level level-high">高</span></td><td>5 次失败锁定 30 分钟（Redis 计数器）</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="6"></td><td>6</td><td>登录失败统一提示（防枚举）</td><td><span class="level level-mid">中</span></td><td>统一返回"用户名或密码错误"</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="7"></td><td>7</td><td>图形验证码触发（暴力破解防护）</td><td><span class="level level-mid">中</span></td><td>连续 3 次失败后触发滑块验证码</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="8"></td><td>8</td><td>秒杀接口用户级限流</td><td><span class="level level-high">高</span></td><td>Redis + Lua 令牌桶 1 QPS/用户</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="9"></td><td>9</td><td>IP 级限流</td><td><span class="level level-high">高</span></td><td>滑动窗口 30 次/分钟/IP</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="10"></td><td>10</td><td>秒杀前验证码拦截</td><td><span class="level level-high">高</span></td><td>滑块验证码（hCaptcha / Geetest）</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="11"></td><td>11</td><td>设备指纹识别与黑名单</td><td><span class="level level-mid">中</span></td><td>浏览器指纹 + UA 分析 + 黑名单</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="12"></td><td>12</td><td>库存 Lua 原子操作（防超卖）</td><td><span class="level level-high">高</span></td><td>Redis Lua 脚本：预减 + 资格校验</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="13"></td><td>13</td><td>数据库乐观锁兜底</td><td><span class="level level-high">高</span></td><td>UPDATE SET stock=stock-1 WHERE stock>0</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="14"></td><td>14</td><td>唯一约束防重复下单</td><td><span class="level level-high">高</span></td><td>uk_user_seckill(user_id, seckill_id)</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="15"></td><td>15</td><td>库存对账定时任务</td><td><span class="level level-mid">中</span></td><td>每 10 分钟比对 Redis 与 MySQL 库存</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="16"></td><td>16</td><td>请求签名防重放</td><td><span class="level level-high">高</span></td><td>HMAC-SHA256 + 60s 时间窗口 + Nonce</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="17"></td><td>17</td><td>SQL 注入防护</td><td><span class="level level-high">高</span></td><td>MyBatis #{} 参数化，禁止 ${}</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="18"></td><td>18</td><td>XSS 防护</td><td><span class="level level-high">高</span></td><td>Jsoup 白名单清洗 + 富文本 sanitize</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="19"></td><td>19</td><td>文件上传安全</td><td><span class="level level-mid">中</span></td><td>类型白名单 + 5MB 限制 + UUID 重命名</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="20"></td><td>20</td><td>接口幂等性保障</td><td><span class="level level-high">高</span></td><td>Redis SETNX 标记 requestId / orderId</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="21"></td><td>21</td><td>支付金额服务端校验</td><td><span class="level level-high">高</span></td><td>金额从 DB 查询，不信任前端传值</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="22"></td><td>22</td><td>订单号防枚举</td><td><span class="level level-mid">中</span></td><td>雪花算法 + 随机数混淆</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="23"></td><td>23</td><td>用户操作权限校验</td><td><span class="level level-high">高</span></td><td>服务端校验 userId 匹配</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="24"></td><td>24</td><td>CORS 严格配置</td><td><span class="level level-mid">中</span></td><td>仅允许前端域名，限制方法和 Headers</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="25"></td><td>25</td><td>敏感数据脱敏</td><td><span class="level level-mid">中</span></td><td>手机号脱敏 + 日志脱敏 + 密码不回传</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="26"></td><td>26</td><td>HTTPS 全站启用</td><td><span class="level level-high">高</span></td><td>Nginx SSL 终止 + HTTP 301 跳转</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="27"></td><td>27</td><td>Nginx 全局限流</td><td><span class="level level-mid">中</span></td><td>limit_req 1000r/s + burst=200</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="28"></td><td>28</td><td>Sentinel 熔断降级</td><td><span class="level level-mid">中</span></td><td>异常比例 > 50% 触发熔断</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="29"></td><td>29</td><td>操作日志记录</td><td><span class="level level-low">低</span></td><td>后台增删改写入 t_operation_log</td></tr>
+    <tr><td style="text-align:center"><input type="checkbox" data-id="30"></td><td>30</td><td>安全日志与告警</td><td><span class="level level-mid">中</span></td><td>安全事件独立记录 + 阈值告警</td></tr>
+  </tbody>
+</table>
+
+<div style="margin-top:16px; display:flex; gap:12px; align-items:center;">
+  <button onclick="checkAll()" style="padding:8px 18px; background:var(--accent); color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">全部勾选</button>
+  <button onclick="uncheckAll()" style="padding:8px 18px; background:#64748b; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">全部取消</button>
+  <span id="checkProgress" style="font-size:13px; color:#64748b;"></span>
+</div>
+</section>
+
+</div><!-- end .main -->
+
+<script>
+// ===== Sidebar Active Highlight =====
+document.querySelectorAll('.nav-link[href^="#"]').forEach(link => {
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    this.classList.add('active');
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+
+// ===== Scroll Spy =====
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-link[href^="#"]');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 120) current = s.id;
+  });
+  navLinks.forEach(l => {
+    l.classList.remove('active');
+    if (l.getAttribute('href') === '#' + current) l.classList.add('active');
+  });
+});
+
+// ===== Checklist Persistence =====
+const checkboxes = document.querySelectorAll('#securityChecklist input[type="checkbox"]');
+const STORAGE_KEY = 'security_checklist_state';
+
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    checkboxes.forEach(cb => {
+      if (saved[cb.dataset.id]) {
+        cb.checked = true;
+        cb.closest('tr').classList.add('checked-row');
+      }
+    });
+    updateProgress();
+  } catch(e) {}
+}
+
+function saveState() {
+  const state = {};
+  checkboxes.forEach(cb => { state[cb.dataset.id] = cb.checked; });
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function updateProgress() {
+  const total = checkboxes.length;
+  const done = Array.from(checkboxes).filter(c => c.checked).length;
+  document.getElementById('checkProgress').textContent =
+    '已完成 ' + done + ' / ' + total + ' (' + Math.round(done/total*100) + '%)';
+}
+
+checkboxes.forEach(cb => {
+  cb.addEventListener('change', function() {
+    this.closest('tr').classList.toggle('checked-row', this.checked);
+    saveState();
+    updateProgress();
+  });
+});
+
+function checkAll() {
+  checkboxes.forEach(cb => { cb.checked = true; cb.closest('tr').classList.add('checked-row'); });
+  saveState(); updateProgress();
+}
+function uncheckAll() {
+  checkboxes.forEach(cb => { cb.checked = false; cb.closest('tr').classList.remove('checked-row'); });
+  saveState(); updateProgress();
+}
+
+loadState();
+</script>
+</body>
+</html>

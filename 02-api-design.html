@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API 接口设计文档 - 高并发秒杀电商平台</title>
+<style>
+:root {
+  --bg: #f7f8fc; --bg2: #ffffff; --bg3: #f0f2f8;
+  --ink: #1a1a2e; --ink2: #374151; --muted: #6b7280; --rule: #e5e7eb;
+  --accent: #2563eb; --accent-light: #dbeafe;
+  --accent2: #059669; --accent2-light: #d1fae5;
+  --warn: #ea580c; --warn-light: #fff7ed;
+  --purple: #7c3aed; --purple-light: #ede9fe;
+  --font: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+  --max: 960px; --radius: 10px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--font); background: var(--bg); color: var(--ink); line-height: 1.7; }
+.sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0; width: 260px;
+  background: #1e1e2e; color: #cdd6f4; overflow-y: auto;
+  z-index: 100; padding: 24px 0;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: #45475a; border-radius: 2px; }
+.sidebar-title { padding: 0 20px 8px; font-size: 15px; font-weight: 700; color: #cdd6f4; letter-spacing: 0.5px; }
+.sidebar-sub { padding: 0 20px 16px; font-size: 11px; color: #6c7086; }
+.sidebar a {
+  display: block; padding: 7px 20px 7px 28px; font-size: 13px;
+  color: #a6adc8; text-decoration: none; transition: all .2s;
+  border-left: 3px solid transparent;
+}
+.sidebar a:hover { background: rgba(255,255,255,.06); color: #cdd6f4; }
+.sidebar a.active { color: #89b4fa; border-left-color: #89b4fa; background: rgba(137,180,250,.08); }
+.sidebar .group-label {
+  padding: 16px 20px 6px; font-size: 10px; text-transform: uppercase;
+  letter-spacing: 1.2px; color: #585b70; font-weight: 600;
+}
+.main { margin-left: 260px; padding: 40px 48px 80px; max-width: calc(var(--max) + 260px + 96px); }
+.main > section { margin-bottom: 56px; }
+h1 { font-size: 28px; font-weight: 800; color: var(--ink); margin-bottom: 6px; }
+h2 {
+  font-size: 22px; font-weight: 700; color: var(--ink); margin-bottom: 20px;
+  padding-bottom: 10px; border-bottom: 2px solid var(--accent);
+  display: flex; align-items: center; gap: 10px;
+}
+h2 .badge { font-size: 11px; background: var(--accent); color: #fff; padding: 2px 10px; border-radius: 12px; font-weight: 500; }
+h3 { font-size: 17px; font-weight: 600; color: var(--ink2); margin: 28px 0 14px; }
+h4 { font-size: 14px; font-weight: 600; color: var(--ink2); margin: 18px 0 8px; }
+p, li { font-size: 14px; color: var(--ink2); }
+.subtitle { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+.card {
+  background: var(--bg2); border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.api-card {
+  background: var(--bg2); border: 1px solid var(--rule); border-radius: var(--radius);
+  margin-bottom: 24px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.api-header {
+  display: flex; align-items: center; gap: 12px; padding: 16px 20px;
+  border-bottom: 1px solid var(--rule); background: var(--bg3);
+}
+.method {
+  font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 4px;
+  font-family: var(--font-mono); letter-spacing: 0.5px; flex-shrink: 0;
+}
+.method-get { background: var(--accent-light); color: var(--accent); }
+.method-post { background: var(--accent2-light); color: var(--accent2); }
+.method-put { background: var(--warn-light); color: var(--warn); }
+.method-delete { background: #fee2e2; color: #dc2626; }
+.api-path { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--ink); }
+.api-desc { font-size: 13px; color: var(--muted); margin-left: auto; }
+.api-body { padding: 20px; }
+.api-meta { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; font-size: 12px; }
+.api-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.tag-auth { background: var(--purple-light); color: var(--purple); padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+.tag-noauth { background: var(--bg3); color: var(--muted); padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 13px; }
+th {
+  background: var(--bg3); text-align: left; padding: 10px 14px;
+  font-weight: 600; color: var(--ink2); border-bottom: 2px solid var(--rule);
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px;
+}
+td { padding: 10px 14px; border-bottom: 1px solid var(--rule); color: var(--ink2); vertical-align: top; }
+td code {
+  background: var(--bg3); padding: 1px 6px; border-radius: 3px;
+  font-family: var(--font-mono); font-size: 12px; color: var(--accent);
+}
+tr:last-child td { border-bottom: none; }
+pre {
+  background: #1e1e2e; color: #cdd6f4; padding: 18px 20px; border-radius: 8px;
+  font-family: var(--font-mono); font-size: 12.5px; line-height: 1.65;
+  overflow-x: auto; margin: 12px 0 16px; position: relative;
+}
+pre .cm { color: #6c7086; }
+pre .k { color: #89b4fa; }
+pre .s { color: #a6e3a1; }
+pre .n { color: #fab387; }
+pre .bo { color: #cba6f7; }
+pre .nu { color: #f38ba8; }
+.code-label {
+  position: absolute; top: 8px; right: 12px; font-size: 10px;
+  color: #585b70; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 1px;
+}
+.error-group { margin-bottom: 24px; }
+.error-group-title {
+  font-size: 13px; font-weight: 600; padding: 8px 14px;
+  background: var(--bg3); border-left: 3px solid var(--accent);
+  margin-bottom: 0; color: var(--ink2);
+}
+.info-box {
+  padding: 14px 18px; border-radius: 8px; margin: 14px 0; font-size: 13px;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.info-box.blue { background: var(--accent-light); border-left: 3px solid var(--accent); }
+.info-box.green { background: var(--accent2-light); border-left: 3px solid var(--accent2); }
+.info-box.orange { background: var(--warn-light); border-left: 3px solid var(--warn); }
+.info-box.purple { background: var(--purple-light); border-left: 3px solid var(--purple); }
+.info-box strong { display: block; margin-bottom: 2px; }
+.spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+.spec-item {
+  background: var(--bg2); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px;
+}
+.spec-item .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.spec-item .value { font-size: 14px; font-weight: 600; color: var(--ink); font-family: var(--font-mono); }
+.module-header {
+  display: flex; align-items: center; gap: 12px; margin: 32px 0 18px;
+  padding: 14px 18px; background: var(--bg2); border: 1px solid var(--rule);
+  border-radius: var(--radius); border-left: 4px solid var(--accent);
+}
+.module-header .num {
+  width: 28px; height: 28px; background: var(--accent); color: #fff;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+}
+.module-header .title { font-size: 16px; font-weight: 700; color: var(--ink); }
+.module-header .count { font-size: 12px; color: var(--muted); margin-left: auto; }
+.required { color: #dc2626; font-weight: 600; }
+.optional { color: var(--muted); }
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; padding: 24px 16px 60px; }
+  .spec-grid { grid-template-columns: 1fr; }
+}
+@media print {
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+  .api-card { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-title">API 接口设计文档</div>
+  <div class="sidebar-sub">高并发秒杀电商平台 v1.0</div>
+  <div class="group-label">文档概览</div>
+  <a href="#overview">项目概述</a>
+  <a href="#convention">一、接口规范总则</a>
+  <a href="#response">二、统一响应格式</a>
+  <a href="#error-codes">三、统一错误码规范</a>
+  <div class="group-label">接口清单</div>
+  <a href="#mod-auth">四.1 用户认证 (6)</a>
+  <a href="#mod-product">四.2 商品管理 (6)</a>
+  <a href="#mod-seckill">四.3 秒杀活动 (6)</a>
+  <a href="#mod-seckill-order">四.4 秒杀下单 (4)</a>
+  <a href="#mod-order">四.5 订单管理 (6)</a>
+  <a href="#mod-user-admin">四.6 用户管理-后台 (4)</a>
+  <a href="#mod-system">四.7 系统管理 (3)</a>
+  <div class="group-label">核心详设</div>
+  <a href="#detail-seckill">执行秒杀</a>
+  <a href="#detail-result">查询秒杀结果</a>
+  <a href="#detail-pay">确认支付</a>
+  <a href="#detail-login">用户登录</a>
+</nav>
+<div class="main">
+
+<!-- Overview -->
+<section id="overview">
+  <h1>API 接口设计文档</h1>
+  <p class="subtitle">高并发秒杀电商平台 &mdash; RESTful API Interface Design Specification &mdash; Version 1.0</p>
+  <div class="card">
+    <h3 style="margin-top:0">项目技术栈</h3>
+    <div class="spec-grid">
+      <div class="spec-item"><div class="label">后端框架</div><div class="value">Spring Boot 3.x</div></div>
+      <div class="spec-item"><div class="label">前端框架</div><div class="value">Vue 3 + Vite</div></div>
+      <div class="spec-item"><div class="label">缓存/队列</div><div class="value">Redis + RabbitMQ</div></div>
+      <div class="spec-item"><div class="label">数据库</div><div class="value">MySQL 8.x</div></div>
+      <div class="spec-item"><div class="label">安全认证</div><div class="value">Spring Security + JWT</div></div>
+      <div class="spec-item"><div class="label">API 风格</div><div class="value">RESTful + JSON</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 一、接口规范总则 -->
+<section id="convention">
+  <h2>一、接口规范总则 <span class="badge">Convention</span></h2>
+  <div class="spec-grid">
+    <div class="spec-item"><div class="label">基础路径</div><div class="value">/api</div></div>
+    <div class="spec-item"><div class="label">版本策略 (URL 前缀)</div><div class="value">/api/v1</div></div>
+    <div class="spec-item"><div class="label">请求格式</div><div class="value">Content-Type: application/json</div></div>
+    <div class="spec-item"><div class="label">鉴权方式</div><div class="value">Bearer Token (JWT)</div></div>
+    <div class="spec-item"><div class="label">分页参数</div><div class="value">pageNum + pageSize</div></div>
+    <div class="spec-item"><div class="label">时间格式</div><div class="value">ISO 8601</div></div>
+  </div>
+  <div class="card">
+    <h4 style="margin-top:0">版本策略说明</h4>
+    <p>所有接口路径以 <code>/api/v1</code> 为前缀，当前仅维护 v1 版本。当出现不兼容的接口变更时，将启用新版本前缀（如 <code>/api/v2</code>），旧版本至少保留 6 个月的过渡期。</p>
+    <h4>鉴权说明</h4>
+    <p>需要鉴权的接口，在请求头中携带 JWT Token：</p>
+<pre><span class="code-label">HTTP Header</span>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDAwMSIs...</pre>
+    <h4>分页约定</h4>
+    <table>
+      <tr><th>参数</th><th>类型</th><th>默认值</th><th>说明</th></tr>
+      <tr><td><code>pageNum</code></td><td>Integer</td><td>1</td><td>页码，从 1 开始</td></tr>
+      <tr><td><code>pageSize</code></td><td>Integer</td><td>10</td><td>每页条数，默认 10，最大 50</td></tr>
+    </table>
+    <p>分页响应中包含：<code>total</code>（总记录数）、<code>list</code>（数据列表）、<code>pageNum</code>、<code>pageSize</code>、<code>pages</code>（总页数）。</p>
+    <h4>时间格式</h4>
+    <p>所有时间字段采用 ISO 8601 格式：<code>yyyy-MM-dd'T'HH:mm:ss</code>，示例：<code>2026-07-29T10:00:00</code>。时区默认为 Asia/Shanghai (UTC+8)。</p>
+  </div>
+</section>
+
+<!-- 二、统一响应格式 -->
+<section id="response">
+  <h2>二、统一响应格式 <span class="badge">Response</span></h2>
+  <h3>2.1 标准响应</h3>
+  <div class="card">
+    <p>所有接口统一返回以下 JSON 结构：</p>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"success"</span>,
+  <span class="k">"data"</span>: { ... },
+  <span class="k">"timestamp"</span>: <span class="s">"2026-07-29T10:00:00"</span>
+}</pre>
+    <table>
+      <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+      <tr><td><code>code</code></td><td>Integer</td><td>业务状态码，200 表示成功，非 200 为具体错误码</td></tr>
+      <tr><td><code>message</code></td><td>String</td><td>状态描述信息</td></tr>
+      <tr><td><code>data</code></td><td>Object/null</td><td>业务数据，失败时可能为 null</td></tr>
+      <tr><td><code>timestamp</code></td><td>String</td><td>服务端响应时间戳（ISO 8601）</td></tr>
+    </table>
+  </div>
+  <h3>2.2 分页响应</h3>
+  <div class="card">
+    <p>分页查询接口的 <code>data</code> 字段结构：</p>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"success"</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"list"</span>: [ ... ],
+    <span class="k">"total"</span>: <span class="n">100</span>,
+    <span class="k">"pageNum"</span>: <span class="n">1</span>,
+    <span class="k">"pageSize"</span>: <span class="n">10</span>,
+    <span class="k">"pages"</span>: <span class="n">10</span>
+  },
+  <span class="k">"timestamp"</span>: <span class="s">"2026-07-29T10:00:00"</span>
+}</pre>
+    <table>
+      <tr><th>字段</th><th>类型</th><th>说明</th></tr>
+      <tr><td><code>list</code></td><td>Array</td><td>当前页数据列表</td></tr>
+      <tr><td><code>total</code></td><td>Long</td><td>总记录数</td></tr>
+      <tr><td><code>pageNum</code></td><td>Integer</td><td>当前页码</td></tr>
+      <tr><td><code>pageSize</code></td><td>Integer</td><td>每页条数</td></tr>
+      <tr><td><code>pages</code></td><td>Integer</td><td>总页数</td></tr>
+    </table>
+  </div>
+  <h3>2.3 错误响应示例</h3>
+  <div class="card">
+<pre><span class="code-label">JSON - 参数校验失败</span>
+{
+  <span class="k">"code"</span>: <span class="n">400</span>,
+  <span class="k">"message"</span>: <span class="s">"参数校验失败：手机号格式不正确"</span>,
+  <span class="k">"data"</span>: <span class="nu">null</span>,
+  <span class="k">"timestamp"</span>: <span class="s">"2026-07-29T10:00:00"</span>
+}</pre>
+<pre><span class="code-label">JSON - 业务错误</span>
+{
+  <span class="k">"code"</span>: <span class="n">2003</span>,
+  <span class="k">"message"</span>: <span class="s">"库存不足，商品已售罄"</span>,
+  <span class="k">"data"</span>: <span class="nu">null</span>,
+  <span class="k">"timestamp"</span>: <span class="s">"2026-07-29T10:00:00"</span>
+}</pre>
+  </div>
+</section>
+
+<!-- 三、统一错误码规范 -->
+<section id="error-codes">
+  <h2>三、统一错误码规范 <span class="badge">Error Codes</span></h2>
+  <p style="margin-bottom:20px">错误码采用分段设计，四位数字编码，按模块划分，便于前端快速定位问题来源。</p>
+  <div class="error-group">
+    <div class="error-group-title">通用错误码 (0xxx)</div>
+    <table>
+      <tr><th>错误码</th><th>HTTP 状态</th><th>说明</th><th>处理建议</th></tr>
+      <tr><td><code>200</code></td><td>200</td><td>请求成功</td><td>-</td></tr>
+      <tr><td><code>400</code></td><td>400</td><td>请求参数错误</td><td>检查请求参数格式和必填项</td></tr>
+      <tr><td><code>401</code></td><td>401</td><td>未认证 / Token 过期</td><td>跳转登录页或刷新 Token</td></tr>
+      <tr><td><code>403</code></td><td>403</td><td>无权限访问该资源</td><td>确认用户角色权限</td></tr>
+      <tr><td><code>404</code></td><td>404</td><td>请求的资源不存在</td><td>检查请求路径</td></tr>
+      <tr><td><code>405</code></td><td>405</td><td>请求方法不允许</td><td>检查 HTTP Method</td></tr>
+      <tr><td><code>429</code></td><td>429</td><td>请求过于频繁，触发限流</td><td>稍后重试</td></tr>
+      <tr><td><code>500</code></td><td>500</td><td>服务器内部异常</td><td>联系管理员或稍后重试</td></tr>
+    </table>
+  </div>
+  <div class="error-group">
+    <div class="error-group-title">用户模块错误码 (1xxx)</div>
+    <table>
+      <tr><th>错误码</th><th>说明</th><th>触发场景</th></tr>
+      <tr><td><code>1001</code></td><td>用户名已存在</td><td>注册时用户名重复</td></tr>
+      <tr><td><code>1002</code></td><td>手机号已注册</td><td>注册时手机号已被使用</td></tr>
+      <tr><td><code>1003</code></td><td>密码错误</td><td>登录或修改密码时原密码不正确</td></tr>
+      <tr><td><code>1004</code></td><td>账号已被禁用</td><td>被管理员禁用的账号尝试登录</td></tr>
+      <tr><td><code>1005</code></td><td>验证码错误或已过期</td><td>图形验证码 / 短信验证码校验失败</td></tr>
+      <tr><td><code>1006</code></td><td>旧密码不正确</td><td>修改密码时旧密码验证失败</td></tr>
+      <tr><td><code>1007</code></td><td>Token 刷新失败</td><td>Refresh Token 已过期或无效</td></tr>
+    </table>
+  </div>
+  <div class="error-group">
+    <div class="error-group-title">秒杀模块错误码 (2xxx)</div>
+    <table>
+      <tr><th>错误码</th><th>说明</th><th>触发场景</th></tr>
+      <tr><td><code>2001</code></td><td>秒杀活动不存在</td><td>活动 ID 无效或已被删除</td></tr>
+      <tr><td><code>2002</code></td><td>秒杀活动尚未开始</td><td>当前时间早于活动开始时间</td></tr>
+      <tr><td><code>2003</code></td><td>库存不足，商品已售罄</td><td>Redis 预减库存判定为 0</td></tr>
+      <tr><td><code>2004</code></td><td>重复下单，每位用户限购一次</td><td>同一用户对同一秒杀商品重复下单</td></tr>
+      <tr><td><code>2005</code></td><td>请求过于频繁，请稍后重试</td><td>触发接口限流 / 验证码校验频率限制</td></tr>
+      <tr><td><code>2006</code></td><td>秒杀活动已结束</td><td>当前时间晚于活动结束时间</td></tr>
+      <tr><td><code>2007</code></td><td>验证码未获取或已失效</td><td>秒杀前未请求验证码或验证码超时</td></tr>
+    </table>
+  </div>
+  <div class="error-group">
+    <div class="error-group-title">订单模块错误码 (3xxx)</div>
+    <table>
+      <tr><th>错误码</th><th>说明</th><th>触发场景</th></tr>
+      <tr><td><code>3001</code></td><td>订单不存在</td><td>订单 ID 无效或无权查看</td></tr>
+      <tr><td><code>3002</code></td><td>订单已支付，请勿重复操作</td><td>对已支付订单再次支付</td></tr>
+      <tr><td><code>3003</code></td><td>订单已取消</td><td>对已取消的订单进行操作</td></tr>
+      <tr><td><code>3004</code></td><td>订单支付超时，已自动取消</td><td>超过 15 分钟未完成支付</td></tr>
+      <tr><td><code>3005</code></td><td>支付处理失败</td><td>支付接口调用异常</td></tr>
+      <tr><td><code>3006</code></td><td>订单状态异常，无法操作</td><td>订单处于不可操作的状态</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 四、完整接口清单 -->
+<section id="api-list">
+  <h2>四、完整接口清单 <span class="badge">35 APIs</span></h2>
+
+  <!-- 4.1 用户认证 -->
+  <div id="mod-auth" class="module-header">
+    <span class="num">1</span><span class="title">用户认证模块</span><span class="count">6 个接口</span>
+  </div>
+
+  
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-post">POST</span>
+      <span class="api-path">/api/v1/auth/register</span>
+      <span class="api-desc">用户注册</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-noauth">无需鉴权</span></div>
+      <h4>请求参数 (Body)</h4>
+    <table>
+      <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+      <tr><td><code>username</code></td><td>String</td><td class="required">是</td><td>用户名，4-20 位字母数字</td></tr>
+      <tr><td><code>password</code></td><td>String</td><td class="required">是</td><td>密码，6-20 位，需包含字母和数字</td></tr>
+      <tr><td><code>phone</code></td><td>String</td><td class="required">是</td><td>手机号，11 位</td></tr>
+      <tr><td><code>captchaKey</code></td><td>String</td><td class="required">是</td><td>验证码标识 Key</td></tr>
+      <tr><td><code>captchaCode</code></td><td>String</td><td class="required">是</td><td>图形验证码</td></tr>
+    </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"注册成功"</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"userId"</span>: <span class="n">10001</span>,
+    <span class="k">"username"</span>: <span class="s">"seckill_user"</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-post">POST</span>
+      <span class="api-path">/api/v1/auth/login</span>
+      <span class="api-desc">用户登录</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-noauth">无需鉴权</span></div>
+      <h4>请求参数 (Body)</h4>
+    <table>
+      <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+      <tr><td><code>username</code></td><td>String</td><td class="required">是</td><td>用户名</td></tr>
+      <tr><td><code>password</code></td><td>String</td><td class="required">是</td><td>密码</td></tr>
+      <tr><td><code>captchaKey</code></td><td>String</td><td class="required">是</td><td>验证码标识 Key</td></tr>
+      <tr><td><code>captchaCode</code></td><td>String</td><td class="required">是</td><td>图形验证码</td></tr>
+    </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"登录成功"</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"accessToken"</span>: <span class="s">"eyJhbGciOiJIUzI1NiJ9..."</span>,
+    <span class="k">"refreshToken"</span>: <span class="s">"dGhpcyBpcyBhIHJlZnJlc2g..."</span>,
+    <span class="k">"expiresIn"</span>: <span class="n">3600</span>,
+    <span class="k">"user"</span>: {
+      <span class="k">"userId"</span>: <span class="n">10001</span>,
+      <span class="k">"username"</span>: <span class="s">"seckill_user"</span>,
+      <span class="k">"phone"</span>: <span class="s">"138****8888"</span>,
+      <span class="k">"role"</span>: <span class="s">"USER"</span>
+    }
+  }
+}</pre>
+    </div>
+  </div>
+
+  
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-post">POST</span>
+      <span class="api-path">/api/v1/auth/logout</span>
+      <span class="api-desc">用户登出</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token</span></div>
+      <h4>请求参数</h4><p>无请求体，从 Token 中解析用户信息，服务端清除 Token 缓存。</p>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"登出成功"</span>,
+  <span class="k">"data"</span>: <span class="nu">null</span>
+}</pre>
+    </div>
+  </div>
+
+  
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/auth/me</span>
+      <span class="api-desc">获取当前登录用户信息</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token</span></div>
+      <h4>请求参数</h4><p>无请求参数，从 Token 中解析用户 ID。</p>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"userId"</span>: <span class="n">10001</span>,
+    <span class="k">"username"</span>: <span class="s">"seckill_user"</span>,
+    <span class="k">"phone"</span>: <span class="s">"138****8888"</span>,
+    <span class="k">"email"</span>: <span class="s">"user@example.com"</span>,
+    <span class="k">"role"</span>: <span class="s">"USER"</span>,
+    <span class="k">"avatar"</span>: <span class="s">"https://cdn.example.com/avatar/default.png"</span>,
+    <span class="k">"createdAt"</span>: <span class="s">"2026-01-15T08:30:00"</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-put">PUT</span>
+      <span class="api-path">/api/v1/auth/password</span>
+      <span class="api-desc">修改密码</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token</span></div>
+      <h4>请求参数 (Body)</h4>
+    <table>
+      <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+      <tr><td><code>oldPassword</code></td><td>String</td><td class="required">是</td><td>原密码</td></tr>
+      <tr><td><code>newPassword</code></td><td>String</td><td class="required">是</td><td>新密码，6-20 位</td></tr>
+      <tr><td><code>confirmPassword</code></td><td>String</td><td class="required">是</td><td>确认新密码</td></tr>
+    </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"密码修改成功，请重新登录"</span>,
+  <span class="k">"data"</span>: <span class="nu">null</span>
+}</pre>
+    </div>
+  </div>
+
+  
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-post">POST</span>
+      <span class="api-path">/api/v1/auth/refresh</span>
+      <span class="api-desc">刷新 Token</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-noauth">无需鉴权</span></div>
+      <h4>请求参数 (Body)</h4>
+    <table>
+      <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+      <tr><td><code>refreshToken</code></td><td>String</td><td class="required">是</td><td>刷新令牌</td></tr>
+    </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"accessToken"</span>: <span class="s">"eyJhbGciOiJIUzI1NiJ9..."</span>,
+    <span class="k">"refreshToken"</span>: <span class="s">"bmV3IHJlZnJlc2ggdG9rZW4..."</span>,
+    <span class="k">"expiresIn"</span>: <span class="n">3600</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <!-- 4.2 商品管理 -->
+  <div id="mod-product" class="module-header">
+    <span class="num">2</span><span class="title">商品管理模块</span><span class="count">6 个接口</span>
+  </div>
+
+  
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/products</span>
+      <span class="api-desc">商品列表（分页）</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-noauth">无需鉴权</span></div>
+      <h4>请求参数 (Query)</h4>
+    <table>
+      <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+      <tr><td><code>pageNum</code></td><td>Integer</td><td class="optional">否</td><td>页码，默认 1</td></tr>
+      <tr><td><code>pageSize</code></td><td>Integer</td><td class="optional">否</td><td>每页条数，默认 10</td></tr>
+      <tr><td><code>categoryId</code></td><td>Long</td><td class="optional">否</td><td>分类 ID 筛选</td></tr>
+      <tr><td><code>keyword</code></td><td>String</td><td class="optional">否</td><td>关键词搜索（商品名称）</td></tr>
+      <tr><td><code>sortBy</code></td><td>String</td><td class="optional">否</td><td>排序字段：price / createdAt / sales</td></tr>
+      <tr><td><code>sortOrder</code></td><td>String</td><td class="optional">否</td><td>排序方向：asc / desc</td></tr>
+    </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"list"</span>: [
+      {
+        <span class="k">"productId"</span>: <span class="n">2001</span>,
+        <span class="k">"name"</span>: <span class="s">"iPhone 16 Pro Max 256GB"</span>,
+        <span class="k">"coverImage"</span>: <span class="s">"https://cdn.example.com/products/iphone16.jpg"</span>,
+        <span class="k">"price"</span>: <span class="n">9999.00</span>,
+        <span class="k">"stock"</span>: <span class="n">500</span>,
+        <span class="k">"sales"</span>: <span class="n">1280</span>,
+        <span class="k">"categoryName"</span>: <span class="s">"手机数码"</span>,
+        <span class="k">"status"</span>: <span class="n">1</span>
+      }
+    ],
+    <span class="k">"total"</span>: <span class="n">86</span>,
+    <span class="k">"pageNum"</span>: <span class="n">1</span>,
+    <span class="k">"pageSize"</span>: <span class="n">10</span>,
+    <span class="k">"pages"</span>: <span class="n">9</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/products/{id}</span>
+      <span class="api-desc">商品详情</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-noauth">无需鉴权</span></div>
+      <h4>请求参数 (Path)</h4>
+    <table>
+      <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+      <tr><td><code>id</code></td><td>Long</td><td class="required">是</td><td>商品 ID</td></tr>
+    </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"productId"</span>: <span class="n">2001</span>,
+    <span class="k">"name"</span>: <span class="s">"iPhone 16 Pro Max 256GB"</span>,
+    <span class="k">"coverImage"</span>: <span class="s">"..."</span>,
+    <span class="k">"images"</span>: [<span class="s">"img1.jpg"</span>, <span class="s">"img2.jpg"</span>, <span class="s">"img3.jpg"</span>],
+    <span class="k">"price"</span>: <span class="n">9999.00</span>,
+    <span class="k">"description"</span>: <span class="s">"Apple iPhone 16 Pro Max..."</span>,
+    <span class="k">"detail"</span>: <span class="s">"&lt;p&gt;富文本商品详情&lt;/p&gt;"</span>,
+    <span class="k">"stock"</span>: <span class="n">500</span>,
+    <span class="k">"sales"</span>: <span class="n">1280</span>,
+    <span class="k">"categoryId"</span>: <span class="n">10</span>,
+    <span class="k">"categoryName"</span>: <span class="s">"手机数码"</span>,
+    <span class="k">"status"</span>: <span class="n">1</span>,
+    <span class="k">"createdAt"</span>: <span class="s">"2026-06-01T10:00:00"</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-post">POST</span>
+      <span class="api-path">/api/v1/products</span>
+      <span class="api-desc">新增商品（管理员）</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数 (Body)</h4>
+    <table>
+      <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+      <tr><td><code>name</code></td><td>String</td><td class="required">是</td><td>商品名称，最大 100 字符</td></tr>
+      <tr><td><code>categoryId</code></td><td>Long</td><td class="required">是</td><td>分类 ID</td></tr>
+      <tr><td><code>price</code></td><td>BigDecimal</td><td class="required">是</td><td>商品价格</td></tr>
+      <tr><td><code>stock</code></td><td>Integer</td><td class="required">是</td><td>库存数量</td></tr>
+      <tr><td><code>coverImage</code></td><td>String</td><td class="required">是</td><td>封面图 URL</td></tr>
+      <tr><td><code>images</code></td><td>String[]</td><td class="optional">否</td><td>商品图片 URL 列表</td></tr>
+      <tr><td><code>description</code></td><td>String</td><td class="optional">否</td><td>商品简述，最大 500 字符</td></tr>
+      <tr><td><code>detail</code></td><td>String</td><td class="optional">否</td><td>富文本详情 (HTML)</td></tr>
+    </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"商品创建成功"</span>,
+  <span class="k">"data"</span>: { <span class="k">"productId"</span>: <span class="n">2099</span> }
+}</pre>
+    </div>
+  </div>
+
+  
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-put">PUT</span>
+      <span class="api-path">/api/v1/products/{id}</span>
+      <span class="api-desc">编辑商品（管理员）</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数</h4>
+    <table>
+      <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+      <tr><td><code>id</code></td><td>Long</td><td class="required">是</td><td>商品 ID（Path）</td></tr>
+      <tr><td><code>name</code></td><td>String</td><td class="optional">否</td><td>商品名称</td></tr>
+      <tr><td><code>categoryId</code></td><td>Long</td><td class="optional">否</td><td>分类 ID</td></tr>
+      <tr><td><code>price</code></td><td>BigDecimal</td><td class="optional">否</td><td>商品价格</td></tr>
+      <tr><td><code>stock</code></td><td>Integer</td><td class="optional">否</td><td>库存数量</td></tr>
+      <tr><td><code>coverImage</code></td><td>String</td><td class="optional">否</td><td>封面图 URL</td></tr>
+      <tr><td><code>description</code></td><td>String</td><td class="optional">否</td><td>商品简述</td></tr>
+      <tr><td><code>detail</code></td><td>String</td><td class="optional">否</td><td>富文本详情</td></tr>
+    </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"商品更新成功"</span>,
+  <span class="k">"data"</span>: <span class="nu">null</span>
+}</pre>
+    </div>
+  </div>
+
+  
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-delete">DELETE</span>
+      <span class="api-path">/api/v1/products/{id}</span>
+      <span class="api-desc">删除/下架商品（管理员）</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数</h4>
+    <table>
+      <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+      <tr><td><code>id</code></td><td>Long</td><td class="required">是</td><td>商品 ID（Path）</td></tr>
+      <tr><td><code>action</code></td><td>String</td><td class="optional">否</td><td>Query: delete / offline, 默认 offline</td></tr>
+    </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"商品已下架"</span>,
+  <span class="k">"data"</span>: <span class="nu">null</span>
+}</pre>
+    </div>
+  </div>
+
+  
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/categories</span>
+      <span class="api-desc">商品分类列表</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-noauth">无需鉴权</span></div>
+      <h4>请求参数</h4><p>无请求参数。</p>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: [
+    { <span class="k">"categoryId"</span>: <span class="n">10</span>, <span class="k">"name"</span>: <span class="s">"手机数码"</span>, <span class="k">"icon"</span>: <span class="s">"phone.png"</span>, <span class="k">"sort"</span>: <span class="n">1</span> },
+    { <span class="k">"categoryId"</span>: <span class="n">20</span>, <span class="k">"name"</span>: <span class="s">"电脑办公"</span>, <span class="k">"icon"</span>: <span class="s">"laptop.png"</span>, <span class="k">"sort"</span>: <span class="n">2</span> },
+    { <span class="k">"categoryId"</span>: <span class="n">30</span>, <span class="k">"name"</span>: <span class="s">"家用电器"</span>, <span class="k">"icon"</span>: <span class="s">"appliance.png"</span>, <span class="k">"sort"</span>: <span class="n">3</span> }
+  ]
+}</pre>
+    </div>
+  </div>
+
+</section>
+
+<section>
+  <!-- 4.3 秒杀活动 -->
+  <div id="mod-seckill" class="module-header">
+    <span class="num">3</span><span class="title">秒杀活动模块</span><span class="count">6 个接口</span>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/seckill/list</span>
+      <span class="api-desc">秒杀大厅列表（正在进行 + 即将开始）</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-noauth">无需鉴权</span></div>
+      <h4>请求参数 (Query)</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>status</code></td><td>Integer</td><td class="optional">否</td><td>状态: 0=即将开始, 1=进行中</td></tr>
+        <tr><td><code>pageNum</code></td><td>Integer</td><td class="optional">否</td><td>页码，默认 1</td></tr>
+        <tr><td><code>pageSize</code></td><td>Integer</td><td class="optional">否</td><td>每页条数，默认 10</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"list"</span>: [
+      {
+        <span class="k">"seckillId"</span>: <span class="n">5001</span>,
+        <span class="k">"productId"</span>: <span class="n">2001</span>,
+        <span class="k">"productName"</span>: <span class="s">"iPhone 16 Pro Max"</span>,
+        <span class="k">"coverImage"</span>: <span class="s">"https://cdn.example.com/products/iphone16.jpg"</span>,
+        <span class="k">"seckillPrice"</span>: <span class="n">5999.00</span>,
+        <span class="k">"originalPrice"</span>: <span class="n">9999.00</span>,
+        <span class="k">"totalStock"</span>: <span class="n">100</span>,
+        <span class="k">"availableStock"</span>: <span class="n">68</span>,
+        <span class="k">"startTime"</span>: <span class="s">"2026-08-01T10:00:00"</span>,
+        <span class="k">"endTime"</span>: <span class="s">"2026-08-01T12:00:00"</span>,
+        <span class="k">"status"</span>: <span class="n">1</span>,
+        <span class="k">"statusText"</span>: <span class="s">"进行中"</span>
+      }
+    ],
+    <span class="k">"total"</span>: <span class="n">12</span>,
+    <span class="k">"pageNum"</span>: <span class="n">1</span>,
+    <span class="k">"pageSize"</span>: <span class="n">10</span>,
+    <span class="k">"pages"</span>: <span class="n">2</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/seckill/{seckillId}</span>
+      <span class="api-desc">秒杀商品详情</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-noauth">无需鉴权</span></div>
+      <h4>请求参数 (Path)</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>seckillId</code></td><td>Long</td><td class="required">是</td><td>秒杀活动 ID</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"seckillId"</span>: <span class="n">5001</span>,
+    <span class="k">"product"</span>: {
+      <span class="k">"productId"</span>: <span class="n">2001</span>,
+      <span class="k">"name"</span>: <span class="s">"iPhone 16 Pro Max 256GB"</span>,
+      <span class="k">"coverImage"</span>: <span class="s">"..."</span>,
+      <span class="k">"images"</span>: [<span class="s">"..."</span>],
+      <span class="k">"description"</span>: <span class="s">"..."</span>,
+      <span class="k">"detail"</span>: <span class="s">"..."</span>
+    },
+    <span class="k">"seckillPrice"</span>: <span class="n">5999.00</span>,
+    <span class="k">"originalPrice"</span>: <span class="n">9999.00</span>,
+    <span class="k">"totalStock"</span>: <span class="n">100</span>,
+    <span class="k">"availableStock"</span>: <span class="n">68</span>,
+    <span class="k">"startTime"</span>: <span class="s">"2026-08-01T10:00:00"</span>,
+    <span class="k">"endTime"</span>: <span class="s">"2026-08-01T12:00:00"</span>,
+    <span class="k">"status"</span>: <span class="n">1</span>,
+    <span class="k">"statusText"</span>: <span class="s">"进行中"</span>,
+    <span class="k">"serverTime"</span>: <span class="s">"2026-08-01T10:32:15"</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-post">POST</span>
+      <span class="api-path">/api/v1/seckill</span>
+      <span class="api-desc">创建秒杀活动（管理员）</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数 (Body)</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>productId</code></td><td>Long</td><td class="required">是</td><td>商品 ID</td></tr>
+        <tr><td><code>seckillPrice</code></td><td>BigDecimal</td><td class="required">是</td><td>秒杀价格</td></tr>
+        <tr><td><code>stock</code></td><td>Integer</td><td class="required">是</td><td>秒杀库存数量</td></tr>
+        <tr><td><code>startTime</code></td><td>String</td><td class="required">是</td><td>开始时间（ISO 8601）</td></tr>
+        <tr><td><code>endTime</code></td><td>String</td><td class="required">是</td><td>结束时间（ISO 8601）</td></tr>
+        <tr><td><code>limitPerUser</code></td><td>Integer</td><td class="optional">否</td><td>每人限购数，默认 1</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"秒杀活动创建成功"</span>,
+  <span class="k">"data"</span>: { <span class="k">"seckillId"</span>: <span class="n">5099</span> }
+}</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-put">PUT</span>
+      <span class="api-path">/api/v1/seckill/{seckillId}</span>
+      <span class="api-desc">编辑秒杀活动（管理员）</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>seckillId</code></td><td>Long</td><td class="required">是</td><td>活动 ID（Path）</td></tr>
+        <tr><td><code>seckillPrice</code></td><td>BigDecimal</td><td class="optional">否</td><td>秒杀价格</td></tr>
+        <tr><td><code>stock</code></td><td>Integer</td><td class="optional">否</td><td>库存数量（仅允许增加）</td></tr>
+        <tr><td><code>startTime</code></td><td>String</td><td class="optional">否</td><td>开始时间</td></tr>
+        <tr><td><code>endTime</code></td><td>String</td><td class="optional">否</td><td>结束时间</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{ <span class="k">"code"</span>: <span class="n">200</span>, <span class="k">"message"</span>: <span class="s">"秒杀活动更新成功"</span>, <span class="k">"data"</span>: <span class="nu">null</span> }</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-delete">DELETE</span>
+      <span class="api-path">/api/v1/seckill/{seckillId}</span>
+      <span class="api-desc">取消秒杀活动（管理员）</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数 (Path)</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>seckillId</code></td><td>Long</td><td class="required">是</td><td>活动 ID</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{ <span class="k">"code"</span>: <span class="n">200</span>, <span class="k">"message"</span>: <span class="s">"秒杀活动已取消"</span>, <span class="k">"data"</span>: <span class="nu">null</span> }</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/seckill/{seckillId}/stats</span>
+      <span class="api-desc">活动数据统计（管理员）</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数 (Path)</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>seckillId</code></td><td>Long</td><td class="required">是</td><td>活动 ID</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"seckillId"</span>: <span class="n">5001</span>,
+    <span class="k">"totalStock"</span>: <span class="n">100</span>,
+    <span class="k">"soldCount"</span>: <span class="n">32</span>,
+    <span class="k">"availableStock"</span>: <span class="n">68</span>,
+    <span class="k">"orderCount"</span>: <span class="n">32</span>,
+    <span class="k">"paidCount"</span>: <span class="n">28</span>,
+    <span class="k">"cancelledCount"</span>: <span class="n">4</span>,
+    <span class="k">"totalRevenue"</span>: <span class="n">167972.00</span>,
+    <span class="k">"requestCount"</span>: <span class="n">15820</span>,
+    <span class="k">"conversionRate"</span>: <span class="n">0.20</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <!-- 4.4 秒杀下单 -->
+  <div id="mod-seckill-order" class="module-header">
+    <span class="num">4</span><span class="title">秒杀下单模块</span><span class="count">4 个接口</span>
+  </div>
+
+  <div class="info-box orange">
+    <div><strong>核心流程说明</strong>秒杀下单采用 "验证码前置 + Redis 预减库存 + RabbitMQ 异步下单" 架构。用户先获取验证码，校验通过后执行秒杀；服务端在 Redis 中原子预减库存，成功后将请求投递消息队列异步创建订单，前端通过轮询获取秒杀结果。</div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/seckill/{seckillId}/captcha</span>
+      <span class="api-desc">获取秒杀验证码</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token</span></div>
+      <h4>请求参数 (Path)</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>seckillId</code></td><td>Long</td><td class="required">是</td><td>秒杀活动 ID</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"captchaKey"</span>: <span class="s">"sk_captcha_5001_10001_a3f8"</span>,
+    <span class="k">"captchaImage"</span>: <span class="s">"data:image/png;base64,iVBORw0KGgo..."</span>,
+    <span class="k">"expiresIn"</span>: <span class="n">60</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-post">POST</span>
+      <span class="api-path">/api/v1/seckill/{seckillId}/captcha/verify</span>
+      <span class="api-desc">校验秒杀验证码</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token</span></div>
+      <h4>请求参数 (Body)</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>seckillId</code></td><td>Long</td><td class="required">是</td><td>秒杀活动 ID（Path）</td></tr>
+        <tr><td><code>captchaKey</code></td><td>String</td><td class="required">是</td><td>验证码标识 Key</td></tr>
+        <tr><td><code>captchaCode</code></td><td>String</td><td class="required">是</td><td>用户输入的验证码</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"验证码校验通过"</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"seckillToken"</span>: <span class="s">"sk_token_5001_10001_9b2e..."</span>,
+    <span class="k">"expiresIn"</span>: <span class="n">30</span>
+  }
+}</pre>
+      <div class="info-box blue" style="margin-top:10px">
+        <div>校验通过后返回 <code>seckillToken</code>，该 Token 在 30 秒内有效，执行秒杀时需携带。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="api-card" style="border-left: 3px solid var(--accent2);">
+    <div class="api-header">
+      <span class="method method-post">POST</span>
+      <span class="api-path">/api/v1/seckill/{seckillId}</span>
+      <span class="api-desc">执行秒杀（核心接口）</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token</span></div>
+      <h4>请求参数</h4>
+      <table>
+        <tr><th>参数</th><th>位置</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>seckillId</code></td><td>Path</td><td>Long</td><td class="required">是</td><td>秒杀活动 ID</td></tr>
+        <tr><td><code>seckillToken</code></td><td>Body</td><td>String</td><td class="required">是</td><td>验证码校验后返回的秒杀令牌</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON - 排队中</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"秒杀请求已提交，排队中"</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"seckillId"</span>: <span class="n">5001</span>,
+    <span class="k">"requestId"</span>: <span class="s">"sk_req_5001_10001_7f3a"</span>,
+    <span class="k">"status"</span>: <span class="n">0</span>,
+    <span class="k">"statusText"</span>: <span class="s">"排队中"</span>
+  }
+}</pre>
+      <div class="info-box green">
+        <div>返回 <code>requestId</code> 后，前端通过轮询 <code>/api/v1/seckill/{seckillId}/result</code> 获取最终结果。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="api-card" style="border-left: 3px solid var(--accent);">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/seckill/{seckillId}/result</span>
+      <span class="api-desc">查询秒杀结果（轮询）</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token</span></div>
+      <h4>请求参数 (Query)</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>seckillId</code></td><td>Long</td><td class="required">是</td><td>秒杀活动 ID（Path）</td></tr>
+        <tr><td><code>requestId</code></td><td>String</td><td class="required">是</td><td>执行秒杀返回的请求 ID（Query）</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON - 秒杀成功</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"status"</span>: <span class="n">1</span>,
+    <span class="k">"statusText"</span>: <span class="s">"秒杀成功"</span>,
+    <span class="k">"orderId"</span>: <span class="n">80001</span>,
+    <span class="k">"payExpireTime"</span>: <span class="s">"2026-08-01T10:47:15"</span>
+  }
+}</pre>
+<pre><span class="code-label">JSON - 秒杀失败</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"status"</span>: <span class="n">-1</span>,
+    <span class="k">"statusText"</span>: <span class="s">"秒杀失败: 库存不足"</span>,
+    <span class="k">"orderId"</span>: <span class="nu">null</span>
+  }
+}</pre>
+      <div class="info-box purple" style="margin-top:10px">
+        <div><strong>轮询策略</strong>status: 0=排队中（继续轮询），1=秒杀成功，-1=秒杀失败。建议轮询间隔：前 5 次每 1 秒，之后每 2 秒，最多轮询 30 次。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <!-- 4.5 订单管理 -->
+  <div id="mod-order" class="module-header">
+    <span class="num">5</span><span class="title">订单管理模块</span><span class="count">6 个接口</span>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/orders</span>
+      <span class="api-desc">我的订单列表</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token</span></div>
+      <h4>请求参数 (Query)</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>pageNum</code></td><td>Integer</td><td class="optional">否</td><td>页码，默认 1</td></tr>
+        <tr><td><code>pageSize</code></td><td>Integer</td><td class="optional">否</td><td>每页条数，默认 10</td></tr>
+        <tr><td><code>status</code></td><td>Integer</td><td class="optional">否</td><td>订单状态: 0=待支付, 1=已支付, 2=已取消, 3=已超时</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"list"</span>: [
+      {
+        <span class="k">"orderId"</span>: <span class="n">80001</span>,
+        <span class="k">"orderNo"</span>: <span class="s">"SK20260801103500001"</span>,
+        <span class="k">"productId"</span>: <span class="n">2001</span>,
+        <span class="k">"productName"</span>: <span class="s">"iPhone 16 Pro Max 256GB"</span>,
+        <span class="k">"coverImage"</span>: <span class="s">"..."</span>,
+        <span class="k">"seckillPrice"</span>: <span class="n">5999.00</span>,
+        <span class="k">"quantity"</span>: <span class="n">1</span>,
+        <span class="k">"totalAmount"</span>: <span class="n">5999.00</span>,
+        <span class="k">"status"</span>: <span class="n">0</span>,
+        <span class="k">"statusText"</span>: <span class="s">"待支付"</span>,
+        <span class="k">"createdAt"</span>: <span class="s">"2026-08-01T10:35:00"</span>,
+        <span class="k">"payExpireTime"</span>: <span class="s">"2026-08-01T10:50:00"</span>
+      }
+    ],
+    <span class="k">"total"</span>: <span class="n">5</span>, <span class="k">"pageNum"</span>: <span class="n">1</span>, <span class="k">"pageSize"</span>: <span class="n">10</span>, <span class="k">"pages"</span>: <span class="n">1</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/orders/{orderId}</span>
+      <span class="api-desc">订单详情</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token</span></div>
+      <h4>请求参数 (Path)</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>orderId</code></td><td>Long</td><td class="required">是</td><td>订单 ID</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"orderId"</span>: <span class="n">80001</span>,
+    <span class="k">"orderNo"</span>: <span class="s">"SK20260801103500001"</span>,
+    <span class="k">"userId"</span>: <span class="n">10001</span>,
+    <span class="k">"seckillId"</span>: <span class="n">5001</span>,
+    <span class="k">"product"</span>: { <span class="k">"productId"</span>: <span class="n">2001</span>, <span class="k">"name"</span>: <span class="s">"iPhone 16 Pro Max 256GB"</span>, <span class="k">"coverImage"</span>: <span class="s">"..."</span> },
+    <span class="k">"seckillPrice"</span>: <span class="n">5999.00</span>,
+    <span class="k">"quantity"</span>: <span class="n">1</span>,
+    <span class="k">"totalAmount"</span>: <span class="n">5999.00</span>,
+    <span class="k">"status"</span>: <span class="n">0</span>,
+    <span class="k">"statusText"</span>: <span class="s">"待支付"</span>,
+    <span class="k">"createdAt"</span>: <span class="s">"2026-08-01T10:35:00"</span>,
+    <span class="k">"payExpireTime"</span>: <span class="s">"2026-08-01T10:50:00"</span>,
+    <span class="k">"paidAt"</span>: <span class="nu">null</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-post">POST</span>
+      <span class="api-path">/api/v1/orders/{orderId}/pay</span>
+      <span class="api-desc">确认支付（模拟支付）</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token</span></div>
+      <h4>请求参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>orderId</code></td><td>Long</td><td class="required">是</td><td>订单 ID（Path）</td></tr>
+        <tr><td><code>payMethod</code></td><td>String</td><td class="optional">否</td><td>支付方式: ALIPAY / WECHAT，默认 ALIPAY（模拟）</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"支付成功"</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"orderId"</span>: <span class="n">80001</span>,
+    <span class="k">"orderNo"</span>: <span class="s">"SK20260801103500001"</span>,
+    <span class="k">"payMethod"</span>: <span class="s">"ALIPAY"</span>,
+    <span class="k">"paidAt"</span>: <span class="s">"2026-08-01T10:38:22"</span>,
+    <span class="k">"transactionId"</span>: <span class="s">"TXN20260801103822001"</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-put">PUT</span>
+      <span class="api-path">/api/v1/orders/{orderId}/cancel</span>
+      <span class="api-desc">取消订单</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token</span></div>
+      <h4>请求参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>orderId</code></td><td>Long</td><td class="required">是</td><td>订单 ID（Path）</td></tr>
+        <tr><td><code>reason</code></td><td>String</td><td class="optional">否</td><td>取消原因</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{ <span class="k">"code"</span>: <span class="n">200</span>, <span class="k">"message"</span>: <span class="s">"订单已取消，库存已恢复"</span>, <span class="k">"data"</span>: <span class="nu">null</span> }</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/admin/orders</span>
+      <span class="api-desc">管理员订单列表</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数 (Query)</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>pageNum</code></td><td>Integer</td><td class="optional">否</td><td>页码</td></tr>
+        <tr><td><code>pageSize</code></td><td>Integer</td><td class="optional">否</td><td>每页条数</td></tr>
+        <tr><td><code>status</code></td><td>Integer</td><td class="optional">否</td><td>订单状态筛选</td></tr>
+        <tr><td><code>orderNo</code></td><td>String</td><td class="optional">否</td><td>订单号精确搜索</td></tr>
+        <tr><td><code>userId</code></td><td>Long</td><td class="optional">否</td><td>用户 ID 筛选</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"list"</span>: [
+      {
+        <span class="k">"orderId"</span>: <span class="n">80001</span>,
+        <span class="k">"orderNo"</span>: <span class="s">"SK20260801103500001"</span>,
+        <span class="k">"username"</span>: <span class="s">"seckill_user"</span>,
+        <span class="k">"productName"</span>: <span class="s">"iPhone 16 Pro Max"</span>,
+        <span class="k">"totalAmount"</span>: <span class="n">5999.00</span>,
+        <span class="k">"status"</span>: <span class="n">1</span>,
+        <span class="k">"statusText"</span>: <span class="s">"已支付"</span>,
+        <span class="k">"createdAt"</span>: <span class="s">"2026-08-01T10:35:00"</span>,
+        <span class="k">"paidAt"</span>: <span class="s">"2026-08-01T10:38:22"</span>
+      }
+    ],
+    <span class="k">"total"</span>: <span class="n">256</span>, <span class="k">"pageNum"</span>: <span class="n">1</span>, <span class="k">"pageSize"</span>: <span class="n">10</span>, <span class="k">"pages"</span>: <span class="n">26</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/admin/orders/{orderId}</span>
+      <span class="api-desc">管理员订单详情</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数 (Path)</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>orderId</code></td><td>Long</td><td class="required">是</td><td>订单 ID</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"orderId"</span>: <span class="n">80001</span>,
+    <span class="k">"orderNo"</span>: <span class="s">"SK20260801103500001"</span>,
+    <span class="k">"user"</span>: { <span class="k">"userId"</span>: <span class="n">10001</span>, <span class="k">"username"</span>: <span class="s">"seckill_user"</span>, <span class="k">"phone"</span>: <span class="s">"138****8888"</span> },
+    <span class="k">"product"</span>: { <span class="k">"productId"</span>: <span class="n">2001</span>, <span class="k">"name"</span>: <span class="s">"iPhone 16 Pro Max 256GB"</span>, <span class="k">"coverImage"</span>: <span class="s">"..."</span> },
+    <span class="k">"seckill"</span>: { <span class="k">"seckillId"</span>: <span class="n">5001</span>, <span class="k">"seckillPrice"</span>: <span class="n">5999.00</span> },
+    <span class="k">"totalAmount"</span>: <span class="n">5999.00</span>,
+    <span class="k">"status"</span>: <span class="n">1</span>,
+    <span class="k">"statusText"</span>: <span class="s">"已支付"</span>,
+    <span class="k">"createdAt"</span>: <span class="s">"2026-08-01T10:35:00"</span>,
+    <span class="k">"paidAt"</span>: <span class="s">"2026-08-01T10:38:22"</span>,
+    <span class="k">"transactionId"</span>: <span class="s">"TXN20260801103822001"</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <!-- 4.6 用户管理-后台 -->
+  <div id="mod-user-admin" class="module-header">
+    <span class="num">6</span><span class="title">用户管理-后台模块</span><span class="count">4 个接口</span>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/admin/users</span>
+      <span class="api-desc">用户列表（管理员）</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数 (Query)</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>pageNum</code></td><td>Integer</td><td class="optional">否</td><td>页码，默认 1</td></tr>
+        <tr><td><code>pageSize</code></td><td>Integer</td><td class="optional">否</td><td>每页条数，默认 10</td></tr>
+        <tr><td><code>keyword</code></td><td>String</td><td class="optional">否</td><td>搜索关键词（用户名/手机号）</td></tr>
+        <tr><td><code>role</code></td><td>String</td><td class="optional">否</td><td>角色筛选: USER / ADMIN</td></tr>
+        <tr><td><code>status</code></td><td>Integer</td><td class="optional">否</td><td>状态筛选: 0=禁用, 1=正常</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"list"</span>: [
+      {
+        <span class="k">"userId"</span>: <span class="n">10001</span>,
+        <span class="k">"username"</span>: <span class="s">"seckill_user"</span>,
+        <span class="k">"phone"</span>: <span class="s">"138****8888"</span>,
+        <span class="k">"email"</span>: <span class="s">"user@example.com"</span>,
+        <span class="k">"role"</span>: <span class="s">"USER"</span>,
+        <span class="k">"status"</span>: <span class="n">1</span>,
+        <span class="k">"statusText"</span>: <span class="s">"正常"</span>,
+        <span class="k">"orderCount"</span>: <span class="n">5</span>,
+        <span class="k">"createdAt"</span>: <span class="s">"2026-01-15T08:30:00"</span>,
+        <span class="k">"lastLoginAt"</span>: <span class="s">"2026-08-01T09:20:00"</span>
+      }
+    ],
+    <span class="k">"total"</span>: <span class="n">1024</span>, <span class="k">"pageNum"</span>: <span class="n">1</span>, <span class="k">"pageSize"</span>: <span class="n">10</span>, <span class="k">"pages"</span>: <span class="n">103</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-put">PUT</span>
+      <span class="api-path">/api/v1/admin/users/{userId}/role</span>
+      <span class="api-desc">修改用户角色</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>userId</code></td><td>Long</td><td class="required">是</td><td>用户 ID（Path）</td></tr>
+        <tr><td><code>role</code></td><td>String</td><td class="required">是</td><td>新角色: USER / ADMIN（Body）</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{ <span class="k">"code"</span>: <span class="n">200</span>, <span class="k">"message"</span>: <span class="s">"用户角色已更新"</span>, <span class="k">"data"</span>: <span class="nu">null</span> }</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-put">PUT</span>
+      <span class="api-path">/api/v1/admin/users/{userId}/status</span>
+      <span class="api-desc">禁用/启用用户</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>userId</code></td><td>Long</td><td class="required">是</td><td>用户 ID（Path）</td></tr>
+        <tr><td><code>status</code></td><td>Integer</td><td class="required">是</td><td>状态: 0=禁用, 1=启用（Body）</td></tr>
+        <tr><td><code>reason</code></td><td>String</td><td class="optional">否</td><td>操作原因（Body）</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{ <span class="k">"code"</span>: <span class="n">200</span>, <span class="k">"message"</span>: <span class="s">"用户已被禁用"</span>, <span class="k">"data"</span>: <span class="nu">null</span> }</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-post">POST</span>
+      <span class="api-path">/api/v1/admin/users/{userId}/reset-password</span>
+      <span class="api-desc">重置用户密码</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数 (Path)</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>userId</code></td><td>Long</td><td class="required">是</td><td>用户 ID</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"密码已重置为默认密码"</span>,
+  <span class="k">"data"</span>: { <span class="k">"defaultPassword"</span>: <span class="s">"Abc123456"</span> }
+}</pre>
+    </div>
+  </div>
+
+  <!-- 4.7 系统管理 -->
+  <div id="mod-system" class="module-header">
+    <span class="num">7</span><span class="title">系统管理模块</span><span class="count">3 个接口</span>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/admin/dashboard</span>
+      <span class="api-desc">仪表盘统计数据</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数</h4><p>无请求参数。</p>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"overview"</span>: {
+      <span class="k">"totalUsers"</span>: <span class="n">10240</span>,
+      <span class="k">"totalProducts"</span>: <span class="n">86</span>,
+      <span class="k">"totalOrders"</span>: <span class="n">5120</span>,
+      <span class="k">"totalRevenue"</span>: <span class="n">2568000.00</span>,
+      <span class="k">"todayNewUsers"</span>: <span class="n">32</span>,
+      <span class="k">"todayOrders"</span>: <span class="n">128</span>,
+      <span class="k">"todayRevenue"</span>: <span class="n">64000.00</span>
+    },
+    <span class="k">"activeSeckills"</span>: <span class="n">3</span>,
+    <span class="k">"pendingOrders"</span>: <span class="n">15</span>,
+    <span class="k">"recentOrders"</span>: [
+      { <span class="k">"orderId"</span>: <span class="n">80001</span>, <span class="k">"orderNo"</span>: <span class="s">"SK20260801103500001"</span>, <span class="k">"username"</span>: <span class="s">"seckill_user"</span>, <span class="k">"totalAmount"</span>: <span class="n">5999.00</span>, <span class="k">"status"</span>: <span class="n">1</span>, <span class="k">"createdAt"</span>: <span class="s">"2026-08-01T10:35:00"</span> }
+    ]
+  }
+}</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/admin/health</span>
+      <span class="api-desc">系统健康状态</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数</h4><p>无请求参数。</p>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"status"</span>: <span class="s">"UP"</span>,
+    <span class="k">"components"</span>: {
+      <span class="k">"mysql"</span>: { <span class="k">"status"</span>: <span class="s">"UP"</span>, <span class="k">"latency"</span>: <span class="s">"3ms"</span> },
+      <span class="k">"redis"</span>: { <span class="k">"status"</span>: <span class="s">"UP"</span>, <span class="k">"latency"</span>: <span class="s">"1ms"</span>, <span class="k">"memoryUsed"</span>: <span class="s">"256MB"</span> },
+      <span class="k">"rabbitmq"</span>: { <span class="k">"status"</span>: <span class="s">"UP"</span>, <span class="k">"queueCount"</span>: <span class="n">2</span>, <span class="k">"pendingMessages"</span>: <span class="n">0</span> }
+    },
+    <span class="k">"jvm"</span>: {
+      <span class="k">"heapUsed"</span>: <span class="s">"512MB"</span>,
+      <span class="k">"heapMax"</span>: <span class="s">"2048MB"</span>,
+      <span class="k">"threadCount"</span>: <span class="n">85</span>,
+      <span class="k">"uptime"</span>: <span class="s">"72h 15m"</span>
+    },
+    <span class="k">"serverTime"</span>: <span class="s">"2026-08-01T10:40:00"</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-get">GET</span>
+      <span class="api-path">/api/v1/admin/settings</span>
+      <span class="api-desc">获取系统设置</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数</h4><p>无请求参数。</p>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"siteName"</span>: <span class="s">"秒杀商城"</span>,
+    <span class="k">"orderTimeoutMinutes"</span>: <span class="n">15</span>,
+    <span class="k">"seckillRateLimit"</span>: <span class="n">10</span>,
+    <span class="k">"captchaEnabled"</span>: <span class="bo">true</span>,
+    <span class="k">"registerEnabled"</span>: <span class="bo">true</span>,
+    <span class="k">"maintenanceMode"</span>: <span class="bo">false</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <div class="api-card">
+    <div class="api-header">
+      <span class="method method-put">PUT</span>
+      <span class="api-path">/api/v1/admin/settings</span>
+      <span class="api-desc">更新系统设置</span>
+    </div>
+    <div class="api-body">
+      <div class="api-meta"><span class="tag-auth">Bearer Token (ADMIN)</span></div>
+      <h4>请求参数 (Body)</h4>
+      <table>
+        <tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr>
+        <tr><td><code>siteName</code></td><td>String</td><td class="optional">否</td><td>站点名称</td></tr>
+        <tr><td><code>orderTimeoutMinutes</code></td><td>Integer</td><td class="optional">否</td><td>订单超时时间（分钟）</td></tr>
+        <tr><td><code>seckillRateLimit</code></td><td>Integer</td><td class="optional">否</td><td>秒杀接口限流（次/秒/用户）</td></tr>
+        <tr><td><code>captchaEnabled</code></td><td>Boolean</td><td class="optional">否</td><td>是否启用验证码</td></tr>
+        <tr><td><code>registerEnabled</code></td><td>Boolean</td><td class="optional">否</td><td>是否开放注册</td></tr>
+        <tr><td><code>maintenanceMode</code></td><td>Boolean</td><td class="optional">否</td><td>是否开启维护模式</td></tr>
+      </table>
+      <h4>响应数据</h4>
+<pre><span class="code-label">JSON</span>
+{ <span class="k">"code"</span>: <span class="n">200</span>, <span class="k">"message"</span>: <span class="s">"系统设置已更新"</span>, <span class="k">"data"</span>: <span class="nu">null</span> }</pre>
+    </div>
+  </div>
+</section>
+
+<!-- 五、核心接口详设 -->
+<section id="detail">
+  <h2>五、核心接口详细设计 <span class="badge">Core APIs</span></h2>
+  <p style="margin-bottom:24px">以下为核心业务接口的完整请求/响应示例，包含详细的 JSON 数据结构和字段说明。</p>
+
+  <!-- 5.1 执行秒杀 -->
+  <div id="detail-seckill">
+    <h3>5.1 执行秒杀 POST /api/v1/seckill/{seckillId}</h3>
+    <div class="card">
+      <div class="info-box orange">
+        <div><strong>核心流程</strong>1. 前端校验 seckillToken 有效性 &rarr; 2. Redis 原子预减库存(DECR) &rarr; 3. 检查用户是否已购买(SISMEMBER) &rarr; 4. 投递消息到 RabbitMQ &rarr; 5. 异步消费者创建订单 &rarr; 6. 前端轮询结果</div>
+      </div>
+      <h4>完整请求示例</h4>
+<pre><span class="code-label">HTTP Request</span>
+POST /api/v1/seckill/5001 HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDAwMSIsInJvbGUiOiJVU0VSIiwiZXhwIjoxNjI3...
+
+{
+  <span class="k">"seckillToken"</span>: <span class="s">"sk_token_5001_10001_9b2e7f3a4c1d"</span>
+}</pre>
+      <h4>成功响应 - 排队中（正常情况）</h4>
+<pre><span class="code-label">JSON Response</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"秒杀请求已提交，排队处理中"</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"seckillId"</span>: <span class="n">5001</span>,
+    <span class="k">"requestId"</span>: <span class="s">"sk_req_5001_10001_7f3a9b2e"</span>,
+    <span class="k">"status"</span>: <span class="n">0</span>,
+    <span class="k">"statusText"</span>: <span class="s">"排队中"</span>,
+    <span class="k">"estimatedWaitMs"</span>: <span class="n">2000</span>
+  },
+  <span class="k">"timestamp"</span>: <span class="s">"2026-08-01T10:32:15"</span>
+}</pre>
+      <h4>失败响应 - 库存不足</h4>
+<pre><span class="code-label">JSON Response</span>
+{
+  <span class="k">"code"</span>: <span class="n">2003</span>,
+  <span class="k">"message"</span>: <span class="s">"库存不足，商品已售罄"</span>,
+  <span class="k">"data"</span>: <span class="nu">null</span>,
+  <span class="k">"timestamp"</span>: <span class="s">"2026-08-01T10:32:15"</span>
+}</pre>
+      <h4>失败响应 - 重复下单</h4>
+<pre><span class="code-label">JSON Response</span>
+{
+  <span class="k">"code"</span>: <span class="n">2004</span>,
+  <span class="k">"message"</span>: <span class="s">"您已参与过此活动，每位用户限购一次"</span>,
+  <span class="k">"data"</span>: <span class="nu">null</span>,
+  <span class="k">"timestamp"</span>: <span class="s">"2026-08-01T10:32:15"</span>
+}</pre>
+      <h4>失败响应 - 活动未开始/已结束</h4>
+<pre><span class="code-label">JSON Response</span>
+{
+  <span class="k">"code"</span>: <span class="n">2002</span>,
+  <span class="k">"message"</span>: <span class="s">"秒杀活动尚未开始"</span>,
+  <span class="k">"data"</span>: <span class="nu">null</span>,
+  <span class="k">"timestamp"</span>: <span class="s">"2026-08-01T09:55:00"</span>
+}</pre>
+      <h4>服务端处理逻辑（伪代码）</h4>
+<pre><span class="code-label">Logic</span>
+<span class="cm">// 1. 验证 seckillToken（Redis 中校验，防伪造）</span>
+tokenValid = redis.exists("sk_token:{seckillId}:{userId}")
+
+<span class="cm">// 2. 检查活动状态（Redis 缓存）</span>
+activity = redis.hget("seckill:info:{seckillId}")
+checkTimeRange(activity.startTime, activity.endTime)
+
+<span class="cm">// 3. 检查用户是否已购买（Redis Set）</span>
+alreadyBought = redis.sismember("seckill:bought:{seckillId}", userId)
+
+<span class="cm">// 4. 预减库存（Redis DECR 原子操作）</span>
+stock = redis.decr("seckill:stock:{seckillId}")
+if (stock &lt; 0) { redis.incr(...); throw StockEmpty }
+
+<span class="cm">// 5. 投递消息到 RabbitMQ</span>
+rabbitMQ.send("seckill.order.queue", {
+    seckillId, userId, requestId, timestamp
+})
+
+<span class="cm">// 6. 立即返回 requestId（前端轮询用）</span>
+return { requestId, status: 0, statusText: "排队中" }</pre>
+    </div>
+  </div>
+
+  <!-- 5.2 查询秒杀结果 -->
+  <div id="detail-result">
+    <h3>5.2 查询秒杀结果 GET /api/v1/seckill/{seckillId}/result</h3>
+    <div class="card">
+      <div class="info-box blue">
+        <div><strong>轮询策略</strong>前端获取到 requestId 后开始轮询。建议：前 5 次间隔 1s，之后间隔 2s，最多 30 次（约 55s）。超时后提示用户稍后在"我的订单"中查看。</div>
+      </div>
+      <h4>完整请求示例</h4>
+<pre><span class="code-label">HTTP Request</span>
+GET /api/v1/seckill/5001/result?requestId=sk_req_5001_10001_7f3a9b2e HTTP/1.1
+Host: api.example.com
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...</pre>
+      <h4>响应 - 排队中（status=0，继续轮询）</h4>
+<pre><span class="code-label">JSON Response</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"success"</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"status"</span>: <span class="n">0</span>,
+    <span class="k">"statusText"</span>: <span class="s">"排队中，正在处理"</span>,
+    <span class="k">"orderId"</span>: <span class="nu">null</span>,
+    <span class="k">"payExpireTime"</span>: <span class="nu">null</span>
+  },
+  <span class="k">"timestamp"</span>: <span class="s">"2026-08-01T10:32:17"</span>
+}</pre>
+      <h4>响应 - 秒杀成功（status=1）</h4>
+<pre><span class="code-label">JSON Response</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"success"</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"status"</span>: <span class="n">1</span>,
+    <span class="k">"statusText"</span>: <span class="s">"秒杀成功! 请在15分钟内完成支付"</span>,
+    <span class="k">"orderId"</span>: <span class="n">80001</span>,
+    <span class="k">"orderNo"</span>: <span class="s">"SK20260801103218001"</span>,
+    <span class="k">"totalAmount"</span>: <span class="n">5999.00</span>,
+    <span class="k">"payExpireTime"</span>: <span class="s">"2026-08-01T10:47:18"</span>
+  },
+  <span class="k">"timestamp"</span>: <span class="s">"2026-08-01T10:32:18"</span>
+}</pre>
+      <h4>响应 - 秒杀失败（status=-1）</h4>
+<pre><span class="code-label">JSON Response</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"success"</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"status"</span>: <span class="n">-1</span>,
+    <span class="k">"statusText"</span>: <span class="s">"秒杀失败: 很遗憾，商品已被抢光"</span>,
+    <span class="k">"orderId"</span>: <span class="nu">null</span>,
+    <span class="k">"payExpireTime"</span>: <span class="nu">null</span>
+  },
+  <span class="k">"timestamp"</span>: <span class="s">"2026-08-01T10:32:20"</span>
+}</pre>
+      <h4>前端轮询伪代码</h4>
+<pre><span class="code-label">JavaScript</span>
+async function pollSeckillResult(seckillId, requestId) {
+  let attempts = 0;
+  const maxAttempts = 30;
+
+  while (attempts &lt; maxAttempts) {
+    const delay = attempts &lt; 5 ? 1000 : 2000;
+    await sleep(delay);
+
+    const res = await fetch(
+      `/api/v1/seckill/${seckillId}/result?requestId=${requestId}`
+    );
+    const { data } = await res.json();
+
+    if (data.status === 1) {
+      <span class="cm">// 秒杀成功，跳转支付页</span>
+      router.push(`/order/pay/${data.orderId}`);
+      return;
+    }
+    if (data.status === -1) {
+      <span class="cm">// 秒杀失败，显示失败提示</span>
+      showToast(data.statusText);
+      return;
+    }
+    <span class="cm">// status === 0，继续轮询</span>
+    attempts++;
+  }
+  <span class="cm">// 超时处理</span>
+  showToast('处理超时，请在"我的订单"中查看');
+}</pre>
+    </div>
+  </div>
+
+  <!-- 5.3 确认支付 -->
+  <div id="detail-pay">
+    <h3>5.3 确认支付 POST /api/v1/orders/{orderId}/pay</h3>
+    <div class="card">
+      <div class="info-box green">
+        <div><strong>支付流程</strong>本项目采用模拟支付，调用后直接将订单状态更新为"已支付"。生产环境可对接支付宝/微信支付 SDK 替换此接口实现。订单创建后 15 分钟内未支付将自动取消（延迟队列实现）。</div>
+      </div>
+      <h4>完整请求示例</h4>
+<pre><span class="code-label">HTTP Request</span>
+POST /api/v1/orders/80001/pay HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+
+{
+  <span class="k">"payMethod"</span>: <span class="s">"ALIPAY"</span>
+}</pre>
+      <h4>成功响应</h4>
+<pre><span class="code-label">JSON Response</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"支付成功"</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"orderId"</span>: <span class="n">80001</span>,
+    <span class="k">"orderNo"</span>: <span class="s">"SK20260801103500001"</span>,
+    <span class="k">"payMethod"</span>: <span class="s">"ALIPAY"</span>,
+    <span class="k">"totalAmount"</span>: <span class="n">5999.00</span>,
+    <span class="k">"paidAt"</span>: <span class="s">"2026-08-01T10:38:22"</span>,
+    <span class="k">"transactionId"</span>: <span class="s">"TXN20260801103822001"</span>
+  },
+  <span class="k">"timestamp"</span>: <span class="s">"2026-08-01T10:38:22"</span>
+}</pre>
+      <h4>失败响应 - 订单已支付</h4>
+<pre><span class="code-label">JSON Response</span>
+{
+  <span class="k">"code"</span>: <span class="n">3002</span>,
+  <span class="k">"message"</span>: <span class="s">"订单已支付，请勿重复操作"</span>,
+  <span class="k">"data"</span>: <span class="nu">null</span>,
+  <span class="k">"timestamp"</span>: <span class="s">"2026-08-01T10:39:00"</span>
+}</pre>
+      <h4>失败响应 - 订单已超时</h4>
+<pre><span class="code-label">JSON Response</span>
+{
+  <span class="k">"code"</span>: <span class="n">3004</span>,
+  <span class="k">"message"</span>: <span class="s">"订单支付超时，已自动取消"</span>,
+  <span class="k">"data"</span>: <span class="nu">null</span>,
+  <span class="k">"timestamp"</span>: <span class="s">"2026-08-01T10:51:00"</span>
+}</pre>
+      <h4>服务端处理逻辑（伪代码）</h4>
+<pre><span class="code-label">Logic</span>
+<span class="cm">// 1. 查询订单并加锁（悲观锁 / 乐观锁）</span>
+order = orderRepository.findByIdForUpdate(orderId)
+
+<span class="cm">// 2. 校验订单状态</span>
+if (order.status != PENDING) throw OrderStatusError
+if (now() > order.payExpireTime) {
+    cancelOrder(order)  <span class="cm">// 超时自动取消</span>
+    throw OrderTimeout
+}
+
+<span class="cm">// 3. 校验用户权限（只能支付自己的订单）</span>
+if (order.userId != currentUser.id) throw Forbidden
+
+<span class="cm">// 4. 执行支付（模拟：直接标记为已支付）</span>
+order.status = PAID
+order.paidAt = now()
+order.transactionId = generateTxnId()
+orderRepository.save(order)
+
+<span class="cm">// 5. 取消延迟取消任务</span>
+rabbitMQ.cancelDelay("order.timeout." + orderId)
+
+return PaySuccessResponse</pre>
+    </div>
+  </div>
+
+  <!-- 5.4 用户登录 -->
+  <div id="detail-login">
+    <h3>5.4 用户登录 POST /api/v1/auth/login</h3>
+    <div class="card">
+      <div class="info-box purple">
+        <div><strong>认证机制</strong>采用 JWT 双 Token 机制：accessToken 有效期 1 小时，refreshToken 有效期 7 天。登录时需先通过图形验证码校验防止暴力破解。Token 黑名单存储在 Redis 中，登出时加入黑名单。</div>
+      </div>
+      <h4>完整请求示例</h4>
+<pre><span class="code-label">HTTP Request</span>
+POST /api/v1/auth/login HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+
+{
+  <span class="k">"username"</span>: <span class="s">"seckill_user"</span>,
+  <span class="k">"password"</span>: <span class="s">"MySecure123"</span>,
+  <span class="k">"captchaKey"</span>: <span class="s">"captcha_login_abc123"</span>,
+  <span class="k">"captchaCode"</span>: <span class="s">"x7k2"</span>
+}</pre>
+      <h4>成功响应</h4>
+<pre><span class="code-label">JSON Response</span>
+{
+  <span class="k">"code"</span>: <span class="n">200</span>,
+  <span class="k">"message"</span>: <span class="s">"登录成功"</span>,
+  <span class="k">"data"</span>: {
+    <span class="k">"accessToken"</span>: <span class="s">"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDAwMSIsInJvbGUiOiJVU0VSIiwiZXhwIjoxNjI3NzQ0MDAwfQ.abc123"</span>,
+    <span class="k">"refreshToken"</span>: <span class="s">"dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4gd2l0aCA3IGRheXMgZXhwaXJ5"</span>,
+    <span class="k">"expiresIn"</span>: <span class="n">3600</span>,
+    <span class="k">"tokenType"</span>: <span class="s">"Bearer"</span>,
+    <span class="k">"user"</span>: {
+      <span class="k">"userId"</span>: <span class="n">10001</span>,
+      <span class="k">"username"</span>: <span class="s">"seckill_user"</span>,
+      <span class="k">"phone"</span>: <span class="s">"138****8888"</span>,
+      <span class="k">"role"</span>: <span class="s">"USER"</span>,
+      <span class="k">"avatar"</span>: <span class="s">"https://cdn.example.com/avatar/default.png"</span>
+    }
+  },
+  <span class="k">"timestamp"</span>: <span class="s">"2026-08-01T09:20:00"</span>
+}</pre>
+      <h4>失败响应 - 密码错误</h4>
+<pre><span class="code-label">JSON Response</span>
+{
+  <span class="k">"code"</span>: <span class="n">1003</span>,
+  <span class="k">"message"</span>: <span class="s">"密码错误，请重试"</span>,
+  <span class="k">"data"</span>: <span class="nu">null</span>,
+  <span class="k">"timestamp"</span>: <span class="s">"2026-08-01T09:20:00"</span>
+}</pre>
+      <h4>失败响应 - 验证码错误</h4>
+<pre><span class="code-label">JSON Response</span>
+{
+  <span class="k">"code"</span>: <span class="n">1005</span>,
+  <span class="k">"message"</span>: <span class="s">"验证码错误或已过期"</span>,
+  <span class="k">"data"</span>: <span class="nu">null</span>,
+  <span class="k">"timestamp"</span>: <span class="s">"2026-08-01T09:20:00"</span>
+}</pre>
+      <h4>失败响应 - 账号被禁用</h4>
+<pre><span class="code-label">JSON Response</span>
+{
+  <span class="k">"code"</span>: <span class="n">1004</span>,
+  <span class="k">"message"</span>: <span class="s">"账号已被禁用，请联系管理员"</span>,
+  <span class="k">"data"</span>: <span class="nu">null</span>,
+  <span class="k">"timestamp"</span>: <span class="s">"2026-08-01T09:20:00"</span>
+}</pre>
+      <h4>服务端处理逻辑（伪代码）</h4>
+<pre><span class="code-label">Logic</span>
+<span class="cm">// 1. 校验图形验证码</span>
+captchaValid = redis.get("captcha:" + captchaKey) == captchaCode
+if (!captchaValid) throw CaptchaError
+redis.del("captcha:" + captchaKey)  <span class="cm">// 一次性使用</span>
+
+<span class="cm">// 2. 查询用户</span>
+user = userRepository.findByUsername(username)
+if (user == null) throw PasswordError  <span class="cm">// 不暴露"用户不存在"</span>
+
+<span class="cm">// 3. 校验账号状态</span>
+if (user.status == DISABLED) throw AccountDisabled
+
+<span class="cm">// 4. 校验密码（BCrypt）</span>
+if (!passwordEncoder.matches(password, user.password)) {
+    loginAttemptService.recordFailure(username)
+    throw PasswordError
+}
+
+<span class="cm">// 5. 生成 JWT Token</span>
+accessToken = jwtService.generateAccessToken(user)
+refreshToken = jwtService.generateRefreshToken(user)
+
+<span class="cm">// 6. 存储 Refresh Token 到 Redis（7天过期）</span>
+redis.set("refresh_token:" + user.id, refreshToken, 7 * DAY)
+
+<span class="cm">// 7. 更新最后登录时间</span>
+user.lastLoginAt = now()
+userRepository.save(user)
+
+return LoginResponse(accessToken, refreshToken, user)</pre>
+    </div>
+  </div>
+</section>
+
+</div><!-- end main -->
+</body>
+</html>

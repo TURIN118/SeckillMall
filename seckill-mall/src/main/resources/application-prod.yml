@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 50
+  data:
+    redis:
+      lettuce:
+        pool:
+          max-active: 32
+  rabbitmq:
+    listener:
+      simple:
+        concurrency: 5
+
+logging:
+  level:
+    root: WARN
+  file:
+    name: /var/log/seckill-mall/app.log

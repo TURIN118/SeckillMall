@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seckill.mall.mapper.SeckillGoodsMapper">
+
+    <select id="selectSeckillPage" resultType="com.seckill.mall.entity.SeckillGoods">
+        SELECT id, product_id, seckill_price, stock_count, available_count,
+               start_time, end_time, status, creator_id,
+               is_deleted, create_time, update_time
+        FROM t_seckill_goods
+        WHERE is_deleted = 0
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND product_id IN (
+                SELECT id FROM t_product
+                WHERE name LIKE CONCAT('%', #{keyword}, '%')
+                  AND is_deleted = 0
+            )
+        </if>
+        ORDER BY start_time DESC
+    </select>
+
+    <select id="selectActiveList" resultType="com.seckill.mall.entity.SeckillGoods">
+        SELECT id, product_id, seckill_price, stock_count, available_count,
+               start_time, end_time, status, creator_id,
+               is_deleted, create_time, update_time
+        FROM t_seckill_goods
+        WHERE is_deleted = 0
+          AND status = 'ACTIVE'
+          AND start_time &lt;= NOW()
+          AND end_time &gt;= NOW()
+        ORDER BY start_time ASC
+    </select>
+
+</mapper>

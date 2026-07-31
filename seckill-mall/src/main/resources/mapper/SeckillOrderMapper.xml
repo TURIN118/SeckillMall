@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.seckill.mall.mapper.SeckillOrderMapper">
+
+    <select id="findByUserAndSeckill" resultType="com.seckill.mall.entity.SeckillOrder">
+        SELECT id, order_no, user_id, seckill_id, product_id, seckill_price,
+               quantity, total_amount, status, pay_time, pay_expire_time,
+               transaction_id, pay_method, cancel_time, cancel_reason,
+               is_deleted, create_time, update_time
+        FROM t_seckill_order
+        WHERE user_id = #{userId}
+          AND seckill_id = #{seckillId}
+          AND is_deleted = 0
+    </select>
+
+    <select id="selectOrderPage" resultType="com.seckill.mall.entity.SeckillOrder">
+        SELECT id, order_no, user_id, seckill_id, product_id, seckill_price,
+               quantity, total_amount, status, pay_time, pay_expire_time,
+               transaction_id, pay_method, cancel_time, cancel_reason,
+               is_deleted, create_time, update_time
+        FROM t_seckill_order
+        WHERE is_deleted = 0
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="seckillId != null">
+            AND seckill_id = #{seckillId}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

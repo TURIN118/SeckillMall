@@ -35,6 +35,12 @@ public class Product {
 
     private Integer salesCount;
 
+    /** 加购数量（冗余计数，由购物车操作维护） */
+    private Integer cartCount;
+
+    /** 收藏数量（冗余计数，由收藏操作维护） */
+    private Integer favoriteCount;
+
     private Long categoryId;
 
     private String images;

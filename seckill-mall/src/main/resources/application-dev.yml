@@ -1,25 +1,24 @@
 spring:
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${MYSQL_DATABASE:seckill_mall}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
-    username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASSWORD:root123}
+    url: jdbc:mysql://localhost:3307/seckill_mall?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: abc123
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       minimum-idle: 5
       maximum-pool-size: 20
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      host: localhost
+      port: 6379
       lettuce:
         pool:
           max-active: 8
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USER:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
     listener:
       simple:
         acknowledge-mode: manual
@@ -28,10 +27,10 @@ spring:
         retry:
           enabled: false
   mail:
-    host: ${SMTP_HOST:smtp.qq.com}
-    port: ${SMTP_PORT:465}
-    username: ${SMTP_USERNAME:}
-    password: ${SMTP_PASSWORD:}
+    host: smtp.qq.com
+    port: 465
+    username: turin118@qq.com
+    password: mztzyzeusvsrdgcb
     default-encoding: UTF-8
     properties:
       mail:
@@ -43,7 +42,7 @@ spring:
             enable: true
 
 jwt:
-  secret: ${JWT_SECRET:MySecretKeyForJwtHS256Algorithm2024SeckillMall}
+  secret: MySecretKeyForJwtHS256Algorithm2024SeckillMall
   access-token-expiration: 7200000
   refresh-token-expiration: 604800000
 
@@ -52,7 +51,7 @@ seckill:
   rate-limit-per-user: 1
   rate-limit-per-ip: 30
   security:
-    sign-secret: ${SECKILL_SIGN_SECRET:wnj-seckill-sign-secret-2024}
+    sign-secret: wnj-seckill-sign-secret-2024
     replay-window-seconds: 60
 
 logging:

@@ -1,12 +1,15 @@
 package com.seckill.mall.controller;
 
+import com.seckill.mall.annotation.OperationLog;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.ChangePasswordRequest;
 import com.seckill.mall.dto.LoginRequest;
+import com.seckill.mall.dto.ProfileUpdateRequest;
 import com.seckill.mall.dto.RefreshTokenRequest;
 import com.seckill.mall.dto.RegisterRequest;
 import com.seckill.mall.service.AuthService;
 import com.seckill.mall.service.CaptchaService;
+import com.seckill.mall.service.UploadService;
 import com.seckill.mall.vo.CaptchaVO;
 import com.seckill.mall.vo.LoginVO;
 import com.seckill.mall.vo.TokenVO;
@@ -22,7 +25,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
 
 /**
  * 创建人：@author WNJ
@@ -38,6 +45,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final CaptchaService captchaService;
+    private final UploadService uploadService;
 
     @Operation(summary = "用户注册")
     @PostMapping("/register")
@@ -46,12 +54,14 @@ public class AuthController {
     }
 
     @Operation(summary = "用户登录")
+    @OperationLog(module = "AUTH", action = "LOGIN", targetType = "USER")
     @PostMapping("/login")
     public Result<LoginVO> login(@Valid @RequestBody LoginRequest req, HttpServletRequest request) {
         return Result.success(authService.login(req, getClientIp(request)));
     }
 
     @Operation(summary = "退出登录")
+    @OperationLog(module = "AUTH", action = "LOGOUT", targetType = "USER")
     @PostMapping("/logout")
     public Result<Void> logout(@RequestHeader("Authorization") String authorization) {
         authService.logout(authorization);
@@ -69,6 +79,18 @@ public class AuthController {
     public Result<Void> changePassword(@Valid @RequestBody ChangePasswordRequest req) {
         authService.changePassword(req);
         return Result.success();
+    }
+
+    @Operation(summary = "更新个人信息")
+    @PutMapping("/profile")
+    public Result<UserVO> updateProfile(@RequestBody ProfileUpdateRequest req) {
+        return Result.success("个人信息更新成功", authService.updateProfile(req));
+    }
+
+    @Operation(summary = "上传头像")
+    @PostMapping("/avatar")
+    public Result<Map<String, String>> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        return Result.success("头像上传成功", authService.uploadAvatar(file));
     }
 
     @Operation(summary = "刷新令牌")

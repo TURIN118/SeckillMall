@@ -4,6 +4,7 @@ import com.seckill.mall.common.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.dto.ChangePasswordRequest;
 import com.seckill.mall.dto.LoginRequest;
+import com.seckill.mall.dto.ProfileUpdateRequest;
 import com.seckill.mall.dto.RefreshTokenRequest;
 import com.seckill.mall.dto.RegisterRequest;
 import com.seckill.mall.entity.LoginLog;
@@ -18,8 +19,10 @@ import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.security.TokenBlacklistService;
 import com.seckill.mall.service.AuthService;
 import com.seckill.mall.service.CaptchaService;
+import com.seckill.mall.service.UploadService;
 import com.seckill.mall.vo.LoginVO;
 import com.seckill.mall.vo.TokenVO;
+import com.seckill.mall.vo.UploadResultVO;
 import com.seckill.mall.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +30,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -53,6 +58,10 @@ public class AuthServiceImpl implements AuthService {
     private final CaptchaService captchaService;
     private final StringRedisTemplate stringRedisTemplate;
     private final PasswordEncoder passwordEncoder;
+    private final UploadService uploadService;
+
+    /** 头像文件最大大小：2MB */
+    private static final long AVATAR_MAX_SIZE = 2L * 1024 * 1024;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -181,6 +190,65 @@ public class AuthServiceImpl implements AuthService {
         userMapper.updateById(update);
         // TODO M9: 密码重置/修改成功后可调用 emailService.sendPasswordReset(user.getEmail(), resetToken)
         //  当前重置流程未独立成接口，待密码重置 API 落地后集成
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public UserVO updateProfile(ProfileUpdateRequest req) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+        // 手机号唯一性校验：仅当传入新手机号且与当前手机号不同时校验
+        String newPhone = req.getPhone();
+        if (newPhone != null && !newPhone.isBlank() && !newPhone.equals(user.getPhone())) {
+            User existing = userMapper.findByPhone(newPhone);
+            if (existing != null && !existing.getId().equals(userId)) {
+                throw new BusinessException(ErrorCode.PHONE_EXISTS);
+            }
+        }
+        // MyBatis-Plus updateById 只更新非 null 字段
+        User update = new User();
+        update.setId(userId);
+        if (req.getNickname() != null) {
+            update.setNickname(req.getNickname());
+        }
+        if (req.getEmail() != null) {
+            update.setEmail(req.getEmail());
+        }
+        if (newPhone != null) {
+            update.setPhone(newPhone);
+        }
+        if (req.getAvatar() != null) {
+            update.setAvatarUrl(req.getAvatar());
+        }
+        userMapper.updateById(update);
+        // 返回最新用户信息
+        User latest = userMapper.selectById(userId);
+        return toUserVO(latest);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, String> uploadAvatar(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "上传文件不能为空");
+        }
+        // 头像专用限制：2MB（通用上传为 5MB，故在此前置校验）
+        if (file.getSize() > AVATAR_MAX_SIZE) {
+            throw new BusinessException(ErrorCode.FILE_TOO_LARGE);
+        }
+        // 复用通用上传服务（类型校验由 UploadService 完成）
+        UploadResultVO result = uploadService.uploadImage(file, "avatar", null);
+        String url = result.getUrl();
+        // 持久化头像 URL 到当前用户
+        Long userId = SecurityUtils.getCurrentUserId();
+        User update = new User();
+        update.setId(userId);
+        update.setAvatarUrl(url);
+        userMapper.updateById(update);
+        return Map.of("avatar", url);
     }
 
     private int getFailCount(String failKey) {

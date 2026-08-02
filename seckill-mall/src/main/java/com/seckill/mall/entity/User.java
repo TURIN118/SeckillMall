@@ -10,6 +10,7 @@ import com.seckill.mall.entity.enums.UserRole;
 import com.seckill.mall.entity.enums.UserStatus;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -36,6 +37,9 @@ public class User {
     private String nickname;
 
     private String avatarUrl;
+
+    /** 钱包余额 */
+    private BigDecimal balance;
 
     @TableField("role")
     private UserRole role;

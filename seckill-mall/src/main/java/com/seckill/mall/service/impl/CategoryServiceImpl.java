@@ -3,8 +3,15 @@ package com.seckill.mall.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.seckill.mall.common.BusinessException;
+import com.seckill.mall.common.ErrorCode;
+import com.seckill.mall.dto.CategoryCreateRequest;
+import com.seckill.mall.dto.CategoryStatusUpdateRequest;
+import com.seckill.mall.dto.CategoryUpdateRequest;
 import com.seckill.mall.entity.Category;
+import com.seckill.mall.entity.Product;
 import com.seckill.mall.mapper.CategoryMapper;
+import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.service.CategoryService;
 import com.seckill.mall.vo.CategoryVO;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +43,17 @@ public class CategoryServiceImpl implements CategoryService {
     // 一级分类的 parentId 约定为 0
     private static final long ROOT_PARENT_ID = 0L;
 
+    // 默认排序值
+    private static final int DEFAULT_SORT_ORDER = 0;
+
+    // 默认状态：1=启用
+    private static final int DEFAULT_STATUS_ENABLED = 1;
+
+    // 循环检测最大向上追溯层数，防止异常数据导致死循环
+    private static final int MAX_ANCESTOR_DEPTH = 50;
+
     private final CategoryMapper categoryMapper;
+    private final ProductMapper productMapper;
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -66,6 +83,146 @@ public class CategoryServiceImpl implements CategoryService {
             log.warn("分类树缓存写入失败", e);
         }
         return tree;
+    }
+
+    @Override
+    public CategoryVO createCategory(CategoryCreateRequest request) {
+        Category category = new Category();
+        category.setName(request.getCategoryName());
+        // parentId=0 一级分类，统一存为 0L 与 ROOT_PARENT_ID 一致
+        category.setParentId(request.getParentId());
+        category.setSortOrder(request.getSortOrder() == null ? DEFAULT_SORT_ORDER : request.getSortOrder());
+        category.setStatus(request.getStatus() == null ? DEFAULT_STATUS_ENABLED : request.getStatus());
+
+        categoryMapper.insert(category);
+        log.info("新增分类成功，id={}, name={}", category.getId(), category.getName());
+
+        evictCategoryCache();
+        return toCategoryVO(category);
+    }
+
+    @Override
+    public CategoryVO updateCategory(Long id, CategoryUpdateRequest request) {
+        Category existing = categoryMapper.selectById(id);
+        if (existing == null) {
+            throw new BusinessException(ErrorCode.CATEGORY_NOT_FOUND);
+        }
+
+        // 若修改 parentId，需校验不能移动到自身或自身子分类下，防止循环引用
+        if (request.getParentId() != null && !request.getParentId().equals(existing.getParentId())) {
+            Long targetParentId = request.getParentId();
+            // 不允许把分类挂到自己下面
+            if (targetParentId.equals(id)) {
+                throw new BusinessException(ErrorCode.CATEGORY_CYCLE);
+            }
+            // 目标父分类的祖先链若包含当前 id，则形成环
+            if (isDescendant(id, targetParentId)) {
+                throw new BusinessException(ErrorCode.CATEGORY_CYCLE);
+            }
+            existing.setParentId(targetParentId);
+        }
+
+        if (request.getCategoryName() != null) {
+            existing.setName(request.getCategoryName());
+        }
+        if (request.getSortOrder() != null) {
+            existing.setSortOrder(request.getSortOrder());
+        }
+        if (request.getStatus() != null) {
+            existing.setStatus(request.getStatus());
+        }
+
+        categoryMapper.updateById(existing);
+        log.info("编辑分类成功，id={}", id);
+
+        evictCategoryCache();
+        return toCategoryVO(existing);
+    }
+
+    @Override
+    public void deleteCategory(Long id) {
+        Category existing = categoryMapper.selectById(id);
+        if (existing == null) {
+            throw new BusinessException(ErrorCode.CATEGORY_NOT_FOUND);
+        }
+
+        // 检查子分类（is_deleted=0 由 @TableLogic 自动追加）
+        Long childCount = categoryMapper.selectCount(
+                new LambdaQueryWrapper<Category>().eq(Category::getParentId, id));
+        if (childCount != null && childCount > 0) {
+            throw new BusinessException(ErrorCode.CATEGORY_HAS_CHILDREN);
+        }
+
+        // 检查关联商品
+        Long productCount = productMapper.selectCount(
+                new LambdaQueryWrapper<Product>().eq(Product::getCategoryId, id));
+        if (productCount != null && productCount > 0) {
+            throw new BusinessException(ErrorCode.CATEGORY_HAS_PRODUCT);
+        }
+
+        // 逻辑删除（@TableLogic 自动处理 is_deleted 字段）
+        categoryMapper.deleteById(id);
+        log.info("删除分类成功，id={}", id);
+
+        evictCategoryCache();
+    }
+
+    @Override
+    public void updateCategoryStatus(Long id, CategoryStatusUpdateRequest request) {
+        Category existing = categoryMapper.selectById(id);
+        if (existing == null) {
+            throw new BusinessException(ErrorCode.CATEGORY_NOT_FOUND);
+        }
+
+        // 只更新 status 字段
+        Category toUpdate = new Category();
+        toUpdate.setId(id);
+        toUpdate.setStatus(request.getStatus());
+        categoryMapper.updateById(toUpdate);
+        log.info("切换分类状态成功，id={}, status={}", id, request.getStatus());
+
+        evictCategoryCache();
+    }
+
+    /**
+     * 判断 ancestorId 是否为 descendantId 的祖先（即 descendantId 是否位于 ancestorId 的子树中）。
+     * 实现方式：从 descendantId 向上追溯 parentId 链，若途中遇到 ancestorId 则返回 true。
+     * 为防止脏数据导致死循环，最多向上追溯 {@link #MAX_ANCESTOR_DEPTH} 层。
+     *
+     * @param ancestorId   候选祖先节点 ID
+     * @param descendantId 起始子节点 ID
+     * @return true 表示 ancestorId 是 descendantId 的祖先
+     */
+    private boolean isDescendant(Long ancestorId, Long descendantId) {
+        Long currentId = descendantId;
+        for (int i = 0; i < MAX_ANCESTOR_DEPTH; i++) {
+            Category current = categoryMapper.selectById(currentId);
+            if (current == null) {
+                return false;
+            }
+            Long parentId = current.getParentId();
+            if (parentId == null || parentId == ROOT_PARENT_ID) {
+                return false;
+            }
+            if (parentId.equals(ancestorId)) {
+                return true;
+            }
+            currentId = parentId;
+        }
+        log.warn("分类祖先链超过 {} 层，可能存在脏数据，ancestorId={}, descendantId={}",
+                MAX_ANCESTOR_DEPTH, ancestorId, descendantId);
+        return false;
+    }
+
+    /**
+     * 失效分类树缓存，所有写操作后调用
+     */
+    private void evictCategoryCache() {
+        try {
+            stringRedisTemplate.delete(CACHE_KEY);
+        } catch (Exception e) {
+            log.warn("分类树缓存删除失败", e);
+        }
     }
 
     // 递归构建分类树：按 parentId 分组后从根节点向下展开

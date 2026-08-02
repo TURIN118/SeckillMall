@@ -1,5 +1,6 @@
 package com.seckill.mall.controller;
 
+import com.seckill.mall.annotation.OperationLog;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.entity.SeckillOrder;
@@ -27,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('BUYER')")
+@PreAuthorize("hasAnyRole('BUYER', 'ADMIN', 'SELLER')")
 public class OrderController {
 
     private final OrderService orderService;
@@ -50,6 +51,7 @@ public class OrderController {
     }
 
     @Operation(summary = "确认支付（模拟支付）")
+    @OperationLog(module = "ORDER", action = "PAY", targetIdSpEL = "#orderId", targetType = "ORDER")
     @PostMapping("/{orderId}/pay")
     public Result<SeckillOrder> pay(@PathVariable Long orderId,
                                     @RequestParam(defaultValue = "ALIPAY") String payMethod) {
@@ -58,6 +60,7 @@ public class OrderController {
     }
 
     @Operation(summary = "取消订单（仅待支付）")
+    @OperationLog(module = "ORDER", action = "CANCEL", targetIdSpEL = "#orderId", targetType = "ORDER")
     @PostMapping("/{orderId}/cancel")
     public Result<SeckillOrder> cancel(@PathVariable Long orderId) {
         Long userId = SecurityUtils.getCurrentUserId();

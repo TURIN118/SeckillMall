@@ -1,5 +1,6 @@
 package com.seckill.mall.controller;
 
+import com.seckill.mall.annotation.OperationLog;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.ProductCreateRequest;
@@ -48,6 +49,7 @@ public class ProductController {
     }
 
     @Operation(summary = "新增商品")
+    @OperationLog(module = "PRODUCT", action = "CREATE", targetType = "PRODUCT")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public Result<ProductVO> create(@Valid @RequestBody ProductCreateRequest req) {
@@ -55,6 +57,7 @@ public class ProductController {
     }
 
     @Operation(summary = "编辑商品")
+    @OperationLog(module = "PRODUCT", action = "UPDATE", targetIdSpEL = "#id", targetType = "PRODUCT")
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public Result<ProductVO> update(@PathVariable Long id, @Valid @RequestBody ProductUpdateRequest req) {
@@ -62,6 +65,7 @@ public class ProductController {
     }
 
     @Operation(summary = "删除商品（逻辑删除）")
+    @OperationLog(module = "PRODUCT", action = "DELETE", targetIdSpEL = "#id", targetType = "PRODUCT")
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {

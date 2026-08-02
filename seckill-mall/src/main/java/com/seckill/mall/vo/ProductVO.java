@@ -26,6 +26,9 @@ public class ProductVO {
 
     private String description;
 
+    /** 商品详情富文本(HTML) */
+    private String detailHtml;
+
     private BigDecimal originalPrice;
 
     private List<String> images;

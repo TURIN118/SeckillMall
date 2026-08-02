@@ -1,6 +1,9 @@
 package com.seckill.mall.aspect;
 
+import com.seckill.mall.dto.LoginRequest;
 import com.seckill.mall.entity.OperationLog;
+import com.seckill.mall.entity.User;
+import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.security.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,7 @@ import java.lang.reflect.Method;
 public class OperationLogAspect {
 
     private final OperationLogRecorder operationLogRecorder;
+    private final UserMapper userMapper;
 
     private final ExpressionParser parser = new SpelExpressionParser();
     private final ParameterNameDiscoverer discoverer = new DefaultParameterNameDiscoverer();
@@ -58,7 +62,7 @@ public class OperationLogAspect {
             entity.setTargetId(evaluateTargetId(operationLog.targetIdSpEL(), method, joinPoint.getArgs()));
             entity.setIpAddress(getClientIp());
 
-            fillOperator(entity);
+            fillOperator(entity, joinPoint.getArgs());
 
             operationLogRecorder.record(entity);
         } catch (Exception e) {
@@ -67,11 +71,29 @@ public class OperationLogAspect {
         }
     }
 
-    private void fillOperator(OperationLog entity) {
+    private void fillOperator(OperationLog entity, Object[] args) {
         try {
             entity.setOperatorId(SecurityUtils.getCurrentUserId());
         } catch (Exception e) {
-            log.debug("无法获取当前操作人信息: {}", e.getMessage());
+            // SecurityContext 无用户（如登录场景），尝试从参数回查
+            if (args != null) {
+                for (Object arg : args) {
+                    if (arg instanceof LoginRequest loginReq) {
+                        try {
+                            User user = userMapper.findByUsername(loginReq.getUsername());
+                            if (user != null) {
+                                entity.setOperatorId(user.getId());
+                            }
+                        } catch (Exception ex) {
+                            log.debug("从LoginRequest回查操作人失败: {}", ex.getMessage());
+                        }
+                        break;
+                    }
+                }
+            }
+            if (entity.getOperatorId() == null) {
+                log.debug("无法获取当前操作人信息: {}", e.getMessage());
+            }
         }
     }
 

@@ -36,6 +36,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
@@ -102,7 +103,8 @@ class ProductServiceTest {
         Page<Product> page = new Page<>(1, 10);
         page.setRecords(List.of(product));
         page.setTotal(1L);
-        given(productMapper.selectProductPage(any(Page.class), any(), any(), eq(ProductStatus.ON_SALE), any(), any()))
+        // 未指定 status 时传 null，返回所有商品(含下架)
+        given(productMapper.selectProductPage(any(Page.class), any(), any(), isNull(), any(), any()))
                 .willReturn(page);
         given(categoryMapper.selectBatchIds(List.of(101L))).willReturn(List.of(buildCategory()));
 
@@ -124,7 +126,8 @@ class ProductServiceTest {
         Page<Product> emptyPage = new Page<>(1, 10);
         emptyPage.setRecords(List.of());
         emptyPage.setTotal(0L);
-        given(productMapper.selectProductPage(any(Page.class), any(), any(), eq(ProductStatus.ON_SALE), any(), any()))
+        // 未指定 status 时传 null，返回所有商品(含下架)
+        given(productMapper.selectProductPage(any(Page.class), any(), any(), isNull(), any(), any()))
                 .willReturn(emptyPage);
 
         // when
@@ -134,6 +137,56 @@ class ProductServiceTest {
         assertThat(result.getList()).isEmpty();
         assertThat(result.getTotal()).isZero();
         then(categoryMapper).should(never()).selectBatchIds(any());
+    }
+
+    @Test
+    @DisplayName("listProducts：指定 status=ON_SALE 时按上架筛选")
+    void listProducts_shouldFilterByStatusWhenSpecified() {
+        // given
+        ProductQueryRequest req = new ProductQueryRequest();
+        req.setPageNum(1);
+        req.setPageSize(10);
+        req.setStatus("ON_SALE");
+
+        Product product = buildProduct();
+        Page<Product> page = new Page<>(1, 10);
+        page.setRecords(List.of(product));
+        page.setTotal(1L);
+        // 指定 status 时应传对应枚举值
+        given(productMapper.selectProductPage(any(Page.class), any(), any(), eq(ProductStatus.ON_SALE), any(), any()))
+                .willReturn(page);
+        given(categoryMapper.selectBatchIds(List.of(101L))).willReturn(List.of(buildCategory()));
+
+        // when
+        PageResult<ProductVO> result = productService.listProducts(req);
+
+        // then
+        assertThat(result.getList()).hasSize(1);
+        assertThat(result.getTotal()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("listProducts：指定 status=OFF_SHELF 时按下架筛选")
+    void listProducts_shouldFilterByOffShelfWhenSpecified() {
+        // given
+        ProductQueryRequest req = new ProductQueryRequest();
+        req.setPageNum(1);
+        req.setPageSize(10);
+        req.setStatus("OFF_SHELF");
+
+        Page<Product> emptyPage = new Page<>(1, 10);
+        emptyPage.setRecords(List.of());
+        emptyPage.setTotal(0L);
+        // 指定 OFF_SHELF 时应传 ProductStatus.OFF_SHELF
+        given(productMapper.selectProductPage(any(Page.class), any(), any(), eq(ProductStatus.OFF_SHELF), any(), any()))
+                .willReturn(emptyPage);
+
+        // when
+        PageResult<ProductVO> result = productService.listProducts(req);
+
+        // then
+        assertThat(result.getList()).isEmpty();
+        assertThat(result.getTotal()).isZero();
     }
 
     @Test

@@ -19,4 +19,24 @@
           AND is_deleted = 0
     </select>
 
+    <!-- 用户注册趋势：按日期分组统计注册数 -->
+    <select id="selectUserTrend" resultType="java.util.Map">
+        SELECT DATE(create_time) AS dt,
+               COUNT(*)          AS cnt
+        FROM t_user
+        WHERE is_deleted = 0
+          AND create_time &gt;= #{startDate}
+          AND create_time &lt; DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+        GROUP BY DATE(create_time)
+    </select>
+
+    <!-- 今日注册用户数 -->
+    <select id="countTodayRegistered" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_user
+        WHERE is_deleted = 0
+          AND create_time &gt;= #{startDate}
+          AND create_time &lt; DATE_ADD(#{startDate}, INTERVAL 1 DAY)
+    </select>
+
 </mapper>

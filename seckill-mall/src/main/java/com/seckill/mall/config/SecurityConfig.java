@@ -55,17 +55,21 @@ public class SecurityConfig {
                                 "/api/v1/auth/refresh",
                                 "/api/v1/auth/captcha",
                                 "/api/v1/products/**",
-                                "/api/v1/categories/**",
                                 "/api/v1/seckill/list",
                                 "/api/v1/seckill/*/stock",
+                                "/api/v1/banners/active",
+                                "/api/v1/verification/**",
                                 "/doc.html",
                                 "/swagger-ui/**",
                                 "/webjars/**",
                                 "/swagger-resources/**",
                                 "/v3/api-docs/**",
-                                "/actuator/**"
+                                "/actuator/**",
+                                "/upload/**"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/seckill/{seckillId}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/reviews/product/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

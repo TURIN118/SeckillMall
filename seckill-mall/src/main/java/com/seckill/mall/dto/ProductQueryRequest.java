@@ -27,11 +27,24 @@ public class ProductQueryRequest {
     @Size(max = 100, message = "关键词最大 100 字符")
     private String keyword;
 
-    @Pattern(regexp = "^(price|sales|createTime)?$",
-            message = "排序字段非法")
+    /**
+     * 排序字段(可选)。此处不做 @Pattern 校验，改在 Service 层做白名单过滤 + 别名归一化，
+     * 既灵活(允许 salesCount/originalPrice/id 等前端常用别名)又安全(防 SQL 注入)。
+     * Mapper XML 仅支持 price/sales/createTime 三个标准字段，其余值回退为 createTime。
+     */
     private String sortBy;
 
     @Pattern(regexp = "^(asc|desc|ASC|DESC)?$",
             message = "排序方向仅支持 asc/desc")
     private String sortOrder;
+
+    /**
+     * 商品状态筛选(可选): ON_SALE / OFF_SHELF
+     * null 或空字符串表示不筛选，返回所有状态商品(含下架)
+     * 前台商品列表应传 "ON_SALE" 只展示上架商品
+     * 后台商品管理默认不传以展示全部商品
+     */
+    @Pattern(regexp = "^(ON_SALE|OFF_SHELF)?$",
+            message = "状态仅支持 ON_SALE/OFF_SHELF")
+    private String status;
 }

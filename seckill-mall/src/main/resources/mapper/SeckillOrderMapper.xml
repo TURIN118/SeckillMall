@@ -43,4 +43,125 @@
         </foreach>
     </select>
 
+    <!-- 近 N 天订单趋势：按日期分组统计订单数与销售额（仅统计指定状态） -->
+    <select id="selectOrderTrend" resultType="java.util.Map">
+        SELECT DATE(create_time) AS dt,
+               COUNT(*)           AS cnt,
+               IFNULL(SUM(total_amount), 0) AS amt
+        FROM t_seckill_order
+        WHERE is_deleted = 0
+          AND status IN
+        <foreach collection="statuses" item="s" open="(" separator="," close=")">
+            #{s}
+        </foreach>
+          AND create_time &gt;= #{startDate}
+          AND create_time &lt; DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+        GROUP BY DATE(create_time)
+    </select>
+
+    <!-- 订单状态分布：按 status 分组统计数量 -->
+    <select id="selectStatusDistribution" resultType="java.util.Map">
+        SELECT status     AS status,
+               COUNT(*)   AS cnt
+        FROM t_seckill_order
+        WHERE is_deleted = 0
+        <if test="startTime != null">
+            AND create_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+        GROUP BY status
+    </select>
+
+    <!-- 后台订单高级筛选分页：关联 t_user/t_product/t_seckill_goods
+         注意：t_seckill_goods 表无 name 字段，seckillName 用关联商品名 productName 代替 -->
+    <select id="selectAdminOrderPage" resultType="com.seckill.mall.vo.AdminOrderVO">
+        SELECT o.id,
+               o.order_no,
+               o.user_id,
+               u.username,
+               o.seckill_id,
+               p.name AS seckill_name,
+               o.product_id,
+               p.name AS product_name,
+               o.seckill_price,
+               o.quantity,
+               o.total_amount,
+               o.status,
+               o.pay_time,
+               o.pay_expire_time,
+               o.transaction_id,
+               o.pay_method,
+               o.cancel_time,
+               o.cancel_reason,
+               o.create_time,
+               o.update_time
+        FROM t_seckill_order o
+        INNER JOIN t_user u ON u.id = o.user_id AND u.is_deleted = 0
+        INNER JOIN t_product p ON p.id = o.product_id AND p.is_deleted = 0
+        LEFT JOIN t_seckill_goods sg ON sg.id = o.seckill_id AND sg.is_deleted = 0
+        <where>
+            o.is_deleted = 0
+            <if test="req.orderNo != null and req.orderNo != ''">
+                AND o.order_no LIKE CONCAT('%', #{req.orderNo}, '%')
+            </if>
+            <if test="req.status != null and req.status != ''">
+                AND o.status = #{req.status}
+            </if>
+            <if test="req.userId != null">
+                AND o.user_id = #{req.userId}
+            </if>
+            <if test="req.productId != null">
+                AND o.product_id = #{req.productId}
+            </if>
+            <if test="req.seckillId != null">
+                AND o.seckill_id = #{req.seckillId}
+            </if>
+            <if test="req.startLdt != null">
+                AND o.create_time &gt;= #{req.startLdt}
+            </if>
+            <if test="req.endLdt != null">
+                AND o.create_time &lt;= #{req.endLdt}
+            </if>
+            <if test="req.payStartLdt != null">
+                AND o.pay_time &gt;= #{req.payStartLdt}
+            </if>
+            <if test="req.payEndLdt != null">
+                AND o.pay_time &lt;= #{req.payEndLdt}
+            </if>
+        </where>
+        ORDER BY ${req.sortByColumn} ${req.sortOrder}
+    </select>
+
+    <!-- 今日订单数 -->
+    <select id="countTodayOrders" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_seckill_order
+        WHERE is_deleted = 0
+          AND create_time &gt;= #{startDate}
+          AND create_time &lt; DATE_ADD(#{startDate}, INTERVAL 1 DAY)
+    </select>
+
+    <!-- 秒杀排行榜 Top N：按销售额降序（销售额相同按销量降序）
+         关联 t_seckill_goods 与 t_product 取商品名与秒杀价 -->
+    <select id="selectSeckillRanking" resultType="com.seckill.mall.vo.SeckillRankingVO">
+        SELECT o.seckill_id     AS seckillId,
+               p.name           AS productName,
+               sg.seckill_price AS seckillPrice,
+               COUNT(o.id)      AS salesCount,
+               IFNULL(SUM(o.total_amount), 0) AS totalAmount
+        FROM t_seckill_order o
+        LEFT JOIN t_seckill_goods sg ON sg.id = o.seckill_id AND sg.is_deleted = 0
+        LEFT JOIN t_product p ON p.id = o.product_id AND p.is_deleted = 0
+        WHERE o.is_deleted = 0
+          AND o.status IN
+        <foreach collection="statuses" item="s" open="(" separator="," close=")">
+            #{s}
+        </foreach>
+        GROUP BY o.seckill_id, p.name, sg.seckill_price
+        ORDER BY totalAmount DESC, salesCount DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

@@ -1,0 +1,165 @@
+/**
+ * 设计令牌 - 以 index.html 设计稿红色主色调为准
+ * --color-primary: #e53935 (红色, 非10-ai-design-spec.md中的蓝色)
+ */
+:root {
+  /* === 主色调 (红色, 来自index.html设计稿) === */
+  --color-primary: #e53935;
+  --color-primary-light: #fff5f5;
+  --color-primary-dark: #c62828;
+  --color-accent: #ff6d00;
+
+  /* === 语义色 === */
+  --color-success: #4caf50;
+  --color-success-light: #e8f5e9;
+  --color-warning: #ff9800;
+  --color-warning-light: #fff3e0;
+  --color-danger: #f44336;
+  --color-danger-light: #ffebee;
+  --color-info: #9e9e9e;
+  --color-info-light: #f5f5f5;
+  --color-primary-blue: #1976d2;
+
+  /* === 秒杀专用色 === */
+  --color-seckill-red: #e53935;
+  --color-seckill-red-light: #fff5f5;
+  --color-seckill-price: #e53935;
+  --color-original-price: #9ca3af;
+
+  /* === 中性色 === */
+  --color-bg: #f5f5f5;
+  --color-bg-subtle: #f8f8f8;
+  --color-bg-muted: #f0f0f0;
+  --color-bg-card: #ffffff;
+  --color-bg-section: #f0f2f8;
+  --color-bg-sidebar: #1a1a2e;
+  --color-bg-sidebar-hover: #313244;
+  --color-bg-footer: #2d2d3a;
+  --color-text-primary: #1a1a2e;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --color-text-sidebar: #cdd6f4;
+  --color-text-sidebar-accent: #89b4fa;
+  --color-text-footer: #9ca3af;
+  --color-border: #e5e7eb;
+  --color-border-light: #f3f4f6;
+
+  /* === 导航色 === */
+  --nav-bg: #1a1a2e;
+  --nav-fg: #cdd6f4;
+  --nav-border: #313244;
+  --nav-muted: #6c7086;
+  --nav-highlight: #89b4fa;
+  --nav-link: #a6adc8;
+
+  /* === 按钮状态色 === */
+  --btn-disabled-bg: #e0e0e0;
+  --btn-disabled-fg: #9e9e9e;
+  --btn-hover: #c62828;
+  --btn-loading-bg: #ef9a9a;
+  --btn-polling-bg: #ffcc80;
+  --btn-polling-fg: #e65100;
+  --btn-fail-fg: #757575;
+
+  /* === 状态标签色 === */
+  --tag-unpaid-bg: #fff3e0;
+  --tag-unpaid-fg: #e65100;
+  --tag-paid-bg: #e8f5e9;
+  --tag-paid-fg: #2e7d32;
+  --tag-cancelled-bg: #f5f5f5;
+  --tag-cancelled-fg: #757575;
+  --tag-timeout-bg: #ffebee;
+  --tag-timeout-fg: #c62828;
+  --tag-completed-bg: #e3f2fd;
+  --tag-completed-fg: #1565c0;
+
+  /* === 价格与促销 === */
+  --price-bg: #fff5f5;
+  --pending-border: #ffcc80;
+
+  /* === 倒计时 === */
+  --cd-bg: #1a1a2e;
+
+  /* === 字体 === */
+  --font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', 'Helvetica Neue', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+  --font-price: 'DIN Alternate', 'Roboto', 'Arial', sans-serif;
+  --font-size-xs: 13px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-md: 15px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 20px;
+  --font-size-3xl: 24px;
+  --font-size-4xl: 32px;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* === 间距 === */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* === 圆角 === */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 16px;
+  --radius-full: 9999px;
+
+  /* === 阴影 === */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+  /* === 布局 === */
+  --layout-max-width: 1200px;
+  --layout-sidebar-width: 220px;
+  --layout-sidebar-collapsed: 64px;
+  --layout-header-height: 60px;
+  --layout-footer-height: 48px;
+
+  /* === Z-Index === */
+  --z-sidebar: 100;
+  --z-header: 90;
+  --z-dropdown: 80;
+  --z-modal: 200;
+  --z-toast: 300;
+
+  /* === 过渡 === */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+}
+
+/* === Element Plus 主题色覆盖 (红色主色调) === */
+:root {
+  --el-color-primary: #e53935;
+  --el-color-primary-light-3: #ed6966;
+  --el-color-primary-light-5: #f19997;
+  --el-color-primary-light-7: #f5c0be;
+  --el-color-primary-light-8: #f9d4d3;
+  --el-color-primary-light-9: #fce8e7;
+  --el-color-primary-dark-2: #c62828;
+  --el-color-success: #4caf50;
+  --el-color-warning: #ff9800;
+  --el-color-danger: #f44336;
+  --el-color-error: #f44336;
+  --el-color-info: #9e9e9e;
+  --el-border-radius-base: 6px;
+  --el-font-family: var(--font-family);
+}

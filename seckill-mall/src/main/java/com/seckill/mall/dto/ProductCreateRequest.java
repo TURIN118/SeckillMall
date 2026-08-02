@@ -30,6 +30,9 @@ public class ProductCreateRequest {
     @Size(max = 500, message = "商品简述最大 500 字符")
     private String description;
 
+    /** 商品详情富文本(HTML)，由 wangEditor 产生，不进行 XSS 清洗以保留合法标签 */
+    private String detailHtml;
+
     @NotNull(message = "商品价格不能为空")
     @DecimalMin(value = "0.01", message = "商品价格必须大于 0")
     private BigDecimal originalPrice;

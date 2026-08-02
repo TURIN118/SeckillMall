@@ -3,3 +3,13 @@ target/
 .idea/
 *.log
 application-local.yml
+
+# Tool metadata
+.arts/
+*.merkle-snapshot.json
+
+# Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.local

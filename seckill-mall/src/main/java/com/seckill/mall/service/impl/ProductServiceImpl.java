@@ -60,6 +60,22 @@ public class ProductServiceImpl implements ProductService {
     private static final long RETRY_SLEEP_MS = 50L;
     private static final long LOCK_HOLD_SECONDS = 10L;
 
+    // ===== 排序字段白名单（与 ProductMapper.xml ORDER BY 支持的字段对齐）=====
+    /** Mapper XML 实际支持的标准排序字段 */
+    private static final java.util.Set<String> ALLOWED_SORT_FIELDS = java.util.Set.of("price", "sales", "createTime");
+    /** 前端常用别名 → Mapper 标准字段 的归一化映射 */
+    private static final java.util.Map<String, String> SORT_FIELD_ALIASES = java.util.Map.of(
+            "salesCount", "sales",
+            "originalPrice", "price",
+            "id", "createTime"
+    );
+    /** 默认排序字段（非法值回退） */
+    private static final String DEFAULT_SORT_FIELD = "createTime";
+    /** 合法排序方向 */
+    private static final java.util.Set<String> ALLOWED_SORT_ORDERS = java.util.Set.of("asc", "desc");
+    /** 默认排序方向（非法值回退） */
+    private static final String DEFAULT_SORT_ORDER = "desc";
+
     private final ProductMapper productMapper;
     private final CategoryMapper categoryMapper;
     private final StringRedisTemplate stringRedisTemplate;
@@ -72,14 +88,21 @@ public class ProductServiceImpl implements ProductService {
         int pageSize = req.getPageSize() == null || req.getPageSize() < 1 ? 10 : Math.min(req.getPageSize(), 50);
 
         Page<Product> page = new Page<>(pageNum, pageSize);
-        // 公开列表仅展示在售商品
+        // 状态筛选: 指定 status 则按 status 筛选；未指定则返回所有商品(含下架)，便于后台管理
+        ProductStatus statusFilter = null;
+        if (req.getStatus() != null && !req.getStatus().isEmpty()) {
+            statusFilter = ProductStatus.valueOf(req.getStatus());
+        }
+        // 排序字段/方向白名单过滤，防 SQL 注入；非法值回退默认值
+        String sortField = sanitizeSortBy(req.getSortBy());
+        String sortOrder = sanitizeSortOrder(req.getSortOrder());
         IPage<Product> result = productMapper.selectProductPage(
                 page,
                 req.getCategoryId(),
                 req.getKeyword(),
-                ProductStatus.ON_SALE,
-                req.getSortBy(),
-                req.getSortOrder());
+                statusFilter,
+                sortField,
+                sortOrder);
 
         List<Product> records = result.getRecords();
         if (records.isEmpty()) {
@@ -171,6 +194,8 @@ public class ProductServiceImpl implements ProductService {
         product.setName(req.getProductName());
         product.setCategoryId(req.getCategoryId());
         product.setDescription(XssCleanUtil.clean(req.getDescription()));
+        // 富文本内容保留原始 HTML，不做 XSS 清洗（wangEditor 已做白名单过滤）
+        product.setDetailHtml(req.getDetailHtml());
         product.setOriginalPrice(req.getOriginalPrice());
         product.setStock(req.getStock());
         product.setSalesCount(0);
@@ -198,6 +223,10 @@ public class ProductServiceImpl implements ProductService {
         }
         if (req.getDescription() != null) {
             product.setDescription(XssCleanUtil.clean(req.getDescription()));
+        }
+        // 富文本内容保留原始 HTML，不做 XSS 清洗（wangEditor 已做白名单过滤）
+        if (req.getDetailHtml() != null) {
+            product.setDetailHtml(req.getDetailHtml());
         }
         if (req.getOriginalPrice() != null) {
             product.setOriginalPrice(req.getOriginalPrice());
@@ -228,6 +257,47 @@ public class ProductServiceImpl implements ProductService {
         // MyBatis-Plus @TableLogic 自动转为逻辑删除
         productMapper.deleteById(id);
         evictCache(id);
+    }
+
+    /**
+     * 白名单过滤排序字段，防 SQL 注入。
+     * 将前端传入的 sortBy 归一化为 Mapper 支持的标准字段(price/sales/createTime)：
+     * 1. 空值 → 默认值 createTime
+     * 2. 命中别名映射(如 salesCount→sales, originalPrice→price, id→createTime) → 标准字段
+     * 3. 命中白名单(price/sales/createTime) → 原值
+     * 4. 其他非法值 → 默认值 createTime
+     */
+    private String sanitizeSortBy(String sortBy) {
+        if (sortBy == null || sortBy.isBlank()) {
+            return DEFAULT_SORT_FIELD;
+        }
+        String trimmed = sortBy.trim();
+        // 先查别名映射
+        String normalized = SORT_FIELD_ALIASES.get(trimmed);
+        if (normalized != null) {
+            return normalized;
+        }
+        // 再查白名单
+        if (ALLOWED_SORT_FIELDS.contains(trimmed)) {
+            return trimmed;
+        }
+        return DEFAULT_SORT_FIELD;
+    }
+
+    /**
+     * 白名单过滤排序方向，防 SQL 注入。
+     * 将 sortOrder 归一化为小写 asc/desc，非法值回退为默认值 desc。
+     * 兼容前端传入的 ASC/DESC 大写形式。
+     */
+    private String sanitizeSortOrder(String sortOrder) {
+        if (sortOrder == null || sortOrder.isBlank()) {
+            return DEFAULT_SORT_ORDER;
+        }
+        String lower = sortOrder.trim().toLowerCase();
+        if (ALLOWED_SORT_ORDERS.contains(lower)) {
+            return lower;
+        }
+        return DEFAULT_SORT_ORDER;
     }
 
     private void validateCategory(Long categoryId) {
@@ -273,6 +343,7 @@ public class ProductServiceImpl implements ProductService {
         vo.setCategoryId(product.getCategoryId());
         vo.setCategoryName(categoryNameMap.getOrDefault(product.getCategoryId(), null));
         vo.setDescription(product.getDescription());
+        vo.setDetailHtml(product.getDetailHtml());
         vo.setOriginalPrice(product.getOriginalPrice());
         vo.setImages(deserializeImages(product.getImages()));
         vo.setStock(product.getStock());

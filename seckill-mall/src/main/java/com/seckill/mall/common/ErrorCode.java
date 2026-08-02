@@ -46,13 +46,59 @@ public enum ErrorCode {
     PRODUCT_NOT_FOUND(4001, "商品不存在"),
     CATEGORY_NOT_FOUND(4002, "分类不存在"),
     CATEGORY_DISABLED(4003, "分类已禁用"),
+    CATEGORY_HAS_CHILDREN(4004, "分类下存在子分类，无法删除"),
+    CATEGORY_HAS_PRODUCT(4005, "分类下存在商品，无法删除"),
+    CATEGORY_CYCLE(4006, "不允许将分类移动到自身子分类下"),
+
+    // 轮播图相关
+    BANNER_NOT_FOUND(4101, "轮播图不存在"),
+
+    // 文件上传相关
+    UNSUPPORTED_MEDIA_TYPE(41501, "文件类型不支持"),
+    FILE_TOO_LARGE(41502, "文件大小超限"),
 
     // 订单相关
     ORDER_NOT_FOUND(3001, "订单不存在"),
     ORDER_ALREADY_PAID(3002, "订单已支付，请勿重复操作"),
     ORDER_STATUS_ERROR(3003, "订单状态异常"),
     ORDER_TIMEOUT(3004, "订单支付超时，已自动取消"),
-    ORDER_CANCEL_FAILED(3005, "订单无法取消");
+    ORDER_CANCEL_FAILED(3005, "订单无法取消"),
+
+    // 收货地址相关
+    ADDRESS_NOT_FOUND(5001, "收货地址不存在"),
+    ADDRESS_FORBIDDEN(5002, "无权操作该收货地址"),
+
+    // 购物车相关
+    CART_ITEM_NOT_FOUND(6001, "购物车项不存在"),
+    CART_ITEM_FORBIDDEN(6002, "无权操作该购物车项"),
+    CART_QUANTITY_INVALID(6003, "加购数量必须大于0"),
+
+    // 收藏夹相关
+    FAVORITE_ALREADY_EXIST(7001, "该商品已收藏"),
+    FAVORITE_NOT_FOUND(7002, "收藏记录不存在"),
+
+    // 优惠券相关
+    COUPON_NOT_FOUND(8001, "优惠券不存在"),
+    COUPON_DISABLED(8002, "优惠券已停用"),
+    COUPON_EXPIRED(8003, "优惠券已过期"),
+    COUPON_OUT_OF_STOCK(8004, "优惠券已抢完"),
+    COUPON_ALREADY_RECEIVED(8005, "您已领取过该优惠券"),
+    COUPON_NOT_STARTED(8006, "优惠券活动尚未开始"),
+
+    // 充值卡相关
+    RECHARGE_CARD_NOT_FOUND(9001, "充值卡不存在"),
+    RECHARGE_CARD_USED(9002, "充值卡已被使用"),
+    RECHARGE_CARD_DISABLED(9003, "充值卡已被禁用"),
+    RECHARGE_CARD_PASSWORD_ERROR(9004, "卡密错误"),
+
+    // 验证码相关
+    VERIFICATION_CODE_INVALID(10001, "验证码错误或已过期"),
+    VERIFICATION_CODE_SEND_FAILED(10002, "验证码发送失败"),
+    VERIFICATION_CODE_RATE_LIMIT(10003, "发送过于频繁，请稍后再试"),
+
+    // 钱包相关
+    WALLET_BALANCE_NOT_ENOUGH(11001, "钱包余额不足"),
+    WALLET_RECHARGE_FAILED(11002, "充值失败");
 
     private final int code;
     private final String message;

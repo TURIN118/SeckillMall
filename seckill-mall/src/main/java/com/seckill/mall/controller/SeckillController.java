@@ -1,5 +1,6 @@
 package com.seckill.mall.controller;
 
+import com.seckill.mall.annotation.OperationLog;
 import com.seckill.mall.annotation.RateLimit;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.Result;
@@ -88,6 +89,7 @@ public class SeckillController {
     }
 
     @Operation(summary = "创建秒杀活动")
+    @OperationLog(module = "SECKILL", action = "CREATE", targetType = "SECKILL")
     @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     @PostMapping("/admin")
     public Result<SeckillGoodsVO> create(@Valid @RequestBody SeckillCreateRequest req) {
@@ -95,6 +97,7 @@ public class SeckillController {
     }
 
     @Operation(summary = "编辑秒杀活动")
+    @OperationLog(module = "SECKILL", action = "UPDATE", targetIdSpEL = "#seckillId", targetType = "SECKILL")
     @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     @PutMapping("/admin/{seckillId}")
     public Result<SeckillGoodsVO> update(@PathVariable Long seckillId,
@@ -103,6 +106,7 @@ public class SeckillController {
     }
 
     @Operation(summary = "取消秒杀活动")
+    @OperationLog(module = "SECKILL", action = "CANCEL", targetIdSpEL = "#seckillId", targetType = "SECKILL")
     @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     @PutMapping("/admin/{seckillId}/cancel")
     public Result<Void> cancel(@PathVariable Long seckillId) {

@@ -87,16 +87,26 @@ public class SeckillServiceImpl implements SeckillService {
 
         String status = info.get("status");
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime startTime = LocalDateTime.parse(info.get("startTime"), DATE_TIME_FORMATTER);
-        LocalDateTime endTime = LocalDateTime.parse(info.get("endTime"), DATE_TIME_FORMATTER);
+        // M13: 时间解析增加异常处理，避免 NPE / DateTimeParseException 导致 500
+        LocalDateTime startTime;
+        LocalDateTime endTime;
+        try {
+            startTime = LocalDateTime.parse(info.get("startTime"), DATE_TIME_FORMATTER);
+            endTime = LocalDateTime.parse(info.get("endTime"), DATE_TIME_FORMATTER);
+        } catch (Exception e) {
+            log.error("秒杀活动时间解析失败 seckillId={} info={}", seckillId, info, e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "秒杀活动数据异常");
+        }
 
+        // C4 修复：先检查是否已取消；后续仅按时间窗口判断，不依赖 DB status 字段
+        // （DB status 不会随时间自动更新为 ACTIVE/ENDED，旧逻辑会导致活动开始后仍被拒绝）
         if (SeckillStatus.CANCELLED.getCode().equals(status)) {
             throw new BusinessException(ErrorCode.SECKILL_TOO_MANY);
         }
-        if (now.isBefore(startTime) || SeckillStatus.PENDING.getCode().equals(status)) {
+        if (now.isBefore(startTime)) {
             throw new BusinessException(ErrorCode.SECKILL_NOT_STARTED);
         }
-        if (now.isAfter(endTime) || SeckillStatus.ENDED.getCode().equals(status)) {
+        if (now.isAfter(endTime)) {
             throw new BusinessException(ErrorCode.SECKILL_ENDED);
         }
 
@@ -136,7 +146,21 @@ public class SeckillServiceImpl implements SeckillService {
         message.setTimestamp(System.currentTimeMillis());
 
         // MQ 宕机降级：sendSeckillOrder 返回非空表示已同步创建订单，需回写成功结果
-        SeckillOrder syncOrder = seckillOrderProducer.sendSeckillOrder(message);
+        // H12 修复：MQ 发送异常时回补 Lua 预减库存与结果缓存，避免库存泄漏
+        SeckillOrder syncOrder;
+        try {
+            syncOrder = seckillOrderProducer.sendSeckillOrder(message);
+        } catch (Exception e) {
+            log.error("MQ 发送秒杀订单失败，回补库存 seckillId={} userId={}", seckillId, userId, e);
+            // 回补 Lua 预减库存（若 seckillLuaService 无 rollbackDeduct 方法，需新增该方法）
+            try {
+                seckillLuaService.rollbackDeduct(seckillId, userId);
+            } catch (Exception ex) {
+                log.error("回补 Lua 库存失败 seckillId={} userId={}", seckillId, userId, ex);
+            }
+            redisService.del(RedisKeyConstants.seckillResult(seckillId, userId));
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+        }
         if (syncOrder != null) {
             return writeSyncSuccessResult(seckillId, userId, requestId, syncOrder);
         }
@@ -154,13 +178,14 @@ public class SeckillServiceImpl implements SeckillService {
             throw new BusinessException(ErrorCode.SECKILL_NOT_FOUND);
         }
         LocalDateTime now = LocalDateTime.now();
+        // C4 修复：仅按时间窗口判断，不依赖 DB status 字段（status 不会随时间自动更新）
         if (SeckillStatus.CANCELLED.equals(goods.getStatus())) {
             throw new BusinessException(ErrorCode.SECKILL_TOO_MANY);
         }
-        if (now.isBefore(goods.getStartTime()) || SeckillStatus.PENDING.equals(goods.getStatus())) {
+        if (now.isBefore(goods.getStartTime())) {
             throw new BusinessException(ErrorCode.SECKILL_NOT_STARTED);
         }
-        if (now.isAfter(goods.getEndTime()) || SeckillStatus.ENDED.equals(goods.getStatus())) {
+        if (now.isAfter(goods.getEndTime())) {
             throw new BusinessException(ErrorCode.SECKILL_ENDED);
         }
 

@@ -71,7 +71,7 @@
           <div class="wang-editor-wrap">
             <Toolbar :editor="editorRef" :mode="mode" style="border-bottom: 1px solid #ccc" />
             <Editor v-model="formData.detailHtml" :defaultConfig="editorConfig" :mode="mode"
-              style="height: 360px; overflow-y: hidden;" @onCreated="(editor: any) => editorRef = editor" />
+              style="height: 360px; overflow-y: hidden;" @onCreated="(editor: IDomEditor) => editorRef = editor" />
           </div>
         </el-form-item>
 
@@ -107,6 +107,8 @@ import ImageUploader from '@/components/ImageUploader.vue'
 // wangEditor 富文本编辑器（Vue3 版本）
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import '@wangeditor/editor/dist/css/style.css'
+// M41 修复: 引入 IDomEditor 类型替代 any
+import type { IDomEditor } from '@wangeditor/editor'
 
 const route = useRoute()
 const router = useRouter()
@@ -229,7 +231,8 @@ async function fetchCategoryTree(): Promise<void> {
 
 /* === wangEditor 富文本编辑器实例 === */
 // 使用 shallowRef 避免对编辑器实例做递归响应式化（官方推荐）
-const editorRef = shallowRef<any>(null)
+// M41 修复: 使用 IDomEditor 类型替代 any，保证类型安全
+const editorRef = shallowRef<IDomEditor | null>(null)
 const editorConfig = { placeholder: '请输入商品详情内容...' }
 const mode = 'default'
 

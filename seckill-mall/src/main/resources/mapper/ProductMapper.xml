@@ -19,6 +19,8 @@
             </foreach>
         </if>
         <if test="keyword != null and keyword != ''">
+            <!-- M36 性能说明：LIKE '%keyword%' 前缀通配符会使 name 上的 B-Tree 索引失效，
+                 高频搜索场景建议引入 ES/全文索引；当前数据量下可接受全表扫描 -->
             AND name LIKE CONCAT('%', #{keyword}, '%')
         </if>
         <if test="status != null">

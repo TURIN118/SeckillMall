@@ -24,7 +24,8 @@ public class SecurityUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userMapper.findByUsername(username);
         if (user == null) {
-            throw new UsernameNotFoundException("用户不存在: " + username);
+            // 安全修复（L4）：使用统一错误信息"用户名或密码错误"，避免用户名枚举攻击
+            throw new UsernameNotFoundException("用户名或密码错误");
         }
         return new SecurityUserDetails(user);
     }

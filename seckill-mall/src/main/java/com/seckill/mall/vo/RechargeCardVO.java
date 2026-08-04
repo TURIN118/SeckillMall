@@ -1,5 +1,6 @@
 package com.seckill.mall.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -24,7 +25,13 @@ public class RechargeCardVO {
     /** 卡号 */
     private String cardNo;
 
-    /** 卡密明文（仅在生成时返回一次，后续查询不返回） */
+    /**
+     * 卡密明文
+     * <p>
+     * H17 修复：默认序列化时忽略该字段，防止通过列表/查询接口泄露卡密。
+     * 仅在生成卡密的专用接口中通过 {@link RechargeCardGenerateVO} 显式返回。
+     */
+    @JsonIgnore
     private String cardPassword;
 
     /** 面额 */

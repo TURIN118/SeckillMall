@@ -69,6 +69,8 @@ public class RechargeCardServiceImpl implements RechargeCardService {
         }
         String batchNo = "B" + LocalDateTime.now().format(BATCH_FMT);
         List<RechargeCardVO> result = new ArrayList<>(count);
+        // L18: 当前逐条 insert，可优化为批量插入（rechargeCardMapper.insertBatchSomeColumn 或 MyBatis-Plus saveBatch）
+        // 批量生成场景 count 可能较大，逐条 insert 性能较差；当前实现优先保证正确性，后续可优化
         for (int i = 0; i < count; i++) {
             String cardNo = generateCardNo();
             String plainPwd = generateCardPassword();

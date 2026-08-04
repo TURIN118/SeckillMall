@@ -85,12 +85,17 @@ request.interceptors.response.use(
           localStorage.removeItem(REFRESH_TOKEN_KEY)
           ElMessage.warning('登录已过期，请重新登录')
           if (!currentPath.startsWith('/login')) {
+            // M40 说明: 此处使用 window.location.href 而非 router.push 是有意为之。
+            // axios 拦截器中无法安全访问 router 实例 (循环依赖风险)，
+            // 且 401 时需彻底重置应用状态 (清空 Pinia store、组件状态等)，
+            // 完整刷新比 SPA 跳转更安全可靠。redirect 参数保证登录后可回到原页面。
             window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`
           }
           break
         case 403:
           ElMessage.error('您没有权限访问该页面')
           if (!currentPath.startsWith('/403')) {
+            // M40 说明: 同 401，使用完整跳转重置应用状态
             window.location.href = '/403'
           }
           break
@@ -101,7 +106,10 @@ request.interceptors.response.use(
           if (status >= 500) {
             ElMessage.error('服务器异常，请稍后重试')
           } else {
-            const msg = response.data?.message || message
+            // L27 修复: 兼容后端返回纯字符串错误体或 { message } 对象两种格式
+            const msg = typeof response.data === 'string'
+              ? response.data
+              : (response.data?.message || message)
             ElMessage.error(msg || `请求错误 (${status})`)
           }
       }

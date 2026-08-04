@@ -1,6 +1,7 @@
 package com.seckill.mall.entity.enums;
 
 import com.baomidou.mybatisplus.annotation.IEnum;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
@@ -38,6 +39,10 @@ public enum SeckillStatus implements IEnum<String> {
         return code;
     }
 
+    /**
+     * L22 修复：添加 @JsonCreator 使前端传入 code 字符串时能正确反序列化为枚举。
+     */
+    @JsonCreator
     public static SeckillStatus fromCode(String code) {
         for (SeckillStatus e : values()) {
             if (e.code.equals(code)) {

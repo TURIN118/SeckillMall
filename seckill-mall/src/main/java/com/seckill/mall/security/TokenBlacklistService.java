@@ -47,8 +47,10 @@ public class TokenBlacklistService {
             String tokenId = jwtUtils.getTokenId(token);
             return Boolean.TRUE.equals(stringRedisTemplate.hasKey(BLACKLIST_KEY_PREFIX + tokenId));
         } catch (Exception e) {
-            log.debug("校验 Token 黑名单失败: {}", e.getMessage());
-            return false;
+            // 安全修复（H4）：Fail-Closed 策略——Redis 异常时视为已黑名单，拒绝请求；
+            // 避免故障期间已登出/吊销 Token 仍可访问。日志级别提升为 error 触发告警。
+            log.error("校验 Token 黑名单失败，采用 Fail-Closed 策略拒绝请求: {}", e.getMessage());
+            return true;
         }
     }
 }

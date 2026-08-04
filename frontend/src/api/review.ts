@@ -6,7 +6,7 @@ import type { Result, PageResult, ProductReviewVO, ReviewCreateRequest } from '@
 
 /** 查商品评论分页（公开接口） */
 export function getProductReviews(
-    productId: number,
+    productId: number | string,
     pageNum: number = 1,
     pageSize: number = 10
 ): Promise<Result<PageResult<ProductReviewVO>>> {

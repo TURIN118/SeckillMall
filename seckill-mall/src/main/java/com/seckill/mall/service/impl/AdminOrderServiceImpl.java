@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -68,6 +69,18 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         req.setEndLdt(parseDateTimeQuiet(req.getEndTime()));
         req.setPayStartLdt(parseDateTimeQuiet(req.getPayStartTime()));
         req.setPayEndLdt(parseDateTimeQuiet(req.getPayEndTime()));
+
+        // M35 配套：date 字段(yyyy-MM-dd)归一化为 [date 00:00:00, date+1 00:00:00) 范围，
+        // 覆盖 startLdt/endLdt，使 Mapper 可走索引范围查询而非 DATE(create_time) 函数扫描
+        if (req.getDate() != null && !req.getDate().isBlank()) {
+            try {
+                LocalDate ld = LocalDate.parse(req.getDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                req.setStartLdt(ld.atStartOfDay());
+                req.setEndLdt(ld.plusDays(1).atStartOfDay());
+            } catch (Exception e) {
+                log.warn("date 解析失败，忽略该筛选条件: date={}, err={}", req.getDate(), e.getMessage());
+            }
+        }
 
         Page<AdminOrderVO> page = new Page<>(pageNum, pageSize);
         IPage<AdminOrderVO> result = seckillOrderMapper.selectAdminOrderPage(page, req);

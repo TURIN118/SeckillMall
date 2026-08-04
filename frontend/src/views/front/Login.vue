@@ -163,8 +163,14 @@ async function handleLogin(): Promise<void> {
       captchaCode: form.captchaCode
     })
     ElMessage.success('登录成功')
+    // H23 修复: 校验 redirect 参数，防止开放重定向攻击
+    // 仅允许以单个 '/' 开头的相对路径，拒绝 '//' (协议相对 URL) 和外部 URL
     const redirect = route.query.redirect as string
-    router.push(redirect || '/')
+    const safeRedirect =
+      redirect && typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')
+        ? redirect
+        : '/'
+    router.push(safeRedirect)
   } catch {
     ElMessage.error('用户名或密码错误')
     refreshCaptcha()

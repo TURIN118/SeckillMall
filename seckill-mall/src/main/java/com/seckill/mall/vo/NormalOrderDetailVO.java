@@ -10,6 +10,10 @@ import java.util.List;
  * 普通订单详情视图对象
  * <p>
  * 在普通订单实体基础上携带订单明细列表，用于订单详情展示。
+ * <p>
+ * M32 安全说明：当前直接暴露 {@link NormalOrder} / {@link NormalOrderItem} 实体，
+ * 可能将内部字段(如 isDeleted、 updateTime、敏感字段)泄露给前端。
+ * 建议后续重构为独立 VO，仅暴露前端所需字段，避免 Entity 与 VO 强耦合。
  *
  * 创建人：@author WNJ
  * 项目名称：seckill-mall

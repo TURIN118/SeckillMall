@@ -230,7 +230,8 @@ public class AuthServiceImpl implements AuthService {
         if (req.getEmail() != null) {
             update.setEmail(req.getEmail());
         }
-        if (newPhone != null) {
+        // L13 修复：手机号为空字符串时不更新，避免把 phone 置空
+        if (newPhone != null && !newPhone.isBlank()) {
             update.setPhone(newPhone);
         }
         if (req.getAvatar() != null) {

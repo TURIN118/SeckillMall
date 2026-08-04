@@ -36,10 +36,15 @@ public class SeckillCreateRequest {
     @Min(value = 1, message = "秒杀库存至少为 1")
     private Integer stockCount;
 
+    /**
+     * L24 说明：此处 @JsonFormat 非冗余，用于将前端传入的 "yyyy-MM-dd HH:mm:ss"
+     * 字符串反序列化为 LocalDateTime；缺失会导致 Jackson 解析失败。
+     */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @NotNull(message = "开始时间不能为空")
     private LocalDateTime startTime;
 
+    /** 同 {@link #startTime}，@JsonFormat 必需保留 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @NotNull(message = "结束时间不能为空")
     private LocalDateTime endTime;

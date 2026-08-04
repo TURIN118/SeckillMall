@@ -55,17 +55,20 @@ public class SecurityUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return true;
+        // 安全修复（M9）：账户过期与启用状态联动，禁用账户视为过期
+        return enabled;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        // 安全修复（M9）：账户锁定状态与 enabled 字段联动，禁用账户视为已锁定
+        return enabled;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true;
+        // 安全修复（M9）：凭证过期与 enabled 字段联动，禁用账户视为凭证过期
+        return enabled;
     }
 
     @Override

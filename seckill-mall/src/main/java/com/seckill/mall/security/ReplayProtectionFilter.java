@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.cache.RedisService;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,11 +46,22 @@ public class ReplayProtectionFilter extends OncePerRequestFilter {
     private final RedisService redisService;
     private final ObjectMapper objectMapper;
 
-    @Value("${seckill.security.sign-secret:wnj-seckill-sign-secret-2024}")
+    @Value("${seckill.security.sign-secret}")
     private String signSecret;
 
     @Value("${seckill.security.replay-window-seconds:60}")
     private long replayWindowSeconds;
+
+    /**
+     * 安全修复（C2）：启动期校验签名密钥必须显式配置且长度 >= 32，避免使用默认弱密钥。
+     */
+    @PostConstruct
+    public void validateSignSecret() {
+        if (signSecret == null || signSecret.length() < 32) {
+            throw new IllegalStateException(
+                    "seckill.security.sign-secret 必须显式配置且长度不少于 32 字符，当前配置不合规");
+        }
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -101,7 +113,8 @@ public class ReplayProtectionFilter extends OncePerRequestFilter {
         String payload = timestamp + nonce + request.getRequestURI();
         String expected = hmacSha256Hex(signSecret, payload);
         if (!constantTimeEquals(expected, sign)) {
-            log.warn("签名不匹配 uri={} expected={} actual={}", request.getRequestURI(), expected, sign);
+            // 安全修复（H3）：日志中不输出 expected/actual 签名值，避免泄露密钥相关信息
+            log.warn("签名不匹配 uri={}", request.getRequestURI());
             reject(request, response, ErrorCode.REPLAY_DETECTED);
             return;
         }
@@ -110,12 +123,7 @@ public class ReplayProtectionFilter extends OncePerRequestFilter {
     }
 
     private void reject(HttpServletRequest request, HttpServletResponse response, ErrorCode errorCode) throws IOException {
-        // 添加CORS头，确保401响应也能被前端正确接收
-        String origin = request.getHeader("Origin");
-        if (origin != null) {
-            response.setHeader("Access-Control-Allow-Origin", origin);
-            response.setHeader("Access-Control-Allow-Credentials", "true");
-        }
+        // 安全修复（H2）：CORS 头统一由 SecurityConfig#corsConfigurationSource 管理，此处不再手动反射 Origin
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());

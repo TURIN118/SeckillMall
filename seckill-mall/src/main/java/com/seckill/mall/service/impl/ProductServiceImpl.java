@@ -94,7 +94,12 @@ public class ProductServiceImpl implements ProductService {
         // 状态筛选: 指定 status 则按 status 筛选；未指定则返回所有商品(含下架)，便于后台管理
         ProductStatus statusFilter = null;
         if (req.getStatus() != null && !req.getStatus().isEmpty()) {
-            statusFilter = ProductStatus.valueOf(req.getStatus());
+            // L11: ProductStatus.valueOf 对非法值抛 IllegalArgumentException，转换为业务异常
+            try {
+                statusFilter = ProductStatus.valueOf(req.getStatus());
+            } catch (IllegalArgumentException e) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "商品状态值非法: " + req.getStatus());
+            }
         }
         // 排序字段/方向白名单过滤，防 SQL 注入；非法值回退默认值
         String sortField = sanitizeSortBy(req.getSortBy());
@@ -209,7 +214,8 @@ public class ProductServiceImpl implements ProductService {
                 Thread.currentThread().interrupt();
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "获取商品详情被中断");
             } finally {
-                if (locked) {
+                // M14 修复：unlock 前校验锁仍被当前线程持有，避免锁租约过期后 unlock 抛 IllegalMonitorStateException
+                if (locked && lock.isHeldByCurrentThread()) {
                     lock.unlock();
                 }
             }

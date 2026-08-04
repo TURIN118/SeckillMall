@@ -49,7 +49,8 @@ const emit = defineEmits<{
 const remaining = ref<number>(0)
 const remainingMs = ref<number>(0)
 const expired = ref<boolean>(false)
-let timer: ReturnType<typeof setInterval> | null = null
+// C8 修复: timer 类型改为 setTimeout 的返回类型，使用递归 setTimeout 替代 setInterval
+let timer: ReturnType<typeof setTimeout> | null = null
 
 const sizeClass = computed(() => `countdown-${props.size}`)
 
@@ -96,21 +97,23 @@ function startTimer(): void {
   clearTimer()
   computeRemaining()
   if (expired.value) return
-  // 紧急时 100ms 更新, 否则 1000ms
-  const interval = remaining.value <= 60 ? 100 : 1000
-  timer = setInterval(() => {
+  // C8 修复: 使用 setTimeout 递归调用替代 setInterval，
+  // 每次回调后根据当前剩余时间动态决定下次延迟 (<=60s 用 100ms，否则 1000ms)，
+  // 避免原实现中 interval 闭包变量不更新导致频繁重建定时器的缺陷
+  const tick = (): void => {
     computeRemaining()
-    // 根据剩余时间动态调整间隔
-    if (timer && remaining.value <= 60 && interval !== 100) {
-      clearTimer()
-      timer = setInterval(computeRemaining, 100)
-    }
-  }, interval)
+    if (expired.value) return
+    const delay = remaining.value <= 60 ? 100 : 1000
+    timer = setTimeout(tick, delay)
+  }
+  const delay = remaining.value <= 60 ? 100 : 1000
+  timer = setTimeout(tick, delay)
 }
 
 function clearTimer(): void {
   if (timer) {
-    clearInterval(timer)
+    // C8 修复: 配合 setTimeout 使用 clearTimeout
+    clearTimeout(timer)
     timer = null
   }
 }

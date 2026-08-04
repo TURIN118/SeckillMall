@@ -72,6 +72,8 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ProductReviewVO create(Long userId, Long productId, String content, Integer rating, String images) {
+        // L14: 业务允许未购买用户评论（不校验订单），便于积累商品评价数据；
+        // 若后续需限制仅购买用户可评论，可在此增加订单存在性校验
         if (userId == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }

@@ -1,8 +1,10 @@
 package com.seckill.mall.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -28,6 +30,7 @@ public class CouponCreateRequest {
 
     /** 类型：AMOUNT-满减 / DISCOUNT-折扣 */
     @NotBlank(message = "优惠券类型不能为空")
+    @Pattern(regexp = "^(AMOUNT|DISCOUNT)$", message = "优惠券类型必须为 AMOUNT 或 DISCOUNT")
     private String type;
 
     /** 满减金额或折扣值（如 0.85 表示85折） */
@@ -47,10 +50,12 @@ public class CouponCreateRequest {
 
     /** 有效期开始 */
     @NotNull(message = "有效期开始时间不能为空")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startTime;
 
     /** 有效期结束 */
     @NotNull(message = "有效期结束时间不能为空")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime endTime;
 
     /** 状态：1-启用 / 0-停用（可选，默认1） */

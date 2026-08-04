@@ -97,12 +97,29 @@ public class RedisService {
 
     /**
      * 使用 SCAN 游标迭代安全遍历 Key，避免 KEYS 阻塞主线程。
+     * <p>
+     * M33 安全说明：本方法无结果数量上限，若 Redis 中匹配 pattern 的 Key 数量巨大，
+     * 可能导致 OOM 或响应过大。调用方应确保 pattern 命中量可控(如带用户前缀)，
+     * 或改用 {@link #scanKeys(String, int)} 显式限制返回数量。
      */
     public List<String> scanKeys(String pattern) {
+        return scanKeys(pattern, Integer.MAX_VALUE);
+    }
+
+    /**
+     * 使用 SCAN 游标迭代安全遍历 Key，并限制返回数量上限，避免 OOM。
+     *
+     * @param pattern Key 匹配模式
+     * @param limit   最大返回 Key 数量(>=0)，达到上限立即停止迭代
+     */
+    public List<String> scanKeys(String pattern, int limit) {
         List<String> keys = new ArrayList<>();
+        if (limit <= 0) {
+            return keys;
+        }
         ScanOptions options = ScanOptions.scanOptions().match(pattern).count(100).build();
         try (Cursor<String> cursor = redisTemplate.scan(options)) {
-            while (cursor.hasNext()) {
+            while (cursor.hasNext() && keys.size() < limit) {
                 keys.add(cursor.next());
             }
         }

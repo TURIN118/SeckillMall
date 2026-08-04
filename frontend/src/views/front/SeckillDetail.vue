@@ -451,6 +451,28 @@ const selectedStorage = ref<string>('256GB')
 let stockTimer: ReturnType<typeof setInterval> | null = null
 let pendingCountdownTimer: ReturnType<typeof setInterval> | null = null
 
+/**
+ * C7 修复: 响应式 now ref，驱动 countdownRemaining computed 在 ACTIVE 状态下每秒更新
+ * 原实现 dayjs() 为非响应式，导致倒计时显示不刷新
+ */
+const now = ref<number>(Date.now())
+let nowTimer: ReturnType<typeof setInterval> | null = null
+
+/**
+ * H20 修复: handleSeckill catch 中的 setTimeout 句柄，cleanup 时清理
+ */
+let failResetTimer: ReturnType<typeof setTimeout> | null = null
+
+/**
+ * H21 修复: pollResult 取消标志位，组件卸载或重新抢购时取消进行中的轮询
+ */
+let pollingCancelled = false
+
+/**
+ * M46 修复: handleSeckill 防重入标志，防止用户连续点击触发多次抢购请求
+ */
+let seckillInProgress = false
+
 /* === 静态数据 (对照设计稿) === */
 const colorOptions = ['原色钛金属', '蓝色钛金属', '白色钛金属', '黑色钛金属']
 const storageOptions = [
@@ -571,8 +593,9 @@ const countdownTarget = computed<string>(() => {
 const countdownRemaining = computed<number>(() => {
   if (!countdownTarget.value) return 0
   if (seckill.value?.status === 'PENDING') return pendingCountdown.value
-  // ACTIVE: 实时计算
-  const remaining = dayjs(countdownTarget.value).diff(dayjs(), 'second')
+  // C7 修复: 使用响应式 now.value 替代非响应式 dayjs()，
+  // 使 computed 在 now 每秒更新时重新计算，倒计时得以刷新
+  const remaining = dayjs(countdownTarget.value).diff(dayjs(now.value), 'second')
   return Math.max(0, remaining)
 })
 
@@ -615,8 +638,9 @@ const bannerTitle = computed<string>(() => {
 })
 
 /* === 工具函数 === */
-function getSeckillId(): number {
-  return Number(route.params.id)
+function getSeckillId(): string {
+  // H22 修复: 使用 String 保留原始 ID 字符串，避免 Number() 对长整型 ID 的精度丢失
+  return String(route.params.id ?? '')
 }
 
 function formatPrice(price: number): string {
@@ -631,7 +655,7 @@ function formatTimeShort(time: string): string {
 /* === 数据拉取 === */
 async function fetchSeckillDetail(): Promise<void> {
   const id = getSeckillId()
-  if (!id || Number.isNaN(id)) {
+  if (!id) {
     error.value = true
     return
   }
@@ -752,29 +776,35 @@ function switchThumb(idx: number): void {
 /** 距开始倒计时结束 -> 转为 ACTIVE */
 async function handleStartEnd(): Promise<void> {
   if (!seckill.value) return
-  // 更新活动状态
-  seckill.value.status = 'ACTIVE'
+  // M42 修复: 不直接修改 seckill.value.status，改为重新拉取详情获取最新状态
   pendingCountdown.value = 0
-  // 拉取最新库存
+  stopStockPolling()
+  await fetchSeckillDetail()
+  // 拉取最新库存并启动库存轮询
   await fetchStock()
-  // 启动库存轮询
   startStockPolling()
   ElMessage.success('秒杀已开始，立即抢购！')
 }
 
 /** 距结束倒计时结束 -> 转为 ENDED */
-function handleActiveEnd(): void {
+async function handleActiveEnd(): Promise<void> {
   if (!seckill.value) return
-  seckill.value.status = 'ENDED'
+  // M42 修复: 不直接修改 seckill.value.status，改为重新拉取详情获取最新状态
   stopStockPolling()
+  await fetchSeckillDetail()
 }
 
 /* === 抢购核心逻辑 === */
 async function handleSeckill(): Promise<void> {
   if (!seckill.value) return
 
+  // M46 修复: 防重入检查，避免连续点击触发多次抢购请求
+  if (seckillInProgress) return
+  seckillInProgress = true
+
   // 1. 登录检查
   if (!userStore.isLoggedIn) {
+    seckillInProgress = false
     router.push(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
     ElMessage.warning('请先登录后再参与秒杀')
     return
@@ -786,6 +816,7 @@ async function handleSeckill(): Promise<void> {
       const tokenRes = await getSeckillToken(seckill.value.id)
       seckillToken.value = tokenRes.data
     } catch {
+      seckillInProgress = false
       ElMessage.error('获取秒杀资格失败，请重试')
       return
     }
@@ -805,9 +836,15 @@ async function handleSeckill(): Promise<void> {
     btnLoading.value = false
     btnState.value = 'fail'
     failText.value = '抢购失败'
-    setTimeout(() => {
+    // H20 修复: 保存 setTimeout 句柄，cleanup 时清理，避免组件卸载后仍触发状态变更
+    if (failResetTimer) clearTimeout(failResetTimer)
+    failResetTimer = setTimeout(() => {
       btnState.value = undefined
+      failResetTimer = null
     }, 2000)
+  } finally {
+    // 释放防重入标志 (轮询/成功/失败后允许再次点击)
+    seckillInProgress = false
   }
 }
 
@@ -839,9 +876,15 @@ function handleSeckillResult(result: SeckillResultVO): void {
 /** 轮询秒杀结果 (最多10次, 每次间隔1秒) */
 async function pollResult(requestId: string): Promise<void> {
   if (!seckill.value) return
+  // H21 修复: 每次启动轮询前重置取消标志
+  pollingCancelled = false
   for (let i = 1; i <= 10; i++) {
+    // 检查取消标志，若已取消则直接退出
+    if (pollingCancelled) return
     pollProgress.value = i
     await new Promise((resolve) => setTimeout(resolve, 1000))
+    // 等待后再次检查取消标志
+    if (pollingCancelled) return
     try {
       const res = await getSeckillResult(seckill.value.id, requestId)
       const result = res.data
@@ -861,6 +904,7 @@ async function pollResult(requestId: string): Promise<void> {
     }
   }
   // 轮询超时
+  if (pollingCancelled) return
   ElMessage.warning('排队超时，请重试')
   btnState.value = undefined
   pollProgress.value = 0
@@ -921,6 +965,20 @@ watch(
 function cleanup(): void {
   stopStockPolling()
   stopPendingCountdown()
+  // C7 修复: 清理 now 定时器
+  if (nowTimer) {
+    clearInterval(nowTimer)
+    nowTimer = null
+  }
+  // H20 修复: 清理失败重置定时器
+  if (failResetTimer) {
+    clearTimeout(failResetTimer)
+    failResetTimer = null
+  }
+  // H21 修复: 取消进行中的轮询
+  pollingCancelled = true
+  // M46 修复: 重置防重入标志
+  seckillInProgress = false
   // 重置状态
   btnLoading.value = false
   btnState.value = undefined
@@ -934,6 +992,10 @@ function cleanup(): void {
 }
 
 onMounted(() => {
+  // C7 修复: 启动 now 定时器，每秒更新 now.value 驱动 countdownRemaining computed
+  nowTimer = setInterval(() => {
+    now.value = Date.now()
+  }, 1000)
   fetchSeckillDetail()
 })
 

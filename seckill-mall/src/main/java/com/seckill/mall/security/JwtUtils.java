@@ -68,6 +68,9 @@ public class JwtUtils {
                 .claim(CLAIM_TOKEN_TYPE, tokenType)
                 .issuedAt(now)
                 .expiration(expiration)
+                // 安全修复（L5）：当前使用 HS256 对称签名，密钥泄露后可伪造任意 Token。
+                // 建议升级为 RS256/ES256 非对称签名：私钥签发、公钥校验，降低密钥泄露影响面。
+                // 暂不修改算法以保持与现有已签发 Token 的兼容性，需在密钥轮换窗口期统一升级。
                 .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }

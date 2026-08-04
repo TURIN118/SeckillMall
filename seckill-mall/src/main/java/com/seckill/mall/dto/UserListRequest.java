@@ -1,5 +1,9 @@
 package com.seckill.mall.dto;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
@@ -11,13 +15,19 @@ import lombok.Data;
 @Data
 public class UserListRequest {
 
+    @Min(value = 1, message = "页码必须大于等于 1")
     private Integer pageNum = 1;
 
+    @Min(value = 1, message = "每页大小必须大于等于 1")
+    @Max(value = 100, message = "每页大小不能超过 100")
     private Integer pageSize = 10;
 
+    @Pattern(regexp = "^(BUYER|SELLER|ADMIN)$", message = "角色非法")
     private String role;
 
+    @Pattern(regexp = "^(ACTIVE|DISABLED)$", message = "状态非法")
     private String status;
 
+    @Size(max = 50, message = "关键字最长 50 字符")
     private String keyword;
 }

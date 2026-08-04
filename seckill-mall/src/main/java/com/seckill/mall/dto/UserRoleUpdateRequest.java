@@ -1,6 +1,7 @@
 package com.seckill.mall.dto;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 /**
@@ -13,5 +14,6 @@ import lombok.Data;
 public class UserRoleUpdateRequest {
 
     @NotNull(message = "角色不能为空")
+    @Pattern(regexp = "^(BUYER|SELLER|ADMIN)$", message = "角色非法")
     private String role;
 }

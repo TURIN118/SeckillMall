@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.seckill.mall.entity.enums.UserRole;
 import com.seckill.mall.entity.enums.UserStatus;
 import lombok.Data;
@@ -28,6 +29,8 @@ public class User {
 
     private String username;
 
+    /** H16 修复：序列化时忽略 password 字段，防止密码哈希通过 JSON 暴露 */
+    @JsonIgnore
     private String password;
 
     private String phone;

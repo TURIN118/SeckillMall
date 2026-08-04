@@ -31,9 +31,10 @@ public interface UserFavoriteMapper extends BaseMapper<UserFavorite> {
      * @param productId 商品 ID
      * @return 收藏实体（可能为 null）
      */
-    @Select("SELECT * FROM t_user_favorite WHERE user_id = #{userId} AND product_id = #{productId} LIMIT 1")
+    @Select("SELECT id, user_id, product_id, is_deleted, create_time, update_time " +
+            "FROM t_user_favorite WHERE user_id = #{userId} AND product_id = #{productId} LIMIT 1")
     UserFavorite selectByUserAndProductIncludeDeleted(@Param("userId") Long userId,
-                                                     @Param("productId") Long productId);
+                                                      @Param("productId") Long productId);
 
     /**
      * 恢复逻辑删除的收藏记录。

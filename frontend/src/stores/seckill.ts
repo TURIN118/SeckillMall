@@ -8,11 +8,13 @@ import * as seckillApi from '@/api/seckill'
 import { getTimeOffset } from '@/api/request'
 import type { SeckillGoodsVO, SeckillResultVO, SeckillStatus } from '@/types'
 
-/** 倒计时定时器映射 */
-const countdownTimers = new Map<number, ReturnType<typeof setInterval>>()
-
 export const useSeckillStore = defineStore('seckill', () => {
   /* === State === */
+  // M45 修复: countdownTimers 从模块级移入 store 工厂函数内部，
+  // 避免多个 store 实例 (如 SSR 或测试场景) 共享同一 Map 导致定时器冲突与内存泄漏
+  /** 倒计时定时器映射 */
+  const countdownTimers = new Map<number, ReturnType<typeof setInterval>>()
+
   const activeList = ref<SeckillGoodsVO[]>([])
   const pendingList = ref<SeckillGoodsVO[]>([])
   const endedList = ref<SeckillGoodsVO[]>([])

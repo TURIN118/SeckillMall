@@ -107,7 +107,12 @@
                 AND o.order_no LIKE CONCAT('%', #{req.orderNo}, '%')
             </if>
             <if test="req.date != null and req.date != ''">
-                AND DATE(o.create_time) = #{req.date}
+                <!-- M35 优化：原 DATE(o.create_time) = #{req.date} 会让 create_time 索引失效，
+                     改为范围查询 [date 00:00:00, date+1 00:00:00)，可走索引。
+                     req.startLdt/req.endLdt 已由 Service 层根据 date 归一化填充。
+                     当 date 非空时，下方 startLdt/endLdt 独立条件不再生效，避免重复与 <= / < 冲突 -->
+                AND o.create_time &gt;= #{req.startLdt}
+                AND o.create_time &lt; #{req.endLdt}
             </if>
             <if test="req.status != null and req.status != ''">
                 AND o.status = #{req.status}
@@ -121,10 +126,10 @@
             <if test="req.seckillId != null">
                 AND o.seckill_id = #{req.seckillId}
             </if>
-            <if test="req.startLdt != null">
+            <if test="(req.date == null or req.date == '') and req.startLdt != null">
                 AND o.create_time &gt;= #{req.startLdt}
             </if>
-            <if test="req.endLdt != null">
+            <if test="(req.date == null or req.date == '') and req.endLdt != null">
                 AND o.create_time &lt;= #{req.endLdt}
             </if>
             <if test="req.payStartLdt != null">
@@ -134,8 +139,19 @@
                 AND o.pay_time &lt;= #{req.payEndLdt}
             </if>
         </where>
-        <!-- 安全说明：${}拼接需调用方进行白名单校验，见AdminOrderServiceImpl.SORT_BY_WHITELIST/SORT_ORDER_WHITELIST -->
-        ORDER BY ${req.sortByColumn} ${req.sortOrder}
+        <!-- 安全修复(C5)：使用 MyBatis choose 白名单映射替代 ${} 拼接，杜绝 SQL 注入 -->
+        ORDER BY
+        <choose>
+            <when test="req.sortByColumn == 'create_time'">create_time</when>
+            <when test="req.sortByColumn == 'pay_time'">pay_time</when>
+            <when test="req.sortByColumn == 'total_amount'">total_amount</when>
+            <when test="req.sortByColumn == 'order_no'">order_no</when>
+            <otherwise>create_time</otherwise>
+        </choose>
+        <choose>
+            <when test="req.sortOrder == 'asc'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
     </select>
 
     <!-- 今日订单数 -->

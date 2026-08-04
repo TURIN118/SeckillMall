@@ -85,17 +85,20 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
         String code = generateCode();
         // 存入 Redis
         storeCode(phone, code);
-        // 短信网关模拟：控制台打印
+        // L15 修复：System.out.println 改为 log.info，统一日志输出便于生产环境排查
         log.info("【短信验证码】phone={}, code={}（有效期5分钟）", phone, code);
-        System.out.println("========================================");
-        System.out.println("【短信验证码】手机号：" + phone);
-        System.out.println("【短信验证码】验证码：" + code);
-        System.out.println("【短信验证码】有效期：5分钟");
-        System.out.println("========================================");
+        log.info("========================================");
+        log.info("【短信验证码】手机号：{}", phone);
+        log.info("【短信验证码】验证码：{}", code);
+        log.info("【短信验证码】有效期：5分钟");
+        log.info("========================================");
     }
 
     @Override
     public boolean verifyCode(String target, String code) {
+        // L16: 并发场景下同一 target 多线程校验存在轻微竞态（读-判-删非原子），
+        // 但验证码业务并发风险低（单用户操作），当前实现可接受；
+        // 若需严格原子可改为 Lua 脚本：GET+EQUAL+DEL 一次执行
         if (target == null || target.isBlank() || code == null || code.isBlank()) {
             return false;
         }

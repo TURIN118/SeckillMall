@@ -594,11 +594,18 @@ public class SystemServiceImpl implements SystemService {
 
     /**
      * 统计进行中的秒杀活动数量（status = ACTIVE）
+     * <p>
+     * M17: DB 中 status 字段不会随时间自动更新（创建时为 PENDING，仅取消时改为 CANCELLED），
+     * 直接按 status=ACTIVE 查询会漏掉所有已开始但 status 仍为 PENDING 的活动。
+     * 正确做法应基于时间窗口动态计算：start_time <= now < end_time 且 status != CANCELLED。
      */
     private Integer getSeckillActiveCount() {
         try {
+            LocalDateTime now = LocalDateTime.now();
             LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(SeckillGoods::getStatus, SeckillStatus.ACTIVE);
+            wrapper.ne(SeckillGoods::getStatus, SeckillStatus.CANCELLED)
+                    .le(SeckillGoods::getStartTime, now)
+                    .gt(SeckillGoods::getEndTime, now);
             return Math.toIntExact(seckillGoodsMapper.selectCount(wrapper));
         } catch (Exception e) {
             log.debug("进行中秒杀数采集失败: {}", e.getMessage());
@@ -608,11 +615,15 @@ public class SystemServiceImpl implements SystemService {
 
     /**
      * 统计待开始的秒杀活动数量（status = PENDING）
+     * <p>
+     * M17: 基于 start_time > now 且未取消动态计算，不依赖 DB status 字段。
      */
     private Integer getSeckillPendingCount() {
         try {
+            LocalDateTime now = LocalDateTime.now();
             LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(SeckillGoods::getStatus, SeckillStatus.PENDING);
+            wrapper.ne(SeckillGoods::getStatus, SeckillStatus.CANCELLED)
+                    .gt(SeckillGoods::getStartTime, now);
             return Math.toIntExact(seckillGoodsMapper.selectCount(wrapper));
         } catch (Exception e) {
             log.debug("待开始秒杀数采集失败: {}", e.getMessage());
@@ -622,14 +633,18 @@ public class SystemServiceImpl implements SystemService {
 
     /**
      * 统计今日已完成的秒杀活动数量（status = ENDED 且 endTime 在今日）
+     * <p>
+     * M17: 基于 end_time < now 且 endTime 在今日、未取消动态计算，不依赖 DB status 字段。
      */
     private Integer getSeckillCompletedToday() {
         try {
             LocalDate today = LocalDate.now();
             LocalDateTime startOfDay = today.atStartOfDay();
             LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+            LocalDateTime now = LocalDateTime.now();
             LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(SeckillGoods::getStatus, SeckillStatus.ENDED)
+            wrapper.ne(SeckillGoods::getStatus, SeckillStatus.CANCELLED)
+                    .lt(SeckillGoods::getEndTime, now)
                     .ge(SeckillGoods::getEndTime, startOfDay)
                     .lt(SeckillGoods::getEndTime, endOfDay);
             return Math.toIntExact(seckillGoodsMapper.selectCount(wrapper));

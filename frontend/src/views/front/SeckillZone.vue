@@ -188,6 +188,7 @@ import { getSeckillList } from '@/api/seckill'
 import { getProductDetail } from '@/api/product'
 import { getCategoryTree } from '@/api/category'
 import { formatImageUrl } from '@/utils/image'
+import { getTimeOffset } from '@/api/request'
 import dayjs from 'dayjs'
 import type { SeckillGoodsVO, CategoryVO } from '@/types'
 
@@ -226,7 +227,8 @@ const currentCategoryId = computed<number | string | undefined>(() => {
 /* === 当前时间戳（每秒更新，驱动倒计时 computed） === */
 const now = ref<number>(Date.now())
 let tickTimer: ReturnType<typeof setInterval> | null = null
-let refreshing = false
+// M43 修复: refreshing 改为 ref，使其在模板中可响应式使用，并保持类型安全
+const refreshing = ref<boolean>(false)
 
 /* === 拉取进行中列表 === */
 async function fetchActive(): Promise<void> {
@@ -341,7 +343,9 @@ function isLowStock(item: SeckillGoodsVO): boolean {
 
 /** 距目标时间的剩余毫秒 */
 function remainMs(targetTime: string): number {
-  return dayjs(targetTime).valueOf() - now.value
+  // M39 修复: 加上服务器时间偏移，避免本地时钟与服务器不一致导致倒计时偏差
+  const offset = getTimeOffset()
+  return dayjs(targetTime).valueOf() - (now.value + offset)
 }
 
 /** 倒计时时分秒 */
@@ -364,14 +368,15 @@ function formatTime(time: string): string {
 
 /* === 检查待开始商品是否到期，到期则刷新列表 === */
 function checkPendingExpired(): void {
-  if (pendingList.value.length === 0 || refreshing) return
+  if (pendingList.value.length === 0 || refreshing.value) return
+  const offset = getTimeOffset()
   const hasExpired = pendingList.value.some(
-    (item) => dayjs(item.startTime).valueOf() <= now.value
+    (item) => dayjs(item.startTime).valueOf() <= (now.value + offset)
   )
   if (hasExpired) {
-    refreshing = true
+    refreshing.value = true
     Promise.all([fetchActive(), fetchPending()]).finally(() => {
-      refreshing = false
+      refreshing.value = false
     })
   }
 }

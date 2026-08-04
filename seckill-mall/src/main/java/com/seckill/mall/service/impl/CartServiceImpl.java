@@ -51,6 +51,8 @@ public class CartServiceImpl implements CartService {
     private static final int SELECTED_FLAG = 1;
     /** 未选中标识：0=未选中 */
     private static final int UNSELECTED_FLAG = 0;
+    /** M15: 单个购物车项数量上限，防止异常加购导致数据异常 */
+    private static final int MAX_CART_QUANTITY = 999;
 
     private final CartMapper cartMapper;
     private final ProductMapper productMapper;
@@ -99,7 +101,17 @@ public class CartServiceImpl implements CartService {
                         .eq(Cart::getProductId, productId));
         if (existCart != null) {
             // 已存在：数量累加，cart_count 不变
-            existCart.setQuantity(existCart.getQuantity() + quantity);
+            // M15 修复：累加后校验数量上限，防止异常加购
+            int newQuantity = existCart.getQuantity() + quantity;
+            if (newQuantity > MAX_CART_QUANTITY) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR,
+                        "加购数量超过上限 " + MAX_CART_QUANTITY);
+            }
+            // 若库存不足以上限为准，再校验库存
+            if (product.getStock() != null && newQuantity > product.getStock()) {
+                throw new BusinessException(ErrorCode.STOCK_EMPTY);
+            }
+            existCart.setQuantity(newQuantity);
             cartMapper.updateById(existCart);
             log.info("购物车数量累加，cartId={}, userId={}, productId={}, quantity=+{}",
                     existCart.getId(), userId, productId, quantity);
@@ -163,6 +175,8 @@ public class CartServiceImpl implements CartService {
         if (carts.isEmpty()) {
             return Result.<Void>success("购物车已为空", null);
         }
+        // L12: 当前先查列表逐项更新 cart_count 再批量删除，可优化为单条 UPDATE 子查询：
+        // UPDATE t_product SET cart_count = cart_count - 1 WHERE id IN (SELECT product_id FROM t_cart WHERE user_id=? AND is_deleted=0)
         // 对每个商品 cart_count - 1
         carts.forEach(cart -> updateProductCartCount(cart.getProductId(), -1));
         // 批量逻辑删除

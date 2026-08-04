@@ -47,7 +47,9 @@ public class AsyncConfig {
         executor.setQueueCapacity(200);
         executor.setKeepAliveSeconds(60);
         executor.setThreadNamePrefix("log-");
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
+        // 安全修复（L6）：DiscardOldestPolicy 会丢弃队列中最旧的日志任务，导致关键审计日志丢失；
+        // 改用 CallerRunsPolicy，队列满时由调用线程同步执行，保证审计日志完整性
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(15);
         executor.initialize();

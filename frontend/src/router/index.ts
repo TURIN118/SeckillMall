@@ -289,7 +289,12 @@ router.beforeEach(async (to, _from, next) => {
     try {
       await userStore.fetchUserInfo()
     } catch {
-      // 拉取失败, 继续放行 (后续 API 401 会处理)
+      // H24 修复: 拉取用户信息失败 (token 无效/被踢出等)，跳转登录页而非继续放行
+      // 继续放行会让用户以"半登录"状态访问页面，导致后续 API 401 雪崩式报错
+      await userStore.logout()
+      ElMessage.warning('登录信息已失效，请重新登录')
+      next(`/login?redirect=${encodeURIComponent(to.fullPath)}`)
+      return
     }
   }
 

@@ -32,9 +32,10 @@ public interface CartMapper extends BaseMapper<Cart> {
      * @param productId 商品 ID
      * @return 购物车实体（可能为 null）
      */
-    @Select("SELECT * FROM t_cart WHERE user_id = #{userId} AND product_id = #{productId} LIMIT 1")
+    @Select("SELECT id, user_id, product_id, quantity, selected, is_deleted, create_time, update_time " +
+            "FROM t_cart WHERE user_id = #{userId} AND product_id = #{productId} LIMIT 1")
     Cart selectByUserAndProductIncludeDeleted(@Param("userId") Long userId,
-                                              @Param("productId") Long productId);
+                                               @Param("productId") Long productId);
 
     /**
      * 恢复逻辑删除的购物车记录并设置数量与选中状态。

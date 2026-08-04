@@ -16,7 +16,7 @@
  * 参照 10-ai-design-spec.md C03 规范 + index.html .seckill-btn 样式
  * 内部状态机: disabled/active/loading/polling/success/fail
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Loading } from '@element-plus/icons-vue'
 import type { SeckillStatus } from '@/types'
 
@@ -119,10 +119,25 @@ const buttonText = computed(() => {
   }
 })
 
+/**
+ * L26 修复: 防重复点击标志
+ * emit('seckill') 后短暂禁用 300ms，防止用户连点触发多次抢购
+ */
+const justEmitted = ref<boolean>(false)
+let emitResetTimer: ReturnType<typeof setTimeout> | null = null
+
 function handleClick(): void {
   if (isDisabled.value) return
+  // L26 修复: 防重复点击，刚刚 emit 过则忽略
+  if (justEmitted.value) return
   if (currentState.value === 'active') {
+    justEmitted.value = true
     emit('seckill')
+    if (emitResetTimer) clearTimeout(emitResetTimer)
+    emitResetTimer = setTimeout(() => {
+      justEmitted.value = false
+      emitResetTimer = null
+    }, 300)
   }
 }
 </script>

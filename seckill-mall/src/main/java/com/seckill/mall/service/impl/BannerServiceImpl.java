@@ -114,6 +114,10 @@ public class BannerServiceImpl implements BannerService {
         if (existing == null) {
             throw new BusinessException(ErrorCode.BANNER_NOT_FOUND);
         }
+        // L17 修复：校验 status 值合法（0=禁用，1=启用），避免任意值落库
+        if (status == null || (status != 0 && status != 1)) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "状态值非法，仅允许 0 或 1");
+        }
         // 只更新 status 字段
         Banner toUpdate = new Banner();
         toUpdate.setId(id);

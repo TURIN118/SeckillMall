@@ -185,7 +185,8 @@
           <!-- 商品详情 -->
           <template v-if="activeTab === 'detail'">
             <!-- detailHtml 富文本(HTML)用 v-html 渲染，与添加商品时 wangEditor 保存格式一致 -->
-            <div v-if="product.detailHtml" class="desc-content" v-html="product.detailHtml"></div>
+            <!-- C6 修复: 使用 DOMPurify 净化 HTML，防止 XSS 攻击 -->
+            <div v-if="product.detailHtml" class="desc-content" v-html="safeDetailHtml"></div>
             <!-- detailHtml 为空时回退显示 description 纯文本(用 <p> 包裹，pre-wrap 保留换行) -->
             <div v-else-if="product.description" class="desc-content">
               <p>{{ product.description }}</p>
@@ -312,6 +313,7 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
 import { formatImageUrl } from '@/utils/image'
+import DOMPurify from 'dompurify'
 import type { ProductVO, ProductReviewVO } from '@/types'
 
 const route = useRoute()
@@ -352,20 +354,29 @@ const displayImages = computed<string[]>(() => {
   return product.value.images || []
 })
 
+/**
+ * C6 修复: 净化后的商品详情 HTML
+ * 使用 DOMPurify 移除潜在的 XSS 攻击代码 (如 <script>、on* 事件属性等)
+ */
+const safeDetailHtml = computed<string>(() => {
+  return product.value?.detailHtml ? DOMPurify.sanitize(product.value.detailHtml) : ''
+})
+
 /** 当前展示图片 */
 const currentImage = computed<string>(() => {
   return formatImageUrl(displayImages.value[currentImageIdx.value] || '')
 })
 
 /** 从路由参数获取商品ID */
-function getProductId(): number {
-  return Number(route.params.id)
+function getProductId(): string {
+  // H22 修复: 使用 String 保留原始 ID 字符串，避免 Number() 对长整型 ID 的精度丢失
+  return String(route.params.id ?? '')
 }
 
 /** 拉取商品详情 */
 async function fetchDetail(): Promise<void> {
   const id = getProductId()
-  if (!id || Number.isNaN(id)) {
+  if (!id) {
     error.value = true
     return
   }
@@ -385,7 +396,7 @@ async function fetchDetail(): Promise<void> {
 /** 拉取评论列表 */
 async function fetchReviews(): Promise<void> {
   const id = getProductId()
-  if (!id || Number.isNaN(id)) return
+  if (!id) return
   reviewLoading.value = true
   try {
     const res = await getProductReviews(id, reviewPageNum.value, reviewPageSize.value)
@@ -428,7 +439,7 @@ async function submitReview(): Promise<void> {
     return
   }
   const productId = getProductId()
-  if (!productId || Number.isNaN(productId)) return
+  if (!productId) return
 
   reviewSubmitting.value = true
   try {
@@ -491,7 +502,7 @@ async function handleBuyNow(): Promise<void> {
   }
 
   const productId = getProductId()
-  if (!productId || Number.isNaN(productId)) {
+  if (!productId) {
     ElMessage.error('商品参数错误')
     return
   }
@@ -565,7 +576,7 @@ async function initFavoriteStatus(): Promise<void> {
   isFavorited.value = false
   if (!userStore.isLoggedIn) return
   const productId = getProductId()
-  if (!productId || Number.isNaN(productId)) return
+  if (!productId) return
   try {
     const res = await checkFavorite(productId)
     isFavorited.value = !!res.data
@@ -583,7 +594,7 @@ async function handleFavorite(): Promise<void> {
     return
   }
   const productId = getProductId()
-  if (!productId || Number.isNaN(productId)) {
+  if (!productId) {
     ElMessage.error('商品参数错误')
     return
   }

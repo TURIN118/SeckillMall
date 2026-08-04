@@ -1,5 +1,8 @@
 package com.seckill.mall.dto;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -16,11 +19,14 @@ public class AdminOrderQueryRequest {
     /**
      * 页码，默认 1
      */
+    @Min(value = 1, message = "页码必须大于等于 1")
     private Integer pageNum;
 
     /**
      * 每页大小，默认 10
      */
+    @Min(value = 1, message = "每页大小必须大于等于 1")
+    @Max(value = 100, message = "每页大小不能超过 100")
     private Integer pageSize;
 
     /**
@@ -32,11 +38,13 @@ public class AdminOrderQueryRequest {
      * 按天筛选订单创建日期，格式 yyyy-MM-dd
      * 前端 dateSingle 传入，Mapper 中使用 DATE(create_time) = #{date} 精确匹配当天
      */
+    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "日期格式必须为 yyyy-MM-dd")
     private String date;
 
     /**
      * 订单状态：UNPAID/PAID/CANCELLED/TIMEOUT/COMPLETED
      */
+    @Pattern(regexp = "^(UNPAID|PAID|CANCELLED|TIMEOUT|COMPLETED)$", message = "订单状态非法")
     private String status;
 
     /**

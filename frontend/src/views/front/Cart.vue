@@ -116,7 +116,7 @@
  * 操作后刷新列表和购物车数量徽标 (Pinia store)。
  */
 defineOptions({ name: 'Cart' })
-import { ref, computed, onMounted, onActivated } from 'vue'
+import { ref, computed, onMounted, onActivated, onUnmounted, onDeactivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
@@ -143,6 +143,15 @@ const loading = ref<boolean>(false)
 
 /** 数量更新防抖映射 (避免频繁请求) */
 const quantityTimers = new Map<number | string, ReturnType<typeof setTimeout>>()
+
+/**
+ * H19 修复: 清理所有数量更新防抖定时器
+ * 在组件卸载或 keep-alive 缓存失活时调用，避免内存泄漏与卸载后仍触发请求
+ */
+function clearAllQuantityTimers(): void {
+  quantityTimers.forEach((t) => clearTimeout(t))
+  quantityTimers.clear()
+}
 
 /* === 计算属性 === */
 
@@ -362,6 +371,16 @@ onMounted(() => {
 // keep-alive 缓存后, 再次激活时刷新购物车列表 (保证从其他页面返回时数据新鲜)
 onActivated(() => {
   loadCartList()
+})
+
+// H19 修复: 组件卸载时清理所有数量更新防抖定时器，避免内存泄漏
+onUnmounted(() => {
+  clearAllQuantityTimers()
+})
+
+// H19 修复: keep-alive 缓存失活时也清理定时器，避免失活期间仍触发请求
+onDeactivated(() => {
+  clearAllQuantityTimers()
 })
 </script>
 

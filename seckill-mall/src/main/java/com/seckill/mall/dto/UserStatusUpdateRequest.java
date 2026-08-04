@@ -1,6 +1,7 @@
 package com.seckill.mall.dto;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 /**
@@ -13,5 +14,6 @@ import lombok.Data;
 public class UserStatusUpdateRequest {
 
     @NotNull(message = "状态不能为空")
+    @Pattern(regexp = "^(ACTIVE|DISABLED)$", message = "状态非法")
     private String status;
 }

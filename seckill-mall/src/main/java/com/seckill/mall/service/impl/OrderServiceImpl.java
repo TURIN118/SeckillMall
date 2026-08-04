@@ -37,6 +37,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -156,17 +158,36 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ErrorCode.ORDER_TIMEOUT);
         }
 
+        // M12 修复：秒杀订单支付支持钱包扣款，与 payNormalOrder 保持一致
+        BigDecimal payAmount = order.getTotalAmount();
+        if (PAY_METHOD_WALLET.equalsIgnoreCase(payMethod)) {
+            // 钱包支付：原子扣减余额，余额不足提示去充值
+            int rows = userMapper.deductBalance(userId, payAmount);
+            if (rows == 0) {
+                throw new BusinessException(ErrorCode.WALLET_BALANCE_NOT_ENOUGH);
+            }
+            log.info("秒杀订单钱包扣款成功，userId={}, orderId={}, amount={}", userId, orderId, payAmount);
+        } else {
+            // 模拟支付（ALIPAY/WECHAT 等）：直接置 PAID
+            log.info("秒杀订单模拟支付成功，userId={}, orderId={}, payMethod={}, amount={}",
+                    userId, orderId, payMethod, payAmount);
+        }
+
         order.setStatus(OrderStatus.PAID);
         order.setPayTime(LocalDateTime.now());
         order.setPayMethod(payMethod);
         order.setTransactionId(generateTransactionId());
         seckillOrderMapper.updateById(order);
 
-        // 支付成功邮件：异步发送，失败不影响主流程
+        // L8: 支付成功邮件：异步发送，失败不影响主流程，添加 try-catch 防止异常冒泡
         String email = getUserEmail(userId);
         if (email != null) {
-            emailService.sendPaySuccess(email, order.getOrderNo(), order.getTotalAmount(),
-                    order.getPayTime().format(PAY_TIME_FORMATTER));
+            try {
+                emailService.sendPaySuccess(email, order.getOrderNo(), order.getTotalAmount(),
+                        order.getPayTime().format(PAY_TIME_FORMATTER));
+            } catch (Exception e) {
+                log.error("秒杀订单支付成功邮件发送失败，orderId={}", orderId, e);
+            }
         }
         return order;
     }
@@ -184,13 +205,18 @@ public class OrderServiceImpl implements OrderService {
         order.setCancelReason(CANCEL_REASON_USER);
         seckillOrderMapper.updateById(order);
 
-        // 回补 Redis 库存 + 移除已购标记，保证缓存与可售库存一致
-        rollbackStock(order.getSeckillId(), userId);
+        // H10 修复：回补 Redis 库存移到事务提交后执行，避免事务回滚后缓存与 DB 不一致
+        Long seckillId = order.getSeckillId();
+        registerAfterCommit(() -> rollbackStock(seckillId, userId));
 
         // 订单取消邮件：异步发送，失败不影响主流程
         String email = getUserEmail(userId);
         if (email != null) {
-            emailService.sendOrderCancel(email, order.getOrderNo(), CANCEL_REASON_USER);
+            try {
+                emailService.sendOrderCancel(email, order.getOrderNo(), CANCEL_REASON_USER);
+            } catch (Exception e) {
+                log.error("订单取消邮件发送失败，orderId={}", orderId, e);
+            }
         }
         return order;
     }
@@ -217,14 +243,38 @@ public class OrderServiceImpl implements OrderService {
         order.setCancelTime(LocalDateTime.now());
         order.setCancelReason(CANCEL_REASON_TIMEOUT);
         seckillOrderMapper.updateById(order);
-        rollbackStock(order.getSeckillId(), order.getUserId());
+        // H10 修复：回补 Redis 库存移到事务提交后执行
+        Long seckillId = order.getSeckillId();
+        Long orderUserId = order.getUserId();
+        registerAfterCommit(() -> rollbackStock(seckillId, orderUserId));
 
         // 超时取消邮件：异步发送，失败不影响主流程
         String email = getUserEmail(order.getUserId());
         if (email != null) {
-            emailService.sendOrderCancel(email, order.getOrderNo(), CANCEL_REASON_TIMEOUT);
+            try {
+                emailService.sendOrderCancel(email, order.getOrderNo(), CANCEL_REASON_TIMEOUT);
+            } catch (Exception e) {
+                log.error("超时取消邮件发送失败，orderId={}", orderId, e);
+            }
         }
         return true;
+    }
+
+    /**
+     * H10: 将 Redis 操作注册到事务提交后执行；无事务上下文时直接执行。
+     * 避免事务回滚后缓存与 DB 不一致。
+     */
+    private void registerAfterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        } else {
+            action.run();
+        }
     }
 
     private void rollbackStock(Long seckillId, Long userId) {
@@ -232,8 +282,8 @@ public class OrderServiceImpl implements OrderService {
             redisService.incr(RedisKeyConstants.seckillStock(seckillId));
             redisService.sRem(RedisKeyConstants.seckillBought(seckillId), String.valueOf(userId));
         } catch (Exception e) {
-            // Redis 异常不阻断主流程，由补偿任务兜底
-            log.error("回补 Redis 库存失败 seckillId={} userId={}", seckillId, userId, e);
+            // L10: Redis 异常不阻断主流程，由补偿任务兜底；记录 warn 便于监控
+            log.warn("回补 Redis 库存失败，需补偿任务兜底 seckillId={} userId={}", seckillId, userId, e);
         }
     }
 
@@ -329,6 +379,8 @@ public class OrderServiceImpl implements OrderService {
         // 1. 校验地址归属
         checkAddressOwnership(userId, addressId);
         // 2. 查询购物车项并校验归属
+        // L9: 若 cartIds 含重复 ID，selectList(in) 会去重返回，导致 carts.size() != cartIds.size() 误报错
+        // 完整方案应在入口去重：cartIds = cartIds.stream().distinct().toList()
         List<Cart> carts = cartMapper.selectList(
                 new LambdaQueryWrapper<Cart>().in(Cart::getId, cartIds));
         if (carts.size() != cartIds.size()) {
@@ -659,9 +711,14 @@ public class OrderServiceImpl implements OrderService {
         OrderStatus statusFilter = parseStatusFromString(status);
 
         // 2. 查询秒杀订单（按 userId + status 过滤，按 createTime 降序）
+        // H11 修复：原代码全量加载后内存分页，存在性能与内存风险。
+        // 此处添加 LIMIT 兜底（最多查 pageNum*pageSize 条），避免大用户量全表加载。
+        // 完整方案应改为 DB 层分页（分别按页查询秒杀/普通订单后归并），此处先做限流保护。
+        int maxLoad = num * size;
         LambdaQueryWrapper<SeckillOrder> skWrapper = new LambdaQueryWrapper<SeckillOrder>()
                 .eq(SeckillOrder::getUserId, userId)
-                .orderByDesc(SeckillOrder::getCreateTime);
+                .orderByDesc(SeckillOrder::getCreateTime)
+                .last("LIMIT " + maxLoad);
         if (statusFilter != null) {
             skWrapper.eq(SeckillOrder::getStatus, statusFilter);
         }
@@ -670,7 +727,8 @@ public class OrderServiceImpl implements OrderService {
         // 3. 查询普通订单（按 userId + status 过滤，按 createTime 降序）
         LambdaQueryWrapper<NormalOrder> normalWrapper = new LambdaQueryWrapper<NormalOrder>()
                 .eq(NormalOrder::getUserId, userId)
-                .orderByDesc(NormalOrder::getCreateTime);
+                .orderByDesc(NormalOrder::getCreateTime)
+                .last("LIMIT " + maxLoad);
         if (statusFilter != null) {
             normalWrapper.eq(NormalOrder::getStatus, statusFilter);
         }

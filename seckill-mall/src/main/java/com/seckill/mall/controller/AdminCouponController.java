@@ -1,5 +1,7 @@
 package com.seckill.mall.controller;
 
+import com.seckill.mall.common.BusinessException;
+import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.CouponCreateRequest;
@@ -72,16 +74,22 @@ public class AdminCouponController {
     @Operation(summary = "启用/停用优惠券")
     @PutMapping("/{id}/status")
     public Result<Void> updateStatus(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
-        couponService.updateStatus(id, body.get("status"));
+        // 安全修复（M4）：服务端校验 status 取值范围，避免非法状态写入
+        Integer status = body == null ? null : body.get("status");
+        if (status == null || (status != 0 && status != 1)) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "status 仅允许 0(停用) 或 1(启用)");
+        }
+        couponService.updateStatus(id, status);
         return Result.<Void>success("状态更新成功", null);
     }
 
     @Operation(summary = "发放优惠券给指定用户")
     @PostMapping("/{id}/distribute")
     public Result<Void> distribute(@PathVariable Long id, @RequestBody Map<String, Long> body) {
-        Long userId = body.get("userId");
-        if (userId == null) {
-            return Result.error(1001, "用户ID不能为空");
+        // 安全修复（M4）：服务端校验 userId 非空且为正数
+        Long userId = body == null ? null : body.get("userId");
+        if (userId == null || userId <= 0) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "用户ID不能为空且必须为正数");
         }
         couponService.distribute(id, userId);
         return Result.<Void>success("发放成功", null);

@@ -28,6 +28,12 @@ import java.util.Map;
  * 项目名称：seckill-mall
  * 文件名称：EmailServiceImpl.java
  * 邮箱：nj651217@163.com
+ * <p>
+ * M18 风险说明：@Async 与 @Retryable 组合使用存在代理顺序问题。
+ * Spring 中 @Retryable 代理通常在 @Async 代理外层，导致重试在调用方线程同步执行，
+ * 既阻塞调用方又使 @Async 失去意义。当前业务对邮件实时性要求不高，暂保留组合；
+ * 若后续出现调用方阻塞问题，应移除 @Retryable，改为在 @Async 线程内手动循环重试，
+ * 或使用 Spring RetryTemplate 在异步方法体内显式重试。
  */
 @Slf4j
 @Service

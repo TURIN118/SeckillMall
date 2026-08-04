@@ -83,7 +83,8 @@
         <span class="zone-title">限时秒杀</span>
         <span class="zone-badge">限时抢购</span>
         <!-- 倒计时方块 -->
-        <div class="zone-countdown">
+        <!-- M44 修复: 仅在有进行中秒杀活动时显示倒计时，无数据时不显示硬编码的虚假倒计时 -->
+        <div v-if="hasActiveSeckill" class="zone-countdown">
           距结束
           <span class="cd-block">{{ cd.hours }}</span>
           <span class="cd-sep">:</span>
@@ -303,16 +304,28 @@ interface Countdown {
   seconds: string
 }
 
-const cd = ref<Countdown>({ hours: '02', minutes: '34', seconds: '56' })
+const cd = ref<Countdown>({ hours: '00', minutes: '00', seconds: '00' })
 let cdTimer: ReturnType<typeof setInterval> | null = null
-// 默认倒计时目标：当前时间 + 2小时34分56秒
-let cdTarget = Date.now() + (2 * 3600 + 34 * 60 + 56) * 1000
+// M44 修复: 移除硬编码的虚假倒计时目标，改为仅在有 ACTIVE 活动时计算
+let cdTarget = 0
+
+/**
+ * M44 修复: 是否存在进行中的秒杀活动
+ * 仅在有 ACTIVE 活动时才显示倒计时，避免无数据时显示虚假倒计时误导用户
+ */
+const hasActiveSeckill = computed<boolean>(() => {
+  return seckillStore.activeList.length > 0
+})
 
 function updateCountdown(): void {
   // 若 store 有 ACTIVE 数据，使用第一个活动的 endTime
   const firstActive = seckillStore.activeList[0]
   if (firstActive) {
     cdTarget = new Date(firstActive.endTime).getTime()
+  } else {
+    // M44 修复: 无 ACTIVE 活动时重置倒计时为 00:00:00，不显示虚假倒计时
+    cd.value = { hours: '00', minutes: '00', seconds: '00' }
+    return
   }
   let remain = Math.max(0, Math.floor((cdTarget - Date.now()) / 1000))
   const hours = Math.floor(remain / 3600)
@@ -373,7 +386,9 @@ function toCardItem(item: SeckillGoodsVO): SeckillCardItem {
     name: item.productName || item.seckillName || '未命名商品',
     desc: item.seckillName || item.description || '限时秒杀 · 手慢无',
     price,
-    original: price > 0 ? Math.round(price / 0.7) : undefined, // 原价近似（无字段时）
+    // H25 修复: 不再伪造原价 (原价近似 price/0.7 误导消费者，违反价格法)
+    // 原价应来自后端 originalPrice 字段，无字段时不显示
+    original: undefined,
     image: item.images?.[0],
     stockPercent: isPending ? undefined : soldPercent,
     stockLevel: isPending ? undefined : level,

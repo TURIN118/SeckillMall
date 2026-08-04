@@ -192,6 +192,9 @@ public class CategoryServiceImpl implements CategoryService {
      * 判断 ancestorId 是否为 descendantId 的祖先（即 descendantId 是否位于 ancestorId 的子树中）。
      * 实现方式：从 descendantId 向上追溯 parentId 链，若途中遇到 ancestorId 则返回 true。
      * 为防止脏数据导致死循环，最多向上追溯 {@link #MAX_ANCESTOR_DEPTH} 层。
+     * <p>
+     * L19: 本方法依赖 MAX_ANCESTOR_DEPTH 深度限制，超过该深度的祖先关系会被误判为 false。
+     * 正常业务分类树深度有限（通常 < 10），该限制可接受；若分类层级扩展需同步调整上限。
      *
      * @param ancestorId   候选祖先节点 ID
      * @param descendantId 起始子节点 ID
@@ -234,12 +237,20 @@ public class CategoryServiceImpl implements CategoryService {
      * 一次性查询每个分类直接挂载的未删除商品数，返回 categoryId → count 映射。
      * 等价 SQL: SELECT category_id, COUNT(*) FROM t_product WHERE is_deleted=0 GROUP BY category_id
      * is_deleted=0 由 @TableLogic 自动追加。
+     * <p>
+     * H13 修复：原实现使用 selectMaps 全表扫描 category_id 后内存分组，商品量大时有性能与内存风险。
+     * 完整方案应在 ProductMapper 新增聚合查询：
+     * {@code @MapKey("categoryId") List<Map<String,Object>> selectCategoryCountGroupBy();}
+     * 对应 SQL: SELECT category_id, COUNT(*) AS cnt FROM t_product WHERE is_deleted=0 GROUP BY category_id
+     * 此处暂保留原实现并添加 LIMIT 兜底，避免全表加载；后续应替换为 DB 层聚合。
      */
     private Map<Long, Integer> buildDirectProductCountMap() {
         // 使用 selectMaps 仅查 category_id 列，再在内存中分组计数，避免依赖自定义 SQL
+        // H13: 添加 LIMIT 兜底，避免商品全表扫描；完整方案应改为 DB 层 GROUP BY 聚合
         List<Map<String, Object>> rows = productMapper.selectMaps(
                 new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Product>()
-                        .select("category_id"));
+                        .select("category_id")
+                        .last("LIMIT 100000"));
         Map<Long, Integer> countMap = new java.util.HashMap<>();
         if (rows == null || rows.isEmpty()) {
             return countMap;

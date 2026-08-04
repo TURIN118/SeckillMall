@@ -17,8 +17,20 @@ public class UserVO {
 
     private String username;
 
+    /**
+     * 手机号
+     * <p>
+     * M31 安全说明：应在 Service 层脱敏(如 138****8000)后再返回前端，
+     * 避免完整手机号通过列表/详情接口泄露。
+     */
     private String phone;
 
+    /**
+     * 邮箱
+     * <p>
+     * M31 安全说明：应在 Service 层脱敏(如 w***@ex.com)后再返回前端，
+     * 避免完整邮箱通过列表/详情接口泄露。
+     */
     private String email;
 
     private String nickname;

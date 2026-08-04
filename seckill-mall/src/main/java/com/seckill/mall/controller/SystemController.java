@@ -74,8 +74,16 @@ public class SystemController {
             @RequestParam(required = false) String module,
             HttpServletResponse response) throws IOException {
 
+        // 安全修复（M10）：限制单次导出条数上限，防止超大结果集导致 OOM/DoS。
+        // Service 层 listAllForExport 内部已限制最多 10000 条；此处再次校验作为兜底，
+        // 并在超过阈值时仅导出前 10000 条，避免恶意条件触发全表扫描。
+        final int EXPORT_LIMIT = 10000;
+
         // 1. 查询所有符合条件的日志（不分页，最多 10000 条）
         List<OperationLogVO> logs = systemService.listAllForExport(module);
+        if (logs.size() > EXPORT_LIMIT) {
+            logs = logs.subList(0, EXPORT_LIMIT);
+        }
 
         // 2. 设置响应头
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");

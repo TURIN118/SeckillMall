@@ -100,7 +100,12 @@ public class WalletController {
         vo.setAmount(card.getFaceValue());
         vo.setBalanceAfter(balanceAfter);
         vo.setCreateTime(card.getUsedTime());
-        vo.setRemark("充值卡充值，卡号：" + card.getCardNo());
+        // 安全修复（L3）：卡号脱敏，仅显示后四位，避免敏感信息泄露
+        String cardNo = card.getCardNo();
+        String maskedCardNo = (cardNo == null || cardNo.length() < 4)
+                ? "****"
+                : "****" + cardNo.substring(cardNo.length() - 4);
+        vo.setRemark("充值卡充值，卡号：" + maskedCardNo);
         return vo;
     }
 }

@@ -6,9 +6,12 @@ import com.seckill.mall.service.CartService;
 import com.seckill.mall.vo.CartItemVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,15 +53,17 @@ public class CartController {
 
     @Operation(summary = "添加到购物车")
     @PostMapping("/add")
-    public Result<Void> add(@RequestBody AddToCartRequest req) {
+    // 安全修复（M3）：添加 @Validated 触发请求体字段校验
+    public Result<Void> add(@Validated @RequestBody AddToCartRequest req) {
         Long userId = SecurityUtils.getCurrentUserId();
         return cartService.addToCart(userId, req.getProductId(), req.getQuantity());
     }
 
     @Operation(summary = "修改购物车项数量")
     @PutMapping("/{cartId}/quantity")
+    // 安全修复（M3）：添加 @Validated 触发请求体字段校验
     public Result<Void> updateQuantity(@PathVariable Long cartId,
-                                       @RequestBody UpdateQuantityRequest req) {
+                                       @Validated @RequestBody UpdateQuantityRequest req) {
         Long userId = SecurityUtils.getCurrentUserId();
         return cartService.updateQuantity(userId, cartId, req.getQuantity());
     }
@@ -102,13 +107,19 @@ public class CartController {
     /** 添加购物车请求体 */
     @Data
     public static class AddToCartRequest {
+        @NotNull(message = "商品 ID 不能为空")
         private Long productId;
+
+        @NotNull(message = "数量不能为空")
+        @Min(value = 1, message = "数量必须大于 0")
         private Integer quantity;
     }
 
     /** 修改数量请求体 */
     @Data
     public static class UpdateQuantityRequest {
+        @NotNull(message = "数量不能为空")
+        @Min(value = 1, message = "数量必须大于 0")
         private Integer quantity;
     }
 

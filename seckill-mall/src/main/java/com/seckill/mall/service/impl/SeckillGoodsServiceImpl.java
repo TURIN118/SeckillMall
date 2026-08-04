@@ -24,6 +24,8 @@ import org.redisson.api.RBloomFilter;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -116,7 +118,8 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         goods.setDescription(req.getDescription());
 
         seckillGoodsMapper.insert(goods);
-        preheatSeckill(goods.getId());
+        // H9 修复：将 preheatSeckill（Redis 操作）移到事务提交后执行，避免事务回滚后缓存与 DB 不一致
+        registerAfterCommit(() -> preheatSeckill(goods.getId()));
         return toVO(goods, Map.of(product.getId(), product));
     }
 
@@ -165,8 +168,11 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         }
         seckillGoodsMapper.updateById(goods);
 
-        evictCache(id);
-        preheatSeckill(id);
+        // H9/M19 修复：evictCache 与 preheatSeckill（Redis 操作）移到事务提交后执行
+        registerAfterCommit(() -> {
+            evictCache(id);
+            preheatSeckill(id);
+        });
         Product product = productMapper.selectById(goods.getProductId());
         return toVO(goods, product == null ? Collections.emptyMap() : Map.of(product.getId(), product));
     }
@@ -180,7 +186,8 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         }
         goods.setStatus(SeckillStatus.CANCELLED);
         seckillGoodsMapper.updateById(goods);
-        evictCache(id);
+        // M19 修复：evictCache（Redis 操作）移到事务提交后执行
+        registerAfterCommit(() -> evictCache(id));
     }
 
     @Override
@@ -209,6 +216,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         String infoKey = RedisKeyConstants.seckillInfo(seckillId);
         String stockKey = RedisKeyConstants.seckillStock(seckillId);
 
+        // L7: TTL 兜底——取活动剩余时间与 60s 的较大值，避免活动临近结束导致缓存过早失效
         long ttlSeconds = Math.max(60L, Duration.between(LocalDateTime.now(), goods.getEndTime()).getSeconds());
 
         redisService.hSet(infoKey, "id", String.valueOf(goods.getId()));
@@ -225,6 +233,23 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         RBloomFilter<Long> bloomFilter = redissonClient.getBloomFilter(RedisKeyConstants.SECKILL_BLOOM_GOODS);
         bloomFilter.tryInit(10000L, 0.01);
         bloomFilter.add(seckillId);
+    }
+
+    /**
+     * H9/M19: 将 Redis 操作注册到事务提交后执行；无事务上下文时直接执行。
+     * 避免事务回滚后缓存与 DB 不一致。
+     */
+    private void registerAfterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    action.run();
+                }
+            });
+        } else {
+            action.run();
+        }
     }
 
     private void evictCache(Long seckillId) {

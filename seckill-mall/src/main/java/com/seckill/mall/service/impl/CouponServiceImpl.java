@@ -1,6 +1,7 @@
 package com.seckill.mall.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.seckill.mall.common.BusinessException;
@@ -142,9 +143,6 @@ public class CouponServiceImpl implements CouponService {
         if (coupon.getStatus() != STATUS_ENABLED) {
             throw new BusinessException(ErrorCode.COUPON_DISABLED);
         }
-        if (coupon.getReceivedCount() >= coupon.getTotalCount()) {
-            throw new BusinessException(ErrorCode.COUPON_OUT_OF_STOCK);
-        }
         // 检查是否已领取过
         Long existCount = userCouponMapper.selectCount(
                 new LambdaQueryWrapper<UserCoupon>()
@@ -160,9 +158,15 @@ public class CouponServiceImpl implements CouponService {
         userCoupon.setStatus(UserCouponStatus.UNUSED);
         userCoupon.setReceiveTime(LocalDateTime.now());
         userCouponMapper.insert(userCoupon);
-        // 更新已领取数 +1
-        coupon.setReceivedCount(coupon.getReceivedCount() + 1);
-        couponMapper.updateById(coupon);
+        // H8/L20 修复：原子更新 received_count，避免"先查后改"并发超卖
+        // WHERE received_count < total_count 保证不超发；返回 0 表示库存不足
+        int rows = couponMapper.update(null, new LambdaUpdateWrapper<Coupon>()
+                .eq(Coupon::getId, couponId)
+                .lt(Coupon::getReceivedCount, coupon.getTotalCount())
+                .setSql("received_count = received_count + 1"));
+        if (rows == 0) {
+            throw new BusinessException(ErrorCode.COUPON_OUT_OF_STOCK);
+        }
         log.info("发放优惠券成功，couponId={}, userId={}", couponId, userId);
     }
 
@@ -199,11 +203,8 @@ public class CouponServiceImpl implements CouponService {
         if (now.isAfter(coupon.getEndTime())) {
             throw new BusinessException(ErrorCode.COUPON_EXPIRED);
         }
-        if (coupon.getReceivedCount() != null && coupon.getTotalCount() != null
-                && coupon.getReceivedCount() >= coupon.getTotalCount()) {
-            throw new BusinessException(ErrorCode.COUPON_OUT_OF_STOCK);
-        }
-        // 检查是否已领取过（每用户每券限领一次）
+        // M16: 重复检查非原子，依赖 (user_id, coupon_id) 唯一索引兜底；
+        // 若并发穿透触发 DuplicateKeyException，转换为业务异常
         Long existCount = userCouponMapper.selectCount(
                 new LambdaQueryWrapper<UserCoupon>()
                         .eq(UserCoupon::getUserId, userId)
@@ -217,12 +218,20 @@ public class CouponServiceImpl implements CouponService {
         userCoupon.setCouponId(couponId);
         userCoupon.setStatus(UserCouponStatus.UNUSED);
         userCoupon.setReceiveTime(now);
-        userCouponMapper.insert(userCoupon);
-        // 已领取数 +1
-        Coupon toUpdate = new Coupon();
-        toUpdate.setId(couponId);
-        toUpdate.setReceivedCount((coupon.getReceivedCount() == null ? 0 : coupon.getReceivedCount()) + 1);
-        couponMapper.updateById(toUpdate);
+        try {
+            userCouponMapper.insert(userCoupon);
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            throw new BusinessException(ErrorCode.COUPON_ALREADY_RECEIVED);
+        }
+        // H8 修复：原子更新 received_count，避免"先查后改"并发超卖
+        // WHERE received_count < total_count 保证不超发；返回 0 表示库存不足
+        int rows = couponMapper.update(null, new LambdaUpdateWrapper<Coupon>()
+                .eq(Coupon::getId, couponId)
+                .lt(Coupon::getReceivedCount, coupon.getTotalCount())
+                .setSql("received_count = received_count + 1"));
+        if (rows == 0) {
+            throw new BusinessException(ErrorCode.COUPON_OUT_OF_STOCK);
+        }
         log.info("用户领取优惠券成功，couponId={}, userId={}", couponId, userId);
     }
 

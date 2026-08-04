@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.HtmlUtils;
 
 /**
  * 创建人：@author WNJ
@@ -50,8 +51,10 @@ public class ProductReviewController {
     @PostMapping("/create")
     public Result<ProductReviewVO> create(@Validated @RequestBody ReviewCreateRequest req) {
         Long userId = SecurityUtils.getCurrentUserId();
+        // 安全修复（M5）：对评论内容做 HTML 转义，防止存储型 XSS
+        String safeContent = HtmlUtils.htmlEscape(req.getContent());
         return Result.success(productReviewService.create(
-                userId, req.getProductId(), req.getContent(), req.getRating(), req.getImages()));
+                userId, req.getProductId(), safeContent, req.getRating(), req.getImages()));
     }
 
     /**

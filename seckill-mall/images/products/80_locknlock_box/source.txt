@@ -1,0 +1,5 @@
+product: 乐扣乐扣 耐热玻璃保鲜盒 6件
+query: 乐扣乐扣 保鲜盒 外观
+01_main.png	http://img13.360buyimg.com/n1/jfs/t1/128770/19/4164/441597/5edb1019E8a35176c/c1772b5209e56c82.png
+02_detail.jpg	https://img10.360buyimg.com/n1/jfs/t22030/64/2642211680/183470/ca827cca/5b6012e0N24a77ff2.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01xX4tAn1iwWGON70gZ_!!3063964477-0-cib.310x310.jpg

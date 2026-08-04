@@ -1,0 +1,5 @@
+product: 凡士林 经典修护润肤露
+query: 凡士林 润肤露 身体乳 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01tnSo2V1rFJBcPbsTk_!!2209060005601-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01eVUcCL1jVmT0Aq8T3_!!3519264554-0-cib.310x310.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01BWxtWp1TpRcN4mhvA_!!2058902431-0-cib.310x310.jpg

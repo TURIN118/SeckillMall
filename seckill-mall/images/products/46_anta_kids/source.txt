@@ -1,0 +1,5 @@
+product: 安踏 儿童运动鞋
+query: 安踏 儿童 运动鞋
+01_main.jpg	https://y.zdmimg.com/202305/24/646dc314419357808.jpg_d320.jpg
+02_detail.jpg	https://qny.smzdm.com/202305/10/645bb1d8d70b76588.jpg_d320.jpg
+03_detail.jpg	https://qny.smzdm.com/202305/10/645bb1d7536929134.jpg_d320.jpg

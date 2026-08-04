@@ -1,0 +1,5 @@
+product: 嘉宝 婴儿米粉 1段
+query: 嘉宝 婴儿米粉 1段 外观
+01_main.jpg	https://qny.smzdm.com/202004/18/5e9af5df33b4c9105.jpg_d320.jpg
+02_detail.jpg	https://y.zdmimg.com/202105/04/60911aae0741b3819.jpg_d250.jpg
+03_detail.jpg	https://qny.smzdm.com/202302/19/63f0ffa1cc2c55846.jpg_d250.jpg

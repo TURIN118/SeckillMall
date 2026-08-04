@@ -33,6 +33,12 @@ export interface SeckillRankingVO {
     totalAmount: number
 }
 
+/** 订单状态分布项（数据看台专用，扁平 status + count） */
+export interface OrderStatusItemVO {
+    status: string
+    count: number
+}
+
 /** 总览统计 */
 export function getStatsOverview(): Promise<Result<StatsOverviewVO>> {
     return get<StatsOverviewVO>('/api/v1/admin/stats/overview')
@@ -51,4 +57,9 @@ export function getOrderTrend(days: number): Promise<Result<TrendItemVO[]>> {
 /** 秒杀排行榜 Top N */
 export function getSeckillRanking(limit: number): Promise<Result<SeckillRankingVO[]>> {
     return get<SeckillRankingVO[]>('/api/v1/admin/stats/seckill-ranking', { limit })
+}
+
+/** 订单状态分布 (按状态分组统计订单数量) */
+export function getOrderStatusDistribution(): Promise<Result<OrderStatusItemVO[]>> {
+    return get<OrderStatusItemVO[]>('/api/v1/admin/stats/order-status-distribution')
 }

@@ -1,5 +1,6 @@
 package com.seckill.mall.service;
 
+import com.seckill.mall.vo.OrderStatusItemVO;
 import com.seckill.mall.vo.SeckillRankingVO;
 import com.seckill.mall.vo.StatsOverviewVO;
 import com.seckill.mall.vo.TrendItemVO;
@@ -49,4 +50,14 @@ public interface StatsService {
      * @return 排行榜列表
      */
     List<SeckillRankingVO> getSeckillRanking(Integer limit);
+
+    /**
+     * 订单状态分布：按 status 分组统计订单数量
+     *
+     * <p>按 {@code OrderStatus} 枚举自然顺序输出，即使 count=0 也返回，
+     * 便于前端饼图直接消费。仅统计未逻辑删除的订单（is_deleted=0）。</p>
+     *
+     * @return 状态分布项列表，每项包含 status 与 count
+     */
+    List<OrderStatusItemVO> getOrderStatusDistribution();
 }

@@ -1,0 +1,5 @@
+product: 九阳 L18-Y933 破壁机
+query: 九阳 L18-Y933 破壁机 外观
+01_main.jpg	https://2b.zol-img.com.cn/product/208_320x240/565/ceTm5h1qjNVMU.jpg
+02_detail.jpg	https://2b.zol-img.com.cn/product/208_698x437/529/cezGpZinHca6w.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN017BbKz22GQBCBR7Xie_!!2214559709009-0-cib.310x310.jpg

@@ -1,0 +1,5 @@
+product: YSL 圣罗兰 纯口红
+query: YSL 圣罗兰 口红 外观
+01_main.jpg	https://y.zdmimg.com/202505/19/682a2d41bc8622844.jpg_d250.jpg
+02_detail.jpg	https://qny.smzdm.com/202104/17/607abfc5c7d971536.jpg_e600.jpg
+03_detail.jpg	https://img13.360buyimg.com/n1/s450x450_jfs/t1/143976/33/7005/87169/5f49ad87E7fd96213/bc11f0146aba501c.jpg

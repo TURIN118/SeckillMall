@@ -1,0 +1,5 @@
+product: 雀巢 1+2 原味咖啡 13g×40条
+query: 雀巢 1+2 咖啡 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01K8r8RY1cUgNWTgnd6_!!2217558763604-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01WoMi291KxO7zdjyt9_!!2216085621230-0-cib.310x310.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01BYWMCl1ntpyF5x6uL_!!2216029305148-0-cib.310x310.jpg

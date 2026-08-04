@@ -8,6 +8,8 @@ import com.seckill.mall.vo.OrderStatusDistributionVO;
 import com.seckill.mall.vo.OrderTrendVO;
 import com.seckill.mall.vo.SystemHealthVO;
 
+import java.util.List;
+
 /**
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
@@ -19,6 +21,15 @@ public interface SystemService {
     DashboardVO getDashboard();
 
     PageResult<OperationLogVO> getOperationLogs(OperationLogQueryRequest req);
+
+    /**
+     * 查询所有符合条件的操作日志（不分页），用于 Excel 导出。
+     * <p>为防止数据量过大，最多返回 {@code MAX_EXPORT_SIZE} 条（当前 10000）。</p>
+     *
+     * @param module 模块名筛选，null/空串表示不筛选
+     * @return 操作日志列表（按时间倒序）
+     */
+    List<OperationLogVO> listAllForExport(String module);
 
     SystemHealthVO getSystemHealth();
 

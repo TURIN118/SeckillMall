@@ -63,13 +63,7 @@
         </el-icon>
         <span class="menu-text" v-if="!appStore.sidebarCollapsed">评论管理</span>
       </div>
-      <div v-if="userStore.isAdmin" class="admin-menu-item" :class="{ active: activeMenu === '/admin/dashboard-data' }"
-        @click="goTo('/admin/dashboard-data')">
-        <el-icon>
-          <TrendCharts />
-        </el-icon>
-        <span class="menu-text" v-if="!appStore.sidebarCollapsed">数据看台</span>
-      </div>
+
       <div v-if="userStore.isAdmin" class="admin-menu-item" :class="{ active: activeMenu === '/admin/coupons' }"
         @click="goTo('/admin/coupons')">
         <el-icon>
@@ -172,7 +166,7 @@ import {
   Expand,
   Picture,
   ChatDotSquare,
-  TrendCharts,
+
   Ticket,
   CreditCard
 } from '@element-plus/icons-vue'
@@ -335,6 +329,9 @@ async function handleUserCommand(command: string): Promise<void> {
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .admin-topbar-left {

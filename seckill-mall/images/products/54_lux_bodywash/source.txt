@@ -1,0 +1,5 @@
+product: 力士 幽莲魅肌沐浴露
+query: 力士 沐浴露 外观
+01_main.png	https://himall-storage-1259069382.cos.ap-nanjing.myqcloud.com/web/Storage/Shop/1883/Products/55468/1.png?imageMogr2/thumbnail/350x/interlace/0
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01UkK0ni1qbSwV1kaw2_!!2214805165514-0-cib.310x310.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN012LYrN31i2dxA4AvpC_!!2213288474355-0-cib.310x310.jpg

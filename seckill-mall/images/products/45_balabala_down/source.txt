@@ -1,0 +1,5 @@
+product: 巴拉巴拉 儿童羽绒服
+query: 巴拉巴拉 儿童 羽绒服
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01oOGWD71ClvQOCUjUC_!!2220299610122-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN016PjQrl1ClvR4FPkai_!!2220299610122-0-cib.310x310.jpg
+03_detail.jpg	https://img12.360buyimg.com/n1/jfs/t1/148821/13/10388/56486/5f811f22E0f0b0186/2ce17ef02ff2ba64.jpg

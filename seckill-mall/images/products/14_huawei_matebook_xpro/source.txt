@@ -1,0 +1,5 @@
+product: 华为 MateBook X Pro 14
+query: 华为 MateBook X Pro 笔记本 外观
+01_main.jpg	https://bkimg.cdn.bcebos.com/smart/8326cffc1e178a82b901cee89358648da9773912427d-bkimg-process,v_1,rw_3168,rh_2252,maxl_399?x-bce-process=image/format,f_auto
+02_detail.jpg	https://2e.zol-img.com.cn/product/238_320x240/52/cer5UZWKAPkA.jpg
+03_detail.jpg	https://2b.zol-img.com.cn/product/221_320x240/847/ceIkX8uAtt7A6.jpg

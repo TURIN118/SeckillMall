@@ -1,0 +1,5 @@
+product: 海尔 EG100MATE81S 10kg 洗衣机
+query: 海尔 EG100MATE81S 滚筒洗衣机 外观
+01_main.png	https://qny.smzdm.com/202303/13/640ec9da8deee8286.png_d250.jpg
+02_detail.jpg	https://qny.smzdm.com/202311/12/65508be59a38c3129.jpg_d250.jpg
+03_detail.jpg	https://qny.smzdm.com/202305/22/646b3372777a77507.jpg_d250.jpg

@@ -1,0 +1,5 @@
+product: 耐克 男士速干运动T恤
+query: 耐克 男士 速干 运动T恤 外观
+01_main.jpg	https://qny.smzdm.com/202312/06/656fb468c5209648.jpg_d250.jpg
+02_detail.jpg	https://qny.smzdm.com/202404/24/6628c2109ce788999.jpg_d250.jpg
+03_detail.jpg	https://qny.smzdm.com/202211/06/6367d6be8418b1796.jpg_d250.jpg

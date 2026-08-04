@@ -1,0 +1,5 @@
+product: 周杰伦《最伟大的作品》专辑CD
+query: 周杰伦 最伟大的作品 CD 专辑 外观
+01_main.jpg	https://qny.smzdm.com/202207/12/62cce6865121b3401.jpg_d250.jpg
+02_detail.jpg	https://qny.smzdm.com/202209/07/6318188a7fce03857.jpg_d250.jpg
+03_detail.jpg	https://y.zdmimg.com/202211/18/63774e086806c9664.jpg_d250.jpg

@@ -1,0 +1,5 @@
+product: 金龙鱼 葵花籽油 5L
+query: 金龙鱼 葵花籽油 5L 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01qFUIGQ1Jy0qN4M25g_!!2212887041096-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN018eVri21d27CTDkcQc_!!2208171493677-0-cib.310x310.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01vDYbch1d27E24l7xg_!!2208171493677-0-cib.310x310.jpg

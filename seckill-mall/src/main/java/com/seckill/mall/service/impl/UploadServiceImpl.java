@@ -3,6 +3,7 @@ package com.seckill.mall.service.impl;
 import com.seckill.mall.common.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.config.UploadProperties;
+import com.seckill.mall.service.StorageService;
 import com.seckill.mall.service.UploadService;
 import com.seckill.mall.vo.UploadResultVO;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -32,6 +33,7 @@ public class UploadServiceImpl implements UploadService {
     private static final DateTimeFormatter DATE_PATH_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
 
     private final UploadProperties uploadProperties;
+    private final StorageService storageService;
 
     @Override
     public UploadResultVO uploadImage(MultipartFile file, String bizType, Long bizId) {
@@ -62,36 +64,26 @@ public class UploadServiceImpl implements UploadService {
         String extension = resolveExtension(originalFilename, contentType);
         String fileName = UUID.randomUUID().toString().replace("-", "") + "." + extension;
 
-        // 7. 构建目标目录并写入磁盘
-        File destDir = new File(uploadProperties.getBaseDir(), type + "/" + datePath);
-        if (!destDir.exists() && !destDir.mkdirs()) {
-            log.error("创建上传目录失败: {}", destDir.getAbsolutePath());
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传目录创建失败");
-        }
-        File destFile = new File(destDir, fileName);
-        try {
-            file.transferTo(destFile.getAbsoluteFile());
-        } catch (IOException e) {
-            log.error("写入上传文件失败: {}", destFile.getAbsolutePath(), e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传文件写入失败");
-        }
-
-        // 8. 读取图片宽高（容错处理）
+        // 7. 读取图片宽高（容错处理，先于存储读取避免流被消耗）
         Integer width = null;
         Integer height = null;
         try {
-            BufferedImage image = ImageIO.read(destFile);
+            BufferedImage image = ImageIO.read(file.getInputStream());
             if (image != null) {
                 width = image.getWidth();
                 height = image.getHeight();
             }
         } catch (IOException e) {
-            log.warn("读取图片宽高失败，忽略: {}", destFile.getAbsolutePath(), e);
+            log.warn("读取图片宽高失败，忽略: {}", originalFilename, e);
         }
 
-        // 9. 构建返回结果（URL 路径分隔符使用 /）
+        // 8. 委托 StorageService 存储文件，返回可访问 URL
+        String directory = type + "/" + datePath;
+        String url = storageService.store(file, directory, fileName);
+
+        // 9. 构建返回结果
         UploadResultVO vo = new UploadResultVO();
-        vo.setUrl(uploadProperties.getBaseUrl() + "/" + type + "/" + datePath + "/" + fileName);
+        vo.setUrl(url);
         vo.setOriginalName(originalFilename);
         vo.setSize(file.getSize());
         vo.setWidth(width);

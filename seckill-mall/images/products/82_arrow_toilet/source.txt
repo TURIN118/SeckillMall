@@ -1,0 +1,5 @@
+product: 箭牌 AE2330M 喷射虹吸马桶
+query: 箭牌 马桶 AE2330M 外观
+01_main.jpg	https://img13.360buyimg.com/n11/jfs/t1/158994/3/49466/134826/67199704F1cfc4d55/52d8b87aac1fa019.jpg
+02_detail.jpg	https://y.zdmimg.com/202407/17/66975940ed3471976.jpg_d250.jpg
+03_detail.png	http://y.zdmimg.com/202410/12/670a623733f848196.png

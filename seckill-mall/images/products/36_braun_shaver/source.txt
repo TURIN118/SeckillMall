@@ -1,0 +1,5 @@
+product: 博朗 92S 电动剃须刀
+query: 博朗 92S 电动剃须刀 外观
+01_main.jpg	https://img14.360buyimg.com/n1/jfs/t1/49340/30/15832/179838/5dcca9c8E13a54483/dd85a1e2745a6609.jpg
+02_detail.jpg	https://a.zdmimg.com/202108/13/611609e8574f35483.jpg_a200.jpg
+03_detail.png	https://q1.itc.cn/q_70/images03/20260117/436a7feb9a1143568f1ae3d0f48de1d9.png

@@ -1,27 +1,16 @@
 <template>
   <div class="image-uploader">
-    <el-upload
-      :file-list="fileList"
-      list-type="picture-card"
-      :limit="maxCount"
-      accept="image/*"
-      :before-upload="handleBeforeUpload"
-      :http-request="handleHttpRequest"
-      :on-remove="handleRemove"
-      :on-exceed="handleExceed"
-      :on-preview="handlePreview"
-      action="#"
-    >
-      <el-icon><Plus /></el-icon>
+    <el-upload :file-list="fileList" list-type="picture-card" :limit="maxCount" accept="image/*"
+      :before-upload="handleBeforeUpload" :http-request="handleHttpRequest" :on-remove="handleRemove"
+      :on-exceed="handleExceed" :on-preview="handlePreview" action="#">
+      <el-icon>
+        <Plus />
+      </el-icon>
     </el-upload>
 
     <!-- 图片预览 -->
-    <el-image-viewer
-      v-if="previewVisible"
-      :url-list="previewList"
-      :initial-index="previewIndex"
-      @close="previewVisible = false"
-    />
+    <el-image-viewer v-if="previewVisible" :url-list="previewList" :initial-index="previewIndex"
+      @close="previewVisible = false" />
   </div>
 </template>
 
@@ -35,6 +24,8 @@ import { ref, computed, watch } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { UploadFile, UploadFiles, UploadRequestOptions } from 'element-plus'
+import { uploadImage } from '@/api/upload'
+import { formatImageUrl } from '@/utils/image'
 
 interface Props {
   /** 图片 URL 数组 (v-model) */
@@ -59,15 +50,24 @@ const fileList = ref<UploadFile[]>([])
 const previewVisible = ref(false)
 const previewIndex = ref(0)
 
-const previewList = computed(() => props.modelValue)
+/**
+ * 预览列表：将后端返回的相对路径拼接 baseURL 得到完整 URL，供 el-image-viewer 显示。
+ * 注意：props.modelValue 始终保存后端原样返回的相对路径（如 /images/products/xxx），
+ * 不被 formatImageUrl 污染，避免提交给后端时携带 host。
+ */
+const previewList = computed(() => props.modelValue.map((url) => formatImageUrl(url)))
 
-/** 同步 modelValue 到 fileList */
+/**
+ * 同步 modelValue 到 fileList。
+ * el-upload 缩略图需要完整 URL 才能正确加载图片，故此处用 formatImageUrl 拼接 baseURL；
+ * 而 modelValue 仍保持后端返回的相对路径，确保提交给后端的数据纯净。
+ */
 watch(
   () => props.modelValue,
   (urls) => {
     fileList.value = urls.map((url, index) => ({
       name: `image-${index}`,
-      url,
+      url: formatImageUrl(url),
       uid: index
     } as UploadFile))
   },
@@ -89,21 +89,25 @@ function handleBeforeUpload(file: File): boolean {
   return true
 }
 
-/** 自定义上传 (占位: 实际项目应上传到 OSS/文件服务) */
-function handleHttpRequest(_options: UploadRequestOptions): Promise<unknown> {
-  // 占位实现: 实际项目中这里应该上传到 OSS/文件服务并返回 URL
-  // 这里使用 FileReader 生成 base64 预览
-  const file = _options.file
-  return new Promise<unknown>((resolve) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const url = e.target?.result as string
-      const newUrls = [...props.modelValue, url]
-      emit('update:modelValue', newUrls)
-      resolve(url)
-    }
-    reader.readAsDataURL(file)
-  })
+/**
+ * 自定义上传：调用后端 /api/v1/upload/image 接口，存储文件并返回 URL 路径。
+ * - emit 给父组件的 modelValue 保持后端原样返回的相对路径（如 /images/products/xxx），保证数据纯净；
+ * - 返回给 el-upload 的响应体 url 用 formatImageUrl 拼接完整 URL，供缩略图显示。
+ */
+async function handleHttpRequest(options: UploadRequestOptions): Promise<unknown> {
+  const file = options.file as File
+  try {
+    const res = await uploadImage(file, 'products')
+    const url = res.data.url
+    // modelValue 保持相对路径
+    const newUrls = [...props.modelValue, url]
+    emit('update:modelValue', newUrls)
+    // 返回完整 URL 供 el-upload 显示缩略图
+    return { url: formatImageUrl(url) }
+  } catch (error) {
+    ElMessage.error('图片上传失败')
+    throw error
+  }
 }
 
 /** 移除图片 */
@@ -125,7 +129,8 @@ function handleExceed(): void {
 function handlePreview(file: UploadFile): void {
   const url = file.url
   if (url) {
-    const index = props.modelValue.indexOf(url)
+    // file.url 已是完整 URL，故在 previewList（同样为完整 URL）中查找索引
+    const index = previewList.value.indexOf(url)
     previewIndex.value = index >= 0 ? index : 0
     previewVisible.value = true
   }

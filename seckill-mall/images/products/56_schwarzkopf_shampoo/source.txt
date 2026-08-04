@@ -1,0 +1,5 @@
+product: 施华蔻 羊绒脂深层修护洗发露
+query: 施华蔻 洗发水 外观
+01_main.jpg	https://img13.360buyimg.com/n1/jfs/t1/162144/15/33693/52867/6397f68cEed62fe7e/d728054dcce75c5b.jpg
+02_detail.jpg	https://img14.360buyimg.com/n1/jfs/t1/120309/9/12664/125385/5f5f35e6E03c2214c/b00ae251189137a2.jpg
+03_detail.jpg	https://y.zdmimg.com/201801/30/5a7069c26a1748186.jpg_d320.jpg

@@ -1,0 +1,5 @@
+product: 梦洁家纺 95%白鹅绒被
+query: 梦洁 白鹅绒被 外观
+01_main.jpg	https://qny.smzdm.com/202311/13/65517183110434459.jpg_d250.jpg
+02_detail.jpg	https://qny.smzdm.com/202212/10/639487a205a612478.jpg_d250.jpg
+03_detail.jpg	https://qny.smzdm.com/202105/17/60a17be380df68361.jpg_d250.jpg

@@ -34,7 +34,7 @@ export function getReviewList(params: {
 
 /** 后台回复评论 */
 export function replyReview(
-    id: number,
+    id: number | string,
     replyContent: string
 ): Promise<Result<void>> {
     return put<void>(`/api/v1/admin/reviews/${id}/reply`, { replyContent })
@@ -42,7 +42,7 @@ export function replyReview(
 
 /** 后台隐藏/显示评论 */
 export function updateReviewStatus(
-    id: number,
+    id: number | string,
     status: number
 ): Promise<Result<void>> {
     return put<void>(`/api/v1/admin/reviews/${id}/status`, { status })

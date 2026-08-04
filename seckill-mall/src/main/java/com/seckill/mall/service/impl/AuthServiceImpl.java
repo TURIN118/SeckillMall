@@ -3,6 +3,8 @@ package com.seckill.mall.service.impl;
 import com.seckill.mall.common.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.dto.ChangePasswordRequest;
+import com.seckill.mall.dto.ForgotPasswordResetRequest;
+import com.seckill.mall.dto.ForgotPasswordSendRequest;
 import com.seckill.mall.dto.LoginRequest;
 import com.seckill.mall.dto.ProfileUpdateRequest;
 import com.seckill.mall.dto.RefreshTokenRequest;
@@ -20,6 +22,7 @@ import com.seckill.mall.security.TokenBlacklistService;
 import com.seckill.mall.service.AuthService;
 import com.seckill.mall.service.CaptchaService;
 import com.seckill.mall.service.UploadService;
+import com.seckill.mall.service.VerificationCodeService;
 import com.seckill.mall.vo.LoginVO;
 import com.seckill.mall.vo.TokenVO;
 import com.seckill.mall.vo.UploadResultVO;
@@ -51,6 +54,15 @@ public class AuthServiceImpl implements AuthService {
     private static final int LOCK_THRESHOLD = 5;
     private static final int CAPTCHA_REQUIRED_THRESHOLD = 3;
 
+    /** 找回密码验证码 Redis key 前缀：forgot-password:{type}:{account} */
+    private static final String FORGOT_PASSWORD_CODE_KEY_PREFIX = "forgot-password:";
+    /** 找回密码验证码有效期（分钟） */
+    private static final long FORGOT_PASSWORD_CODE_TTL_MINUTES = 5L;
+    /** 验证方式：手机短信 */
+    private static final String TYPE_PHONE = "PHONE";
+    /** 验证方式：邮箱 */
+    private static final String TYPE_EMAIL = "EMAIL";
+
     private final UserMapper userMapper;
     private final LoginLogMapper loginLogMapper;
     private final JwtUtils jwtUtils;
@@ -59,6 +71,7 @@ public class AuthServiceImpl implements AuthService {
     private final StringRedisTemplate stringRedisTemplate;
     private final PasswordEncoder passwordEncoder;
     private final UploadService uploadService;
+    private final VerificationCodeService verificationCodeService;
 
     /** 头像文件最大大小：2MB */
     private static final long AVATAR_MAX_SIZE = 2L * 1024 * 1024;
@@ -292,5 +305,82 @@ public class AuthServiceImpl implements AuthService {
         vo.setStatus(user.getStatus() == null ? null : user.getStatus().getCode());
         vo.setCreateTime(user.getCreateTime());
         return vo;
+    }
+
+    @Override
+    public void sendForgotPasswordCode(ForgotPasswordSendRequest req) {
+        String type = req.getType();
+        String account = req.getAccount();
+        // 校验账号对应的用户存在
+        User user = findUserByAccount(type, account);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND_BY_ACCOUNT);
+        }
+        // 复用现有验证码服务发送验证码（短信控制台打印，邮箱通过 Spring Mail 发送）
+        if (TYPE_PHONE.equals(type)) {
+            verificationCodeService.sendSmsCode(account);
+        } else if (TYPE_EMAIL.equals(type)) {
+            verificationCodeService.sendEmailCode(account);
+        } else {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "验证方式只能为 PHONE 或 EMAIL");
+        }
+        // 验证码已由 VerificationCodeService 存入 Redis（key=verify_code:{account}），
+        // 此处再写入一个找回密码专用标记 key，便于 resetPassword 时区分业务场景并独立校验
+        String forgotKey = FORGOT_PASSWORD_CODE_KEY_PREFIX + type + ":" + account;
+        // 标记 key 的有效期与验证码一致（5 分钟），value 为占位标识
+        stringRedisTemplate.opsForValue().set(forgotKey, "1", FORGOT_PASSWORD_CODE_TTL_MINUTES, TimeUnit.MINUTES);
+        log.info("找回密码验证码已发送，type={}, account={}", type, account);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void resetPassword(ForgotPasswordResetRequest req) {
+        String type = req.getType();
+        String account = req.getAccount();
+        String code = req.getCode();
+        String newPassword = req.getNewPassword();
+
+        // 校验找回密码标记 key 是否存在（过期则提示重新获取）
+        String forgotKey = FORGOT_PASSWORD_CODE_KEY_PREFIX + type + ":" + account;
+        Boolean forgotKeyExists = stringRedisTemplate.hasKey(forgotKey);
+        if (!Boolean.TRUE.equals(forgotKeyExists)) {
+            throw new BusinessException(ErrorCode.VERIFICATION_CODE_EXPIRED);
+        }
+
+        // 复用 VerificationCodeService 校验验证码（校验成功后会自动删除 verify_code:{account}）
+        boolean valid = verificationCodeService.verifyCode(account, code);
+        if (!valid) {
+            throw new BusinessException(ErrorCode.VERIFICATION_CODE_ERROR);
+        }
+
+        // 校验通过后，查询用户并更新密码
+        User user = findUserByAccount(type, account);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND_BY_ACCOUNT);
+        }
+        User update = new User();
+        update.setId(user.getId());
+        update.setPassword(passwordEncoder.encode(newPassword));
+        userMapper.updateById(update);
+
+        // 删除找回密码标记 key
+        stringRedisTemplate.delete(forgotKey);
+        log.info("找回密码重置成功，type={}, account={}, userId={}", type, account, user.getId());
+    }
+
+    /**
+     * 根据验证方式与账号查询用户
+     *
+     * @param type    PHONE 或 EMAIL
+     * @param account 手机号或邮箱
+     * @return 用户实体，不存在返回 null
+     */
+    private User findUserByAccount(String type, String account) {
+        if (TYPE_PHONE.equals(type)) {
+            return userMapper.findByPhone(account);
+        } else if (TYPE_EMAIL.equals(type)) {
+            return userMapper.findByEmail(account);
+        }
+        return null;
     }
 }

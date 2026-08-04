@@ -27,8 +27,8 @@ public class CartItemVO {
     /** 加购数量 */
     private Integer quantity;
 
-    /** 是否选中：0-否 / 1-是 */
-    private Integer selected;
+    /** 是否选中：true-选中 / false-未选中（实体层仍以 0/1 存储，由 Service 层转换） */
+    private Boolean selected;
 
     /** 商品名称 */
     private String productName;

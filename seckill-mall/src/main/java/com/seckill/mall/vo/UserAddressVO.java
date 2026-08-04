@@ -1,5 +1,6 @@
 package com.seckill.mall.vo;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -25,9 +26,11 @@ public class UserAddressVO {
     private Long userId;
 
     /** 收货人姓名 */
+    @NotBlank(message = "收货人姓名不能为空")
     private String receiverName;
 
     /** 收货人手机号 */
+    @NotBlank(message = "收货人手机号不能为空")
     private String receiverPhone;
 
     /** 省份 */
@@ -40,6 +43,7 @@ public class UserAddressVO {
     private String district;
 
     /** 详细地址（街道、门牌号等） */
+    @NotBlank(message = "详细地址不能为空")
     private String detailAddress;
 
     /** 是否默认地址：0-否 / 1-是 */

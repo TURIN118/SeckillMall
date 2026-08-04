@@ -1,0 +1,5 @@
+product: 《读者》合订本
+query: 读者 合订本 杂志 封面
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01Fsd2H71eS3D9bLT4s_!!0-item_pic.310x310.jpg
+02_detail.jpg	https://img10.360buyimg.com/n1/jfs/t1/139563/20/3929/195540/5f1e7acaE6da8fc82/5dbca47d8a9c1772.jpg
+03_detail.jpg	https://img.alicdn.com/bao/uploaded/i2/380693186/O1CN01dbeg3b1ZPETm0Q4Zc_!!0-item_pic.jpg

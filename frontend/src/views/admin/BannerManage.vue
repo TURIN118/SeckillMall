@@ -26,7 +26,7 @@
           <tr v-for="row in bannerList" :key="row.id">
             <td>
               <div class="table-avatar img">
-                <img v-if="row.imageUrl" :src="row.imageUrl" alt="" />
+                <img v-if="row.imageUrl" :src="formatImageUrl(row.imageUrl)" alt="" />
                 <span v-else>无图</span>
               </div>
             </td>
@@ -36,11 +36,8 @@
             </td>
             <td>{{ row.sortOrder }}</td>
             <td>
-              <el-switch
-                :model-value="row.status === 1"
-                :loading="statusLoadingId === row.id"
-                @change="handleStatusChange(row)"
-              />
+              <el-switch :model-value="row.status === 1" :loading="statusLoadingId === row.id"
+                @change="handleStatusChange(row)" />
             </td>
             <td>
               <div class="table-actions">
@@ -57,42 +54,22 @@
     </div>
 
     <!-- 新增/编辑弹窗 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="dialogTitle"
-      width="600px"
-      :close-on-click-modal="false"
-      destroy-on-close
-      @closed="resetForm"
-    >
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px" :close-on-click-modal="false" destroy-on-close
+      @closed="resetForm">
       <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
         <el-form-item label="标题" prop="title">
-          <el-input
-            v-model="formData.title"
-            placeholder="请输入轮播图标题"
-            maxlength="100"
-            show-word-limit
-          />
+          <el-input v-model="formData.title" placeholder="请输入轮播图标题" maxlength="100" show-word-limit />
         </el-form-item>
         <el-form-item label="图片" prop="images">
           <ImageUploader v-model="formData.images" :max-count="1" />
           <span class="form-unit">建议尺寸 1200×400，仅支持 1 张</span>
         </el-form-item>
         <el-form-item label="跳转链接" prop="linkUrl">
-          <el-input
-            v-model="formData.linkUrl"
-            placeholder="请输入跳转链接（可留空）"
-            maxlength="500"
-          />
+          <el-input v-model="formData.linkUrl" placeholder="请输入跳转链接（可留空）" maxlength="500" />
         </el-form-item>
         <el-form-item label="排序" prop="sortOrder">
-          <el-input-number
-            v-model="formData.sortOrder"
-            :min="0"
-            :step="1"
-            controls-position="right"
-            style="width: 200px"
-          />
+          <el-input-number v-model="formData.sortOrder" :min="0" :step="1" controls-position="right"
+            style="width: 200px" />
           <span class="form-unit">数值越小越靠前</span>
         </el-form-item>
         <el-form-item label="状态" prop="status">
@@ -125,6 +102,7 @@ import {
   updateBannerStatus
 } from '@/api/banner'
 import type { BannerVO } from '@/types'
+import { formatImageUrl } from '@/utils/image'
 import ImageUploader from '@/components/ImageUploader.vue'
 
 /* === 列表数据 === */
@@ -147,7 +125,7 @@ async function fetchBannerList(): Promise<void> {
 /* === 弹窗 === */
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增轮播图')
-const editingId = ref<number | null>(null)
+const editingId = ref<number | string | null>(null)
 const submitting = ref(false)
 const formRef = ref<FormInstance | null>(null)
 
@@ -272,7 +250,7 @@ async function handleDelete(row: BannerVO): Promise<void> {
 }
 
 /* === 切换轮播图状态 === */
-const statusLoadingId = ref<number | null>(null)
+const statusLoadingId = ref<number | string | null>(null)
 async function handleStatusChange(row: BannerVO): Promise<void> {
   const nextStatus = row.status === 1 ? 0 : 1
   statusLoadingId.value = row.id

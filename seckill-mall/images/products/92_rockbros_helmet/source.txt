@@ -1,0 +1,5 @@
+product: 洛克兄弟 骑行头盔
+query: 洛克兄弟 骑行头盔 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01IjkKCN1QVLTIJ8dRs_!!1573561981-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01f5gYRM1R1P7dxxYBy_!!2206649432051-0-cib.310x310.jpg
+03_detail.jpg	https://img13.360buyimg.com/n1/jfs/t1/119392/17/12635/84638/5f27726cE68367a03/f275af1ff133cff5.jpg

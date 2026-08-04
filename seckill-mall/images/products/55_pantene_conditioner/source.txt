@@ -1,0 +1,5 @@
+product: 潘婷 三分钟奇迹奢护精华素
+query: 潘婷 护发素 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01uUaqjt1hYPdQVNUJ8_!!2209270834289-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01qX7yW81m1VFnCSUr4_!!2216959764894-0-cib.310x310.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01sGkX3M1ivbOjZWZZm_!!3845064475-0-cib.310x310.jpg

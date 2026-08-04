@@ -1,0 +1,5 @@
+product: 力动 可调节哑铃 20kg
+query: 可调节 哑铃 20kg 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01rbIq0a1UwbN3ji7YT_!!2711912582-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01TfFAAB213XOpX4ssW_!!2211558926929-0-cib.310x310.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/4509858520_2000305610.310x310.jpg

@@ -1,0 +1,5 @@
+product: 林氏木业 现代简约布艺沙发
+query: 林氏木业 布艺沙发 外观
+01_main.jpg	https://img.pchouse.com.cn/images/upload/upc/tx/houselib/1408/17/c3/37523564_1408254150024.jpg
+02_detail.jpg	https://img.pchouse.com.cn/images/upload/upc/tx/houselib/1409/01/c0/38134714_1409565953960.jpg
+03_detail.jpg	https://img.pchouse.com.cn/images/upload/upc/tx/houselib/1409/01/c0/38135088_1409566512085.jpg

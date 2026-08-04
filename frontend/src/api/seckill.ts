@@ -14,6 +14,7 @@ import type {
 /** 秒杀活动列表 */
 export function getSeckillList(params: {
   status?: SeckillStatus
+  categoryId?: number | string
   pageNum?: number
   pageSize?: number
 }): Promise<Result<PageResult<SeckillGoodsVO>>> {
@@ -21,23 +22,23 @@ export function getSeckillList(params: {
 }
 
 /** 秒杀活动详情 */
-export function getSeckillDetail(seckillId: number): Promise<Result<SeckillGoodsVO>> {
+export function getSeckillDetail(seckillId: number | string): Promise<Result<SeckillGoodsVO>> {
   return get<SeckillGoodsVO>(`/api/v1/seckill/${seckillId}`)
 }
 
 /** 查询实时库存 */
-export function getSeckillStock(seckillId: number): Promise<Result<number>> {
+export function getSeckillStock(seckillId: number | string): Promise<Result<number>> {
   return get<number>(`/api/v1/seckill/${seckillId}/stock`)
 }
 
 /** 获取秒杀令牌 */
-export function getSeckillToken(seckillId: number): Promise<Result<string>> {
+export function getSeckillToken(seckillId: number | string): Promise<Result<string>> {
   return get<string>(`/api/v1/seckill/${seckillId}/token`)
 }
 
 /** 执行秒杀 */
 export function doSeckill(
-  seckillId: number,
+  seckillId: number | string,
   seckillToken: string
 ): Promise<Result<SeckillResultVO>> {
   return post<SeckillResultVO>(`/api/v1/seckill/${seckillId}`, undefined, {
@@ -46,9 +47,14 @@ export function doSeckill(
   })
 }
 
+/** 一键执行秒杀下单（无需预取 token，后端在 /execute 端点内部处理资格校验） */
+export function executeSeckill(seckillId: number | string): Promise<Result<SeckillResultVO>> {
+  return post<SeckillResultVO>(`/api/v1/seckill/${seckillId}/execute`)
+}
+
 /** 查询秒杀结果 */
 export function getSeckillResult(
-  seckillId: number,
+  seckillId: number | string,
   requestId: string
 ): Promise<Result<SeckillResultVO>> {
   return get<SeckillResultVO>(`/api/v1/seckill/${seckillId}/result`, { requestId })
@@ -61,13 +67,13 @@ export function createSeckill(data: SeckillCreateRequest): Promise<Result<Seckil
 
 /** 编辑秒杀活动 */
 export function updateSeckill(
-  seckillId: number,
+  seckillId: number | string,
   data: SeckillCreateRequest
 ): Promise<Result<SeckillGoodsVO>> {
   return put<SeckillGoodsVO>(`/api/v1/seckill/admin/${seckillId}`, data)
 }
 
 /** 取消秒杀活动 */
-export function cancelSeckill(seckillId: number): Promise<Result<void>> {
+export function cancelSeckill(seckillId: number | string): Promise<Result<void>> {
   return put<void>(`/api/v1/seckill/admin/${seckillId}/cancel`)
 }

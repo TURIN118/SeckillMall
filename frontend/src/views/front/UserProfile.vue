@@ -33,20 +33,28 @@
         </dl>
         <!-- 快捷入口 -->
         <div class="profile-shortcuts">
-          <div class="shortcut-item" @click="goTo('/user/wallet')">
-            <el-icon><Wallet /></el-icon>
+          <div class="shortcut-item" @click="activeTab = 'wallet'">
+            <el-icon>
+              <Wallet />
+            </el-icon>
             <span>我的钱包</span>
           </div>
-          <div class="shortcut-item" @click="goTo('/user/coupons')">
-            <el-icon><Ticket /></el-icon>
+          <div class="shortcut-item" @click="activeTab = 'coupons'">
+            <el-icon>
+              <Ticket />
+            </el-icon>
             <span>我的优惠券</span>
           </div>
-          <div class="shortcut-item" @click="goTo('/user/address')">
-            <el-icon><Location /></el-icon>
+          <div class="shortcut-item" @click="activeTab = 'address'">
+            <el-icon>
+              <Location />
+            </el-icon>
             <span>收货地址</span>
           </div>
           <div class="shortcut-item" @click="goTo('/user/orders')">
-            <el-icon><List /></el-icon>
+            <el-icon>
+              <List />
+            </el-icon>
             <span>我的订单</span>
           </div>
         </div>
@@ -58,6 +66,12 @@
         <div class="profile-tabs">
           <div class="profile-tab" :class="{ active: activeTab === 'info' }" @click="activeTab = 'info'">基本信息</div>
           <div class="profile-tab" :class="{ active: activeTab === 'password' }" @click="activeTab = 'password'">修改密码
+          </div>
+          <div class="profile-tab" :class="{ active: activeTab === 'wallet' }" @click="activeTab = 'wallet'">我的钱包
+          </div>
+          <div class="profile-tab" :class="{ active: activeTab === 'address' }" @click="activeTab = 'address'">收货地址
+          </div>
+          <div class="profile-tab" :class="{ active: activeTab === 'coupons' }" @click="activeTab = 'coupons'">我的优惠券
           </div>
         </div>
 
@@ -110,20 +124,10 @@
                   <div v-if="editErrors.phone" class="form-error">{{ editErrors.phone }}</div>
                   <!-- 验证码输入 + 发送按钮 (仅手机号变更时需要) -->
                   <div v-if="isPhoneChanged" class="verify-row">
-                    <input
-                      v-model.trim="editForm.phoneCode"
-                      class="form-input verify-input"
-                      :class="{ error: editErrors.phoneCode }"
-                      type="text"
-                      placeholder="请输入短信验证码"
-                      maxlength="6"
-                    />
-                    <button
-                      class="btn-sm primary verify-btn"
-                      type="button"
-                      :disabled="phoneCountdown > 0 || sendingPhoneCode"
-                      @click="handleSendPhoneCode"
-                    >
+                    <input v-model.trim="editForm.phoneCode" class="form-input verify-input"
+                      :class="{ error: editErrors.phoneCode }" type="text" placeholder="请输入短信验证码" maxlength="6" />
+                    <button class="btn-sm primary verify-btn" type="button"
+                      :disabled="phoneCountdown > 0 || sendingPhoneCode" @click="handleSendPhoneCode">
                       {{ phoneCountdown > 0 ? `${phoneCountdown}s` : (sendingPhoneCode ? '发送中' : '发送验证码') }}
                     </button>
                   </div>
@@ -138,20 +142,10 @@
                   <div v-if="editErrors.email" class="form-error">{{ editErrors.email }}</div>
                   <!-- 验证码输入 + 发送按钮 (仅邮箱变更时需要) -->
                   <div v-if="isEmailChanged" class="verify-row">
-                    <input
-                      v-model.trim="editForm.emailCode"
-                      class="form-input verify-input"
-                      :class="{ error: editErrors.emailCode }"
-                      type="text"
-                      placeholder="请输入邮箱验证码"
-                      maxlength="6"
-                    />
-                    <button
-                      class="btn-sm primary verify-btn"
-                      type="button"
-                      :disabled="emailCountdown > 0 || sendingEmailCode"
-                      @click="handleSendEmailCode"
-                    >
+                    <input v-model.trim="editForm.emailCode" class="form-input verify-input"
+                      :class="{ error: editErrors.emailCode }" type="text" placeholder="请输入邮箱验证码" maxlength="6" />
+                    <button class="btn-sm primary verify-btn" type="button"
+                      :disabled="emailCountdown > 0 || sendingEmailCode" @click="handleSendEmailCode">
                       {{ emailCountdown > 0 ? `${emailCountdown}s` : (sendingEmailCode ? '发送中' : '发送验证码') }}
                     </button>
                   </div>
@@ -173,7 +167,7 @@
         </div>
 
         <!-- Tab 2: 修改密码 -->
-        <div v-else class="profile-form">
+        <div v-else-if="activeTab === 'password'" class="profile-form">
           <div class="pwd-card">
             <form @submit.prevent="handleChangePassword">
               <div class="form-group">
@@ -191,7 +185,8 @@
                 <div class="strength-bars">
                   <div class="strength-bar" :class="{ active: passwordStrength >= 1, weak: passwordStrength === 1 }">
                   </div>
-                  <div class="strength-bar" :class="{ active: passwordStrength >= 2, mid: passwordStrength === 2 }"></div>
+                  <div class="strength-bar" :class="{ active: passwordStrength >= 2, mid: passwordStrength === 2 }">
+                  </div>
                   <div class="strength-bar" :class="{ active: passwordStrength >= 3, strong: passwordStrength === 3 }">
                   </div>
                 </div>
@@ -217,6 +212,299 @@
             </form>
           </div>
         </div>
+
+        <!-- Tab 3: 我的钱包 -->
+        <div v-else-if="activeTab === 'wallet'" class="wallet-tab">
+          <!-- 余额展示卡片 -->
+          <div class="wallet-balance-card" v-loading="walletBalanceLoading">
+            <div class="wallet-balance-icon">
+              <el-icon>
+                <Wallet />
+              </el-icon>
+            </div>
+            <div class="wallet-balance-info">
+              <div class="wallet-balance-label">我的余额 (元)</div>
+              <div class="wallet-balance-amount">¥ {{ formatMoney(walletBalance) }}</div>
+            </div>
+            <div class="wallet-balance-actions">
+              <button class="btn-sm primary wallet-recharge-btn" type="button" @click="openRechargeDialog">
+                <el-icon class="btn-icon">
+                  <Plus />
+                </el-icon>充值
+              </button>
+            </div>
+          </div>
+
+          <!-- 交易记录 (前10条) -->
+          <div class="wallet-records-section">
+            <div class="wallet-section-header">
+              <h3 class="wallet-section-title">交易记录</h3>
+              <button class="btn-sm text" type="button" @click="loadWalletRecords">
+                <el-icon>
+                  <Refresh />
+                </el-icon>刷新
+              </button>
+            </div>
+
+            <!-- 加载中 -->
+            <div v-if="walletRecordsLoading" class="wallet-loading-state">
+              <el-icon class="is-loading">
+                <Loading />
+              </el-icon>
+              <span class="wallet-loading-text">加载中...</span>
+            </div>
+
+            <!-- 空状态 -->
+            <div v-else-if="walletRecords.length === 0" class="wallet-empty-state">
+              <el-empty description="暂无交易记录" />
+            </div>
+
+            <!-- 记录表格 -->
+            <div v-else class="wallet-records-table-wrap">
+              <table class="wallet-records-table">
+                <thead>
+                  <tr>
+                    <th>类型</th>
+                    <th>金额</th>
+                    <th>时间</th>
+                    <th>备注</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in walletRecords.slice(0, 10)" :key="row.id">
+                    <td>
+                      <el-tag :type="recordTagType(row.type)" size="small" effect="plain">
+                        {{ recordTypeLabel(row.type) }}
+                      </el-tag>
+                    </td>
+                    <td>
+                      <span class="wallet-amount-cell" :class="{ income: row.amount >= 0, expense: row.amount < 0 }">
+                        {{ row.amount >= 0 ? '+' : '' }}¥ {{ formatMoney(row.amount) }}
+                      </span>
+                    </td>
+                    <td class="wallet-time-cell">{{ formatTime(row.createTime) }}</td>
+                    <td class="wallet-remark-cell">{{ row.remark || '—' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <!-- 查看更多 -->
+              <div v-if="walletRecords.length > 10" class="wallet-records-footer">
+                <button class="btn-sm text" type="button" @click="goTo('/user/wallet')">
+                  查看更多 <el-icon>
+                    <ArrowRight />
+                  </el-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 充值弹窗 -->
+          <el-dialog v-model="rechargeDialogVisible" title="钱包充值" width="460px" :close-on-click-modal="false"
+            destroy-on-close @closed="resetRechargeForm">
+            <el-form ref="rechargeFormRef" :model="rechargeForm" :rules="rechargeRules" label-width="80px">
+              <el-form-item label="卡号" prop="cardNo">
+                <el-input v-model.trim="rechargeForm.cardNo" placeholder="请输入充值卡卡号" maxlength="32" clearable />
+              </el-form-item>
+              <el-form-item label="卡密" prop="cardPassword">
+                <el-input v-model.trim="rechargeForm.cardPassword" type="password" placeholder="请输入充值卡卡密" maxlength="64"
+                  show-password clearable @keyup.enter="handleRecharge" />
+              </el-form-item>
+              <div class="recharge-tip">
+                <el-icon>
+                  <InfoFilled />
+                </el-icon>
+                <span>请输入正确的充值卡卡号和卡密，充值后卡将作废</span>
+              </div>
+            </el-form>
+            <template #footer>
+              <el-button @click="rechargeDialogVisible = false">取消</el-button>
+              <el-button type="primary" :loading="rechargeSubmitting" @click="handleRecharge">
+                确认充值
+              </el-button>
+            </template>
+          </el-dialog>
+        </div>
+
+        <!-- Tab 4: 收货地址 -->
+        <div v-else-if="activeTab === 'address'" class="address-tab">
+          <!-- 页头：标题 + 新增按钮 -->
+          <div class="address-header">
+            <h3 class="address-title">收货地址管理</h3>
+            <button class="btn-sm primary" type="button" @click="openAddDialog">
+              <span class="btn-plus">+</span> 新增地址
+            </button>
+          </div>
+
+          <!-- 加载中 -->
+          <div v-if="addressLoading" class="address-loading-state">
+            <el-icon class="is-loading">
+              <Loading />
+            </el-icon>
+            <span class="address-loading-text">加载中...</span>
+          </div>
+
+          <!-- 空状态 -->
+          <div v-else-if="addressList.length === 0" class="address-empty-state">
+            <div class="address-empty-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+            </div>
+            <p class="address-empty-text">还没有收货地址，快去添加吧！</p>
+            <button class="btn-sm primary" type="button" @click="openAddDialog">新增地址</button>
+          </div>
+
+          <!-- 地址列表：响应式卡片网格 -->
+          <el-row v-else :gutter="16" class="address-grid">
+            <el-col v-for="addr in addressList" :key="addr.id" :xs="24" :sm="24" :md="12" :lg="8" :xl="8"
+              class="address-col">
+              <div class="address-card" :class="{ 'address-default': addr.isDefault === 1 }">
+                <!-- 顶部：姓名 + 手机号 + 默认标签 -->
+                <div class="card-top">
+                  <div class="card-name-row">
+                    <span class="address-name">{{ addr.receiverName }}</span>
+                    <span class="address-phone">{{ addr.receiverPhone }}</span>
+                    <el-tag v-if="addr.isDefault === 1" type="danger" size="small" effect="dark"
+                      class="default-tag">默认</el-tag>
+                  </div>
+                </div>
+
+                <!-- 中部：详细地址 -->
+                <div class="card-detail">
+                  <el-icon class="detail-icon">
+                    <Location />
+                  </el-icon>
+                  <span class="detail-text">
+                    {{ addr.province }}{{ addr.city }}{{ addr.district }} {{ addr.detailAddress }}
+                  </span>
+                </div>
+
+                <!-- 底部：操作按钮 -->
+                <div class="card-actions">
+                  <button v-if="addr.isDefault !== 1" class="btn-sm text" type="button"
+                    @click="handleSetDefault(addr)">设为默认</button>
+                  <button class="btn-sm text" type="button" @click="openEditDialog(addr)">编辑</button>
+                  <button class="btn-sm text danger" type="button" @click="handleDeleteAddress(addr)">删除</button>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
+
+          <!-- 新增/编辑弹窗 -->
+          <el-dialog v-model="addressDialogVisible" :title="addressDialogTitle" width="500px"
+            :close-on-click-modal="false" append-to-body>
+            <el-form ref="addressFormRef" :model="addressFormData" :rules="addressFormRules" label-width="100px">
+              <el-form-item label="姓名" prop="receiverName">
+                <el-input v-model="addressFormData.receiverName" placeholder="请输入收货人姓名" maxlength="20"
+                  show-word-limit />
+              </el-form-item>
+              <el-form-item label="手机号" prop="receiverPhone">
+                <el-input v-model="addressFormData.receiverPhone" placeholder="请输入 11 位手机号" maxlength="11" />
+              </el-form-item>
+              <el-form-item label="省份" prop="province">
+                <el-input v-model="addressFormData.province" placeholder="如：北京市" maxlength="30" />
+              </el-form-item>
+              <el-form-item label="城市" prop="city">
+                <el-input v-model="addressFormData.city" placeholder="如：北京市" maxlength="30" />
+              </el-form-item>
+              <el-form-item label="区/县" prop="district">
+                <el-input v-model="addressFormData.district" placeholder="如：海淀区" maxlength="30" />
+              </el-form-item>
+              <el-form-item label="详细地址" prop="detailAddress">
+                <el-input v-model="addressFormData.detailAddress" type="textarea" :rows="2"
+                  placeholder="请输入详细地址（街道、门牌号等）" maxlength="200" show-word-limit />
+              </el-form-item>
+              <el-form-item label="设为默认">
+                <el-switch v-model="addressFormData.isDefault" />
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <el-button @click="addressDialogVisible = false">取消</el-button>
+              <el-button type="primary" :loading="addressSubmitting" @click="handleAddressSubmit">确定</el-button>
+            </template>
+          </el-dialog>
+        </div>
+
+        <!-- Tab 5: 我的优惠券 -->
+        <div v-else-if="activeTab === 'coupons'" class="coupons-tab">
+          <!-- 子Tab切换 -->
+          <div class="coupon-tabs">
+            <div v-for="tab in couponSubTabs" :key="tab.value" class="coupon-tab"
+              :class="{ active: couponActiveSubTab === tab.value }" @click="switchCouponSubTab(tab.value)">
+              {{ tab.label }}
+              <span class="tab-count">({{ couponTabCountMap[tab.value] || 0 }})</span>
+            </div>
+          </div>
+
+          <!-- 加载中 -->
+          <div v-if="couponLoading" class="coupon-loading-state">
+            <el-icon class="is-loading">
+              <Loading />
+            </el-icon>
+            <span class="coupon-loading-text">加载中...</span>
+          </div>
+
+          <!-- 空状态 -->
+          <div v-else-if="couponList.length === 0" class="coupon-empty-state">
+            <el-empty :description="couponEmptyText" />
+          </div>
+
+          <!-- 优惠券卡片网格 -->
+          <el-row v-else :gutter="16" class="coupon-grid">
+            <el-col v-for="item in couponList" :key="item.id" :xs="24" :sm="12" :md="12" :lg="8" :xl="6"
+              class="coupon-col">
+              <div class="coupon-card" :class="couponCardClass(item)">
+                <!-- 左侧面额区 -->
+                <div class="coupon-left">
+                  <template v-if="item.coupon.type === 'AMOUNT'">
+                    <div class="coupon-value">
+                      <span class="value-unit">¥</span>
+                      <span class="value-num">{{ formatCouponAmount(item.coupon.amount) }}</span>
+                    </div>
+                    <div class="coupon-type-label">满减券</div>
+                  </template>
+                  <template v-else>
+                    <div class="coupon-value">
+                      <span class="value-num discount">{{ formatCouponDiscount(item.coupon.amount) }}</span>
+                      <span class="value-unit">折</span>
+                    </div>
+                    <div class="coupon-type-label">折扣券</div>
+                  </template>
+                </div>
+
+                <!-- 右侧信息区 -->
+                <div class="coupon-right">
+                  <div class="coupon-name">{{ item.coupon.name }}</div>
+                  <div class="coupon-condition">
+                    <template v-if="item.coupon.type === 'AMOUNT'">
+                      满 {{ formatCouponMoney(item.coupon.minAmount) }} 元可用
+                    </template>
+                    <template v-else>
+                      <span v-if="item.coupon.minAmount > 0">
+                        满 {{ formatCouponMoney(item.coupon.minAmount) }} 元可用
+                      </span>
+                      <span v-else>无门槛</span>
+                    </template>
+                  </div>
+                  <div class="coupon-time">
+                    {{ formatCouponDate(item.coupon.startTime) }} ~ {{ formatCouponDate(item.coupon.endTime) }}
+                  </div>
+                  <div class="coupon-status">
+                    <el-tag :type="couponStatusTagType(item.status)" size="small" effect="dark">
+                      {{ couponStatusLabel(item.status) }}
+                    </el-tag>
+                  </div>
+                </div>
+
+                <!-- 已使用/已过期标记 (右上角) -->
+                <div v-if="item.status !== 'UNUSED'" class="coupon-mark">
+                  <span class="mark-text">{{ couponStatusLabel(item.status) }}</span>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
+        </div>
       </div>
     </div>
   </div>
@@ -226,15 +514,42 @@
 /**
  * P09 个人中心
  * 严格对照 index.html .profile-layout / .profile-card / .profile-tabs 样式
+ * 钱包 Tab 整合: 余额卡片 + 充值弹窗 + 交易记录前10条
  */
 defineOptions({ name: 'UserProfile' })
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { Wallet, Ticket, Location, List } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import {
+  Wallet,
+  Ticket,
+  Location,
+  List,
+  Plus,
+  Refresh,
+  Loading,
+  InfoFilled,
+  ArrowRight
+} from '@element-plus/icons-vue'
 import { changePassword, updateProfile, updatePhone, updateEmail } from '@/api/auth'
 import { sendSmsCode, sendEmailCode } from '@/api/verification'
+import { getWalletBalance, rechargeWallet, getWalletRecords } from '@/api/wallet'
+import {
+  getAddressList,
+  createAddress,
+  updateAddress,
+  deleteAddress,
+  setDefaultAddress
+} from '@/api/address'
+import { getMyCoupons } from '@/api/coupon'
 import { useUserStore } from '@/stores/user'
+import type {
+  WalletRecordVO,
+  UserAddressVO,
+  UserAddressRequest,
+  UserCouponVO,
+  UserCouponStatus
+} from '@/types'
 import dayjs from 'dayjs'
 
 const router = useRouter()
@@ -621,6 +936,401 @@ async function handleSaveProfile(): Promise<void> {
   } finally {
     editLoading.value = false
   }
+}
+
+/* === 钱包 Tab: 余额 + 交易记录 + 充值弹窗 === */
+const walletBalance = ref<number>(0)
+const walletBalanceLoading = ref<boolean>(false)
+const walletRecords = ref<WalletRecordVO[]>([])
+const walletRecordsLoading = ref<boolean>(false)
+/** 钱包数据是否已加载 (避免重复加载) */
+const walletLoaded = ref<boolean>(false)
+
+/** 加载钱包余额 */
+async function loadWalletBalance(): Promise<void> {
+  walletBalanceLoading.value = true
+  try {
+    const res = await getWalletBalance()
+    // 后端返回 Result<BigDecimal>，res.data 直接是数字
+    walletBalance.value = res.data ?? 0
+  } catch {
+    // 错误已由全局拦截器提示
+  } finally {
+    walletBalanceLoading.value = false
+  }
+}
+
+/** 加载钱包交易记录 */
+async function loadWalletRecords(): Promise<void> {
+  walletRecordsLoading.value = true
+  try {
+    const res = await getWalletRecords()
+    walletRecords.value = res.data ?? []
+  } catch {
+    // 错误已由全局拦截器提示
+    walletRecords.value = []
+  } finally {
+    walletRecordsLoading.value = false
+  }
+}
+
+/** 加载钱包全部数据 (余额 + 记录) */
+async function loadWalletData(): Promise<void> {
+  await Promise.all([loadWalletBalance(), loadWalletRecords()])
+}
+
+/** 金额格式化 (保留2位小数) */
+function formatMoney(value: number): string {
+  const num = Number(value || 0)
+  return num.toFixed(2)
+}
+
+/** 交易类型标签文本 */
+function recordTypeLabel(type: string): string {
+  const map: Record<string, string> = {
+    RECHARGE: '充值',
+    CONSUME: '消费',
+    REFUND: '退款',
+    WITHDRAW: '提现'
+  }
+  return map[type] || type || '未知'
+}
+
+/** 交易类型标签样式 */
+function recordTagType(type: string): 'success' | 'warning' | 'danger' | 'info' {
+  const map: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
+    RECHARGE: 'success',
+    CONSUME: 'danger',
+    REFUND: 'warning',
+    WITHDRAW: 'info'
+  }
+  return map[type] || 'info'
+}
+
+/* === 充值弹窗 === */
+const rechargeDialogVisible = ref<boolean>(false)
+const rechargeSubmitting = ref<boolean>(false)
+const rechargeFormRef = ref<FormInstance | null>(null)
+
+const rechargeForm = reactive({
+  cardNo: '',
+  cardPassword: ''
+})
+
+const rechargeRules: FormRules = {
+  cardNo: [{ required: true, message: '请输入充值卡卡号', trigger: 'blur' }],
+  cardPassword: [{ required: true, message: '请输入充值卡卡密', trigger: 'blur' }]
+}
+
+function openRechargeDialog(): void {
+  resetRechargeForm()
+  rechargeDialogVisible.value = true
+}
+
+function resetRechargeForm(): void {
+  rechargeForm.cardNo = ''
+  rechargeForm.cardPassword = ''
+  rechargeFormRef.value?.clearValidate()
+}
+
+/** 确认充值 */
+async function handleRecharge(): Promise<void> {
+  if (!rechargeFormRef.value) return
+  try {
+    await rechargeFormRef.value.validate()
+  } catch {
+    return
+  }
+  rechargeSubmitting.value = true
+  try {
+    await rechargeWallet({
+      cardNo: rechargeForm.cardNo.trim(),
+      cardPassword: rechargeForm.cardPassword.trim()
+    })
+    ElMessage.success('充值成功')
+    rechargeDialogVisible.value = false
+    // 充值成功后刷新余额和记录
+    await loadWalletData()
+  } catch {
+    // 错误已由全局拦截器提示
+  } finally {
+    rechargeSubmitting.value = false
+  }
+}
+
+/** 切换到钱包 Tab 时加载数据 (仅首次切换加载) */
+watch(activeTab, (tab) => {
+  if (tab === 'wallet' && !walletLoaded.value) {
+    walletLoaded.value = true
+    loadWalletData()
+  }
+  if (tab === 'address' && !addressLoaded.value) {
+    addressLoaded.value = true
+    loadAddressList()
+  }
+  if (tab === 'coupons' && !couponsLoaded.value) {
+    couponsLoaded.value = true
+    initCoupons()
+  }
+})
+
+/* === 收货地址 Tab: 列表 + 新增/编辑弹窗 === */
+const addressList = ref<UserAddressVO[]>([])
+const addressLoading = ref<boolean>(false)
+const addressLoaded = ref<boolean>(false)
+
+const addressDialogVisible = ref<boolean>(false)
+const addressDialogTitle = ref<string>('新增地址')
+const addressSubmitting = ref<boolean>(false)
+const addressEditingId = ref<number | string | null>(null)
+const addressFormRef = ref<FormInstance | null>(null)
+
+const addressFormData = reactive({
+  receiverName: '',
+  receiverPhone: '',
+  province: '',
+  city: '',
+  district: '',
+  detailAddress: '',
+  isDefault: false
+})
+
+const addressFormRules: FormRules = {
+  receiverName: [{ required: true, message: '请输入收货人姓名', trigger: 'blur' }],
+  receiverPhone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { pattern: /^1\d{10}$/, message: '请输入正确的 11 位手机号', trigger: 'blur' }
+  ],
+  province: [{ required: true, message: '请输入省份', trigger: 'blur' }],
+  city: [{ required: true, message: '请输入城市', trigger: 'blur' }],
+  district: [{ required: true, message: '请输入区/县', trigger: 'blur' }],
+  detailAddress: [{ required: true, message: '请输入详细地址', trigger: 'blur' }]
+}
+
+/** 加载地址列表 */
+async function loadAddressList(): Promise<void> {
+  addressLoading.value = true
+  try {
+    const res = await getAddressList()
+    addressList.value = res.data ?? []
+  } catch {
+    // 错误信息已由请求拦截器统一提示
+    addressList.value = []
+  } finally {
+    addressLoading.value = false
+  }
+}
+
+/** 重置地址表单 */
+function resetAddressForm(): void {
+  addressFormData.receiverName = ''
+  addressFormData.receiverPhone = ''
+  addressFormData.province = ''
+  addressFormData.city = ''
+  addressFormData.district = ''
+  addressFormData.detailAddress = ''
+  addressFormData.isDefault = false
+  addressEditingId.value = null
+  addressFormRef.value?.clearValidate()
+}
+
+/** 打开新增地址弹窗 */
+function openAddDialog(): void {
+  addressDialogTitle.value = '新增地址'
+  resetAddressForm()
+  addressDialogVisible.value = true
+}
+
+/** 打开编辑地址弹窗 */
+function openEditDialog(addr: UserAddressVO): void {
+  addressDialogTitle.value = '编辑地址'
+  addressEditingId.value = addr.id
+  addressFormData.receiverName = addr.receiverName
+  addressFormData.receiverPhone = addr.receiverPhone
+  addressFormData.province = addr.province
+  addressFormData.city = addr.city
+  addressFormData.district = addr.district
+  addressFormData.detailAddress = addr.detailAddress
+  addressFormData.isDefault = addr.isDefault === 1
+  addressFormRef.value?.clearValidate()
+  addressDialogVisible.value = true
+}
+
+/** 构造地址提交载荷 (isDefault: boolean → number 0/1) */
+function buildAddressPayload(): UserAddressRequest {
+  return {
+    receiverName: addressFormData.receiverName.trim(),
+    receiverPhone: addressFormData.receiverPhone.trim(),
+    province: addressFormData.province.trim(),
+    city: addressFormData.city.trim(),
+    district: addressFormData.district.trim(),
+    detailAddress: addressFormData.detailAddress.trim(),
+    isDefault: addressFormData.isDefault ? 1 : 0
+  }
+}
+
+/** 提交地址表单 (新增 / 编辑) */
+async function handleAddressSubmit(): Promise<void> {
+  if (!addressFormRef.value) return
+  try {
+    await addressFormRef.value.validate()
+  } catch {
+    return
+  }
+  addressSubmitting.value = true
+  try {
+    const payload = buildAddressPayload()
+    if (addressEditingId.value === null) {
+      await createAddress(payload)
+      ElMessage.success('地址添加成功')
+    } else {
+      await updateAddress(addressEditingId.value, payload)
+      ElMessage.success('地址修改成功')
+    }
+    addressDialogVisible.value = false
+    resetAddressForm()
+    await loadAddressList()
+  } catch {
+    // 错误信息已由请求拦截器统一提示
+  } finally {
+    addressSubmitting.value = false
+  }
+}
+
+/** 删除地址 */
+async function handleDeleteAddress(addr: UserAddressVO): Promise<void> {
+  try {
+    await ElMessageBox.confirm('确定删除该收货地址吗？', '删除确认', {
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '再想想'
+    })
+  } catch {
+    return
+  }
+  try {
+    await deleteAddress(addr.id)
+    ElMessage.success('地址已删除')
+    await loadAddressList()
+  } catch {
+    // 错误信息已由请求拦截器统一提示
+  }
+}
+
+/** 设为默认地址 */
+async function handleSetDefault(addr: UserAddressVO): Promise<void> {
+  try {
+    await setDefaultAddress(addr.id)
+    ElMessage.success('已设为默认地址')
+    await loadAddressList()
+  } catch {
+    // 错误信息已由请求拦截器统一提示
+  }
+}
+
+/* === 优惠券 Tab: 子Tab切换 + 卡片展示 === */
+interface CouponSubTabItem {
+  label: string
+  value: UserCouponStatus
+}
+
+const couponSubTabs: CouponSubTabItem[] = [
+  { label: '可用', value: 'UNUSED' },
+  { label: '已使用', value: 'USED' },
+  { label: '已过期', value: 'EXPIRED' }
+]
+
+const couponActiveSubTab = ref<UserCouponStatus>('UNUSED')
+const couponList = ref<UserCouponVO[]>([])
+const couponLoading = ref<boolean>(false)
+const couponsLoaded = ref<boolean>(false)
+
+const couponTabCountMap = ref<Record<UserCouponStatus, number>>({
+  UNUSED: 0,
+  USED: 0,
+  EXPIRED: 0
+})
+
+const couponEmptyText = ref<string>('暂无可用优惠券')
+
+/** 拉取优惠券列表 (按状态) */
+async function loadCoupons(status: UserCouponStatus): Promise<void> {
+  couponLoading.value = true
+  try {
+    const res = await getMyCoupons(status)
+    couponList.value = res.data ?? []
+    couponTabCountMap.value[status] = couponList.value.length
+  } catch {
+    // 错误已由全局拦截器提示
+    couponList.value = []
+  } finally {
+    couponLoading.value = false
+  }
+}
+
+/** 切换优惠券子Tab */
+async function switchCouponSubTab(status: UserCouponStatus): Promise<void> {
+  if (status === couponActiveSubTab.value) return
+  couponActiveSubTab.value = status
+  couponEmptyText.value = status === 'UNUSED' ? '暂无可用优惠券' : status === 'USED' ? '暂无已使用优惠券' : '暂无已过期优惠券'
+  await loadCoupons(status)
+}
+
+/** 初始化优惠券数据: 拉取三个状态数量 + 默认Tab数据 */
+async function initCoupons(): Promise<void> {
+  const statuses: UserCouponStatus[] = ['UNUSED', 'USED', 'EXPIRED']
+  await Promise.all(statuses.map((s) => loadCoupons(s)))
+  await loadCoupons(couponActiveSubTab.value)
+}
+
+/** 优惠券金额格式化 */
+function formatCouponMoney(value: number): string {
+  return Number(value || 0).toFixed(2)
+}
+
+/** 优惠券面额格式化 (整数不带小数) */
+function formatCouponAmount(value: number): string {
+  const num = Number(value || 0)
+  return num % 1 === 0 ? String(num) : num.toFixed(2)
+}
+
+/** 优惠券折扣格式化 */
+function formatCouponDiscount(value: number): string {
+  const num = Number(value || 0)
+  return num % 1 === 0 ? String(num) : num.toFixed(1)
+}
+
+/** 优惠券日期格式化 */
+function formatCouponDate(time: string): string {
+  if (!time) return '—'
+  return dayjs(time).format('YYYY-MM-DD')
+}
+
+/** 优惠券状态文本 */
+function couponStatusLabel(status: UserCouponStatus): string {
+  const map: Record<UserCouponStatus, string> = {
+    UNUSED: '未使用',
+    USED: '已使用',
+    EXPIRED: '已过期'
+  }
+  return map[status] || status
+}
+
+/** 优惠券状态标签样式 */
+function couponStatusTagType(status: UserCouponStatus): 'success' | 'info' | 'warning' {
+  const map: Record<UserCouponStatus, 'success' | 'info' | 'warning'> = {
+    UNUSED: 'success',
+    USED: 'info',
+    EXPIRED: 'warning'
+  }
+  return map[status] || 'info'
+}
+
+/** 优惠券卡片样式: 已使用/已过期置灰 */
+function couponCardClass(item: UserCouponVO): string {
+  if (item.status === 'USED') return 'is-used'
+  if (item.status === 'EXPIRED') return 'is-expired'
+  return ''
 }
 
 /* === 拉取用户信息 === */
@@ -1072,6 +1782,609 @@ onUnmounted(() => {
   align-items: center;
 }
 
+/* === 钱包 Tab 样式 === */
+.wallet-tab {
+  /* 不限制 max-width，让钱包内容更饱满 */
+}
+
+/* 余额展示卡片 (渐变背景) */
+.wallet-balance-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: linear-gradient(135deg, var(--color-primary), #d32f2f);
+  color: #fff;
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  box-shadow: 0 6px 20px rgba(229, 57, 53, 0.25);
+}
+
+.wallet-balance-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.wallet-balance-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wallet-balance-label {
+  font-size: 13px;
+  opacity: 0.9;
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+.wallet-balance-amount {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+
+.wallet-balance-actions {
+  flex-shrink: 0;
+}
+
+.wallet-recharge-btn {
+  background: #fff;
+  color: var(--color-primary);
+  border-color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wallet-recharge-btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* 交易记录区 */
+.wallet-records-section {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.wallet-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.wallet-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* 加载/空状态 */
+.wallet-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--color-text-muted);
+  gap: 12px;
+}
+
+.wallet-loading-text {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.wallet-empty-state {
+  padding: 32px 24px;
+  display: flex;
+  justify-content: center;
+}
+
+/* 记录表格 (紧凑样式) */
+.wallet-records-table-wrap {
+  overflow-x: auto;
+}
+
+.wallet-records-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.wallet-records-table thead th {
+  background: var(--color-bg-subtle);
+  padding: 9px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+  letter-spacing: 0.02em;
+}
+
+.wallet-records-table tbody td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+  color: var(--color-text-primary);
+}
+
+.wallet-records-table tbody tr:hover {
+  background: var(--color-bg-subtle);
+}
+
+.wallet-records-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.wallet-amount-cell {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.wallet-amount-cell.income {
+  color: var(--color-success);
+}
+
+.wallet-amount-cell.expense {
+  color: var(--color-danger);
+}
+
+.wallet-time-cell {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.wallet-remark-cell {
+  color: var(--color-text-secondary);
+  max-width: 220px;
+  word-break: break-all;
+}
+
+/* 表格底部"查看更多" */
+.wallet-records-footer {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+}
+
+.wallet-records-footer .btn-sm.text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 充值提示 */
+.recharge-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 8px 12px;
+  background: var(--color-bg-subtle);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.recharge-tip .el-icon {
+  color: var(--color-primary);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* 按钮内图标 */
+.btn-icon {
+  font-size: 14px;
+}
+
+/* text 按钮 (用于刷新/查看更多) */
+.btn-sm.text {
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  padding: 6px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-sm.text:hover {
+  color: var(--color-primary);
+}
+
+/* === 收货地址 Tab 样式 === */
+.address-tab {
+  /* 不限制 max-width，让地址卡片网格更饱满 */
+}
+
+.address-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.address-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.address-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  color: var(--color-text-muted);
+  gap: 12px;
+}
+
+.address-loading-text {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.address-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.address-empty-icon {
+  color: var(--color-text-muted);
+  margin-bottom: 16px;
+}
+
+.address-empty-text {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 20px;
+}
+
+/* 地址卡片网格 */
+.address-grid {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.address-col {
+  margin-bottom: 16px;
+}
+
+.address-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+  box-sizing: border-box;
+}
+
+.address-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.address-card.address-default {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 12px rgba(229, 57, 53, 0.15);
+}
+
+.address-card.address-default:hover {
+  box-shadow: 0 8px 24px rgba(229, 57, 53, 0.25);
+}
+
+.card-top {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.address-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+
+.address-phone {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.default-tag {
+  margin-left: auto;
+  font-weight: 700;
+}
+
+.card-detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  min-height: 42px;
+}
+
+.detail-icon {
+  font-size: 15px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.detail-text {
+  flex: 1;
+  word-break: break-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border-light);
+  margin-top: auto;
+}
+
+.btn-plus {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.btn-sm.text.danger:hover {
+  color: var(--color-primary);
+}
+
+/* === 优惠券 Tab 样式 === */
+.coupons-tab {
+  /* 不限制 max-width，让优惠券卡片网格更饱满 */
+}
+
+.coupon-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 20px;
+  background: var(--color-bg-card);
+  border-radius: 8px 8px 0 0;
+  padding: 0 8px;
+}
+
+.coupon-tab {
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.coupon-tab:hover {
+  color: var(--color-primary);
+}
+
+.coupon-tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.tab-count {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.coupon-tab.active .tab-count {
+  color: var(--color-primary);
+  opacity: 0.8;
+}
+
+.coupon-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  color: var(--color-text-muted);
+  gap: 12px;
+}
+
+.coupon-loading-text {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.coupon-empty-state {
+  padding: 40px 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.coupon-grid {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.coupon-col {
+  margin-bottom: 16px;
+}
+
+/* 优惠券卡片 (左面额 + 右信息) */
+.coupon-card {
+  position: relative;
+  display: flex;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+  height: 130px;
+}
+
+.coupon-card:hover {
+  box-shadow: 0 8px 24px rgba(229, 57, 53, 0.15);
+  transform: translateY(-2px);
+}
+
+.coupon-left {
+  width: 130px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--color-primary), #d32f2f);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+}
+
+.coupon-left::after {
+  content: '';
+  position: absolute;
+  right: -6px;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  background: radial-gradient(circle at 6px 8px, transparent 4px, #fff 4px) repeat-y;
+  background-size: 12px 16px;
+}
+
+.coupon-value {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.value-unit {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.value-num {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.value-num.discount {
+  font-size: 36px;
+}
+
+.coupon-type-label {
+  font-size: 12px;
+  opacity: 0.9;
+  letter-spacing: 0.04em;
+}
+
+.coupon-right {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+}
+
+.coupon-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coupon-condition {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.coupon-time {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.coupon-status {
+  margin-top: 2px;
+}
+
+/* 已使用/已过期卡片置灰 */
+.coupon-card.is-used .coupon-left,
+.coupon-card.is-expired .coupon-left {
+  background: linear-gradient(135deg, #bdbdbd, #9e9e9e);
+}
+
+.coupon-card.is-used .coupon-name,
+.coupon-card.is-expired .coupon-name {
+  color: var(--color-text-secondary);
+}
+
+/* 右上角状态标记 */
+.coupon-mark {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+}
+
+.mark-text {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.5);
+}
+
 /* 响应式 */
 @media (max-width: 768px) {
   .profile-layout {
@@ -1084,6 +2397,37 @@ onUnmounted(() => {
 
   .profile-shortcuts {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .wallet-balance-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 18px;
+    gap: 14px;
+  }
+
+  .wallet-balance-amount {
+    font-size: 24px;
+  }
+
+  .address-col {
+    margin-bottom: 12px;
+  }
+
+  .address-card {
+    padding: 14px;
+  }
+
+  .coupon-card {
+    height: 120px;
+  }
+
+  .coupon-left {
+    width: 110px;
+  }
+
+  .value-num {
+    font-size: 28px;
   }
 }
 </style>

@@ -13,6 +13,7 @@ import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.enums.ProductStatus;
 import com.seckill.mall.mapper.CategoryMapper;
 import com.seckill.mall.mapper.ProductMapper;
+import com.seckill.mall.service.CategoryService;
 import com.seckill.mall.service.impl.ProductServiceImpl;
 import com.seckill.mall.vo.ProductVO;
 import org.junit.jupiter.api.DisplayName;
@@ -56,6 +57,8 @@ class ProductServiceTest {
     private ProductMapper productMapper;
     @Mock
     private CategoryMapper categoryMapper;
+    @Mock
+    private CategoryService categoryService;
     @Mock
     private StringRedisTemplate stringRedisTemplate;
     @Mock
@@ -104,7 +107,7 @@ class ProductServiceTest {
         page.setRecords(List.of(product));
         page.setTotal(1L);
         // 未指定 status 时传 null，返回所有商品(含下架)
-        given(productMapper.selectProductPage(any(Page.class), any(), any(), isNull(), any(), any()))
+        given(productMapper.selectProductPage(any(Page.class), any(), any(), any(), isNull(), any(), any(), any(), any()))
                 .willReturn(page);
         given(categoryMapper.selectBatchIds(List.of(101L))).willReturn(List.of(buildCategory()));
 
@@ -127,7 +130,7 @@ class ProductServiceTest {
         emptyPage.setRecords(List.of());
         emptyPage.setTotal(0L);
         // 未指定 status 时传 null，返回所有商品(含下架)
-        given(productMapper.selectProductPage(any(Page.class), any(), any(), isNull(), any(), any()))
+        given(productMapper.selectProductPage(any(Page.class), any(), any(), any(), isNull(), any(), any(), any(), any()))
                 .willReturn(emptyPage);
 
         // when
@@ -153,7 +156,7 @@ class ProductServiceTest {
         page.setRecords(List.of(product));
         page.setTotal(1L);
         // 指定 status 时应传对应枚举值
-        given(productMapper.selectProductPage(any(Page.class), any(), any(), eq(ProductStatus.ON_SALE), any(), any()))
+        given(productMapper.selectProductPage(any(Page.class), any(), any(), any(), eq(ProductStatus.ON_SALE), any(), any(), any(), any()))
                 .willReturn(page);
         given(categoryMapper.selectBatchIds(List.of(101L))).willReturn(List.of(buildCategory()));
 
@@ -178,7 +181,7 @@ class ProductServiceTest {
         emptyPage.setRecords(List.of());
         emptyPage.setTotal(0L);
         // 指定 OFF_SHELF 时应传 ProductStatus.OFF_SHELF
-        given(productMapper.selectProductPage(any(Page.class), any(), any(), eq(ProductStatus.OFF_SHELF), any(), any()))
+        given(productMapper.selectProductPage(any(Page.class), any(), any(), any(), eq(ProductStatus.OFF_SHELF), any(), any(), any(), any()))
                 .willReturn(emptyPage);
 
         // when
@@ -316,7 +319,7 @@ class ProductServiceTest {
         req.setStock(10);
         req.setDescription("<script>x</script>");
         given(categoryMapper.selectById(101L)).willReturn(buildCategory());
-        given(categoryMapper.selectBatchIds(any())).willReturn(List.of(buildCategory()));
+
 
         // when
         ProductVO vo = productService.createProduct(req);

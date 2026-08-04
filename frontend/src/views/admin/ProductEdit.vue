@@ -13,105 +13,70 @@
 
     <!-- 表单卡片 -->
     <div class="form-card" v-loading="loading">
-      <el-form
-        ref="formRef"
-        :model="formData"
-        :rules="formRules"
-        label-width="100px"
-        class="product-form"
-      >
-        <el-form-item label="商品名称" prop="productName">
-          <el-input
-            v-model="formData.productName"
-            placeholder="请输入商品名称"
-            maxlength="100"
-            show-word-limit
-            style="width: 480px"
-          />
-        </el-form-item>
+      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="80px" class="product-form">
+        <!-- 双列布局：左列基本信息 + 右列媒体上传 -->
+        <div class="form-grid">
+          <!-- 左列：基本信息 -->
+          <div class="form-col form-col-left">
+            <el-form-item label="商品名称" prop="productName">
+              <el-input v-model="formData.productName" placeholder="请输入商品名称" maxlength="100" show-word-limit />
+            </el-form-item>
 
-        <el-form-item label="分类" prop="categoryId">
-          <el-cascader
-            v-model="cascaderValue"
-            :options="categoryOptions"
-            :props="cascaderProps"
-            placeholder="请选择分类（可选一级或二级分类）"
-            clearable
-            style="width: 320px"
-            @change="handleCategoryChange"
-          />
-        </el-form-item>
+            <el-form-item label="分类" prop="categoryId">
+              <el-cascader v-model="cascaderValue" :options="categoryOptions" :props="cascaderProps" placeholder="请选择分类"
+                clearable style="width: 100%" @change="handleCategoryChange" />
+            </el-form-item>
 
-        <el-form-item label="原价" prop="originalPrice">
-          <el-input-number
-            v-model="formData.originalPrice"
-            :min="0.01"
-            :precision="2"
-            :step="1"
-            controls-position="right"
-            style="width: 200px"
-          />
-          <span class="form-unit">元</span>
-        </el-form-item>
+            <el-form-item label="原价" prop="originalPrice">
+              <el-input-number v-model="formData.originalPrice" :min="0.01" :precision="2" :step="1"
+                controls-position="right" style="width: 200px" />
+              <span class="form-unit">元</span>
+            </el-form-item>
 
-        <el-form-item label="库存" prop="stock">
-          <el-input-number
-            v-model="formData.stock"
-            :min="0"
-            :step="1"
-            controls-position="right"
-            style="width: 200px"
-          />
-          <span class="form-unit">件</span>
-        </el-form-item>
+            <el-form-item label="库存" prop="stock">
+              <el-input-number v-model="formData.stock" :min="0" :step="1" controls-position="right"
+                style="width: 200px" />
+              <span class="form-unit">件</span>
+            </el-form-item>
 
-        <el-form-item label="主图" prop="mainImage">
-          <ImageUploader v-model="mainImageList" :max-count="1" />
-          <span class="form-unit">商品主图，仅支持 1 张</span>
-        </el-form-item>
+            <el-form-item label="状态" prop="status">
+              <el-radio-group v-model="formData.status">
+                <el-radio value="ON_SALE">上架</el-radio>
+                <el-radio value="OFF_SHELF">下架</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </div>
 
-        <el-form-item label="图片" prop="images">
-          <ImageUploader v-model="formData.images" :max-count="5" />
-          <span class="form-unit">商品多图，最多 5 张</span>
-        </el-form-item>
+          <!-- 右列：媒体上传 -->
+          <div class="form-col form-col-right">
+            <el-form-item label="主图" prop="mainImage">
+              <ImageUploader v-model="mainImageList" :max-count="1" />
+              <span class="form-unit">商品主图，仅支持 1 张</span>
+            </el-form-item>
 
-        <el-form-item label="商品简介" prop="description">
-          <el-input
-            v-model="formData.description"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入商品简介/描述"
-            maxlength="500"
-            show-word-limit
-            style="width: 480px"
-          />
-        </el-form-item>
+            <el-form-item label="图片" prop="images">
+              <ImageUploader v-model="formData.images" :max-count="5" />
+              <span class="form-unit">商品多图，最多 5 张</span>
+            </el-form-item>
 
-        <el-form-item label="商品详情" prop="detailHtml">
+            <el-form-item label="商品简介" prop="description">
+              <el-input v-model="formData.description" type="textarea" :rows="3" placeholder="请输入商品简介/描述"
+                maxlength="500" show-word-limit />
+            </el-form-item>
+          </div>
+        </div>
+
+        <!-- 全宽：富文本编辑器 -->
+        <el-form-item label="商品详情" prop="detailHtml" class="form-item-full">
           <div class="wang-editor-wrap">
-            <Toolbar
-              :editor="editorRef"
-              :mode="mode"
-              style="border-bottom: 1px solid #ccc"
-            />
-            <Editor
-              v-model="formData.detailHtml"
-              :defaultConfig="editorConfig"
-              :mode="mode"
-              style="height: 360px; overflow-y: hidden;"
-              @onCreated="(editor: any) => editorRef = editor"
-            />
+            <Toolbar :editor="editorRef" :mode="mode" style="border-bottom: 1px solid #ccc" />
+            <Editor v-model="formData.detailHtml" :defaultConfig="editorConfig" :mode="mode"
+              style="height: 360px; overflow-y: hidden;" @onCreated="(editor: any) => editorRef = editor" />
           </div>
         </el-form-item>
 
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="formData.status">
-            <el-radio value="ON_SALE">上架</el-radio>
-            <el-radio value="OFF_SHELF">下架</el-radio>
-          </el-radio-group>
-        </el-form-item>
-
-        <el-form-item>
+        <!-- 全宽：操作按钮 -->
+        <el-form-item class="form-item-full">
           <div class="form-actions">
             <el-button type="primary" :loading="submitting" @click="handleSubmit">保存</el-button>
             <el-button @click="handleCancel">取消</el-button>
@@ -163,7 +128,7 @@ const formRef = ref<FormInstance | null>(null)
 /* === 表单数据 === */
 interface ProductFormData {
   productName: string
-  categoryId: number | undefined
+  categoryId: number | string | undefined
   originalPrice: number
   stock: number
   description: string
@@ -202,7 +167,7 @@ const formRules: FormRules = {
 
 /* === 分类级联选择器 === */
 interface CascaderOption {
-  value: number
+  value: number | string
   label: string
   children?: CascaderOption[]
 }
@@ -218,7 +183,7 @@ const cascaderProps = {
   children: 'children'
 }
 // cascaderValue 与 formData.categoryId 同步
-const cascaderValue = ref<number | undefined>(undefined)
+const cascaderValue = ref<number | string | undefined>(undefined)
 
 function handleCategoryChange(value: unknown): void {
   // emitPath=false 时 value 为单值(number | string | null | undefined)
@@ -378,7 +343,7 @@ onMounted(async () => {
 /* === 页面容器 === */
 .product-edit-page {
   padding: 20px;
-  max-width: 900px;
+
   margin: 0 auto;
 }
 
@@ -389,6 +354,7 @@ onMounted(async () => {
   gap: 16px;
   margin-bottom: 20px;
 }
+
 .back-btn {
   display: inline-flex;
   align-items: center;
@@ -403,10 +369,12 @@ onMounted(async () => {
   color: var(--color-text-primary);
   transition: all 0.2s;
 }
+
 .back-btn:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
+
 .page-title {
   font-size: 18px;
   font-weight: 700;
@@ -424,7 +392,26 @@ onMounted(async () => {
 }
 
 .product-form {
-  max-width: 720px;
+  width: 100%;
+}
+
+/* === 双列布局网格 === */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 40px;
+}
+
+.form-col {
+  /* 每列内的表单项垂直排列 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* === 全宽表单项（富文本编辑器、操作按钮） === */
+.form-item-full {
+  width: 100%;
+  margin-top: 8px;
 }
 
 /* === 表单单位提示 === */
@@ -448,5 +435,21 @@ onMounted(async () => {
   width: 100%;
   border-radius: 4px;
   overflow: hidden;
+}
+
+/* === 响应式：小屏改为单列 === */
+@media (max-width: 768px) {
+  .product-edit-page {
+    padding: 12px;
+  }
+
+  .form-card {
+    padding: 20px 16px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
 }
 </style>

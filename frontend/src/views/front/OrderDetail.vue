@@ -28,10 +28,7 @@
           <div class="step-line done"></div>
         </div>
         <div class="step">
-          <div
-            class="step-dot"
-            :class="step2DotClass"
-          >{{ step2DotContent }}</div>
+          <div class="step-dot" :class="step2DotClass">{{ step2DotContent }}</div>
           <span class="step-label">{{ step2Label }}</span>
           <span class="step-time" :class="{ active: order.status === 'UNPAID' }">{{ step2Time }}</span>
           <div class="step-line" :class="{ done: step2LineDone }"></div>
@@ -42,21 +39,23 @@
         </div>
       </div>
 
-      <!-- 商品信息卡片（对照 .order-card） -->
-      <div class="order-card product-card">
+      <!-- 商品信息卡片（对照 .order-card，支持多商品遍历） -->
+      <div class="order-card product-card" v-for="item in order.items" :key="item.productId">
         <div class="order-card-img large">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <img v-if="item.productImage" :src="formatImageUrl(item.productImage)" :alt="item.productName"
+            class="order-card-img-tag" loading="lazy" />
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="3" y="3" width="18" height="18" rx="2" />
             <circle cx="8.5" cy="8.5" r="1.5" />
             <path d="m21 15-5-5L5 21" />
           </svg>
         </div>
         <div class="order-card-info">
-          <div class="order-card-name large">商品 ID：{{ order.productId }}</div>
-          <div class="order-card-time">秒杀价 ¥{{ formatPrice(order.seckillPrice) }} | 数量 {{ order.quantity }} 件</div>
+          <div class="order-card-name large">{{ item.productName }}</div>
+          <div class="order-card-time">单价 ¥{{ formatPrice(item.unitPrice) }} | 数量 {{ item.quantity }} 件</div>
           <div class="product-meta">
-            <span>秒杀价：<strong class="seckill-price">¥{{ formatPrice(order.seckillPrice) }}</strong></span>
-            <span>数量：{{ order.quantity }} 件</span>
+            <span>单价：<strong class="seckill-price">¥{{ formatPrice(item.unitPrice) }}</strong></span>
+            <span>数量：{{ item.quantity }} 件</span>
           </div>
         </div>
       </div>
@@ -124,16 +123,34 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getOrderDetail, payOrder, cancelOrder } from '@/api/order'
+import { getOrderDetail, getNormalOrderDetail, payOrder, payNormalOrder, cancelOrder, cancelNormalOrder } from '@/api/order'
+import { formatImageUrl } from '@/utils/image'
 import dayjs from 'dayjs'
-import type { SeckillOrder, OrderStatus } from '@/types'
+import type { OrderItemSnapshot } from '@/types'
+
+/** 统一订单详情（适配秒杀+普通两种接口返回） */
+interface UnifiedOrderDetail {
+  id: number | string
+  orderNo: string
+  /** 订单类型：SECKILL-秒杀 / NORMAL-普通 */
+  orderType: 'SECKILL' | 'NORMAL'
+  status: string
+  totalAmount: number
+  payMethod: string
+  createTime: string
+  payTime: string
+  payExpireTime?: string
+  cancelTime?: string
+  cancelReason?: string
+  items: OrderItemSnapshot[]
+}
 
 const route = useRoute()
 const router = useRouter()
 
 const loading = ref<boolean>(false)
 const error = ref<boolean>(false)
-const order = ref<SeckillOrder | null>(null)
+const order = ref<UnifiedOrderDetail | null>(null)
 const payLoading = ref<boolean>(false)
 const cancelLoading = ref<boolean>(false)
 
@@ -194,8 +211,8 @@ const step3Label = computed<string>(() => {
 })
 
 /** 状态标签 class 映射 */
-function statusClass(status: OrderStatus): string {
-  const map: Record<OrderStatus, string> = {
+function statusClass(status: string): string {
+  const map: Record<string, string> = {
     UNPAID: 'unpaid',
     PAID: 'paid',
     CANCELLED: 'cancelled',
@@ -205,8 +222,8 @@ function statusClass(status: OrderStatus): string {
   return map[status] || 'cancelled'
 }
 
-function statusLabel(status: OrderStatus): string {
-  const map: Record<OrderStatus, string> = {
+function statusLabel(status: string): string {
+  const map: Record<string, string> = {
     UNPAID: '待支付',
     PAID: '已支付',
     CANCELLED: '已取消',
@@ -221,7 +238,12 @@ function getOrderId(): number {
   return Number(route.params.id)
 }
 
-/** 拉取订单详情 */
+/** 获取订单类型 (从 query 参数) */
+function getOrderType(): 'SECKILL' | 'NORMAL' {
+  return route.query.type === 'NORMAL' ? 'NORMAL' : 'SECKILL'
+}
+
+/** 拉取订单详情 (根据订单类型调用不同接口) */
 async function fetchOrderDetail(): Promise<void> {
   const id = getOrderId()
   if (!id || Number.isNaN(id)) {
@@ -231,8 +253,56 @@ async function fetchOrderDetail(): Promise<void> {
   loading.value = true
   error.value = false
   try {
-    const res = await getOrderDetail(id)
-    order.value = res.data
+    const orderType = getOrderType()
+    if (orderType === 'NORMAL') {
+      // 普通订单：调用 normal-detail 接口，返回嵌套 { order, items }
+      const res = await getNormalOrderDetail(id)
+      const detail = res.data
+      order.value = {
+        id: detail.order.id,
+        orderNo: detail.order.orderNo,
+        orderType: 'NORMAL',
+        status: detail.order.status,
+        totalAmount: detail.order.totalAmount,
+        payMethod: detail.order.payMethod || '',
+        createTime: detail.order.createTime,
+        payTime: detail.order.payTime || '',
+        payExpireTime: detail.order.payExpireTime,
+        cancelTime: detail.order.cancelTime,
+        cancelReason: detail.order.cancelReason,
+        items: (detail.items || []).map(item => ({
+          productId: item.productId,
+          productName: item.productName,
+          productImage: item.productImage,
+          unitPrice: item.unitPrice,
+          quantity: item.quantity
+        }))
+      }
+    } else {
+      // 秒杀订单：调用原详情接口，返回 SeckillOrder
+      const res = await getOrderDetail(id)
+      const seckill = res.data
+      order.value = {
+        id: seckill.id,
+        orderNo: seckill.orderNo,
+        orderType: 'SECKILL',
+        status: seckill.status,
+        totalAmount: seckill.totalAmount,
+        payMethod: seckill.payMethod || '',
+        createTime: seckill.createTime,
+        payTime: seckill.payTime || '',
+        payExpireTime: seckill.payExpireTime,
+        cancelTime: seckill.cancelTime,
+        cancelReason: seckill.cancelReason,
+        items: [{
+          productId: seckill.productId,
+          productName: `秒杀商品 #${seckill.productId}`,
+          productImage: '',
+          unitPrice: seckill.seckillPrice,
+          quantity: seckill.quantity
+        }]
+      }
+    }
   } catch {
     error.value = true
   } finally {
@@ -267,12 +337,16 @@ async function copyOrderNo(): Promise<void> {
   }
 }
 
-/** 立即支付 */
+/** 立即支付 (根据订单类型调用不同支付接口) */
 async function handlePay(): Promise<void> {
   if (!order.value) return
   payLoading.value = true
   try {
-    await payOrder(order.value.id, 'ALIPAY')
+    if (order.value.orderType === 'NORMAL') {
+      await payNormalOrder(order.value.id, 'ALIPAY')
+    } else {
+      await payOrder(order.value.id, 'ALIPAY')
+    }
     ElMessage.success('支付成功')
     await fetchOrderDetail()
   } catch {
@@ -292,7 +366,11 @@ async function handleCancel(): Promise<void> {
       cancelButtonText: '再想想'
     })
     cancelLoading.value = true
-    await cancelOrder(order.value.id)
+    if (order.value.orderType === 'NORMAL') {
+      await cancelNormalOrder(order.value.id)
+    } else {
+      await cancelOrder(order.value.id)
+    }
     ElMessage.success('订单已取消')
     await fetchOrderDetail()
   } catch {
@@ -342,8 +420,13 @@ onMounted(() => {
 }
 
 @keyframes skeleton-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* 错误状态 */
@@ -503,6 +586,13 @@ onMounted(() => {
 .order-card-img.large svg {
   width: 36px;
   height: 36px;
+}
+
+.order-card-img-tag {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
 }
 
 .order-card-info {

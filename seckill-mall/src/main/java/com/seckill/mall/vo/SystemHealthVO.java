@@ -52,6 +52,66 @@ public class SystemHealthVO {
      */
     private String mqQueueBacklog;
 
+    /**
+     * JVM 堆内存使用率（0-100，1 位小数），采集失败为 null
+     */
+    private Double jvmHeapUsage;
+
+    /**
+     * JVM 非堆内存使用率（0-100，1 位小数），采集失败为 null
+     */
+    private Double jvmNonHeapUsage;
+
+    /**
+     * 数据库连接池活跃连接数，采集失败为 null
+     */
+    private Integer dbActiveConnections;
+
+    /**
+     * 数据库连接池空闲连接数，采集失败为 null
+     */
+    private Integer dbIdleConnections;
+
+    /**
+     * 数据库连接池最大连接数，采集失败为 null
+     */
+    private Integer dbMaxConnections;
+
+    /**
+     * 操作系统名称，采集失败为 null
+     */
+    private String osName;
+
+    /**
+     * JDK 版本，采集失败为 null
+     */
+    private String jdkVersion;
+
+    /**
+     * 应用启动时间（yyyy-MM-dd HH:mm:ss），采集失败为 null
+     */
+    private String appStartTime;
+
+    /**
+     * 应用运行时长（如 "2h 13m"），采集失败为 null
+     */
+    private String appUptime;
+
+    /**
+     * 进行中秒杀活动数量，采集失败为 null
+     */
+    private Integer seckillActiveCount;
+
+    /**
+     * 待开始秒杀活动数量，采集失败为 null
+     */
+    private Integer seckillPendingCount;
+
+    /**
+     * 今日已完成秒杀活动数量（已结束且 endTime 在今日），采集失败为 null
+     */
+    private Integer seckillCompletedToday;
+
     public boolean isAllHealthy() {
         return "UP".equals(redis) && "UP".equals(database) && "UP".equals(mq);
     }

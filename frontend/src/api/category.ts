@@ -31,16 +31,16 @@ export function createCategory(data: CategoryCreateRequest): Promise<Result<Cate
 }
 
 /** 编辑分类 */
-export function updateCategory(id: number, data: CategoryUpdateRequest): Promise<Result<CategoryVO>> {
+export function updateCategory(id: number | string, data: CategoryUpdateRequest): Promise<Result<CategoryVO>> {
   return put<CategoryVO>(`/api/v1/categories/${id}`, data)
 }
 
 /** 删除分类 */
-export function deleteCategory(id: number): Promise<Result<void>> {
+export function deleteCategory(id: number | string): Promise<Result<void>> {
   return del<void>(`/api/v1/categories/${id}`)
 }
 
 /** 切换分类状态 */
-export function updateCategoryStatus(id: number, status: number): Promise<Result<void>> {
+export function updateCategoryStatus(id: number | string, status: number): Promise<Result<void>> {
   return put<void>(`/api/v1/categories/${id}/status`, { status })
 }

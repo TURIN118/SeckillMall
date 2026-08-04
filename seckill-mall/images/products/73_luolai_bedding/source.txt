@@ -1,0 +1,5 @@
+product: 罗莱家纺 床品四件套
+query: 罗莱家纺 床品四件套 外观
+01_main.jpg	https://img10.360buyimg.com/n1/jfs/t1/158177/32/11564/250542/60479d65E64cdef96/33ec332a164a2a40.jpg
+02_detail.jpg	https://img13.360buyimg.com/n1/jfs/t1/129753/32/9602/201519/5f58bc5cE9d368bd3/f6f568ce6a5c172a.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01n9HIkQ1H1jP3tsqEa_!!2217701840698-0-cib.310x310.jpg

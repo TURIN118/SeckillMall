@@ -106,6 +106,9 @@
             <if test="req.orderNo != null and req.orderNo != ''">
                 AND o.order_no LIKE CONCAT('%', #{req.orderNo}, '%')
             </if>
+            <if test="req.date != null and req.date != ''">
+                AND DATE(o.create_time) = #{req.date}
+            </if>
             <if test="req.status != null and req.status != ''">
                 AND o.status = #{req.status}
             </if>
@@ -131,6 +134,7 @@
                 AND o.pay_time &lt;= #{req.payEndLdt}
             </if>
         </where>
+        <!-- 安全说明：${}拼接需调用方进行白名单校验，见AdminOrderServiceImpl.SORT_BY_WHITELIST/SORT_ORDER_WHITELIST -->
         ORDER BY ${req.sortByColumn} ${req.sortOrder}
     </select>
 

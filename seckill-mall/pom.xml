@@ -125,6 +125,20 @@
             <version>1.17.2</version>
         </dependency>
 
+        <!-- MinIO SDK (预留，默认不启用，启用 storage.type=minio 时使用) -->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.5.7</version>
+        </dependency>
+
+        <!-- Apache POI: 操作日志导出 Excel -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.2.3</version>
+        </dependency>
+
         <!-- JJWT (JWT 生成与解析) -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

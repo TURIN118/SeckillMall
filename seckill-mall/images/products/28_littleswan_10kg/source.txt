@@ -1,0 +1,5 @@
+product: 小天鹅 TG100V818 10kg 洗衣机
+query: 小天鹅 TG100V818 滚筒洗衣机 外观
+01_main.jpg	https://img12.360buyimg.com/n1/jfs/t1/188597/40/881/289173/608cedadEa95831ec/289b27ea00c1e694.jpg
+02_detail.png	https://y.zdmimg.com/202504/27/680dc6000752c3072.png_a200.jpg
+03_detail.jpg	https://img30.360buyimg.com/shaidan/s616x405_jfs/t1/49756/39/17035/255871/5dde1cedEcde813c2/5d3d3350f224b9e0.jpg

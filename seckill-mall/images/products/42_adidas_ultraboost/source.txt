@@ -1,0 +1,5 @@
+product: 阿迪达斯 Ultraboost 22 运动鞋
+query: 阿迪达斯 Ultraboost 22 跑步鞋
+01_main.jpg	https://y.zdmimg.com/202308/12/64d6f634ea24f5027.jpg_d250.jpg
+02_detail.jpg	https://qny.smzdm.com/202401/24/65b070341c03a9599.jpg_d250.jpg
+03_detail.jpg	https://qny.smzdm.com/202309/21/650c1be1036cf217.jpg_d250.jpg

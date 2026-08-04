@@ -1,0 +1,5 @@
+product: ONLY 女装针织连衣裙
+query: ONLY 女装 针织 连衣裙
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01Dn2CP61RYNkMPLbu6_!!2216747282123-0-cib.310x310.jpg
+02_detail.jpg	https://qny.smzdm.com/202209/22/632bef2eb5b906362.jpg_d250.jpg
+03_detail.jpg	https://qny.smzdm.com/201910/28/5d5e0a0ed3b466891.jpg_d250.jpg

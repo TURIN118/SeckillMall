@@ -45,10 +45,11 @@ public class SeckillController {
     @Operation(summary = "秒杀活动列表")
     @GetMapping("/list")
     public Result<PageResult<SeckillGoodsVO>> list(
-            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        return Result.success(seckillGoodsService.listSeckill(status, pageNum, pageSize));
+        return Result.success(seckillGoodsService.listSeckill(status, categoryId, pageNum, pageSize));
     }
 
     @Operation(summary = "秒杀活动详情")
@@ -77,6 +78,16 @@ public class SeckillController {
             @RequestHeader(value = "X-Seckill-Token", required = false) String headerToken,
             @RequestParam(value = "seckillToken", required = false) String paramToken) {
         String token = headerToken != null ? headerToken : paramToken;
+        return Result.success(seckillService.doSeckill(seckillId, token));
+    }
+
+    @Operation(summary = "一键执行秒杀（无需预取token）")
+    @PostMapping("/{seckillId}/execute")
+    @RateLimit(key = "seckill", capacity = 1, rate = 1)
+    public Result<SeckillResultVO> execute(@PathVariable Long seckillId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        // 内部自动获取token
+        String token = seckillTokenService.getSeckillToken(seckillId, userId);
         return Result.success(seckillService.doSeckill(seckillId, token));
     }
 

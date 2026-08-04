@@ -57,12 +57,12 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
     private final ObjectMapper objectMapper;
 
     @Override
-    public PageResult<SeckillGoodsVO> listSeckill(Integer status, Integer pageNum, Integer pageSize) {
+    public PageResult<SeckillGoodsVO> listSeckill(String status, Long categoryId, Integer pageNum, Integer pageSize) {
         int num = pageNum == null || pageNum < 1 ? 1 : pageNum;
         int size = pageSize == null || pageSize < 1 ? 10 : Math.min(pageSize, 50);
 
         Page<SeckillGoods> page = new Page<>(num, size);
-        IPage<SeckillGoods> result = seckillGoodsMapper.selectSeckillPage(page, parseStatus(status), null);
+        IPage<SeckillGoods> result = seckillGoodsMapper.selectSeckillPage(page, parseStatus(status), null, categoryId);
 
         List<SeckillGoods> records = result.getRecords();
         if (records.isEmpty()) {
@@ -109,6 +109,11 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         goods.setEndTime(req.getEndTime());
         goods.setStatus(SeckillStatus.PENDING);
         goods.setCreatorId(SecurityUtils.getCurrentUserId());
+        // 落库秒杀活动扩展字段
+        goods.setSeckillName(req.getSeckillName());
+        goods.setPerLimit(req.getPerLimit() != null && req.getPerLimit() > 0 ? req.getPerLimit() : DEFAULT_PER_LIMIT);
+        goods.setImages(serializeImages(req.getImages()));
+        goods.setDescription(req.getDescription());
 
         seckillGoodsMapper.insert(goods);
         preheatSeckill(goods.getId());
@@ -144,6 +149,19 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         }
         if (req.getEndTime() != null) {
             goods.setEndTime(req.getEndTime());
+        }
+        // 更新秒杀活动扩展字段
+        if (req.getSeckillName() != null) {
+            goods.setSeckillName(req.getSeckillName());
+        }
+        if (req.getPerLimit() != null && req.getPerLimit() > 0) {
+            goods.setPerLimit(req.getPerLimit());
+        }
+        if (req.getImages() != null) {
+            goods.setImages(serializeImages(req.getImages()));
+        }
+        if (req.getDescription() != null) {
+            goods.setDescription(req.getDescription());
         }
         seckillGoodsMapper.updateById(goods);
 
@@ -198,7 +216,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         redisService.hSet(infoKey, "startTime", goods.getStartTime().format(DATE_TIME_FORMATTER));
         redisService.hSet(infoKey, "endTime", goods.getEndTime().format(DATE_TIME_FORMATTER));
         redisService.hSet(infoKey, "status", goods.getStatus().getCode());
-        redisService.hSet(infoKey, "perLimit", String.valueOf(DEFAULT_PER_LIMIT));
+        redisService.hSet(infoKey, "perLimit", String.valueOf(resolvePerLimit(goods)));
         redisService.expire(infoKey, ttlSeconds, TimeUnit.SECONDS);
 
         redisService.set(stockKey, String.valueOf(goods.getAvailableCount()), ttlSeconds, TimeUnit.SECONDS);
@@ -238,19 +256,61 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         vo.setAvailableCount(goods.getAvailableCount());
         vo.setStartTime(goods.getStartTime());
         vo.setEndTime(goods.getEndTime());
-        vo.setStatus(goods.getStatus());
-        vo.setPerLimit(DEFAULT_PER_LIMIT);
+        // 动态计算秒杀活动状态（不依赖数据库存储的 status 字段，确保实时准确）
+        // 已取消的活动保持原状态，其余根据 startTime/endTime 和当前时间实时计算
+        if (goods.getStatus() == SeckillStatus.CANCELLED) {
+            vo.setStatus(SeckillStatus.CANCELLED);
+        } else {
+            LocalDateTime now = LocalDateTime.now();
+            if (goods.getStartTime() != null && now.isBefore(goods.getStartTime())) {
+                vo.setStatus(SeckillStatus.PENDING);   // 未开始
+            } else if (goods.getEndTime() != null && now.isAfter(goods.getEndTime())) {
+                vo.setStatus(SeckillStatus.ENDED);     // 已结束
+            } else {
+                vo.setStatus(SeckillStatus.ACTIVE);    // 进行中
+            }
+        }
+        vo.setPerLimit(resolvePerLimit(goods));
         vo.setCreateTime(goods.getCreateTime());
 
         Product product = productMap.get(goods.getProductId());
+        // 秒杀活动名称：优先用活动自身字段，fallback 到商品名称（向后兼容）
+        vo.setSeckillName(goods.getSeckillName() != null ? goods.getSeckillName()
+                : (product != null ? product.getName() : null));
+        // 活动图片：优先用活动自身字段，fallback 到商品图片
+        vo.setImages(goods.getImages() != null && !goods.getImages().isBlank()
+                ? deserializeImages(goods.getImages())
+                : (product != null ? deserializeImages(product.getImages()) : Collections.emptyList()));
+        // 活动描述：优先用活动自身字段，fallback 到商品描述
+        vo.setDescription(goods.getDescription() != null ? goods.getDescription()
+                : (product != null ? product.getDescription() : null));
         if (product != null) {
             vo.setProductName(product.getName());
-            // 实体未单独存储秒杀活动名称，复用商品名称展示
-            vo.setSeckillName(product.getName());
-            vo.setImages(deserializeImages(product.getImages()));
-            vo.setDescription(product.getDescription());
         }
         return vo;
+    }
+
+    /**
+     * 解析限购数量：优先用秒杀活动自身的 perLimit，为空或非法时 fallback 到默认值
+     */
+    private int resolvePerLimit(SeckillGoods goods) {
+        Integer perLimit = goods.getPerLimit();
+        return perLimit != null && perLimit > 0 ? perLimit : DEFAULT_PER_LIMIT;
+    }
+
+    /**
+     * 将图片列表序列化为 JSON 数组字符串落库
+     */
+    private String serializeImages(List<String> images) {
+        if (images == null || images.isEmpty()) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(images);
+        } catch (Exception e) {
+            log.warn("序列化图片列表失败: {}", images, e);
+            return null;
+        }
     }
 
     private List<String> deserializeImages(String images) {
@@ -265,16 +325,29 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         }
     }
 
-    private SeckillStatus parseStatus(Integer status) {
-        if (status == null) {
+    private SeckillStatus parseStatus(String status) {
+        if (status == null || status.isBlank()) {
             return null;
         }
-        return switch (status) {
-            case 0 -> SeckillStatus.PENDING;
-            case 1 -> SeckillStatus.ACTIVE;
-            case 2 -> SeckillStatus.ENDED;
-            case 3 -> SeckillStatus.CANCELLED;
-            default -> null;
-        };
+        String trimmed = status.trim();
+        // 1. 优先按枚举名解析（支持 "ACTIVE"/"PENDING"/"ENDED"/"CANCELLED"，大小写不敏感）
+        try {
+            return SeckillStatus.valueOf(trimmed.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            // 不是有效的枚举名，继续尝试数字解析
+        }
+        // 2. 兼容旧数字接口：0=PENDING, 1=ACTIVE, 2=ENDED, 3=CANCELLED
+        try {
+            int code = Integer.parseInt(trimmed);
+            return switch (code) {
+                case 0 -> SeckillStatus.PENDING;
+                case 1 -> SeckillStatus.ACTIVE;
+                case 2 -> SeckillStatus.ENDED;
+                case 3 -> SeckillStatus.CANCELLED;
+                default -> null;
+            };
+        } catch (NumberFormatException e2) {
+            return null;
+        }
     }
 }

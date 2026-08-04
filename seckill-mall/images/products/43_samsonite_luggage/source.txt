@@ -1,0 +1,5 @@
+product: 新秀丽 拉杆箱
+query: 新秀丽 拉杆箱 行李箱 外观
+01_main.jpg	https://img12.360buyimg.com/n1/jfs/t1/141740/33/36131/86865/64717771Fe8cdb6cb/14dc8d236569d97b.jpg
+02_detail.jpg	https://img10.360buyimg.com/n1/jfs/t1/173927/16/34005/104919/6407e338Fca5792ac/656974bb96fc70f0.jpg
+03_detail.jpg	https://img13.360buyimg.com/n1/jfs/t1/135634/37/30627/78134/63bcd21bF84e6cf5f/2f96d283def917ad.jpg

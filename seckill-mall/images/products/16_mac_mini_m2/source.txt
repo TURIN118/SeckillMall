@@ -1,0 +1,5 @@
+product: 苹果 Mac mini M2
+query: 苹果 Mac mini M2 主机 外观
+01_main.jpg	https://y.zdmimg.com/202304/23/6444eb2b5837e2001.jpg_d250.jpg
+02_detail.jpg	https://qnam.smzdm.com/202502/27/67bffcd3f4adc9532.jpg_e1080.jpg
+03_detail.png	https://qny.smzdm.com/202403/24/66003567c40fa8311.png_d250.jpg

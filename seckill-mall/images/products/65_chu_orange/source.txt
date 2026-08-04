@@ -1,0 +1,5 @@
+product: 褚橙 冰糖橙 5kg
+query: 褚橙 冰糖橙 外观
+01_main.jpg	https://qny.smzdm.com/202310/23/6536298f2dd714220.jpg_a200.jpg
+02_detail.jpg	https://qny.smzdm.com/202412/09/6756f36d8cb6c7045.jpg_a200.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01chz7vF1uI0WEvc18i_!!2214627506013-0-cib.310x310.jpg

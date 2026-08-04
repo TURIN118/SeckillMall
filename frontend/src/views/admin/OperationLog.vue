@@ -10,6 +10,9 @@
             <option value="">全部模块</option>
             <option v-for="m in moduleOptions" :key="m" :value="m">{{ m }}</option>
           </select>
+          <button class="btn-sm primary" :disabled="exportLoading" @click="handleExport">
+            {{ exportLoading ? '导出中...' : '导出Excel' }}
+          </button>
         </div>
       </div>
 
@@ -74,7 +77,8 @@
  */
 import { ref, computed, onMounted } from 'vue'
 import dayjs from 'dayjs'
-import { getOperationLogs } from '@/api/system'
+import { ElMessage } from 'element-plus'
+import { getOperationLogs, exportLogs } from '@/api/system'
 import type { OperationLogVO } from '@/types'
 
 /* === 列表数据 === */
@@ -86,6 +90,9 @@ const pageSize = ref(10)
 
 /* === 筛选条件 === */
 const moduleFilter = ref('')
+
+/* === 导出loading === */
+const exportLoading = ref(false)
 
 /* === 模块选项 (从已加载数据中提取) === */
 const moduleOptions = computed<string[]>(() => {
@@ -155,6 +162,32 @@ function handlePageChange(page: number): void {
   fetchLogList()
 }
 
+/* === 导出 Excel（后端生成，blob 下载） === */
+async function handleExport(): Promise<void> {
+  exportLoading.value = true
+  try {
+    const blob = await exportLogs(moduleFilter.value || undefined)
+    // 空文件保护：blob 大小为 0 时提示
+    if (blob.size === 0) {
+      ElMessage.warning('没有可导出的操作日志')
+      return
+    }
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `操作日志_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch {
+    ElMessage.error('导出失败')
+  } finally {
+    exportLoading.value = false
+  }
+}
+
 onMounted(() => {
   fetchLogList()
 })
@@ -196,6 +229,31 @@ onMounted(() => {
   font-size: 13px;
   background: #fff;
   outline: none;
+}
+
+/* === 严格对照 .btn-sm === */
+.btn-sm {
+  padding: 5px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  color: var(--color-text-primary);
+  letter-spacing: 0.02em;
+}
+.btn-sm.primary {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+.btn-sm:hover {
+  opacity: 0.9;
+}
+.btn-sm:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* === 严格对照 .admin-table === */

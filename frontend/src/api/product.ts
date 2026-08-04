@@ -19,7 +19,7 @@ export function getProductList(
 }
 
 /** 商品详情 */
-export function getProductDetail(id: number): Promise<Result<ProductVO>> {
+export function getProductDetail(id: number | string): Promise<Result<ProductVO>> {
   return get<ProductVO>(`/api/v1/products/${id}`)
 }
 
@@ -29,11 +29,11 @@ export function createProduct(data: ProductCreateRequest): Promise<Result<Produc
 }
 
 /** 编辑商品 */
-export function updateProduct(id: number, data: ProductUpdateRequest): Promise<Result<ProductVO>> {
+export function updateProduct(id: number | string, data: ProductUpdateRequest): Promise<Result<ProductVO>> {
   return put<ProductVO>(`/api/v1/products/${id}`, data)
 }
 
 /** 删除商品 (逻辑删除) */
-export function deleteProduct(id: number): Promise<Result<void>> {
+export function deleteProduct(id: number | string): Promise<Result<void>> {
   return del<void>(`/api/v1/products/${id}`)
 }

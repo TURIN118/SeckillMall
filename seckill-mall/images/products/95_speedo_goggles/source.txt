@@ -1,0 +1,5 @@
+product: 速比涛 成人泳镜
+query: 速比涛 泳镜 成人 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01H2pkAV2MGuwRNf1Yy_!!2219672349801-0-cib.310x310.jpg
+02_detail.jpg	https://qny.smzdm.com/202405/09/663c79212e7921425.jpg_d320.jpg
+03_detail.jpg	https://y.zdmimg.com/202510/31/690421476f297232.jpg_d250.jpg

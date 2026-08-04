@@ -14,15 +14,6 @@ import type {
 
 /* ==================== 前台接口 (需登录) ==================== */
 
-/** 查询可领取的优惠券列表 */
-export function getAvailableCoupons(): Promise<Result<CouponVO[]>> {
-    return get<CouponVO[]>('/api/v1/coupons/available')
-}
-
-/** 领取优惠券 */
-export function receiveCoupon(id: number): Promise<Result<void>> {
-    return post<void>(`/api/v1/coupons/${id}/receive`)
-}
 
 /** 查询我的优惠券列表 (按状态筛选) */
 export function getMyCoupons(status?: UserCouponStatus): Promise<Result<UserCouponVO[]>> {
@@ -47,21 +38,21 @@ export function adminCreateCoupon(data: CouponRequest): Promise<Result<CouponVO>
 }
 
 /** 后台编辑优惠券 */
-export function adminUpdateCoupon(id: number, data: CouponRequest): Promise<Result<CouponVO>> {
+export function adminUpdateCoupon(id: number | string, data: CouponRequest): Promise<Result<CouponVO>> {
     return put<CouponVO>(`/api/v1/admin/coupons/${id}/update`, data)
 }
 
 /** 后台删除优惠券 */
-export function adminDeleteCoupon(id: number): Promise<Result<void>> {
+export function adminDeleteCoupon(id: number | string): Promise<Result<void>> {
     return del<void>(`/api/v1/admin/coupons/${id}`)
 }
 
 /** 后台启停优惠券 (status: 1-启用 / 0-停用) */
-export function adminUpdateCouponStatus(id: number, status: number): Promise<Result<void>> {
+export function adminUpdateCouponStatus(id: number | string, status: number): Promise<Result<void>> {
     return put<void>(`/api/v1/admin/coupons/${id}/status`, { status })
 }
 
 /** 后台发放优惠券给指定用户 */
-export function adminDistributeCoupon(id: number, userId: number): Promise<Result<void>> {
+export function adminDistributeCoupon(id: number | string, userId: number): Promise<Result<void>> {
     return post<void>(`/api/v1/admin/coupons/${id}/distribute`, { userId })
 }

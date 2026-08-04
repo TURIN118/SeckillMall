@@ -42,6 +42,18 @@ public class SeckillGoods {
 
     private Long creatorId;
 
+    /** 秒杀活动名称 */
+    private String seckillName;
+
+    /** 每人限购数量 */
+    private Integer perLimit;
+
+    /** 活动图片(JSON数组字符串) */
+    private String images;
+
+    /** 活动描述 */
+    private String description;
+
     @TableLogic
     private Integer isDeleted;
 

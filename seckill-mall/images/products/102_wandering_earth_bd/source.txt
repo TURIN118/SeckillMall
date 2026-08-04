@@ -1,0 +1,5 @@
+product: 《流浪地球 2》电影BD
+query: 流浪地球2 蓝光 BD 碟 外观
+01_main.jpg	https://bkimg.cdn.bcebos.com/pic/03087bf40ad162d9f2d3ffd17589beec8a13622767fd?x-bce-process=image/format,f_auto/resize,m_lfit,limit_1,h_440
+02_detail.jpg	http://ent.qingdaonews.com/images/2022-08/20/fb3f878f-a2ac-45aa-b9b7-04006530e92a.jpg
+03_detail.jpg	http://i2.hdslb.com/bfs/archive/d132591c93f4e647d1b39bdf36b266a7aa2ce7b1.jpg

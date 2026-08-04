@@ -1,0 +1,5 @@
+product: 孩之宝 变形金刚 领袖级
+query: 孩之宝 变形金刚 领袖级 玩具 外观
+01_main.jpg	https://img13.360buyimg.com/n1/jfs/t1/113490/36/18665/175307/5f6eb8afEb2737ec7/402ef271b03bbfa7.jpg
+02_detail.jpg	https://qny.smzdm.com/202207/27/62e0ffe950feb1464.jpg_d250.jpg
+03_detail.jpg	https://y.zdmimg.com/202505/28/68372e21d58247316.jpg_d250.jpg

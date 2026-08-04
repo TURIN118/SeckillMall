@@ -1,0 +1,5 @@
+product: 贝亲 宽口径奶瓶 160ml
+query: 贝亲 宽口径 奶瓶 160ml 外观
+01_main.jpg	https://qny.smzdm.com/202404/08/6613a2987f3f91665.jpg_d250.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN010QfGEt2BZGsaQQ2si_!!2214766428352-0-cib.310x310.jpg
+03_detail.jpg	https://y.zdmimg.com/202508/20/68a54181c01801524.jpg_d250.jpg

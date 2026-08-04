@@ -1,0 +1,5 @@
+product: 舒华 SH-T3900 跑步机
+query: 舒华 跑步机 T3900 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01yjGnpK1yoIvVMPl6L_!!2217489086625-0-cib.310x310.jpg
+02_detail.jpg	https://qny.smzdm.com/202202/21/6212fdab18e5d456.jpg_d250.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01Ne5yBc1yoItfvtmKs_!!2217489086625-0-cib.310x310.jpg

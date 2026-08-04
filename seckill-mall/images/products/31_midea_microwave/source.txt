@@ -1,0 +1,5 @@
+product: 美的 M1-L213B 微波炉
+query: 美的 M1-L213B 微波炉 外观
+01_main.png	http://mall-sourcing-prod-rongchuang.oss-cn-beijing.aliyuncs.com/V1.0.0/goods/A7CECC21A482490DB4E18B3CC2178CE3.png?x-oss-process=image/resize,m_fill,h_400,w_400/rotate,0
+02_detail.jpg	https://qny.smzdm.com/202106/05/60bb3b62be9944980.jpg_d320.jpg
+03_detail.jpg	https://qna.smzdm.com/201811/29/5bff576b177265895.jpg_e1080.jpg

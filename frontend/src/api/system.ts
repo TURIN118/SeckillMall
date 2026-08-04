@@ -21,6 +21,10 @@ import type {
  * - cpuUsage/memoryUsage/diskUsage/redisHitRate：资源监控字段，后端扩展后返回；
  *   前端做兼容处理——有则用，无则 undefined，显示占位而非假数据。
  * - redisResponseTime/dbPoolUsage/mqQueueBacklog：服务元信息，可选。
+ * - jvmHeapUsage/jvmNonHeapUsage：JVM 堆/非堆内存使用率（0-100）。
+ * - dbActiveConnections/dbIdleConnections/dbMaxConnections：HikariCP 连接池详情。
+ * - osName/jdkVersion/appStartTime/appUptime：系统信息。
+ * - seckillActiveCount/seckillPendingCount/seckillCompletedToday：秒杀活动概览。
  *
  * 详见 API-GAP-2.md「系统资源监控接口」一节。
  */
@@ -38,18 +42,47 @@ export interface SystemResourceVO {
   redisResponseTime?: string
   dbPoolUsage?: string
   mqQueueBacklog?: string
+  // JVM 内存监控
+  jvmHeapUsage?: number
+  jvmNonHeapUsage?: number
+  // 数据库连接池详情
+  dbActiveConnections?: number
+  dbIdleConnections?: number
+  dbMaxConnections?: number
+  // 系统信息
+  osName?: string
+  jdkVersion?: string
+  appStartTime?: string
+  appUptime?: string
+  // 秒杀活动概览
+  seckillActiveCount?: number
+  seckillPendingCount?: number
+  seckillCompletedToday?: number
 }
 
-/** 仪表盘统计 */
-export function getDashboard(): Promise<Result<DashboardVO>> {
-  return get<DashboardVO>('/api/v1/admin/dashboard')
-}
 
 /** 操作日志列表 (分页+模块筛选) */
 export function getOperationLogs(
   params: OperationLogQueryRequest
 ): Promise<Result<PageResult<OperationLogVO>>> {
   return get<PageResult<OperationLogVO>>('/api/v1/admin/operation-logs', params)
+}
+
+/**
+ * 导出操作日志为 Excel（blob 响应）。
+ *
+ * 后端返回 application/vnd.openxmlformats-officedocument.spreadsheetml.sheet，
+ * 响应拦截器对 responseType='blob' 直接返回原始 Blob，故此处类型为 Promise<Blob>。
+ *
+ * @param module 模块名筛选，可选
+ * @returns Excel 文件 Blob
+ */
+export function exportLogs(module?: string): Promise<Blob> {
+  return get<Blob>(
+    '/api/v1/admin/operation-logs/export',
+    module ? { module } : undefined,
+    { responseType: 'blob' }
+  ) as unknown as Promise<Blob>
 }
 
 /**

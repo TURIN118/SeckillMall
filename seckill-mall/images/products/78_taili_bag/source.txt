@@ -1,0 +1,5 @@
+product: 太力 真空压缩袋 12件套
+query: 太力 真空压缩袋 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01ZEDyAw1hs6jZFSMqW_!!992274332-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01P2fJXn25XXlbfXfMh_!!2395757536-0-cib.310x310.jpg
+03_detail.jpg	https://qny.smzdm.com/202404/07/66126b1e380a39582.jpg_d250.jpg

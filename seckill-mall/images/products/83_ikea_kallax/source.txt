@@ -1,0 +1,5 @@
+product: 宜家 KALLAX 卡莱克书架
+query: 宜家 KALLAX 书架 外观
+01_main.jpg	https://qny.smzdm.com/202105/25/60ac9c44a61c88.jpg_a200.jpg
+02_detail.jpg	https://y.zdmimg.com/202008/11/5f3254fa4fc323005.jpg_a200.jpg
+03_detail.jpg	https://qny.smzdm.com/202204/14/6257ea19c363a9026.jpg_a200.jpg

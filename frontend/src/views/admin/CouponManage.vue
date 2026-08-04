@@ -41,11 +41,8 @@
             <td>{{ row.receivedCount }} / {{ row.totalCount }}</td>
             <td>{{ row.usedCount }}</td>
             <td>
-              <el-switch
-                :model-value="row.status === 1"
-                :loading="statusLoadingId === row.id"
-                @change="handleStatusChange(row)"
-              />
+              <el-switch :model-value="row.status === 1" :loading="statusLoadingId === row.id"
+                @change="handleStatusChange(row)" />
             </td>
             <td class="time-cell">
               {{ formatDate(row.startTime) }}<br />~ {{ formatDate(row.endTime) }}
@@ -68,44 +65,21 @@
       <div class="admin-table-footer">
         <span class="page-info">共 {{ total }} 条记录</span>
         <div class="pagination">
-          <div
-            class="page-btn"
-            :class="{ disabled: pageNum <= 1 }"
-            @click="handlePageChange(pageNum - 1)"
-          >&lt;</div>
-          <div
-            v-for="p in displayPages"
-            :key="p"
-            class="page-btn"
-            :class="{ active: p === pageNum }"
-            @click="handlePageChange(p)"
-          >{{ p }}</div>
-          <div
-            class="page-btn"
-            :class="{ disabled: pageNum >= totalPages }"
-            @click="handlePageChange(pageNum + 1)"
-          >&gt;</div>
+          <div class="page-btn" :class="{ disabled: pageNum <= 1 }" @click="handlePageChange(pageNum - 1)">&lt;</div>
+          <div v-for="p in displayPages" :key="p" class="page-btn" :class="{ active: p === pageNum }"
+            @click="handlePageChange(p)">{{ p }}</div>
+          <div class="page-btn" :class="{ disabled: pageNum >= totalPages }" @click="handlePageChange(pageNum + 1)">&gt;
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 新增/编辑弹窗 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="dialogTitle"
-      width="560px"
-      :close-on-click-modal="false"
-      destroy-on-close
-      @closed="resetForm"
-    >
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="560px" :close-on-click-modal="false" destroy-on-close
+      @closed="resetForm">
       <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
         <el-form-item label="优惠券名称" prop="name">
-          <el-input
-            v-model.trim="formData.name"
-            placeholder="请输入优惠券名称"
-            maxlength="50"
-            show-word-limit
-          />
+          <el-input v-model.trim="formData.name" placeholder="请输入优惠券名称" maxlength="50" show-word-limit />
         </el-form-item>
         <el-form-item label="类型" prop="type">
           <el-radio-group v-model="formData.type">
@@ -118,58 +92,28 @@
           </div>
         </el-form-item>
         <el-form-item :label="formData.type === 'AMOUNT' ? '减免金额' : '折扣率'" prop="amount">
-          <el-input-number
-            v-model="formData.amount"
-            :min="formData.type === 'AMOUNT' ? 0.01 : 0.1"
-            :max="formData.type === 'AMOUNT' ? 99999 : 9.9"
-            :step="formData.type === 'AMOUNT' ? 1 : 0.1"
-            :precision="formData.type === 'AMOUNT' ? 2 : 1"
-            controls-position="right"
-            style="width: 200px"
-          />
+          <el-input-number v-model="formData.amount" :min="formData.type === 'AMOUNT' ? 0.01 : 0.1"
+            :max="formData.type === 'AMOUNT' ? 99999 : 9.9" :step="formData.type === 'AMOUNT' ? 1 : 0.1"
+            :precision="formData.type === 'AMOUNT' ? 2 : 1" controls-position="right" style="width: 200px" />
           <span class="form-unit">{{ formData.type === 'AMOUNT' ? '元' : '折' }}</span>
         </el-form-item>
         <el-form-item label="最低消费" prop="minAmount">
-          <el-input-number
-            v-model="formData.minAmount"
-            :min="0"
-            :step="1"
-            :precision="2"
-            controls-position="right"
-            style="width: 200px"
-          />
+          <el-input-number v-model="formData.minAmount" :min="0" :step="1" :precision="2" controls-position="right"
+            style="width: 200px" />
           <span class="form-unit">元 (0 表示无门槛)</span>
         </el-form-item>
         <el-form-item label="发放总数" prop="totalCount">
-          <el-input-number
-            v-model="formData.totalCount"
-            :min="1"
-            :step="1"
-            :precision="0"
-            controls-position="right"
-            style="width: 200px"
-          />
+          <el-input-number v-model="formData.totalCount" :min="1" :step="1" :precision="0" controls-position="right"
+            style="width: 200px" />
           <span class="form-unit">张</span>
         </el-form-item>
         <el-form-item label="生效时间" prop="startTime">
-          <el-date-picker
-            v-model="formData.startTime"
-            type="datetime"
-            placeholder="选择开始时间"
-            format="YYYY-MM-DD HH:mm:ss"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            style="width: 100%"
-          />
+          <el-date-picker v-model="formData.startTime" type="datetime" placeholder="选择开始时间" format="YYYY-MM-DD HH:mm:ss"
+            value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
         </el-form-item>
         <el-form-item label="失效时间" prop="endTime">
-          <el-date-picker
-            v-model="formData.endTime"
-            type="datetime"
-            placeholder="选择结束时间"
-            format="YYYY-MM-DD HH:mm:ss"
-            value-format="YYYY-MM-DD HH:mm:ss"
-            style="width: 100%"
-          />
+          <el-date-picker v-model="formData.endTime" type="datetime" placeholder="选择结束时间" format="YYYY-MM-DD HH:mm:ss"
+            value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="formData.status">
@@ -185,13 +129,7 @@
     </el-dialog>
 
     <!-- 发放弹窗 -->
-    <el-dialog
-      v-model="distributeVisible"
-      title="发放优惠券"
-      width="420px"
-      :close-on-click-modal="false"
-      destroy-on-close
-    >
+    <el-dialog v-model="distributeVisible" title="发放优惠券" width="420px" :close-on-click-modal="false" destroy-on-close>
       <div v-if="distributeRow" class="distribute-content">
         <div class="distribute-info">
           <span class="info-label">优惠券：</span>
@@ -201,17 +139,11 @@
           <span class="info-label">已领：</span>
           <span class="info-value">{{ distributeRow.receivedCount }} / {{ distributeRow.totalCount }}</span>
         </div>
-        <el-form ref="distributeFormRef" :model="distributeForm" :rules="distributeRules" label-width="80px" style="margin-top: 16px">
+        <el-form ref="distributeFormRef" :model="distributeForm" :rules="distributeRules" label-width="80px"
+          style="margin-top: 16px">
           <el-form-item label="用户 ID" prop="userId">
-            <el-input-number
-              v-model="distributeForm.userId"
-              :min="1"
-              :step="1"
-              :precision="0"
-              controls-position="right"
-              placeholder="请输入用户 ID"
-              style="width: 100%"
-            />
+            <el-input-number v-model="distributeForm.userId" :min="1" :step="1" :precision="0" controls-position="right"
+              placeholder="请输入用户 ID" style="width: 100%" />
           </el-form-item>
         </el-form>
       </div>
@@ -300,7 +232,7 @@ function formatDate(time: string): string {
 /* === 新增/编辑弹窗 === */
 const dialogVisible = ref<boolean>(false)
 const dialogTitle = ref<string>('新增优惠券')
-const editingId = ref<number | null>(null)
+const editingId = ref<number | string | null>(null)
 const submitting = ref<boolean>(false)
 const formRef = ref<FormInstance | null>(null)
 
@@ -445,7 +377,7 @@ async function handleDelete(row: CouponVO): Promise<void> {
 }
 
 /* === 启停 === */
-const statusLoadingId = ref<number | null>(null)
+const statusLoadingId = ref<number | string | null>(null)
 async function handleStatusChange(row: CouponVO): Promise<void> {
   const nextStatus = row.status === 1 ? 0 : 1
   statusLoadingId.value = row.id

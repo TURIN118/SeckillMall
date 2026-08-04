@@ -27,12 +27,7 @@
         <!-- 左列: 图片轮播 -->
         <div>
           <div class="detail-carousel">
-            <el-image
-              v-if="currentImage"
-              :src="currentImage"
-              fit="cover"
-              class="carousel-image"
-            >
+            <el-image v-if="currentImage" :src="currentImage" fit="cover" class="carousel-image">
               <template #error>
                 <div class="img-placeholder">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -52,24 +47,15 @@
             </div>
             <!-- 轮播指示点 -->
             <div v-if="displayImages.length > 1" class="carousel-dots">
-              <span
-                v-for="(img, idx) in displayImages"
-                :key="idx"
-                :class="{ active: idx === currentImageIdx }"
-                @click="currentImageIdx = idx"
-              ></span>
+              <span v-for="(img, idx) in displayImages" :key="idx" :class="{ active: idx === currentImageIdx }"
+                @click="currentImageIdx = idx"></span>
             </div>
           </div>
           <!-- 缩略图列表 -->
           <div v-if="displayImages.length > 1" class="thumb-list">
-            <div
-              v-for="(img, idx) in displayImages"
-              :key="idx"
-              class="thumb-item"
-              :class="{ active: idx === currentImageIdx }"
-              @click="currentImageIdx = idx"
-            >
-              <el-image :src="img" fit="cover" class="thumb-image" lazy>
+            <div v-for="(img, idx) in displayImages" :key="idx" class="thumb-item"
+              :class="{ active: idx === currentImageIdx }" @click="currentImageIdx = idx">
+              <el-image :src="formatImageUrl(img)" fit="cover" class="thumb-image" lazy>
                 <template #error>
                   <div class="thumb-placeholder">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -84,13 +70,14 @@
           </div>
           <!-- 分享/收藏 -->
           <div class="action-row">
-            <span class="action-item">
+            <span class="action-item" :class="{ favorited: isFavorited }" @click="handleFavorite">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                <path
+                  d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
               </svg>
-              收藏
+              {{ isFavorited ? '已收藏' : '收藏' }}
             </span>
-            <span class="action-item">
+            <span class="action-item" @click="handleShare">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="18" cy="5" r="3" />
                 <circle cx="6" cy="12" r="3" />
@@ -144,28 +131,32 @@
           <!-- 服务保障 -->
           <div class="service-bar">
             <span class="service-item">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)"
+                stroke-width="2">
                 <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
                 <path d="M22 4L12 14.01l-3-3" />
               </svg>
               正品保障
             </span>
             <span class="service-item">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)"
+                stroke-width="2">
                 <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
                 <path d="M22 4L12 14.01l-3-3" />
               </svg>
               7天无理由
             </span>
             <span class="service-item">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)"
+                stroke-width="2">
                 <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
                 <path d="M22 4L12 14.01l-3-3" />
               </svg>
               运费险
             </span>
             <span class="service-item">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)"
+                stroke-width="2">
                 <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
                 <path d="M22 4L12 14.01l-3-3" />
               </svg>
@@ -175,12 +166,9 @@
 
           <!-- 操作按钮 -->
           <div class="action-buttons">
-            <button
-              class="action-btn primary"
-              :disabled="product.status === 'OFF_SHELF' || product.stock <= 0"
-              @click="goProductList"
-            >{{ product.stock <= 0 ? '暂无库存' : '立即购买' }}</button>
-            <button class="action-btn ghost" @click="router.push('/products')">返回列表</button>
+            <button class="action-btn primary" :disabled="product.status === 'OFF_SHELF' || product.stock <= 0"
+              @click="handleBuyNow">{{ product.stock <= 0 ? '暂无库存' : '立即购买' }}</button>
+                <button class="action-btn ghost" @click="router.push('/products')">返回列表</button>
           </div>
         </div>
       </div>
@@ -188,26 +176,10 @@
       <!-- 商品详情 Tab -->
       <div class="detail-tabs-wrap">
         <div class="detail-tabs">
-          <div
-            class="detail-tab"
-            :class="{ active: activeTab === 'detail' }"
-            @click="activeTab = 'detail'"
-          >商品详情</div>
-          <div
-            class="detail-tab"
-            :class="{ active: activeTab === 'spec' }"
-            @click="activeTab = 'spec'"
-          >规格参数</div>
-          <div
-            class="detail-tab"
-            :class="{ active: activeTab === 'review' }"
-            @click="switchTab('review')"
-          >用户评价</div>
-          <div
-            class="detail-tab"
-            :class="{ active: activeTab === 'service' }"
-            @click="activeTab = 'service'"
-          >售后保障</div>
+          <div class="detail-tab" :class="{ active: activeTab === 'detail' }" @click="activeTab = 'detail'">商品详情</div>
+          <div class="detail-tab" :class="{ active: activeTab === 'spec' }" @click="activeTab = 'spec'">规格参数</div>
+          <div class="detail-tab" :class="{ active: activeTab === 'review' }" @click="switchTab('review')">用户评价</div>
+          <div class="detail-tab" :class="{ active: activeTab === 'service' }" @click="activeTab = 'service'">售后保障</div>
         </div>
         <div class="detail-tab-content">
           <!-- 商品详情 -->
@@ -255,29 +227,16 @@
                 <div class="review-form-row">
                   <span class="review-form-label">评分：</span>
                   <div class="rating-star-input">
-                    <span
-                      v-for="star in 5"
-                      :key="star"
-                      class="star"
-                      :class="{ filled: star <= reviewForm.rating }"
-                      @click="reviewForm.rating = star"
-                    >★</span>
+                    <span v-for="star in 5" :key="star" class="star" :class="{ filled: star <= reviewForm.rating }"
+                      @click="reviewForm.rating = star">★</span>
                   </div>
                   <span class="rating-text">{{ reviewForm.rating }} 星</span>
                 </div>
-                <textarea
-                  v-model="reviewForm.content"
-                  class="review-textarea"
-                  placeholder="请输入您的评价内容（最多 1000 字）"
-                  maxlength="1000"
-                  rows="4"
-                ></textarea>
+                <textarea v-model="reviewForm.content" class="review-textarea" placeholder="请输入您的评价内容（最多 1000 字）"
+                  maxlength="1000" rows="4"></textarea>
                 <div class="review-form-actions">
-                  <button
-                    class="btn-sm primary"
-                    :disabled="reviewSubmitting || !reviewForm.content.trim()"
-                    @click="submitReview"
-                  >{{ reviewSubmitting ? '提交中...' : '发表评价' }}</button>
+                  <button class="btn-sm primary" :disabled="reviewSubmitting || !reviewForm.content.trim()"
+                    @click="submitReview">{{ reviewSubmitting ? '提交中...' : '发表评价' }}</button>
                 </div>
               </template>
             </div>
@@ -291,25 +250,15 @@
                 <div class="review-item-header">
                   <span class="review-user">{{ review.userName || '匿名用户' }}</span>
                   <span class="review-rating">
-                    <span
-                      v-for="star in 5"
-                      :key="star"
-                      class="star small"
-                      :class="{ filled: star <= review.rating }"
-                    >★</span>
+                    <span v-for="star in 5" :key="star" class="star small"
+                      :class="{ filled: star <= review.rating }">★</span>
                   </span>
                   <span class="review-time">{{ formatTime(review.createTime) }}</span>
                 </div>
                 <div class="review-content">{{ review.content }}</div>
                 <div v-if="review.images && review.images.length > 0" class="review-images">
-                  <el-image
-                    v-for="(img, idx) in review.images"
-                    :key="idx"
-                    :src="img"
-                    fit="cover"
-                    class="review-img"
-                    lazy
-                  />
+                  <el-image v-for="(img, idx) in review.images" :key="idx" :src="formatImageUrl(img)" fit="cover"
+                    class="review-img" lazy />
                 </div>
                 <div v-if="review.replyContent" class="review-reply">
                   <div class="reply-label">商家回复：</div>
@@ -321,17 +270,11 @@
 
             <!-- 评论分页 -->
             <div v-if="reviewTotal > reviewPageSize" class="review-pagination">
-              <button
-                class="btn-sm"
-                :disabled="reviewPageNum <= 1"
-                @click="changeReviewPage(reviewPageNum - 1)"
-              >上一页</button>
+              <button class="btn-sm" :disabled="reviewPageNum <= 1"
+                @click="changeReviewPage(reviewPageNum - 1)">上一页</button>
               <span class="page-info-text">第 {{ reviewPageNum }} 页 / 共 {{ reviewTotalPages }} 页</span>
-              <button
-                class="btn-sm"
-                :disabled="reviewPageNum >= reviewTotalPages"
-                @click="changeReviewPage(reviewPageNum + 1)"
-              >下一页</button>
+              <button class="btn-sm" :disabled="reviewPageNum >= reviewTotalPages"
+                @click="changeReviewPage(reviewPageNum + 1)">下一页</button>
             </div>
           </template>
 
@@ -362,9 +305,13 @@ import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getProductDetail } from '@/api/product'
 import { getProductReviews, createReview } from '@/api/review'
+import { getWalletBalance } from '@/api/wallet'
+import { createOrder, payNormalOrder } from '@/api/order'
+import { checkFavorite, addFavorite, removeFavorite } from '@/api/favorite'
 import { useUserStore } from '@/stores/user'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
+import { formatImageUrl } from '@/utils/image'
 import type { ProductVO, ProductReviewVO } from '@/types'
 
 const route = useRoute()
@@ -375,6 +322,9 @@ const loading = ref<boolean>(false)
 const error = ref<boolean>(false)
 const product = ref<ProductVO | null>(null)
 const currentImageIdx = ref<number>(0)
+
+/** 是否已收藏当前商品 */
+const isFavorited = ref<boolean>(false)
 
 /** 当前激活的 Tab */
 const activeTab = ref<'detail' | 'spec' | 'review' | 'service'>('detail')
@@ -404,7 +354,7 @@ const displayImages = computed<string[]>(() => {
 
 /** 当前展示图片 */
 const currentImage = computed<string>(() => {
-  return displayImages.value[currentImageIdx.value] || ''
+  return formatImageUrl(displayImages.value[currentImageIdx.value] || '')
 })
 
 /** 从路由参数获取商品ID */
@@ -515,6 +465,166 @@ function goProductList(): void {
   router.push('/products')
 }
 
+/* ==================== 需求5: 立即购买 (钱包支付) ==================== */
+
+/**
+ * 立即购买：弹窗确认 → 钱包余额支付 → 跳转订单详情
+ * 数量固定为 1 (详情页无数量选择器，符合当前交互)
+ */
+async function handleBuyNow(): Promise<void> {
+  // 1. 登录校验
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录')
+    router.push(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
+    return
+  }
+
+  // 2. 商品状态/库存校验
+  if (!product.value) return
+  if (product.value.status === 'OFF_SHELF') {
+    ElMessage.warning('商品已下架')
+    return
+  }
+  if (product.value.stock <= 0) {
+    ElMessage.warning('商品库存不足')
+    return
+  }
+
+  const productId = getProductId()
+  if (!productId || Number.isNaN(productId)) {
+    ElMessage.error('商品参数错误')
+    return
+  }
+
+  const productName = product.value.productName
+  const unitPrice = Number(product.value.originalPrice || 0)
+  const quantity = 1
+  const totalAmount = unitPrice * quantity
+
+  // 3. 拉取钱包余额
+  let balance = 0
+  try {
+    const balRes = await getWalletBalance()
+    balance = Number(balRes.data || 0)
+  } catch {
+    // 错误已由全局拦截器提示
+    return
+  }
+
+  // 4. 余额不足：提示去充值
+  if (balance < totalAmount) {
+    try {
+      await ElMessageBox.confirm(
+        `商品「${productName}」应付 ¥${totalAmount.toFixed(2)}，钱包余额 ¥${balance.toFixed(2)}，余额不足。`,
+        '余额不足',
+        {
+          confirmButtonText: '去充值',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      )
+      router.push('/user/wallet')
+    } catch {
+      // 用户取消，无需处理
+    }
+    return
+  }
+
+  // 5. 余额充足：弹窗确认结算
+  try {
+    await ElMessageBox.confirm(
+      `商品：${productName}\n单价：¥${unitPrice.toFixed(2)}\n数量：${quantity}\n合计：¥${totalAmount.toFixed(2)}\n钱包余额：¥${balance.toFixed(2)}`,
+      '确认支付',
+      {
+        confirmButtonText: '确认支付',
+        cancelButtonText: '取消',
+        type: 'info'
+      }
+    )
+  } catch {
+    // 用户取消支付
+    return
+  }
+
+  // 6. 创建订单 → 钱包支付 → 跳转订单详情
+  try {
+    const createRes = await createOrder({ productId, quantity })
+    const orderId = createRes.data.id
+    await payNormalOrder(orderId, 'WALLET')
+    ElMessage.success('支付成功')
+    router.push(`/user/orders/${orderId}?type=NORMAL`)
+  } catch {
+    // 错误已由全局拦截器提示
+  }
+}
+
+/* ==================== 需求6: 收藏 / 分享 ==================== */
+
+/** 初始化收藏状态 (已登录时检查当前商品是否已收藏) */
+async function initFavoriteStatus(): Promise<void> {
+  isFavorited.value = false
+  if (!userStore.isLoggedIn) return
+  const productId = getProductId()
+  if (!productId || Number.isNaN(productId)) return
+  try {
+    const res = await checkFavorite(productId)
+    isFavorited.value = !!res.data
+  } catch {
+    // 错误已由全局拦截器提示
+  }
+}
+
+/** 切换收藏状态 */
+async function handleFavorite(): Promise<void> {
+  // 登录校验
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录')
+    router.push(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
+    return
+  }
+  const productId = getProductId()
+  if (!productId || Number.isNaN(productId)) {
+    ElMessage.error('商品参数错误')
+    return
+  }
+
+  try {
+    if (isFavorited.value) {
+      // 已收藏 → 取消收藏
+      await removeFavorite(productId)
+      isFavorited.value = false
+      ElMessage.success('已取消收藏')
+    } else {
+      // 未收藏 → 添加收藏
+      await addFavorite({ productId })
+      isFavorited.value = true
+      ElMessage.success('收藏成功')
+    }
+  } catch {
+    // 错误已由全局拦截器提示
+  }
+}
+
+/** 分享：复制当前商品链接到剪贴板 */
+async function handleShare(): Promise<void> {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(window.location.href)
+    } else {
+      // 兜底：使用 execCommand 兼容非安全上下文 (HTTP / 旧浏览器)
+      const input = document.createElement('input')
+      input.value = window.location.href
+      document.body.appendChild(input)
+      input.select()
+      document.execCommand('copy')
+      document.body.removeChild(input)
+    }
+    ElMessage.success('商品链接已复制')
+  } catch {
+    ElMessage.error('复制失败，请手动复制地址栏链接')
+  }
+}
+
 watch(
   () => route.params.id,
   () => {
@@ -525,12 +635,15 @@ watch(
       reviewPageNum.value = 1
       reviewList.value = []
       reviewTotal.value = 0
+      // 切换商品时重新检查收藏状态
+      initFavoriteStatus()
     }
   }
 )
 
 onMounted(() => {
   fetchDetail()
+  initFavoriteStatus()
 })
 </script>
 
@@ -559,8 +672,13 @@ onMounted(() => {
 }
 
 @keyframes skeleton-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* 错误状态 */
@@ -770,6 +888,15 @@ onMounted(() => {
   color: var(--color-primary);
 }
 
+/* 已收藏状态：高亮显示 */
+.action-item.favorited {
+  color: var(--color-primary);
+}
+
+.action-item.favorited svg {
+  fill: var(--color-primary);
+}
+
 /* 右列商品信息：对照 .detail-info 样式 */
 .detail-info h2 {
   font-size: 20px;
@@ -964,10 +1091,12 @@ onMounted(() => {
   max-width: 100%;
   height: auto;
 }
+
 .desc-content :deep(p) {
   margin: 8px 0;
   line-height: 1.8;
 }
+
 .desc-content :deep(h1),
 .desc-content :deep(h2),
 .desc-content :deep(h3),
@@ -976,22 +1105,26 @@ onMounted(() => {
   font-weight: 700;
   color: var(--color-text-primary);
 }
+
 .desc-content :deep(ul),
 .desc-content :deep(ol) {
   margin: 8px 0;
   padding-left: 24px;
 }
+
 .desc-content :deep(blockquote) {
   margin: 8px 0;
   padding: 8px 16px;
   border-left: 4px solid var(--color-primary);
   background: var(--color-bg-subtle);
 }
+
 .desc-content :deep(table) {
   width: 100%;
   border-collapse: collapse;
   margin: 8px 0;
 }
+
 .desc-content :deep(table td),
 .desc-content :deep(table th) {
   border: 1px solid var(--color-border);
@@ -1042,6 +1175,7 @@ onMounted(() => {
   gap: 12px;
   font-size: 13px;
 }
+
 .spec-row {
   display: flex;
   justify-content: space-between;
@@ -1049,9 +1183,11 @@ onMounted(() => {
   background: var(--color-bg-subtle);
   border-radius: 4px;
 }
+
 .spec-row dt {
   color: var(--color-text-secondary);
 }
+
 .spec-row dd {
   font-weight: 600;
   color: var(--color-text-primary);
@@ -1064,12 +1200,14 @@ onMounted(() => {
   margin-bottom: 12px;
   color: var(--color-text-primary);
 }
+
 .service-content ul {
   padding-left: 20px;
   font-size: 13px;
   color: var(--color-text-secondary);
   line-height: 1.8;
 }
+
 .service-content li {
   margin-bottom: 6px;
 }
@@ -1081,38 +1219,46 @@ onMounted(() => {
   border-radius: var(--radius-lg);
   margin-bottom: 20px;
 }
+
 .review-form-title {
   font-size: 14px;
   font-weight: 700;
   margin-bottom: 12px;
   color: var(--color-text-primary);
 }
+
 .review-login-tip {
   font-size: 13px;
   color: var(--color-text-secondary);
   padding: 8px 0;
 }
+
 .review-login-link {
   color: var(--color-primary);
   text-decoration: none;
 }
+
 .review-login-link:hover {
   text-decoration: underline;
 }
+
 .review-form-row {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
 }
+
 .review-form-label {
   font-size: 13px;
   color: var(--color-text-secondary);
 }
+
 .rating-star-input {
   display: inline-flex;
   gap: 2px;
 }
+
 .star {
   font-size: 20px;
   color: var(--color-text-muted);
@@ -1120,18 +1266,22 @@ onMounted(() => {
   user-select: none;
   transition: color 0.2s;
 }
+
 .star.filled {
   color: #f5a623;
 }
+
 .star.small {
   font-size: 14px;
   cursor: default;
 }
+
 .rating-text {
   font-size: 12px;
   color: var(--color-text-secondary);
   margin-left: 4px;
 }
+
 .review-textarea {
   width: 100%;
   padding: 10px;
@@ -1143,9 +1293,11 @@ onMounted(() => {
   font-family: inherit;
   box-sizing: border-box;
 }
+
 .review-textarea:focus {
   border-color: var(--color-primary);
 }
+
 .review-form-actions {
   margin-top: 10px;
   display: flex;
@@ -1156,39 +1308,47 @@ onMounted(() => {
 .review-list {
   min-height: 100px;
 }
+
 .review-empty {
   text-align: center;
   padding: 40px 0;
   font-size: 13px;
   color: var(--color-text-secondary);
 }
+
 .review-item {
   padding: 16px 0;
   border-bottom: 1px solid var(--color-border-light, var(--color-border));
 }
+
 .review-item:last-child {
   border-bottom: none;
 }
+
 .review-item-header {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 8px;
 }
+
 .review-user {
   font-size: 13px;
   font-weight: 600;
   color: var(--color-text-primary);
 }
+
 .review-rating {
   display: inline-flex;
   gap: 1px;
 }
+
 .review-time {
   font-size: 12px;
   color: var(--color-text-muted);
   margin-left: auto;
 }
+
 .review-content {
   font-size: 13px;
   color: var(--color-text-primary);
@@ -1196,23 +1356,27 @@ onMounted(() => {
   margin-bottom: 8px;
   white-space: pre-wrap;
 }
+
 .review-images {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 8px;
 }
+
 .review-img {
   width: 80px;
   height: 80px;
   border-radius: 4px;
   border: 1px solid var(--color-border);
 }
+
 .review-img :deep(img) {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
 .review-reply {
   background: var(--color-bg-subtle);
   padding: 10px 12px;
@@ -1220,15 +1384,18 @@ onMounted(() => {
   font-size: 12px;
   margin-top: 8px;
 }
+
 .reply-label {
   font-weight: 600;
   color: var(--color-primary);
   margin-bottom: 4px;
 }
+
 .reply-content {
   color: var(--color-text-secondary);
   line-height: 1.6;
 }
+
 .reply-time {
   color: var(--color-text-muted);
   margin-top: 4px;
@@ -1243,6 +1410,7 @@ onMounted(() => {
   gap: 12px;
   margin-top: 20px;
 }
+
 .page-info-text {
   font-size: 12px;
   color: var(--color-text-secondary);
@@ -1254,12 +1422,15 @@ onMounted(() => {
     grid-template-columns: 1fr;
     padding: 0 16px 16px;
   }
+
   .detail-meta {
     grid-template-columns: 1fr;
   }
+
   .detail-tabs-wrap {
     padding: 0 16px;
   }
+
   .spec-list {
     grid-template-columns: 1fr;
   }

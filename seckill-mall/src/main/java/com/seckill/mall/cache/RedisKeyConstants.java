@@ -38,10 +38,6 @@ public final class RedisKeyConstants {
         return SECKILL_BOUGHT + seckillId;
     }
 
-    public static String seckillMark(Long seckillId, Long userId) {
-        return SECKILL_MARK + seckillId + ":" + userId;
-    }
-
     public static String seckillResult(Long seckillId, Long userId) {
         return SECKILL_RESULT + seckillId + ":" + userId;
     }
@@ -52,18 +48,6 @@ public final class RedisKeyConstants {
 
     public static String seckillToken(Long seckillId, Long userId) {
         return SECKILL_TOKEN + seckillId + ":" + userId;
-    }
-
-    public static String rateSeckill(Long userId) {
-        return RATE_SECKILL + userId;
-    }
-
-    public static String rateIp(String ip, String path) {
-        return RATE_IP + ip + ":" + path;
-    }
-
-    public static String loginFail(String username) {
-        return LOGIN_FAIL + username;
     }
 
     public static String tokenBlacklist(String tokenId) {

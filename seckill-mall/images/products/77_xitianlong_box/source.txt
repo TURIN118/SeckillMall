@@ -1,0 +1,5 @@
+product: 禧天龙 收纳箱 60L
+query: 禧天龙 收纳箱 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01UNbtvL1UTkeoqa4z0_!!2211027002519-0-cib.310x310.jpg
+02_detail.jpg	https://y.zdmimg.com/202303/23/641be9d52a2f77909.jpg_d250.jpg
+03_detail.jpg	https://y.zdmimg.com/202601/07/695e446eb5b726024.jpg_d250.jpg

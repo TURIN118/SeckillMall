@@ -3,13 +3,8 @@
   <div class="order-page">
     <!-- 标签页 -->
     <div class="order-tabs">
-      <div
-        v-for="tab in tabs"
-        :key="tab.name"
-        class="order-tab"
-        :class="{ active: activeTab === tab.name }"
-        @click="handleTabChange(tab.name)"
-      >{{ tab.label }}</div>
+      <div v-for="tab in tabs" :key="tab.name" class="order-tab" :class="{ active: activeTab === tab.name }"
+        @click="handleTabChange(tab.name)">{{ tab.label }}</div>
     </div>
 
     <!-- 加载骨架屏 -->
@@ -32,16 +27,14 @@
 
     <!-- 订单列表 -->
     <div v-else>
-      <div
-        v-for="order in orderList"
-        :key="order.id"
-        class="order-card"
-        :class="{ 'order-disabled': isDisabledStatus(order.status) }"
-        @click="goDetail(order)"
-      >
-        <!-- 商品图 -->
+      <div v-for="order in orderList" :key="order.id" class="order-card"
+        :class="{ 'order-disabled': isDisabledStatus(order.status) }" @click="goDetail(order)">
+        <!-- 商品图：显示第一个商品图片，无图则显示 SVG 占位 -->
         <div class="order-card-img">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <img v-if="order.items && order.items.length > 0 && order.items[0].productImage"
+            :src="formatImageUrl(order.items[0].productImage)" :alt="order.items[0].productName"
+            class="order-card-img-tag" loading="lazy" />
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="3" y="3" width="18" height="18" rx="2" />
             <circle cx="8.5" cy="8.5" r="1.5" />
             <path d="m21 15-5-5L5 21" />
@@ -50,23 +43,19 @@
 
         <!-- 信息 -->
         <div class="order-card-info">
-          <div class="order-card-name">商品 ID：{{ order.productId }}</div>
+          <div class="order-card-name">
+            {{ order.items && order.items.length > 0 ? order.items[0].productName : '—' }}
+            <span v-if="order.items && order.items.length > 1" class="order-item-count">等{{ order.items.length
+            }}件商品</span>
+          </div>
           <div class="order-card-time">
             下单时间：{{ formatTime(order.createTime) }} &nbsp;|&nbsp; 订单号：{{ order.orderNo }}
           </div>
           <div class="order-card-status">
-            <span class="status-tag" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
-            <span
-              v-if="order.status === 'UNPAID' && order.payExpireTime"
-              class="order-countdown-text"
-            >
-              <SeckillCountdown
-                :target-time="order.payExpireTime"
-                size="small"
-                @end="handleCountdownEnd"
-              />
-              <span class="countdown-suffix">自动取消</span>
+            <span class="order-type-tag" :class="order.orderType === 'SECKILL' ? 'seckill' : 'normal'">
+              {{ order.orderType === 'SECKILL' ? '秒杀订单' : '普通订单' }}
             </span>
+            <span class="status-tag" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
           </div>
         </div>
 
@@ -78,24 +67,14 @@
               <button class="btn-sm text" @click.stop="handleCancel(order)">取消订单</button>
               <button class="btn-sm primary" @click.stop="goPay(order)">去支付</button>
             </template>
-            <button
-              v-else
-              class="btn-sm"
-              @click.stop="goDetail(order)"
-            >查看订单</button>
+            <button v-else class="btn-sm" @click.stop="goDetail(order)">查看订单</button>
           </div>
         </div>
       </div>
 
       <!-- 分页 -->
-      <PaginationWrapper
-        v-if="total > 0"
-        :total="total"
-        :page-num="pageNum"
-        :page-size="pageSize"
-        :page-sizes="[10, 20, 50]"
-        @change="handlePageChange"
-      />
+      <PaginationWrapper v-if="total > 0" :total="total" :page-num="pageNum" :page-size="pageSize"
+        :page-sizes="[10, 20, 50]" @change="handlePageChange" />
     </div>
   </div>
 </template>
@@ -108,16 +87,17 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getOrderList, cancelOrder } from '@/api/order'
-import SeckillCountdown from '@/components/SeckillCountdown.vue'
+import { getUnifiedOrderList, cancelOrder, cancelNormalOrder } from '@/api/order'
+
 import PaginationWrapper from '@/components/PaginationWrapper.vue'
+import { formatImageUrl } from '@/utils/image'
 import dayjs from 'dayjs'
-import type { SeckillOrder, OrderStatus } from '@/types'
+import type { OrderListItemVO } from '@/types'
 
 const router = useRouter()
 
 const loading = ref<boolean>(false)
-const orderList = ref<SeckillOrder[]>([])
+const orderList = ref<OrderListItemVO[]>([])
 const total = ref<number>(0)
 const activeTab = ref<string>('all')
 const pageNum = ref<number>(1)
@@ -132,8 +112,8 @@ const tabs = [
 ]
 
 /** 状态标签 class 映射：unpaid 橙 / paid 绿 / cancelled 灰 / timeout 红 / completed 蓝 */
-function statusClass(status: OrderStatus): string {
-  const map: Record<OrderStatus, string> = {
+function statusClass(status: string): string {
+  const map: Record<string, string> = {
     UNPAID: 'unpaid',
     PAID: 'paid',
     CANCELLED: 'cancelled',
@@ -143,8 +123,8 @@ function statusClass(status: OrderStatus): string {
   return map[status] || 'cancelled'
 }
 
-function statusLabel(status: OrderStatus): string {
-  const map: Record<OrderStatus, string> = {
+function statusLabel(status: string): string {
+  const map: Record<string, string> = {
     UNPAID: '待支付',
     PAID: '已支付',
     CANCELLED: '已取消',
@@ -155,7 +135,7 @@ function statusLabel(status: OrderStatus): string {
 }
 
 /** 是否为禁用状态 (取消/超时) */
-function isDisabledStatus(status: OrderStatus): boolean {
+function isDisabledStatus(status: string): boolean {
   return status === 'CANCELLED' || status === 'TIMEOUT'
 }
 
@@ -163,8 +143,8 @@ function isDisabledStatus(status: OrderStatus): boolean {
 async function fetchOrders(): Promise<void> {
   loading.value = true
   try {
-    const res = await getOrderList({
-      status: activeTab.value === 'all' ? undefined : (activeTab.value as OrderStatus),
+    const res = await getUnifiedOrderList({
+      status: activeTab.value === 'all' ? undefined : activeTab.value,
       pageNum: pageNum.value,
       pageSize: pageSize.value
     })
@@ -192,23 +172,28 @@ function handlePageChange(payload: { pageNum: number; pageSize: number }): void 
 }
 
 /** 跳转订单详情/去支付 */
-function goPay(order: SeckillOrder): void {
-  router.push(`/user/orders/${order.id}`)
+function goPay(order: OrderListItemVO): void {
+  router.push(`/user/orders/${order.id}?type=${order.orderType}`)
 }
 
-function goDetail(order: SeckillOrder): void {
-  router.push(`/user/orders/${order.id}`)
+function goDetail(order: OrderListItemVO): void {
+  router.push(`/user/orders/${order.id}?type=${order.orderType}`)
 }
 
-/** 取消订单 */
-async function handleCancel(order: SeckillOrder): Promise<void> {
+/** 取消订单：根据 orderType 调用不同取消接口（BUG-002 修复） */
+async function handleCancel(order: OrderListItemVO): Promise<void> {
   try {
     await ElMessageBox.confirm('确定取消该订单吗？', '取消确认', {
       type: 'warning',
       confirmButtonText: '确定',
       cancelButtonText: '再想想'
     })
-    await cancelOrder(order.id)
+    // 普通订单走 cancel-normal 接口（操作 t_normal_order），秒杀订单走原 cancel 接口
+    if (order.orderType === 'NORMAL') {
+      await cancelNormalOrder(order.id)
+    } else {
+      await cancelOrder(order.id)
+    }
     ElMessage.success('订单已取消')
     fetchOrders()
   } catch {
@@ -216,11 +201,6 @@ async function handleCancel(order: SeckillOrder): Promise<void> {
   }
 }
 
-/** 倒计时结束 (支付超时) */
-function handleCountdownEnd(): void {
-  ElMessage.warning('支付超时，订单已自动取消')
-  fetchOrders()
-}
 
 /** 格式化时间 */
 function formatTime(time: string): string {
@@ -285,8 +265,13 @@ onMounted(() => {
 }
 
 @keyframes skeleton-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* 空状态 */
@@ -349,6 +334,41 @@ onMounted(() => {
   width: 28px;
   height: 28px;
   color: var(--color-text-muted);
+}
+
+.order-card-img-tag {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.order-item-count {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  margin-left: 6px;
+}
+
+/* 订单类型标签：seckill 红 / normal 蓝 */
+.order-type-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-right: 6px;
+}
+
+.order-type-tag.seckill {
+  background: #fff1f0;
+  color: #cf1322;
+}
+
+.order-type-tag.normal {
+  background: #e6f4ff;
+  color: #1677ff;
 }
 
 .order-card-info {

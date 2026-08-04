@@ -19,6 +19,14 @@
           AND is_deleted = 0
     </select>
 
+    <select id="findByEmail" resultType="com.seckill.mall.entity.User">
+        SELECT id, username, password, phone, email, nickname, avatar_url,
+               role, status, is_deleted, create_time, update_time
+        FROM t_user
+        WHERE email = #{email}
+          AND is_deleted = 0
+    </select>
+
     <!-- 用户注册趋势：按日期分组统计注册数 -->
     <select id="selectUserTrend" resultType="java.util.Map">
         SELECT DATE(create_time) AS dt,

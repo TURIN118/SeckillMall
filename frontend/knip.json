@@ -1,0 +1,15 @@
+{
+    "entry": [
+        "src/main.ts",
+        "src/App.vue"
+    ],
+    "ignore": [
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/*.test.ts",
+        "**/*.spec.ts"
+    ],
+    "ignoreDependencies": [
+        "@types/*"
+    ]
+}

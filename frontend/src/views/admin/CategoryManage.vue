@@ -110,11 +110,11 @@ const categoryList = ref<CategoryVO[]>([])
 const categoryTree = ref<CategoryTreeNode[]>([])
 
 /* === 展开状态 === */
-const expandedSet = ref<Set<number>>(new Set())
+const expandedSet = ref<Set<number | string>>(new Set())
 
 /* === 构建树结构 === */
 function buildTree(list: CategoryVO[]): CategoryTreeNode[] {
-  const map = new Map<number, CategoryTreeNode>()
+  const map = new Map<number | string, CategoryTreeNode>()
   const roots: CategoryTreeNode[] = []
   list.forEach((item) => {
     map.set(item.id, { ...item, children: [] })
@@ -177,7 +177,7 @@ const flatNodes = computed<FlatNode[]>(() => {
 })
 
 /* === 切换展开 === */
-function toggleExpand(id: number): void {
+function toggleExpand(id: number | string): void {
   if (expandedSet.value.has(id)) {
     expandedSet.value.delete(id)
   } else {
@@ -213,7 +213,7 @@ const rootCategories = computed<CategoryVO[]>(() =>
 /* === 弹窗 === */
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增分类')
-const editingId = ref<number | null>(null)
+const editingId = ref<number | string | null>(null)
 const submitting = ref(false)
 const formRef = ref<FormInstance | null>(null)
 
@@ -335,7 +335,7 @@ async function handleDelete(row: CategoryVO): Promise<void> {
 }
 
 /* === 切换分类状态 === */
-const statusLoadingId = ref<number | null>(null)
+const statusLoadingId = ref<number | string | null>(null)
 async function handleStatusChange(node: CategoryVO): Promise<void> {
   const nextStatus = node.status === 1 ? 0 : 1
   statusLoadingId.value = node.id

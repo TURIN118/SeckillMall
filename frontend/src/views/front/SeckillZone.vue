@@ -16,15 +16,23 @@
 
     <!-- === Tab 切换 === -->
     <div class="zone-tabs">
-      <div
-        v-for="tab in tabs"
-        :key="tab.key"
-        class="zone-tab"
-        :class="{ active: activeTab === tab.key }"
-        @click="activeTab = tab.key"
-      >
+      <div v-for="tab in tabs" :key="tab.key" class="zone-tab" :class="{ active: activeTab === tab.key }"
+        @click="activeTab = tab.key">
         <span class="tab-label">{{ tab.label }}</span>
         <span class="tab-count">{{ tab.key === 'ACTIVE' ? activeList.length : pendingList.length }}</span>
+      </div>
+    </div>
+
+    <!-- === 分类筛选栏（仅一级分类） === -->
+    <div class="zone-category">
+      <!-- 一级分类 -->
+      <div class="category-row">
+        <span class="cat-row-label">分类：</span>
+        <div class="cat-tags">
+          <span class="cat-tag" :class="{ active: selectedFirstId === null }" @click="selectFirst(null)">全部</span>
+          <span v-for="cat in firstLevelCategories" :key="cat.id" class="cat-tag"
+            :class="{ active: selectedFirstId === cat.id }" @click="selectFirst(cat.id)">{{ cat.categoryName }}</span>
+        </div>
       </div>
     </div>
 
@@ -37,29 +45,22 @@
         </div>
         <template v-else>
           <div v-if="activeList.length > 0" class="seckill-grid">
-            <div
-              v-for="item in activeList"
-              :key="item.id"
-              class="seckill-card"
-              @click="goDetail(item.id)"
-            >
+            <div v-for="item in activeList" :key="item.id" class="seckill-card" @click="goDetail(item.id)">
               <!-- 商品图片 -->
               <div class="card-img">
-                <el-image
-                  v-if="cardImage(item)"
-                  :src="cardImage(item)"
-                  fit="cover"
-                  class="card-img-tag"
-                  lazy
-                >
+                <el-image v-if="cardImage(item)" :src="cardImage(item)" fit="cover" class="card-img-tag" lazy>
                   <template #error>
                     <div class="img-placeholder">
-                      <el-icon :size="40"><Picture /></el-icon>
+                      <el-icon :size="40">
+                        <Picture />
+                      </el-icon>
                     </div>
                   </template>
                 </el-image>
                 <div v-else class="img-placeholder">
-                  <el-icon :size="40"><Picture /></el-icon>
+                  <el-icon :size="40">
+                    <Picture />
+                  </el-icon>
                 </div>
                 <!-- 状态标签 -->
                 <span class="status-tag tag-active">抢购中</span>
@@ -73,18 +74,15 @@
                 <!-- 价格行 -->
                 <div class="card-prices">
                   <span class="price-seckill">{{ formatPrice(item.seckillPrice) }}</span>
-                  <span
-                    v-if="getOriginalPrice(item) && getOriginalPrice(item)! > item.seckillPrice"
-                    class="price-original">¥{{ formatNumber(getOriginalPrice(item)!) }}</span>
+                  <span v-if="getOriginalPrice(item) && getOriginalPrice(item)! > item.seckillPrice"
+                    class="price-original">¥{{
+                      formatNumber(getOriginalPrice(item)!) }}</span>
                 </div>
 
                 <!-- 库存进度条 -->
                 <div class="stock-bar">
-                  <div
-                    class="stock-bar-fill"
-                    :class="stockLevel(item)"
-                    :style="{ width: soldPercent(item) + '%' }"
-                  ></div>
+                  <div class="stock-bar-fill" :class="stockLevel(item)" :style="{ width: soldPercent(item) + '%' }">
+                  </div>
                 </div>
                 <div class="stock-text" :class="{ danger: isLowStock(item) }">
                   <template v-if="isLowStock(item)">仅剩 {{ item.availableCount }} 件！手慢无</template>
@@ -111,29 +109,22 @@
         </div>
         <template v-else>
           <div v-if="pendingList.length > 0" class="seckill-grid">
-            <div
-              v-for="item in pendingList"
-              :key="item.id"
-              class="seckill-card"
-              @click="goDetail(item.id)"
-            >
+            <div v-for="item in pendingList" :key="item.id" class="seckill-card" @click="goDetail(item.id)">
               <!-- 商品图片 -->
               <div class="card-img">
-                <el-image
-                  v-if="cardImage(item)"
-                  :src="cardImage(item)"
-                  fit="cover"
-                  class="card-img-tag"
-                  lazy
-                >
+                <el-image v-if="cardImage(item)" :src="cardImage(item)" fit="cover" class="card-img-tag" lazy>
                   <template #error>
                     <div class="img-placeholder">
-                      <el-icon :size="40"><Picture /></el-icon>
+                      <el-icon :size="40">
+                        <Picture />
+                      </el-icon>
                     </div>
                   </template>
                 </el-image>
                 <div v-else class="img-placeholder">
-                  <el-icon :size="40"><Picture /></el-icon>
+                  <el-icon :size="40">
+                    <Picture />
+                  </el-icon>
                 </div>
                 <!-- 状态标签 -->
                 <span class="status-tag tag-pending">即将开始</span>
@@ -147,9 +138,9 @@
                 <!-- 价格行 -->
                 <div class="card-prices">
                   <span class="price-seckill">{{ formatPrice(item.seckillPrice) }}</span>
-                  <span
-                    v-if="getOriginalPrice(item) && getOriginalPrice(item)! > item.seckillPrice"
-                    class="price-original">¥{{ formatNumber(getOriginalPrice(item)!) }}</span>
+                  <span v-if="getOriginalPrice(item) && getOriginalPrice(item)! > item.seckillPrice"
+                    class="price-original">¥{{
+                      formatNumber(getOriginalPrice(item)!) }}</span>
                 </div>
 
                 <!-- 库存信息（待开始不显示已抢进度，显示限量） -->
@@ -190,13 +181,15 @@
  * - 原价通过 getProductDetail 异步获取（SeckillGoodsVO 无原价字段）
  * - 待开始卡片显示距 startTime 倒计时，到期后自动刷新列表
  */
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Picture } from '@element-plus/icons-vue'
 import { getSeckillList } from '@/api/seckill'
 import { getProductDetail } from '@/api/product'
+import { getCategoryTree } from '@/api/category'
+import { formatImageUrl } from '@/utils/image'
 import dayjs from 'dayjs'
-import type { SeckillGoodsVO } from '@/types'
+import type { SeckillGoodsVO, CategoryVO } from '@/types'
 
 const router = useRouter()
 
@@ -214,7 +207,21 @@ const activeLoading = ref<boolean>(false)
 const pendingLoading = ref<boolean>(false)
 
 /* === 原价缓存（通过商品详情 API 获取，key 为 productId） === */
-const originalPriceMap = reactive<Record<number, number>>({})
+const originalPriceMap = reactive<Record<number | string, number>>({})
+
+/* === 分类筛选（仅一级分类） === */
+const allCategories = ref<CategoryVO[]>([])
+const selectedFirstId = ref<number | string | null>(null)
+
+/* 一级分类：parentId === 0 */
+const firstLevelCategories = computed<CategoryVO[]>(() =>
+  allCategories.value.filter((c) => c.parentId === 0)
+)
+
+/* 当前生效的分类 id：直接使用一级分类 id，未选则为 undefined（不筛选） */
+const currentCategoryId = computed<number | string | undefined>(() => {
+  return selectedFirstId.value === null ? undefined : selectedFirstId.value
+})
 
 /* === 当前时间戳（每秒更新，驱动倒计时 computed） === */
 const now = ref<number>(Date.now())
@@ -225,7 +232,7 @@ let refreshing = false
 async function fetchActive(): Promise<void> {
   activeLoading.value = true
   try {
-    const res = await getSeckillList({ status: 'ACTIVE', pageNum: 1, pageSize: 10 })
+    const res = await getSeckillList({ status: 'ACTIVE', categoryId: currentCategoryId.value, pageNum: 1, pageSize: 10 })
     activeList.value = res.data?.list || []
     // 异步填充原价，不阻塞渲染
     void fetchOriginalPrices(activeList.value)
@@ -240,7 +247,7 @@ async function fetchActive(): Promise<void> {
 async function fetchPending(): Promise<void> {
   pendingLoading.value = true
   try {
-    const res = await getSeckillList({ status: 'PENDING', pageNum: 1, pageSize: 10 })
+    const res = await getSeckillList({ status: 'PENDING', categoryId: currentCategoryId.value, pageNum: 1, pageSize: 10 })
     pendingList.value = res.data?.list || []
     void fetchOriginalPrices(pendingList.value)
   } catch {
@@ -267,15 +274,33 @@ async function fetchOriginalPrices(list: SeckillGoodsVO[]): Promise<void> {
   )
 }
 
+/* === 获取分类树 === */
+async function fetchCategories(): Promise<void> {
+  try {
+    const res = await getCategoryTree()
+    allCategories.value = res.data || []
+  } catch {
+    // 错误已由请求拦截器处理
+  }
+}
+
+/* === 选择一级分类（直接刷新列表） === */
+function selectFirst(id: number | string | null): void {
+  if (selectedFirstId.value === id) return
+  selectedFirstId.value = id
+  fetchActive()
+  fetchPending()
+}
+
 /* === 跳转秒杀详情 === */
-function goDetail(id: number): void {
+function goDetail(id: number | string): void {
   router.push(`/seckill/${id}`)
 }
 
 /* === 工具函数 === */
 /** 卡片首图 */
 function cardImage(item: SeckillGoodsVO): string {
-  return item.images?.[0] || ''
+  return formatImageUrl(item.images?.[0])
 }
 
 /** 价格格式化（带 ¥ 符号，保留两位小数） */
@@ -353,6 +378,7 @@ function checkPendingExpired(): void {
 
 /* === 生命周期 === */
 onMounted(() => {
+  fetchCategories()
   fetchActive()
   fetchPending()
   tickTimer = setInterval(() => {
@@ -472,6 +498,67 @@ onUnmounted(() => {
   background: var(--color-primary);
 }
 
+/* === 分类筛选栏 === */
+.zone-category {
+  margin: 16px 24px 0;
+  padding: 12px 16px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.category-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.category-row+.category-row {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.cat-row-label {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  line-height: 28px;
+}
+
+.cat-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.cat-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  line-height: 20px;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.cat-tag:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.cat-tag.active {
+  color: #fff;
+  background: var(--color-primary);
+  font-weight: 600;
+}
+
 /* === 内容区 === */
 .zone-content {
   padding: 20px 24px 0;
@@ -495,8 +582,13 @@ onUnmounted(() => {
 }
 
 @keyframes skeleton-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* === 秒杀卡片网格 === */
@@ -744,6 +836,7 @@ onUnmounted(() => {
 
 /* === 响应式 === */
 @media (max-width: 1024px) {
+
   .skeleton-grid,
   .seckill-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -756,28 +849,39 @@ onUnmounted(() => {
     padding: 0 20px;
     height: 130px;
   }
+
   .banner-title {
     font-size: 22px;
   }
+
   .banner-deco {
     display: none;
   }
+
   .zone-tabs {
     margin: 16px 12px 0;
   }
+
+  .zone-category {
+    margin: 12px 12px 0;
+  }
+
   .zone-content {
     padding: 16px 12px 0;
   }
+
   .skeleton-grid,
   .seckill-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .skeleton-card {
     height: 300px;
   }
 }
 
 @media (max-width: 480px) {
+
   .skeleton-grid,
   .seckill-grid {
     grid-template-columns: 1fr;

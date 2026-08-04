@@ -1,0 +1,5 @@
+product: 捷安特 Talon 山地自行车
+query: 捷安特 Talon 山地自行车 外观
+01_main.jpg	https://am.zdmimg.com/202506/26/685c9e42a42966595.jpg_e1080.jpg
+02_detail.jpg	https://am.zdmimg.com/202504/21/68064db321bf22239.jpg_e1080.jpg
+03_detail.jpg	https://qny.smzdm.com/202503/07/67ca809e8f1e63527.jpg_a200.jpg

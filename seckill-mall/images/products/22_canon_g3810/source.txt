@@ -1,0 +1,5 @@
+product: 佳能 G3810 喷墨打印机
+query: 佳能 G3810 喷墨打印机 外观
+01_main.png	http://www.joinway.com/Upload/goods/2022-12/639c306914187_thumb.png
+02_detail.jpg	https://y.zdmimg.com/202507/20/687c54edaefff3682.jpg_d250.jpg
+03_detail.jpg	https://qna.smzdm.com/201910/26/5db469938bde09615.jpg_e1080.jpg

@@ -1,0 +1,5 @@
+product: 兰蔻 清滢柔肤水
+query: 兰蔻 清滢柔肤水 粉水 外观
+01_main.jpg	http://javashop-statics.oss-cn-beijing.aliyuncs.com/demo/A5FAF3655E4F49EF8CE903A03CB0FC89.jpg_400x400
+02_detail.jpg	http://javashop-statics.oss-cn-beijing.aliyuncs.com/v70/goods/0258221C6C8F40FBA33A300F7F0FA529.jpg_400x400
+03_detail.jpg	https://y.zdmimg.com/202503/15/67d54037904fa1149.jpg_d250.jpg

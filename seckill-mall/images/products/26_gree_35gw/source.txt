@@ -1,0 +1,5 @@
+product: 格力 KFR-35GW 1.5匹空调
+query: 格力 KFR-35GW 1.5匹 空调 外观
+01_main.png	http://www.xiaolinnet.com/images/201903/goods_img/2020_P_1552928579598.png
+02_detail.jpg	https://img14.360buyimg.com/pop/s200x200_jfs/t1/207174/10/39337/79386/65bcb317F51e5cc10/a289f4f2d1c083bc.jpg
+03_detail.jpg	https://img12.360buyimg.com/n1/jfs/t18694/41/1502894980/100135/dc72c4e4/5acde52dN16fa15c6.jpg

@@ -8,14 +8,13 @@
       <!-- 搜索框：居中绝对定位 + 红色边框 + 红色按钮 -->
       <div class="mock-search">
         <input v-model="searchKeyword" class="mock-search-input" type="text" placeholder="搜索商品、品牌..."
-          @input="debouncedSearch"
-          @keyup.enter="handleSearch" />
+          @input="debouncedSearch" @keyup.enter="handleSearch" />
         <button class="mock-search-btn" @click="handleSearch">搜索</button>
       </div>
 
       <!-- 导航链接：秒杀专区 / 我的订单 / 购物车(带徽标) / 收藏夹 -->
       <nav class="mock-nav-links">
-        <a href="javascript:void(0)" @click="router.push('/')">秒杀专区</a>
+        <a href="javascript:void(0)" @click="router.push('/seckill')">秒杀专区</a>
         <a href="javascript:void(0)" @click="goOrders">我的订单</a>
         <!-- 购物车链接 + 数量徽标 -->
         <a href="javascript:void(0)" class="nav-cart-link" @click="goCart">
@@ -265,7 +264,9 @@ async function handleLogout(): Promise<void> {
   display: flex;
   align-items: center;
   gap: 20px;
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
   box-sizing: border-box;
 }
 

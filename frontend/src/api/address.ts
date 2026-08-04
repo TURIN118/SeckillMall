@@ -15,16 +15,16 @@ export function createAddress(data: UserAddressRequest): Promise<Result<UserAddr
 }
 
 /** 编辑收货地址 */
-export function updateAddress(id: number, data: UserAddressRequest): Promise<Result<UserAddressVO>> {
+export function updateAddress(id: number | string, data: UserAddressRequest): Promise<Result<UserAddressVO>> {
     return put<UserAddressVO>(`/api/v1/addresses/${id}`, data)
 }
 
 /** 删除收货地址 (逻辑删除) */
-export function deleteAddress(id: number): Promise<Result<void>> {
+export function deleteAddress(id: number | string): Promise<Result<void>> {
     return del<void>(`/api/v1/addresses/${id}`)
 }
 
 /** 设置默认收货地址 */
-export function setDefaultAddress(id: number): Promise<Result<void>> {
+export function setDefaultAddress(id: number | string): Promise<Result<void>> {
     return put<void>(`/api/v1/addresses/${id}/default`)
 }

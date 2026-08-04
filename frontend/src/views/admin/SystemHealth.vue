@@ -78,6 +78,95 @@
         </div>
       </div>
     </div>
+
+    <!-- JVM 内存监控 + 数据库连接池详情 -->
+    <div class="chart-grid" style="margin-top: 16px;">
+      <div class="chart-card">
+        <h4>JVM 内存监控</h4>
+        <div class="resource-list">
+          <div class="resource-item">
+            <div class="resource-label">
+              <span>堆内存使用率</span>
+              <span class="resource-value">{{ jvmHeapUsageText }}</span>
+            </div>
+            <div class="stock-bar">
+              <div class="stock-bar-fill" :class="getBarClass(jvmHeapUsage)" :style="{ width: jvmHeapUsage + '%' }">
+              </div>
+            </div>
+          </div>
+          <div class="resource-item">
+            <div class="resource-label">
+              <span>非堆内存使用率</span>
+              <span class="resource-value">{{ jvmNonHeapUsageText }}</span>
+            </div>
+            <div class="stock-bar">
+              <div class="stock-bar-fill" :class="getBarClass(jvmNonHeapUsage)"
+                :style="{ width: jvmNonHeapUsage + '%' }">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h4>数据库连接池详情</h4>
+        <div class="db-pool-list">
+          <div class="db-pool-item">
+            <div class="db-pool-label">活跃连接</div>
+            <div class="db-pool-value">{{ dbActiveText }}</div>
+          </div>
+          <div class="db-pool-item">
+            <div class="db-pool-label">空闲连接</div>
+            <div class="db-pool-value">{{ dbIdleText }}</div>
+          </div>
+          <div class="db-pool-item">
+            <div class="db-pool-label">最大连接</div>
+            <div class="db-pool-value">{{ dbMaxText }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 系统信息 + 秒杀活动概览 -->
+    <div class="chart-grid" style="margin-top: 16px;">
+      <div class="chart-card">
+        <h4>系统信息</h4>
+        <div class="info-list">
+          <div class="info-item">
+            <span class="info-label">操作系统</span>
+            <span class="info-value">{{ osNameText }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">JDK 版本</span>
+            <span class="info-value">{{ jdkVersionText }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">启动时间</span>
+            <span class="info-value">{{ appStartTimeText }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">运行时长</span>
+            <span class="info-value">{{ appUptimeText }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h4>秒杀活动概览</h4>
+        <div class="seckill-overview">
+          <div class="seckill-stat">
+            <div class="seckill-stat-value seckill-stat-active">{{ seckillActiveText }}</div>
+            <div class="seckill-stat-label">进行中</div>
+          </div>
+          <div class="seckill-stat">
+            <div class="seckill-stat-value seckill-stat-pending">{{ seckillPendingText }}</div>
+            <div class="seckill-stat-label">待开始</div>
+          </div>
+          <div class="seckill-stat">
+            <div class="seckill-stat-value seckill-stat-completed">{{ seckillCompletedTodayText }}</div>
+            <div class="seckill-stat-label">今日已完成</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -162,6 +251,60 @@ const hitRate = computed<number>(() => health.value?.redisHitRate ?? 0)
 const hitRateText = computed<string>(() =>
   health.value && health.value.redisHitRate !== undefined
     ? `${health.value.redisHitRate}%`
+    : '—'
+)
+
+/* === JVM 内存监控 === */
+const jvmHeapUsage = computed<number>(() => health.value?.jvmHeapUsage ?? 0)
+const jvmNonHeapUsage = computed<number>(() => health.value?.jvmNonHeapUsage ?? 0)
+const jvmHeapUsageText = computed<string>(() =>
+  health.value && health.value.jvmHeapUsage !== undefined
+    ? `${health.value.jvmHeapUsage}%`
+    : '—'
+)
+const jvmNonHeapUsageText = computed<string>(() =>
+  health.value && health.value.jvmNonHeapUsage !== undefined
+    ? `${health.value.jvmNonHeapUsage}%`
+    : '—'
+)
+
+/* === 数据库连接池详情 === */
+const dbActiveText = computed<string>(() =>
+  health.value && health.value.dbActiveConnections !== undefined
+    ? String(health.value.dbActiveConnections)
+    : '—'
+)
+const dbIdleText = computed<string>(() =>
+  health.value && health.value.dbIdleConnections !== undefined
+    ? String(health.value.dbIdleConnections)
+    : '—'
+)
+const dbMaxText = computed<string>(() =>
+  health.value && health.value.dbMaxConnections !== undefined
+    ? String(health.value.dbMaxConnections)
+    : '—'
+)
+
+/* === 系统信息 === */
+const osNameText = computed<string>(() => health.value?.osName ?? '—')
+const jdkVersionText = computed<string>(() => health.value?.jdkVersion ?? '—')
+const appStartTimeText = computed<string>(() => health.value?.appStartTime ?? '—')
+const appUptimeText = computed<string>(() => health.value?.appUptime ?? '—')
+
+/* === 秒杀活动概览 === */
+const seckillActiveText = computed<string>(() =>
+  health.value && health.value.seckillActiveCount !== undefined
+    ? String(health.value.seckillActiveCount)
+    : '—'
+)
+const seckillPendingText = computed<string>(() =>
+  health.value && health.value.seckillPendingCount !== undefined
+    ? String(health.value.seckillPendingCount)
+    : '—'
+)
+const seckillCompletedTodayText = computed<string>(() =>
+  health.value && health.value.seckillCompletedToday !== undefined
+    ? String(health.value.seckillCompletedToday)
     : '—'
 )
 
@@ -393,5 +536,100 @@ onUnmounted(() => {
   font-size: 13px;
   color: var(--color-text-secondary);
   margin-top: 8px;
+}
+
+/* === 数据库连接池详情 === */
+.db-pool-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.db-pool-item {
+  text-align: center;
+  padding: 16px 8px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.db-pool-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.db-pool-value {
+  font-family: var(--font-price);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* === 系统信息 === */
+.info-list {
+  display: grid;
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  color: var(--color-text-secondary);
+}
+
+.info-value {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* === 秒杀活动概览 === */
+.seckill-overview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.seckill-stat {
+  text-align: center;
+  padding: 16px 8px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.seckill-stat-value {
+  font-family: var(--font-price);
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.seckill-stat-active {
+  color: var(--color-success);
+}
+
+.seckill-stat-pending {
+  color: var(--color-warning);
+}
+
+.seckill-stat-completed {
+  color: var(--color-primary);
+}
+
+.seckill-stat-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }
 </style>

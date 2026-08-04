@@ -1,0 +1,5 @@
+product: 乐高 创意百变高手 10283
+query: 乐高 10283 大众T2 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01KPkh2z1PDCE32ntz2_!!2217073751806-0-cib.310x310.jpg
+02_detail.jpg	https://qny.smzdm.com/202109/27/61515fcebcf468630.jpg_d250.jpg
+03_detail.jpg	https://qny.smzdm.com/202307/20/64b8aafbaf94a369.jpg_d250.jpg

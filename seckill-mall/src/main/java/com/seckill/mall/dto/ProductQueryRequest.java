@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 /**
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
@@ -23,6 +25,20 @@ public class ProductQueryRequest {
     private Integer pageSize = 10;
 
     private Long categoryId;
+
+    /**
+     * 价格区间筛选(可选)：原价下限，单位元。
+     * null 表示不限制下限。
+     */
+    @Min(value = 0, message = "最低价格不能小于 0")
+    private BigDecimal minPrice;
+
+    /**
+     * 价格区间筛选(可选)：原价上限，单位元。
+     * null 表示不限制上限。
+     */
+    @Min(value = 0, message = "最高价格不能小于 0")
+    private BigDecimal maxPrice;
 
     @Size(max = 100, message = "关键词最大 100 字符")
     private String keyword;

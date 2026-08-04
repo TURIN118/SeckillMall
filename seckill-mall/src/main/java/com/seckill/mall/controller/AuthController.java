@@ -3,6 +3,8 @@ package com.seckill.mall.controller;
 import com.seckill.mall.annotation.OperationLog;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.ChangePasswordRequest;
+import com.seckill.mall.dto.ForgotPasswordResetRequest;
+import com.seckill.mall.dto.ForgotPasswordSendRequest;
 import com.seckill.mall.dto.LoginRequest;
 import com.seckill.mall.dto.ProfileUpdateRequest;
 import com.seckill.mall.dto.RefreshTokenRequest;
@@ -103,6 +105,20 @@ public class AuthController {
     @GetMapping("/captcha")
     public Result<CaptchaVO> captcha() {
         return Result.success(captchaService.generateCaptcha());
+    }
+
+    @Operation(summary = "找回密码-发送验证码（手机短信或邮箱）")
+    @PostMapping("/forgot-password/send-code")
+    public Result<Void> sendForgotPasswordCode(@Valid @RequestBody ForgotPasswordSendRequest req) {
+        authService.sendForgotPasswordCode(req);
+        return Result.success("验证码已发送", null);
+    }
+
+    @Operation(summary = "找回密码-校验验证码并重置密码")
+    @PostMapping("/forgot-password/reset")
+    public Result<Void> resetPassword(@Valid @RequestBody ForgotPasswordResetRequest req) {
+        authService.resetPassword(req);
+        return Result.success("密码重置成功", null);
     }
 
     private String getClientIp(HttpServletRequest request) {

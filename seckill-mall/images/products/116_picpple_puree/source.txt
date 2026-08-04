@@ -1,0 +1,5 @@
+product: 小皮 苹果香蕉泥 6袋
+query: 小皮 苹果香蕉泥 外观
+01_main.png	https://qny.smzdm.com/201907/08/5d22c5b06dc3d3987.png_d250.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01PnfPBW1p7PA7Xxqzs_!!2216236595313-0-cib.310x310.jpg
+03_detail.png	https://qny.smzdm.com/202302/07/63e1ae66a33a61255.png_d250.jpg

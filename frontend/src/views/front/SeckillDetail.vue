@@ -6,12 +6,7 @@
     </div>
 
     <!-- 错误状态 -->
-    <el-result
-      v-else-if="error"
-      icon="warning"
-      title="活动不存在"
-      sub-title="您访问的秒杀活动可能已结束或被删除"
-    >
+    <el-result v-else-if="error" icon="warning" title="活动不存在" sub-title="您访问的秒杀活动可能已结束或被删除">
       <template #extra>
         <el-button type="primary" @click="router.push('/')">返回首页</el-button>
       </template>
@@ -50,42 +45,35 @@
         <div class="detail-grid">
           <!-- 左列: 图片轮播 + 缩略图条 -->
           <div class="detail-left">
-            <el-carousel
-              v-if="displayImages.length > 0"
-              height="360px"
-              indicator-position="none"
-              :autoplay="true"
-              :interval="4000"
-              arrow="hover"
-              class="detail-carousel"
-              @change="onCarouselChange"
-            >
+            <el-carousel v-if="displayImages.length > 0" height="360px" indicator-position="none" :autoplay="true"
+              :interval="4000" arrow="hover" class="detail-carousel" @change="onCarouselChange">
               <el-carousel-item v-for="(img, idx) in displayImages" :key="idx">
-                <el-image :src="img" fit="cover" class="carousel-image">
+                <el-image :src="formatImageUrl(img)" fit="cover" class="carousel-image">
                   <template #error>
                     <div class="img-placeholder">
-                      <el-icon :size="64"><Picture /></el-icon>
+                      <el-icon :size="64">
+                        <Picture />
+                      </el-icon>
                     </div>
                   </template>
                 </el-image>
               </el-carousel-item>
             </el-carousel>
             <div v-else class="detail-carousel empty-carousel">
-              <el-icon :size="64"><Picture /></el-icon>
+              <el-icon :size="64">
+                <Picture />
+              </el-icon>
             </div>
 
             <!-- 缩略图条 -->
             <div class="thumb-strip">
-              <div
-                v-for="(img, idx) in thumbImages"
-                :key="idx"
-                class="thumb-item"
-                :class="{ active: idx === currentCarouselIdx }"
-                @click="switchThumb(idx)"
-              >
-                <el-image :src="img" fit="cover" class="thumb-img" lazy>
+              <div v-for="(img, idx) in thumbImages" :key="idx" class="thumb-item"
+                :class="{ active: idx === currentCarouselIdx }" @click="switchThumb(idx)">
+                <el-image :src="formatImageUrl(img)" fit="cover" class="thumb-img" lazy>
                   <template #error>
-                    <el-icon :size="20"><Picture /></el-icon>
+                    <el-icon :size="20">
+                      <Picture />
+                    </el-icon>
                   </template>
                 </el-image>
               </div>
@@ -128,13 +116,8 @@
                 颜色 <span class="spec-value">{{ selectedColor }}</span>
               </div>
               <div class="spec-options">
-                <span
-                  v-for="color in colorOptions"
-                  :key="color"
-                  class="spec-option"
-                  :class="{ active: selectedColor === color }"
-                  @click="selectedColor = color"
-                >{{ color }}</span>
+                <span v-for="color in colorOptions" :key="color" class="spec-option"
+                  :class="{ active: selectedColor === color }" @click="selectedColor = color">{{ color }}</span>
               </div>
             </div>
 
@@ -144,68 +127,70 @@
                 存储 <span class="spec-value">{{ selectedStorage }}</span>
               </div>
               <div class="spec-options">
-                <span
-                  v-for="storage in storageOptions"
-                  :key="storage.value"
-                  class="spec-option"
-                  :class="{
-                    active: selectedStorage === storage.value,
-                    disabled: storage.disabled
-                  }"
-                  @click="!storage.disabled && (selectedStorage = storage.value)"
-                >{{ storage.label }}</span>
+                <span v-for="storage in storageOptions" :key="storage.value" class="spec-option" :class="{
+                  active: selectedStorage === storage.value,
+                  disabled: storage.disabled
+                }" @click="!storage.disabled && (selectedStorage = storage.value)">{{ storage.label }}</span>
               </div>
             </div>
 
             <!-- 服务保障 -->
             <div class="service-row">
               <span class="service-item">
-                <el-icon class="service-icon"><CircleCheckFilled /></el-icon>正品保障
+                <el-icon class="service-icon">
+                  <CircleCheckFilled />
+                </el-icon>正品保障
               </span>
               <span class="service-item">
-                <el-icon class="service-icon"><CircleCheckFilled /></el-icon>7天无理由
+                <el-icon class="service-icon">
+                  <CircleCheckFilled />
+                </el-icon>7天无理由
               </span>
               <span class="service-item">
-                <el-icon class="service-icon"><CircleCheckFilled /></el-icon>运费险
+                <el-icon class="service-icon">
+                  <CircleCheckFilled />
+                </el-icon>运费险
               </span>
               <span class="service-item">
-                <el-icon class="service-icon"><CircleCheckFilled /></el-icon>极速退款
+                <el-icon class="service-icon">
+                  <CircleCheckFilled />
+                </el-icon>极速退款
               </span>
             </div>
 
             <!-- 商品参数 (detail-meta) -->
             <dl class="detail-meta">
-              <div><dt>限购数量</dt><dd>每人限购 {{ seckill.perLimit }} 件</dd></div>
-              <div><dt>发货时间</dt><dd>付款后 24h 内</dd></div>
-              <div><dt>开始时间</dt><dd>{{ formatTimeShort(seckill.startTime) }}</dd></div>
-              <div><dt>结束时间</dt><dd>{{ formatTimeShort(seckill.endTime) }}</dd></div>
+              <div>
+                <dt>限购数量</dt>
+                <dd>每人限购 {{ seckill.perLimit }} 件</dd>
+              </div>
+              <div>
+                <dt>发货时间</dt>
+                <dd>付款后 24h 内</dd>
+              </div>
+              <div>
+                <dt>开始时间</dt>
+                <dd>{{ formatTimeShort(seckill.startTime) }}</dd>
+              </div>
+              <div>
+                <dt>结束时间</dt>
+                <dd>{{ formatTimeShort(seckill.endTime) }}</dd>
+              </div>
             </dl>
 
             <!-- 库存进度条 (stock-inline) -->
             <div class="stock-inline">
               <span class="stock-inline-label">库存</span>
               <div class="stock-bar">
-                <div
-                  class="stock-bar-fill"
-                  :class="stockBarClass"
-                  :style="{ width: stockPercent + '%' }"
-                ></div>
+                <div class="stock-bar-fill" :class="stockBarClass" :style="{ width: stockPercent + '%' }"></div>
               </div>
               <span class="stock-num">剩余 {{ availableCount }} / {{ seckill.stockCount }} 件</span>
             </div>
 
             <!-- 秒杀按钮 (seckill-btn) -->
-            <SeckillButton
-              :seckill-status="seckill.status"
-              :available-count="availableCount"
-              :loading="btnLoading"
-              :state="btnState"
-              :countdown="pendingCountdown"
-              :fail-text="failText"
-              :poll-progress="pollProgress"
-              class="seckill-action"
-              @seckill="handleSeckill"
-            />
+            <SeckillButton :seckill-status="seckill.status" :available-count="availableCount" :loading="btnLoading"
+              :state="btnState" :countdown="pendingCountdown" :fail-text="failText" :poll-progress="pollProgress"
+              class="seckill-action" @seckill="handleSeckill" />
 
             <p class="action-tip">
               已有 {{ participantCount }} 人参与抢购 · 限购{{ seckill.perLimit }}件
@@ -216,13 +201,8 @@
         <!-- === 下方标签页 === -->
         <div class="tab-section">
           <div class="tab-header">
-            <div
-              v-for="tab in tabs"
-              :key="tab.key"
-              class="tab-item"
-              :class="{ active: activeTab === tab.key }"
-              @click="activeTab = tab.key"
-            >{{ tab.label }}</div>
+            <div v-for="tab in tabs" :key="tab.key" class="tab-item" :class="{ active: activeTab === tab.key }"
+              @click="activeTab = tab.key">{{ tab.label }}</div>
           </div>
 
           <div class="tab-content">
@@ -252,15 +232,21 @@
 
               <!-- 详情图占位 -->
               <div class="detail-image-placeholder">
-                <el-icon :size="48"><Picture /></el-icon>
+                <el-icon :size="48">
+                  <Picture />
+                </el-icon>
                 <span>商品详情图 1 — 产品正面展示</span>
               </div>
               <div class="detail-image-placeholder">
-                <el-icon :size="48"><Picture /></el-icon>
+                <el-icon :size="48">
+                  <Picture />
+                </el-icon>
                 <span>商品详情图 2 — 摄像头模组特写</span>
               </div>
               <div class="detail-image-placeholder">
-                <el-icon :size="48"><Picture /></el-icon>
+                <el-icon :size="48">
+                  <Picture />
+                </el-icon>
                 <span>商品详情图 3 — 钛金属边框细节</span>
               </div>
             </template>
@@ -271,28 +257,40 @@
               <table class="spec-table">
                 <tbody>
                   <tr>
-                    <td class="spec-key">品牌</td><td class="spec-val">Apple</td>
-                    <td class="spec-key">型号</td><td class="spec-val">iPhone 15 Pro</td>
+                    <td class="spec-key">品牌</td>
+                    <td class="spec-val">Apple</td>
+                    <td class="spec-key">型号</td>
+                    <td class="spec-val">iPhone 15 Pro</td>
                   </tr>
                   <tr>
-                    <td class="spec-key">处理器</td><td class="spec-val">A17 Pro (3nm)</td>
-                    <td class="spec-key">存储容量</td><td class="spec-val">{{ selectedStorage }}</td>
+                    <td class="spec-key">处理器</td>
+                    <td class="spec-val">A17 Pro (3nm)</td>
+                    <td class="spec-key">存储容量</td>
+                    <td class="spec-val">{{ selectedStorage }}</td>
                   </tr>
                   <tr>
-                    <td class="spec-key">屏幕尺寸</td><td class="spec-val">6.1 英寸</td>
-                    <td class="spec-key">屏幕材质</td><td class="spec-val">OLED 超视网膜 XDR</td>
+                    <td class="spec-key">屏幕尺寸</td>
+                    <td class="spec-val">6.1 英寸</td>
+                    <td class="spec-key">屏幕材质</td>
+                    <td class="spec-val">OLED 超视网膜 XDR</td>
                   </tr>
                   <tr>
-                    <td class="spec-key">后置摄像头</td><td class="spec-val">4800万 + 1200万 + 1200万</td>
-                    <td class="spec-key">前置摄像头</td><td class="spec-val">1200万像素</td>
+                    <td class="spec-key">后置摄像头</td>
+                    <td class="spec-val">4800万 + 1200万 + 1200万</td>
+                    <td class="spec-key">前置摄像头</td>
+                    <td class="spec-val">1200万像素</td>
                   </tr>
                   <tr>
-                    <td class="spec-key">电池容量</td><td class="spec-val">3274mAh</td>
-                    <td class="spec-key">充电接口</td><td class="spec-val">USB-C</td>
+                    <td class="spec-key">电池容量</td>
+                    <td class="spec-val">3274mAh</td>
+                    <td class="spec-key">充电接口</td>
+                    <td class="spec-val">USB-C</td>
                   </tr>
                   <tr>
-                    <td class="spec-key">机身材质</td><td class="spec-val">钛金属 + 超瓷晶面板</td>
-                    <td class="spec-key">重量</td><td class="spec-val">187g</td>
+                    <td class="spec-key">机身材质</td>
+                    <td class="spec-val">钛金属 + 超瓷晶面板</td>
+                    <td class="spec-key">重量</td>
+                    <td class="spec-val">187g</td>
                   </tr>
                 </tbody>
               </table>
@@ -354,28 +352,40 @@
           <table class="spec-table">
             <tbody>
               <tr>
-                <td class="spec-key">品牌</td><td class="spec-val">Apple</td>
-                <td class="spec-key">型号</td><td class="spec-val">iPhone 15 Pro</td>
+                <td class="spec-key">品牌</td>
+                <td class="spec-val">Apple</td>
+                <td class="spec-key">型号</td>
+                <td class="spec-val">iPhone 15 Pro</td>
               </tr>
               <tr>
-                <td class="spec-key">处理器</td><td class="spec-val">A17 Pro (3nm)</td>
-                <td class="spec-key">存储容量</td><td class="spec-val">{{ selectedStorage }}</td>
+                <td class="spec-key">处理器</td>
+                <td class="spec-val">A17 Pro (3nm)</td>
+                <td class="spec-key">存储容量</td>
+                <td class="spec-val">{{ selectedStorage }}</td>
               </tr>
               <tr>
-                <td class="spec-key">屏幕尺寸</td><td class="spec-val">6.1 英寸</td>
-                <td class="spec-key">屏幕材质</td><td class="spec-val">OLED 超视网膜 XDR</td>
+                <td class="spec-key">屏幕尺寸</td>
+                <td class="spec-val">6.1 英寸</td>
+                <td class="spec-key">屏幕材质</td>
+                <td class="spec-val">OLED 超视网膜 XDR</td>
               </tr>
               <tr>
-                <td class="spec-key">后置摄像头</td><td class="spec-val">4800万 + 1200万 + 1200万</td>
-                <td class="spec-key">前置摄像头</td><td class="spec-val">1200万像素</td>
+                <td class="spec-key">后置摄像头</td>
+                <td class="spec-val">4800万 + 1200万 + 1200万</td>
+                <td class="spec-key">前置摄像头</td>
+                <td class="spec-val">1200万像素</td>
               </tr>
               <tr>
-                <td class="spec-key">电池容量</td><td class="spec-val">3274mAh</td>
-                <td class="spec-key">充电接口</td><td class="spec-val">USB-C</td>
+                <td class="spec-key">电池容量</td>
+                <td class="spec-val">3274mAh</td>
+                <td class="spec-key">充电接口</td>
+                <td class="spec-val">USB-C</td>
               </tr>
               <tr>
-                <td class="spec-key">机身材质</td><td class="spec-val">钛金属 + 超瓷晶面板</td>
-                <td class="spec-key">重量</td><td class="spec-val">187g</td>
+                <td class="spec-key">机身材质</td>
+                <td class="spec-val">钛金属 + 超瓷晶面板</td>
+                <td class="spec-key">重量</td>
+                <td class="spec-val">187g</td>
               </tr>
             </tbody>
           </table>
@@ -407,6 +417,7 @@ import { getProductDetail } from '@/api/product'
 import { useUserStore } from '@/stores/user'
 import SeckillButton from '@/components/SeckillButton.vue'
 import dayjs from 'dayjs'
+import { formatImageUrl } from '@/utils/image'
 import type { SeckillGoodsVO, SeckillResultVO } from '@/types'
 
 const route = useRoute()
@@ -865,7 +876,7 @@ function handleSuccess(result: SeckillResultVO): void {
       confirmButtonText: '去支付',
       type: 'success',
       callback: () => {
-        router.push(`/user/orders/${result.orderId}`)
+        router.push(`/user/orders/${result.orderId}?type=SECKILL`)
       }
     }
   )

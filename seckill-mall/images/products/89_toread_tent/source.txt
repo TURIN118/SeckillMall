@@ -1,0 +1,5 @@
+product: 探路者 三季帐篷
+query: 探路者 帐篷 户外 外观
+01_main.jpg	http://img13.360buyimg.com/cms/s350x350_jfs/t1/61936/36/20458/79487/62ec8d16E3d82ec20/610649bc28632970.jpg
+02_detail.jpg	https://qny.smzdm.com/202104/10/60714493839c35208.jpg_d250.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01xLBsX92D3KWqsKmVK_!!1955708553-0-cib.310x310.jpg

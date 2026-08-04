@@ -1,0 +1,5 @@
+product: 耐克 Air Max 90 运动鞋
+query: 耐克 Air Max 90 运动鞋 男
+01_main.jpg	https://y.zdmimg.com/202311/12/655019f5c028c6303.jpg_d250.jpg
+02_detail.jpg	https://qny.smzdm.com/202308/13/64d8dbcfab6e08681.jpg_d250.jpg
+03_detail.jpg	https://y.zdmimg.com/202304/23/64441006495563883.jpg_d250.jpg

@@ -66,10 +66,34 @@ export function logout(): Promise<Result<void>> {
 
 /** 修改手机号 (需短信验证码校验) */
 export function updatePhone(data: UpdatePhoneRequest): Promise<Result<UserVO>> {
-  return put<UserVO>('/api/v1/user/profile/phone', data)
+  return put<UserVO>('/api/v1/users/profile/phone', data)
 }
 
 /** 修改邮箱 (需邮箱验证码校验) */
 export function updateEmail(data: UpdateEmailRequest): Promise<Result<UserVO>> {
-  return put<UserVO>('/api/v1/user/profile/email', data)
+  return put<UserVO>('/api/v1/users/profile/email', data)
+}
+
+/** 找回密码-发送验证码请求参数 */
+export interface ForgotPasswordSendCodeRequest {
+  account: string
+  type: 'PHONE' | 'EMAIL'
+}
+
+/** 找回密码-重置密码请求参数 */
+export interface ForgotPasswordResetRequest {
+  account: string
+  type: 'PHONE' | 'EMAIL'
+  code: string
+  newPassword: string
+}
+
+/** 找回密码-发送验证码（手机短信或邮箱） */
+export function sendForgotPasswordCode(data: ForgotPasswordSendCodeRequest): Promise<Result<void>> {
+  return post<void>('/api/v1/auth/forgot-password/send-code', data)
+}
+
+/** 找回密码-校验验证码并重置密码 */
+export function resetPassword(data: ForgotPasswordResetRequest): Promise<Result<void>> {
+  return post<void>('/api/v1/auth/forgot-password/reset', data)
 }

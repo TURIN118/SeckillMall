@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.seckill.mall.entity.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,14 @@ public interface UserMapper extends BaseMapper<User> {
     User findByPhone(@Param("phone") String phone);
 
     /**
+     * 根据邮箱查询用户（未删除）
+     *
+     * @param email 邮箱
+     * @return 用户实体，不存在返回 null
+     */
+    User findByEmail(@Param("email") String email);
+
+    /**
      * 用户注册趋势：按日期分组统计注册数
      *
      * @param startDate 起始日期（含）
@@ -39,4 +49,17 @@ public interface UserMapper extends BaseMapper<User> {
      * @return 注册数
      */
     Long countTodayRegistered(@Param("startDate") LocalDate startDate);
+
+    /**
+     * 钱包扣款：原子扣减用户余额，仅在余额充足时扣减成功。
+     * <p>
+     * 通过 {@code WHERE balance >= amount} 保证并发安全，避免余额负数。
+     *
+     * @param userId 用户 ID
+     * @param amount 扣减金额（必须大于0）
+     * @return 受影响行数：1=扣减成功，0=余额不足或用户不存在
+     */
+    @Update("UPDATE t_user SET balance = balance - #{amount}, update_time = NOW() " +
+            "WHERE id = #{userId} AND is_deleted = 0 AND balance >= #{amount}")
+    int deductBalance(@Param("userId") Long userId, @Param("amount") BigDecimal amount);
 }

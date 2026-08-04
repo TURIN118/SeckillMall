@@ -1,0 +1,5 @@
+product: 十月结晶 孕妇睡衣
+query: 十月结晶 孕妇睡衣 外观
+01_main.jpg	https://qny.smzdm.com/202306/06/647f536506d311951.jpg_d250.jpg
+02_detail.jpg	https://qny.smzdm.com/202302/26/63fb77f3a41971198.jpg_d250.jpg
+03_detail.jpg	https://qny.smzdm.com/202204/18/625d135d90ac38083.jpg_d320.jpg

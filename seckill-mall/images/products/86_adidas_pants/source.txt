@@ -1,0 +1,5 @@
+product: 阿迪达斯 男士休闲运动裤
+query: 阿迪达斯 男士 运动裤 外观
+01_main.jpg	https://y.zdmimg.com/202011/29/5fc34ac956f71810.jpg_d250.jpg
+02_detail.jpg	https://qny.smzdm.com/202304/03/642a3d01daede7861.jpg_d250.jpg
+03_detail.jpg	https://y.zdmimg.com/202205/09/6278c499dc78a6928.jpg_d250.jpg

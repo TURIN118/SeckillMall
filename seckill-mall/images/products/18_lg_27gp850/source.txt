@@ -1,0 +1,5 @@
+product: LG 27GP850 27英寸显示器
+query: LG 27GP850 显示器 外观
+01_main.jpg	https://2b.zol-img.com.cn/product/222_320x240/877/ceJLOFJnZRKEQ.jpg
+02_detail.jpg	https://qny.smzdm.com/202203/18/62345987c5b711504.jpg_d320.jpg
+03_detail.jpg	https://2d.zol-img.com.cn/product/212_698x437/599/ceyTqHeez8fi6.jpg

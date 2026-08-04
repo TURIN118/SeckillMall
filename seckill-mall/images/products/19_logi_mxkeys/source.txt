@@ -1,0 +1,5 @@
+product: 罗技 MX Keys S 无线键盘
+query: 罗技 MX Keys S 键盘 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN011n2CRz1YEsJFdGGJC_!!4141893028-0-cib.310x310.jpg
+02_detail.jpg	https://2e.zol-img.com.cn/product/222_320x240/518/cepH7psFL3ip6.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01kj9t0t1g6BYmsumR7_!!2201277004092-0-cib.310x310.jpg

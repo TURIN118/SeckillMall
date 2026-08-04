@@ -1,0 +1,5 @@
+product: 优衣库 女装摇粒绒外套
+query: 优衣库 女装 摇粒绒 外套
+01_main.jpg	https://y.zdmimg.com/202509/11/68c29f83e6d8027.jpg_d320.jpg
+02_detail.jpg	https://www.uniqlo.cn/public/image/L3/spl-contents/feature/fleece/women/teji/296_220926_ylr05.jpg
+03_detail.jpg	https://qny.smzdm.com/201901/24/5c3404313f692683.jpg_d250.jpg

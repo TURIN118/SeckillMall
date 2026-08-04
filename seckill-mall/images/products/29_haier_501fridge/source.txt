@@ -1,0 +1,5 @@
+product: 海尔 BCD-501WLHFD9DGYU1 冰箱
+query: 海尔 BCD-501 冰箱 外观
+01_main.jpg	https://qny.smzdm.com/202206/08/629f8202507bb7742.jpg_d250.jpg
+02_detail.jpg	https://qny.smzdm.com/202305/16/6462ec1e288b33516.jpg_d250.jpg
+03_detail.jpg	https://2a.zol-img.com.cn/product/256_320x240/582/ceVEeBFBOwpmk.jpg

@@ -1,0 +1,5 @@
+product: 立顿 精选红茶包 100片
+query: 立顿 红茶包 外观
+01_main.jpg	https://y.zdmimg.com/202003/13/5e6b1e20cc20f7420.jpg_d250.jpg
+02_detail.jpg	http://img13.360buyimg.com/n1/jfs/t1/95229/33/21260/233356/61eea07dE7e19950a/1e7f111f79d1e3c4.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01Q8TSZ52FkV8V2QiC9_!!2200876178918-0-cib.310x310.jpg

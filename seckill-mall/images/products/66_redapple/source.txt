@@ -1,0 +1,5 @@
+product: 烟台红富士苹果 5kg
+query: 烟台 红富士 苹果 外观
+01_main.jpg	https://qny.smzdm.com/202204/12/6254f6c4898bc5928.jpg_d320.jpg
+02_detail.gif	https://cbu01.alicdn.com/img/ibank/2020/045/172/21635271540_98606493.360x360.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01nvoEBP1tIAyFKzUii_!!4094285878-0-cib.310x310.jpg

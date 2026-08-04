@@ -1,0 +1,5 @@
+product: 中国集邮 2024年生肖邮票
+query: 中国集邮 2024 龙年 生肖邮票 外观
+01_main.jpg	https://icity-static.icitycdn.com/images/uploads/ap/imsm/event/pic_cover/3lqkiow/6957d81f217682963lqkiow.jpg/1706868729/210x210
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01miOFrY2AwLGBAxq4x_!!2214116708267-0-cib.310x310.jpg
+03_detail.jpg	https://icity-static.icitycdn.com/images/uploads/photos/lnkj/2a938e072d0fb632lnkjt7l.jpg/200x200

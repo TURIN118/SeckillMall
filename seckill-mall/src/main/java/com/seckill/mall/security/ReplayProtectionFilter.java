@@ -54,9 +54,11 @@ public class ReplayProtectionFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        // 仅拦截秒杀接口的 POST 请求
+        // 仅拦截秒杀下单接口的 POST 请求（排除后台管理接口 /admin）
+        String requestUri = request.getRequestURI();
         if (!"POST".equalsIgnoreCase(request.getMethod())
-                || !request.getRequestURI().startsWith("/api/v1/seckill/")) {
+                || !requestUri.startsWith("/api/v1/seckill/")
+                || requestUri.startsWith("/api/v1/seckill/admin")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -66,7 +68,7 @@ public class ReplayProtectionFilter extends OncePerRequestFilter {
         String nonce = request.getHeader(HEADER_NONCE);
 
         if (!StringUtils.hasText(sign) || !StringUtils.hasText(timestamp) || !StringUtils.hasText(nonce)) {
-            reject(response, ErrorCode.REPLAY_DETECTED);
+            reject(request, response, ErrorCode.REPLAY_DETECTED);
             return;
         }
 
@@ -74,7 +76,7 @@ public class ReplayProtectionFilter extends OncePerRequestFilter {
         try {
             ts = Long.parseLong(timestamp);
         } catch (NumberFormatException e) {
-            reject(response, ErrorCode.REPLAY_DETECTED);
+            reject(request, response, ErrorCode.REPLAY_DETECTED);
             return;
         }
 
@@ -82,7 +84,7 @@ public class ReplayProtectionFilter extends OncePerRequestFilter {
         long now = System.currentTimeMillis();
         if (Math.abs(now - ts) > replayWindowSeconds * 1000L) {
             log.warn("签名时间窗口校验失败 uri={} ts={} drift={}ms", request.getRequestURI(), ts, now - ts);
-            reject(response, ErrorCode.REPLAY_DETECTED);
+            reject(request, response, ErrorCode.REPLAY_DETECTED);
             return;
         }
 
@@ -91,7 +93,7 @@ public class ReplayProtectionFilter extends OncePerRequestFilter {
         Boolean ok = redisService.setIfAbsent(nonceKey, "1", 60L, TimeUnit.SECONDS);
         if (ok == null || !ok) {
             log.warn("Nonce 重复，疑似重放 uri={} nonce={}", request.getRequestURI(), nonce);
-            reject(response, ErrorCode.REPLAY_DETECTED);
+            reject(request, response, ErrorCode.REPLAY_DETECTED);
             return;
         }
 
@@ -100,14 +102,20 @@ public class ReplayProtectionFilter extends OncePerRequestFilter {
         String expected = hmacSha256Hex(signSecret, payload);
         if (!constantTimeEquals(expected, sign)) {
             log.warn("签名不匹配 uri={} expected={} actual={}", request.getRequestURI(), expected, sign);
-            reject(response, ErrorCode.REPLAY_DETECTED);
+            reject(request, response, ErrorCode.REPLAY_DETECTED);
             return;
         }
 
         filterChain.doFilter(request, response);
     }
 
-    private void reject(HttpServletResponse response, ErrorCode errorCode) throws IOException {
+    private void reject(HttpServletRequest request, HttpServletResponse response, ErrorCode errorCode) throws IOException {
+        // 添加CORS头，确保401响应也能被前端正确接收
+        String origin = request.getHeader("Origin");
+        if (origin != null) {
+            response.setHeader("Access-Control-Allow-Origin", origin);
+            response.setHeader("Access-Control-Allow-Credentials", "true");
+        }
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());

@@ -12,7 +12,7 @@ import com.seckill.mall.vo.SeckillGoodsVO;
  */
 public interface SeckillGoodsService {
 
-    PageResult<SeckillGoodsVO> listSeckill(Integer status, Integer pageNum, Integer pageSize);
+    PageResult<SeckillGoodsVO> listSeckill(String status, Long categoryId, Integer pageNum, Integer pageSize);
 
     SeckillGoodsVO getSeckillDetail(Long seckillId);
 

@@ -111,7 +111,7 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
             log.info("验证码校验成功，target={}", target);
             return true;
         }
-        log.warn("验证码校验失败，target={}, input={}, stored={}", target, code, stored);
+        log.warn("验证码校验失败，target={}, input={}", target, code);
         return false;
     }
 

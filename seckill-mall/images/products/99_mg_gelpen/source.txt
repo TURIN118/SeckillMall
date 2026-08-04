@@ -1,0 +1,5 @@
+product: 晨光 GP1008 中性笔 12支
+query: 晨光 GP1008 中性笔 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01rwAW6j1uQhqmd63B4_!!2214683786032-0-cib.310x310.jpg
+02_detail.jpg	https://img12.360buyimg.com/n1/s450x450_jfs/t1/23721/15/20127/106064/634d08a2E86bf1f01/90b7ca45f6e355f8.jpg
+03_detail.jpg	https://qny.smzdm.com/202106/29/60da78151aee78806.jpg_d250.jpg

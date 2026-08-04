@@ -1,0 +1,5 @@
+product: 海澜之家 男士西装外套
+query: 海澜之家 男士 西装外套 男装
+01_main.jpg	https://img12.360buyimg.com/n1/s350x449_jfs/t1/141950/3/14117/312141/5fac20efE37dd0a4c/7aa66fc4b0f0089a.jpg!cc_350x449.jpg
+02_detail.jpg	https://img11.360buyimg.com/n1/s350x449_jfs/t1/150463/30/14854/180928/5ffe55aaE577ddedb/a7e638390bca7560.jpg!cc_350x449.jpg
+03_detail.jpg	https://y.zdmimg.com/202503/12/67d157020023a5057.jpg_d320.jpg

@@ -1,0 +1,5 @@
+product: 飞利浦 HD9200 空气炸锅
+query: 飞利浦 HD9200 空气炸锅 外观
+01_main.jpg	https://bkimg.cdn.bcebos.com/pic/b7fd5266d0160924ab189b966d4b22fae6cd7a899ea0?x-bce-process=image/format,f_auto/resize,m_lfit,limit_1,h_336
+02_detail.jpg	https://qny.smzdm.com/202205/15/6280bada06ace8877.jpg_d250.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01pLvmZi1Teuh4uZHZT_!!2218005702408-0-cib.310x310.jpg

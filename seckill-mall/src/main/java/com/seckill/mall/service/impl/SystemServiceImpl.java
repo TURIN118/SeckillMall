@@ -1,10 +1,13 @@
 package com.seckill.mall.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.OperationLogQueryRequest;
+import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.enums.OrderStatus;
+import com.seckill.mall.entity.enums.SeckillStatus;
 import com.seckill.mall.mapper.OperationLogMapper;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
@@ -30,11 +33,17 @@ import org.springframework.stereotype.Service;
 import javax.sql.DataSource;
 import java.io.File;
 import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
+import java.lang.management.RuntimeMXBean;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Date;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -97,6 +106,15 @@ public class SystemServiceImpl implements SystemService {
         return PageResult.of(list, result.getTotal(), result.getCurrent(), result.getSize());
     }
 
+    /** 导出最大条数，防止数据量过大导致 OOM */
+    private static final int MAX_EXPORT_SIZE = 10000;
+
+    @Override
+    public List<OperationLogVO> listAllForExport(String module) {
+        List<OperationLogVO> list = operationLogMapper.selectOperationLogVOList(module, MAX_EXPORT_SIZE);
+        return list == null ? Collections.emptyList() : list;
+    }
+
     @Override
     public SystemHealthVO getSystemHealth() {
         SystemHealthVO vo = new SystemHealthVO();
@@ -111,6 +129,22 @@ public class SystemServiceImpl implements SystemService {
         vo.setRedisResponseTime(getRedisResponseTime());
         vo.setDbPoolUsage(getDbPoolUsage());
         vo.setMqQueueBacklog(getMqQueueBacklog());
+        // JVM 内存监控
+        vo.setJvmHeapUsage(getJvmHeapUsage());
+        vo.setJvmNonHeapUsage(getJvmNonHeapUsage());
+        // 数据库连接池详情
+        vo.setDbActiveConnections(getDbActiveConnections());
+        vo.setDbIdleConnections(getDbIdleConnections());
+        vo.setDbMaxConnections(getDbMaxConnections());
+        // 系统信息
+        vo.setOsName(getOsName());
+        vo.setJdkVersion(getJdkVersion());
+        vo.setAppStartTime(getAppStartTime());
+        vo.setAppUptime(getAppUptime());
+        // 秒杀活动概览
+        vo.setSeckillActiveCount(getSeckillActiveCount());
+        vo.setSeckillPendingCount(getSeckillPendingCount());
+        vo.setSeckillCompletedToday(getSeckillCompletedToday());
         return vo;
     }
 
@@ -394,6 +428,217 @@ public class SystemServiceImpl implements SystemService {
         }
     }
 
+    // ==================== JVM 内存监控 ====================
+
+    /**
+     * 采集 JVM 堆内存使用率（0-100，1 位小数）
+     */
+    private Double getJvmHeapUsage() {
+        try {
+            MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
+            MemoryUsage usage = memoryBean.getHeapMemoryUsage();
+            long used = usage.getUsed();
+            long max = usage.getMax();
+            if (max <= 0) {
+                return null;
+            }
+            return round1((double) used / max * 100);
+        } catch (Exception e) {
+            log.debug("JVM堆内存采集失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 采集 JVM 非堆内存使用率（0-100，1 位小数）
+     */
+    private Double getJvmNonHeapUsage() {
+        try {
+            MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
+            MemoryUsage usage = memoryBean.getNonHeapMemoryUsage();
+            long used = usage.getUsed();
+            long max = usage.getMax();
+            // 非堆内存 max 可能不固定（-1），无法计算百分比
+            if (max <= 0) {
+                return null;
+            }
+            return round1((double) used / max * 100);
+        } catch (Exception e) {
+            log.debug("JVM非堆内存采集失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    // ==================== 数据库连接池详情 ====================
+
+    /**
+     * 采集 HikariCP 活跃连接数
+     */
+    private Integer getDbActiveConnections() {
+        try {
+            HikariDataSource hikari = (HikariDataSource) dataSource;
+            HikariPoolMXBean pool = hikari.getHikariPoolMXBean();
+            if (pool == null) {
+                return null;
+            }
+            return pool.getActiveConnections();
+        } catch (Exception e) {
+            log.debug("DB活跃连接数采集失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 采集 HikariCP 空闲连接数
+     */
+    private Integer getDbIdleConnections() {
+        try {
+            HikariDataSource hikari = (HikariDataSource) dataSource;
+            HikariPoolMXBean pool = hikari.getHikariPoolMXBean();
+            if (pool == null) {
+                return null;
+            }
+            return pool.getIdleConnections();
+        } catch (Exception e) {
+            log.debug("DB空闲连接数采集失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 采集 HikariCP 最大连接数
+     */
+    private Integer getDbMaxConnections() {
+        try {
+            HikariDataSource hikari = (HikariDataSource) dataSource;
+            return hikari.getMaximumPoolSize();
+        } catch (Exception e) {
+            log.debug("DB最大连接数采集失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    // ==================== 系统信息 ====================
+
+    /**
+     * 获取操作系统名称
+     */
+    private String getOsName() {
+        try {
+            return System.getProperty("os.name");
+        } catch (Exception e) {
+            log.debug("操作系统名称采集失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 获取 JDK 版本
+     */
+    private String getJdkVersion() {
+        try {
+            return System.getProperty("java.version");
+        } catch (Exception e) {
+            log.debug("JDK版本采集失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 获取应用启动时间（yyyy-MM-dd HH:mm:ss）
+     */
+    private String getAppStartTime() {
+        try {
+            RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
+            long startTimeMillis = runtimeBean.getStartTime();
+            LocalDateTime startLdt = LocalDateTime.ofInstant(
+                    Instant.ofEpochMilli(startTimeMillis), ZoneId.systemDefault());
+            return startLdt.format(DATETIME_FORMATTER);
+        } catch (Exception e) {
+            log.debug("应用启动时间采集失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 获取应用运行时长（如 "2h 13m" 或 "13m 25s"）
+     */
+    private String getAppUptime() {
+        try {
+            RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
+            long uptimeMillis = runtimeBean.getUptime();
+            Duration duration = Duration.ofMillis(uptimeMillis);
+            long days = duration.toDays();
+            long hours = duration.minusDays(days).toHours();
+            long minutes = duration.minusDays(days).minusHours(hours).toMinutes();
+            long seconds = duration.minusDays(days).minusHours(hours).minusMinutes(minutes).getSeconds();
+            StringBuilder sb = new StringBuilder();
+            if (days > 0) {
+                sb.append(days).append("d ");
+            }
+            if (hours > 0 || days > 0) {
+                sb.append(hours).append("h ");
+            }
+            if (minutes > 0 || hours > 0 || days > 0) {
+                sb.append(minutes).append("m ");
+            }
+            sb.append(seconds).append("s");
+            return sb.toString().trim();
+        } catch (Exception e) {
+            log.debug("应用运行时长采集失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    // ==================== 秒杀活动概览 ====================
+
+    /**
+     * 统计进行中的秒杀活动数量（status = ACTIVE）
+     */
+    private Integer getSeckillActiveCount() {
+        try {
+            LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(SeckillGoods::getStatus, SeckillStatus.ACTIVE);
+            return Math.toIntExact(seckillGoodsMapper.selectCount(wrapper));
+        } catch (Exception e) {
+            log.debug("进行中秒杀数采集失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 统计待开始的秒杀活动数量（status = PENDING）
+     */
+    private Integer getSeckillPendingCount() {
+        try {
+            LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(SeckillGoods::getStatus, SeckillStatus.PENDING);
+            return Math.toIntExact(seckillGoodsMapper.selectCount(wrapper));
+        } catch (Exception e) {
+            log.debug("待开始秒杀数采集失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 统计今日已完成的秒杀活动数量（status = ENDED 且 endTime 在今日）
+     */
+    private Integer getSeckillCompletedToday() {
+        try {
+            LocalDate today = LocalDate.now();
+            LocalDateTime startOfDay = today.atStartOfDay();
+            LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+            LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(SeckillGoods::getStatus, SeckillStatus.ENDED)
+                    .ge(SeckillGoods::getEndTime, startOfDay)
+                    .lt(SeckillGoods::getEndTime, endOfDay);
+            return Math.toIntExact(seckillGoodsMapper.selectCount(wrapper));
+        } catch (Exception e) {
+            log.debug("今日已完成秒杀数采集失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
     /**
      * 保留 1 位小数（HALF_UP）后转 double
      */
@@ -460,6 +705,7 @@ public class SystemServiceImpl implements SystemService {
         try {
             return new BigDecimal(obj.toString());
         } catch (NumberFormatException e) {
+            log.warn("解析BigDecimal失败，obj={}", obj);
             return BigDecimal.ZERO;
         }
     }

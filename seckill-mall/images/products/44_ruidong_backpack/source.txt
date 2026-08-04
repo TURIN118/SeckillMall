@@ -1,0 +1,5 @@
+product: 瑞动 双肩包
+query: 瑞动 双肩包 背包 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01LI4PnC2Dn894A1UI4_!!2774928653-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01yhagD7280W64vBKFI_!!1816277870-0-cib.310x310.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01jCVoAT1FO3ZsP1Sxd_!!2208918530476-0-cib.310x310.jpg

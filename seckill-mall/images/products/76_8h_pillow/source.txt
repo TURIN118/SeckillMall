@@ -1,0 +1,5 @@
+product: 8H 乳胶枕头
+query: 8H 乳胶枕头 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01lf1Ops1qdksfA6J7g_!!2218615215519-0-cib.310x310.jpg
+02_detail.jpg	https://qny.smzdm.com/202004/18/5e9ad6e7352119731.jpg_d320.jpg
+03_detail.jpg	https://qny.smzdm.com/202112/16/61bab245a1c123687.jpg_d250.jpg

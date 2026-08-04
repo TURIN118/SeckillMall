@@ -32,12 +32,10 @@ export interface PageRequest {
 /** 用户角色 */
 export type UserRole = 'BUYER' | 'SELLER' | 'ADMIN'
 
-/** 用户状态 */
-export type UserStatus = 'ACTIVE' | 'DISABLED'
 
 /** 用户视图对象 */
 export interface UserVO {
-  id: number
+  id: number | string
   username: string
   phone: string
   email: string
@@ -74,9 +72,9 @@ export type ProductStatus = 'ON_SALE' | 'OFF_SHELF'
 
 /** 商品视图对象 */
 export interface ProductVO {
-  id: number
+  id: number | string
   productName: string
-  categoryId: number
+  categoryId: number | string
   categoryName: string
   description: string
   /** 商品详情富文本(HTML)，由 wangEditor 产生 */
@@ -91,8 +89,8 @@ export interface ProductVO {
 
 /** 分类视图对象 */
 export interface CategoryVO {
-  id: number
-  parentId: number
+  id: number | string
+  parentId: number | string
   categoryName: string
   sortOrder: number
   status: number
@@ -107,12 +105,12 @@ export interface CategoryTreeNode extends CategoryVO {
 
 /** 商品评论视图对象 */
 export interface ProductReviewVO {
-  id: number
-  productId: number
-  userId: number
+  id: number | string
+  productId: number | string
+  userId: number | string
   /** 评论用户名 */
   userName: string
-  orderId: number | null
+  orderId: number | string | null
   content: string
   /** 评分：1-5 星 */
   rating: number
@@ -129,7 +127,7 @@ export interface ProductReviewVO {
 
 /** 发表评论请求 */
 export interface ReviewCreateRequest {
-  productId: number
+  productId: number | string
   content: string
   rating: number
   /** 评论图片 URL 数组（JSON 字符串），可选 */
@@ -140,7 +138,7 @@ export interface ReviewCreateRequest {
 
 /** 轮播图视图对象 */
 export interface BannerVO {
-  id: number
+  id: number | string
   title: string
   imageUrl: string
   linkUrl: string
@@ -155,8 +153,8 @@ export interface BannerVO {
 
 /** 购物车项视图对象 (匹配后端 CartItemVO) */
 export interface CartItemVO {
-  id: number
-  productId: number
+  id: number | string
+  productId: number | string
   quantity: number
   /** 是否选中: true-选中 / false-未选中 */
   selected: boolean
@@ -172,7 +170,7 @@ export interface CartItemVO {
 
 /** 添加购物车请求 */
 export interface CartAddRequest {
-  productId: number
+  productId: number | string
   quantity: number
 }
 
@@ -180,8 +178,8 @@ export interface CartAddRequest {
 
 /** 收藏夹项视图对象 (匹配后端 FavoriteItemVO) */
 export interface FavoriteItemVO {
-  id: number
-  productId: number
+  id: number | string
+  productId: number | string
   productName: string
   mainImage: string
   originalPrice: number
@@ -193,15 +191,15 @@ export interface FavoriteItemVO {
 
 /** 添加收藏请求 */
 export interface FavoriteAddRequest {
-  productId: number
+  productId: number | string
 }
 
 /* ==================== 收货地址类型 ==================== */
 
 /** 收货地址视图对象 (匹配后端 UserAddressVO) */
 export interface UserAddressVO {
-  id: number
-  userId: number
+  id: number | string
+  userId: number | string
   receiverName: string
   receiverPhone: string
   province: string
@@ -232,8 +230,8 @@ export type SeckillStatus = 'PENDING' | 'ACTIVE' | 'ENDED' | 'CANCELLED'
 
 /** 秒杀商品视图对象 */
 export interface SeckillGoodsVO {
-  id: number
-  productId: number
+  id: number | string
+  productId: number | string
   productName: string
   seckillName: string
   seckillPrice: number
@@ -248,14 +246,12 @@ export interface SeckillGoodsVO {
   createTime: string
 }
 
-/** 秒杀结果状态: 0=排队中, 1=成功, -1=库存不足, -2=重复购买 */
-export type SeckillResultStatus = 0 | 1 | -1 | -2
 
 /** 秒杀结果视图对象 */
 export interface SeckillResultVO {
   status: number
   requestId: string
-  orderId: number
+  orderId: number | string
   orderNo: string
   totalAmount: number
   payExpireTime: string
@@ -268,11 +264,11 @@ export type OrderStatus = 'UNPAID' | 'PAID' | 'CANCELLED' | 'TIMEOUT' | 'COMPLET
 
 /** 秒杀订单 */
 export interface SeckillOrder {
-  id: number
+  id: number | string
   orderNo: string
-  userId: number
-  seckillId: number
-  productId: number
+  userId: number | string
+  seckillId: number | string
+  productId: number | string
   seckillPrice: number
   quantity: number
   totalAmount: number
@@ -288,6 +284,107 @@ export interface SeckillOrder {
   updateTime: string
 }
 
+/**
+ * 后台订单 VO - 对应后端 com.seckill.mall.vo.AdminOrderVO
+ * 关联 t_user.username / t_product.name（productName / seckillName）
+ */
+export interface AdminOrderVO {
+  id: number | string
+  orderNo: string
+  userId: number | string
+  username: string
+  seckillId: number | string
+  seckillName: string
+  productId: number | string
+  productName: string
+  seckillPrice: number
+  quantity: number
+  totalAmount: number
+  status: OrderStatus
+  payTime: string
+  payExpireTime: string
+  transactionId: string
+  payMethod: string
+  cancelTime: string
+  cancelReason: string
+  createTime: string
+  updateTime: string
+}
+
+/**
+ * 后台订单查询请求 - 对应后端 com.seckill.mall.dto.AdminOrderQueryRequest
+ * 仅包含前端使用的字段（orderNo / date / status + 分页）
+ */
+export interface AdminOrderQueryRequest {
+  orderNo?: string
+  date?: string
+  status?: OrderStatus
+  pageNum?: number
+  pageSize?: number
+}
+
+/** 普通订单商品项 (匹配后端 NormalOrderItemVO) */
+export interface NormalOrderItem {
+  id: number | string
+  orderId: number | string
+  productId: number | string
+  productName: string
+  productImage: string
+  unitPrice: number
+  quantity: number
+  subtotal: number
+}
+
+/** 普通订单 (匹配后端 NormalOrderVO) */
+export interface NormalOrder {
+  id: number | string
+  orderNo: string
+  userId: number | string
+  addressId: number | string
+  totalAmount: number
+  freightAmount: number
+  payAmount: number
+  status: string
+  payMethod?: string
+  transactionId?: string
+  payTime?: string
+  payExpireTime?: string
+  cancelTime?: string
+  cancelReason?: string
+  createTime: string
+  updateTime: string
+  items?: NormalOrderItem[]
+}
+
+/** 普通订单详情VO（后端嵌套结构，匹配后端 NormalOrderDetailVO） */
+export interface NormalOrderDetailVO {
+  order: NormalOrder
+  items: NormalOrderItem[]
+}
+
+/** 统一订单列表项商品快照 */
+export interface OrderItemSnapshot {
+  productId: number | string
+  productName: string
+  productImage: string
+  unitPrice: number
+  quantity: number
+}
+
+/** 统一订单列表项（秒杀+普通合并展示，匹配后端 OrderListItemVO） */
+export interface OrderListItemVO {
+  id: number | string
+  orderNo: string
+  /** 订单类型：SECKILL-秒杀订单 / NORMAL-普通订单 */
+  orderType: 'SECKILL' | 'NORMAL'
+  status: string
+  totalAmount: number
+  payMethod: string
+  createTime: string
+  payTime: string
+  items: OrderItemSnapshot[]
+}
+
 /* ==================== 后台管理类型 ==================== */
 
 /** 仪表盘统计 */
@@ -298,18 +395,11 @@ export interface DashboardVO {
   seckillCount: number
 }
 
-/** 系统健康状态 */
-export interface SystemHealthVO {
-  redis: string
-  database: string
-  mq: string
-  allHealthy: boolean
-}
 
 /** 操作日志 */
 export interface OperationLogVO {
-  id: number
-  operatorId: number
+  id: number | string
+  operatorId: number | string
   operatorName: string
   module: string
   action: string
@@ -322,8 +412,8 @@ export interface OperationLogVO {
 
 /** 登录日志 */
 export interface LoginLogVO {
-  id: number
-  userId: number
+  id: number | string
+  userId: number | string
   username: string
   loginIp: string
   loginLocation: string
@@ -366,10 +456,16 @@ export interface ChangePasswordRequest {
 
 /** 商品查询请求 */
 export interface ProductQueryRequest extends PageRequest {
-  categoryId?: number
+  // categoryId 允许 string: 后端 Long 字段经 JSON 序列化为 string,
+  // 前端从 URL query 读取的 categoryId 为 string, 直接传给后端 Spring 会自动解析为 Long
+  categoryId?: number | string
   keyword?: string
   sortBy?: string
   sortOrder?: string
+  /** 价格区间筛选: 最低价 (可选) */
+  minPrice?: number
+  /** 价格区间筛选: 最高价 (可选) */
+  maxPrice?: number
   /** 商品状态筛选(可选): ON_SALE / OFF_SHELF, 不传表示不筛选 */
   status?: ProductStatus
 }
@@ -377,7 +473,7 @@ export interface ProductQueryRequest extends PageRequest {
 /** 新增商品请求 */
 export interface ProductCreateRequest {
   productName: string
-  categoryId: number
+  categoryId: number | string
   originalPrice: number
   stock: number
   description?: string
@@ -402,7 +498,7 @@ export interface ProductUpdateRequest {
 
 /** 创建秒杀活动请求 */
 export interface SeckillCreateRequest {
-  productId: number
+  productId: number | string
   seckillName: string
   seckillPrice: number
   stockCount: number
@@ -446,7 +542,7 @@ export type UserCouponStatus = 'UNUSED' | 'USED' | 'EXPIRED'
 
 /** 优惠券视图对象 (匹配后端 CouponVO) */
 export interface CouponVO {
-  id: number
+  id: number | string
   name: string
   /** 优惠券类型: AMOUNT-满减 / DISCOUNT-折扣 */
   type: CouponType
@@ -472,10 +568,10 @@ export interface CouponVO {
 
 /** 用户优惠券视图对象 (匹配后端 UserCouponVO) */
 export interface UserCouponVO {
-  id: number
+  id: number | string
   /** 用户 ID */
-  userId: number
-  couponId: number
+  userId: number | string
+  couponId: number | string
   /** 状态: UNUSED-未使用 / USED-已使用 / EXPIRED-已过期 */
   status: UserCouponStatus
   /** 领取时间 */
@@ -483,7 +579,7 @@ export interface UserCouponVO {
   /** 使用时间 */
   useTime: string | null
   /** 关联订单 ID (使用后才有值) */
-  orderId: number | null
+  orderId: number | string | null
   /** 优惠券详情 */
   coupon: CouponVO
   createTime?: string
@@ -508,7 +604,7 @@ export type RechargeCardStatus = 'UNUSED' | 'USED' | 'DISABLED'
 
 /** 充值卡视图对象 (匹配后端 RechargeCardVO) */
 export interface RechargeCardVO {
-  id: number
+  id: number | string
   /** 卡号 */
   cardNo: string
   /** 卡密明文 (仅在批量生成时返回一次，列表查询不返回) */
@@ -518,7 +614,7 @@ export interface RechargeCardVO {
   /** 状态: UNUSED-未使用 / USED-已使用 / DISABLED-已禁用 */
   status: RechargeCardStatus
   /** 使用者用户 ID (未使用时为 null) */
-  usedBy: number | null
+  usedBy: number | string | null
   /** 使用时间 */
   usedTime: string | null
   /** 批次号 */
@@ -536,15 +632,10 @@ export interface RechargeCardGenerateRequest {
 
 /* ==================== 钱包类型 ==================== */
 
-/** 钱包余额视图对象 */
-export interface WalletBalanceVO {
-  /** 钱包余额 */
-  balance: number
-}
 
 /** 钱包交易记录视图对象 (匹配后端 WalletRecordVO) */
 export interface WalletRecordVO {
-  id: number
+  id: number | string
   /** 交易类型: RECHARGE-充值 / CONSUME-消费 / REFUND-退款 等 */
   type: string
   /** 交易金额 (正数为收入, 负数为支出) */

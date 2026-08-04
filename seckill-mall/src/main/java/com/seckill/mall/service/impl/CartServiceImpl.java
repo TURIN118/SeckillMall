@@ -252,7 +252,7 @@ public class CartServiceImpl implements CartService {
         vo.setId(cart.getId());
         vo.setProductId(cart.getProductId());
         vo.setQuantity(cart.getQuantity());
-        vo.setSelected(cart.getSelected());
+        vo.setSelected(cart.getSelected() != null && cart.getSelected() == SELECTED_FLAG);
         if (product != null) {
             vo.setProductName(product.getName());
             vo.setMainImage(product.getMainImage());

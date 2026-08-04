@@ -1,0 +1,5 @@
+product: 良品铺子 肉松饼礼盒
+query: 良品铺子 肉松饼 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01ynO6qi1VFqBYIG8eg_!!2217044502624-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01cKPg3Z1IwoSS5Hes4_!!2217909930958-0-cib.310x310.jpg
+03_detail.jpg	https://y.zdmimg.com/202012/14/5fd734dd5a5cd678.jpg_d250.jpg

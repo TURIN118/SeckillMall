@@ -73,7 +73,18 @@ info:
     author: WNJ
 
 upload:
-  base-dir: ${user.dir}/upload
-  base-url: /upload
+  base-dir: ${user.dir}/images
+  base-url: /images
   allowed-types: image/jpeg,image/png,image/gif,image/webp
   max-size: 5242880
+
+# 文件存储配置
+storage:
+  type: local  # local | minio
+
+# MinIO 对象存储配置（预留，启用 storage.type=minio 时需取消注释并填写连接信息）
+# minio:
+#   endpoint: http://localhost:9000
+#   access-key: minioadmin
+#   secret-key: minioadmin
+#   bucket: seckill-mall

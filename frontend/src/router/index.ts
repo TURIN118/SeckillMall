@@ -60,21 +60,15 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'user/address',
-        name: 'UserAddress',
-        component: () => import('@/views/front/UserAddress.vue'),
-        meta: { title: '收货地址', requiresAuth: true }
+        redirect: '/user/profile'
       },
       {
         path: 'user/wallet',
-        name: 'Wallet',
-        component: () => import('@/views/front/Wallet.vue'),
-        meta: { title: '我的钱包', requiresAuth: true }
+        redirect: '/user/profile'
       },
       {
         path: 'user/coupons',
-        name: 'MyCoupons',
-        component: () => import('@/views/front/MyCoupons.vue'),
-        meta: { title: '我的优惠券', requiresAuth: true }
+        redirect: '/user/profile'
       },
       {
         path: 'seckill',
@@ -87,6 +81,12 @@ const routes: RouteRecordRaw[] = [
         name: 'Cart',
         component: () => import('@/views/front/Cart.vue'),
         meta: { title: '购物车', requiresAuth: true }
+      },
+      {
+        path: 'checkout',
+        name: 'Checkout',
+        component: () => import('@/views/front/Checkout.vue'),
+        meta: { title: '确认订单', requiresAuth: true }
       },
       {
         path: 'favorites',
@@ -118,6 +118,18 @@ const routes: RouteRecordRaw[] = [
         name: 'Register',
         component: () => import('@/views/front/Register.vue'),
         meta: { title: '注册' }
+      }
+    ]
+  },
+  {
+    path: '/forgot-password',
+    component: BlankLayout,
+    children: [
+      {
+        path: '',
+        name: 'ForgotPassword',
+        component: () => import('@/views/front/ForgotPassword.vue'),
+        meta: { title: '找回密码' }
       }
     ]
   },
@@ -201,9 +213,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'dashboard-data',
-        name: 'DataDashboard',
-        component: () => import('@/views/admin/DataDashboard.vue'),
-        meta: { title: '数据看台', requiresAuth: true, roles: ['ADMIN'] }
+        redirect: '/admin'
       },
       {
         path: 'coupons',
@@ -328,10 +338,10 @@ if (typeof window !== 'undefined') {
     })
   }
 
-  /** 批次1: 首屏最高频路由 (首页 + 商品列表 + 登录/注册)
-   *  登录/注册预取: 未登录用户点击切换时 chunk 已加载, 避免首次切换卡顿白屏. */
+  /** 批次1: 首屏最高频路由 (首页 + 商品列表 + 登录/注册/找回密码)
+   *  登录/注册/找回密码预取: 未登录用户点击切换时 chunk 已加载, 避免首次切换卡顿白屏. */
   const prefetchBatch1 = (): void => {
-    prefetchRoutes(['/', '/products', '/login', '/register'])
+    prefetchRoutes(['/', '/products', '/login', '/register', '/forgot-password'])
   }
 
   /** 批次2: 次高频路由 (商品详情/购物车/收藏夹/个人中心/秒杀专区) */

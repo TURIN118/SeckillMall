@@ -1,0 +1,5 @@
+product: 双立人 锋韵 6件套锅
+query: 双立人 锅 6件套 外观
+01_main.jpg	https://qny.smzdm.com/202401/24/65b0b9c6817d89621.jpg_d250.jpg
+02_detail.jpg	http://www.i5tea.com/images/201506/mybabys_img/646_P_1434070773072.jpg
+03_detail.jpg	https://qny.smzdm.com/202405/21/664c0b661001d4962.jpg_d250.jpg

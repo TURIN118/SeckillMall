@@ -1,0 +1,834 @@
+================================================================================
+Dead Code Scan Report
+================================================================================
+
+[Summary]
+- Total classes: 223
+- Total methods: 2429
+- Unused classes: 0
+- Unused methods: 204
+
+
+================================================================================
+[Unused Methods]
+================================================================================
+
+Method name: AuthControllerTest.register_shouldFailValidationWhenUsernameBlank
+File: src\test\java\com\seckill\mall\controller\AuthControllerTest.java:70
+Belongs to class: AuthControllerTest
+
+Method name: AuthControllerTest.register_shouldFailValidationWhenPhoneInvalid
+File: src\test\java\com\seckill\mall\controller\AuthControllerTest.java:85
+Belongs to class: AuthControllerTest
+
+Method name: AuthControllerTest.register_shouldReturnSuccess
+File: src\test\java\com\seckill\mall\controller\AuthControllerTest.java:100
+Belongs to class: AuthControllerTest
+
+Method name: AuthControllerTest.login_shouldFailValidationWhenUsernameBlank
+File: src\test\java\com\seckill\mall\controller\AuthControllerTest.java:119
+Belongs to class: AuthControllerTest
+
+Method name: AuthControllerTest.login_shouldReturnTokensOnSuccess
+File: src\test\java\com\seckill\mall\controller\AuthControllerTest.java:135
+Belongs to class: AuthControllerTest
+
+Method name: AuthControllerTest.login_shouldReturnErrorOnBusinessException
+File: src\test\java\com\seckill\mall\controller\AuthControllerTest.java:156
+Belongs to class: AuthControllerTest
+
+Method name: AuthControllerTest.willThrow
+File: src\test\java\com\seckill\mall\controller\AuthControllerTest.java:162
+Belongs to class: AuthControllerTest
+
+Method name: OrderControllerTest.pay_shouldReturnPaidOrder
+File: src\test\java\com\seckill\mall\controller\OrderControllerTest.java:70
+Belongs to class: OrderControllerTest
+
+Method name: OrderControllerTest.detail_shouldReturnOrder
+File: src\test\java\com\seckill\mall\controller\OrderControllerTest.java:89
+Belongs to class: OrderControllerTest
+
+Method name: OrderControllerTest.status_shouldReturnOrderStatus
+File: src\test\java\com\seckill\mall\controller\OrderControllerTest.java:107
+Belongs to class: OrderControllerTest
+
+Method name: ProductControllerTest.list_shouldFailWhenPageNumInvalid
+File: src\test\java\com\seckill\mall\controller\ProductControllerTest.java:58
+Belongs to class: ProductControllerTest
+
+Method name: ProductControllerTest.list_shouldReturnPagedResult
+File: src\test\java\com\seckill\mall\controller\ProductControllerTest.java:69
+Belongs to class: ProductControllerTest
+
+Method name: ProductControllerTest.detail_shouldReturnProduct
+File: src\test\java\com\seckill\mall\controller\ProductControllerTest.java:90
+Belongs to class: ProductControllerTest
+
+Method name: ProductControllerTest.create_shouldFailWhenNameBlank
+File: src\test\java\com\seckill\mall\controller\ProductControllerTest.java:107
+Belongs to class: ProductControllerTest
+
+Method name: ProductControllerTest.create_shouldFailWhenPriceInvalid
+File: src\test\java\com\seckill\mall\controller\ProductControllerTest.java:125
+Belongs to class: ProductControllerTest
+
+Method name: SeckillOrderMapperTest.insert_shouldPersistOrder
+File: src\test\java\com\seckill\mall\mapper\SeckillOrderMapperTest.java:50
+Belongs to class: SeckillOrderMapperTest
+
+Method name: SeckillOrderMapperTest.findByUserAndSeckill_shouldReturnOrder
+File: src\test\java\com\seckill\mall\mapper\SeckillOrderMapperTest.java:64
+Belongs to class: SeckillOrderMapperTest
+
+Method name: SeckillOrderMapperTest.sumSalesAmount_shouldReturnZeroWhenNoMatch
+File: src\test\java\com\seckill\mall\mapper\SeckillOrderMapperTest.java:79
+Belongs to class: SeckillOrderMapperTest
+
+Method name: SeckillOrderMapperTest.sumSalesAmount_shouldSumPaidOrders
+File: src\test\java\com\seckill\mall\mapper\SeckillOrderMapperTest.java:89
+Belongs to class: SeckillOrderMapperTest
+
+Method name: UserMapperTest.insert_shouldPersistUser
+File: src\test\java\com\seckill\mall\mapper\UserMapperTest.java:42
+Belongs to class: UserMapperTest
+
+Method name: UserMapperTest.findByUsername_shouldReturnPersistedUser
+File: src\test\java\com\seckill\mall\mapper\UserMapperTest.java:56
+Belongs to class: UserMapperTest
+
+Method name: UserMapperTest.findByUsername_shouldReturnNullWhenAbsent
+File: src\test\java\com\seckill\mall\mapper\UserMapperTest.java:73
+Belongs to class: UserMapperTest
+
+Method name: UserMapperTest.findByPhone_shouldReturnUser
+File: src\test\java\com\seckill\mall\mapper\UserMapperTest.java:83
+Belongs to class: UserMapperTest
+
+Method name: SeckillE2ETest.VALUES
+File: src\test\java\com\seckill\mall\seckill\SeckillE2ETest.java:113
+Belongs to class: SeckillE2ETest
+
+Method name: SeckillE2ETest.seckillFullFlow
+File: src\test\java\com\seckill\mall\seckill\SeckillE2ETest.java:129
+Belongs to class: SeckillE2ETest
+
+Method name: AuthServiceTest.register_shouldThrowWhenUsernameExists
+File: src\test\java\com\seckill\mall\service\AuthServiceTest.java:90
+Belongs to class: AuthServiceTest
+
+Method name: AuthServiceTest.register_shouldThrowWhenPhoneExists
+File: src\test\java\com\seckill\mall\service\AuthServiceTest.java:106
+Belongs to class: AuthServiceTest
+
+Method name: AuthServiceTest.register_shouldThrowWhenCaptchaInvalid
+File: src\test\java\com\seckill\mall\service\AuthServiceTest.java:122
+Belongs to class: AuthServiceTest
+
+Method name: AuthServiceTest.login_shouldIssueTokensOnSuccess
+File: src\test\java\com\seckill\mall\service\AuthServiceTest.java:136
+Belongs to class: AuthServiceTest
+
+Method name: AuthServiceTest.login_shouldRecordFailureOnWrongPassword
+File: src\test\java\com\seckill\mall\service\AuthServiceTest.java:164
+Belongs to class: AuthServiceTest
+
+Method name: AuthServiceTest.login_shouldThrowWhenLocked
+File: src\test\java\com\seckill\mall\service\AuthServiceTest.java:188
+Belongs to class: AuthServiceTest
+
+Method name: AuthServiceTest.login_shouldThrowWhenAccountDisabled
+File: src\test\java\com\seckill\mall\service\AuthServiceTest.java:207
+Belongs to class: AuthServiceTest
+
+Method name: AuthServiceTest.logout_shouldAddTokenToBlacklist
+File: src\test\java\com\seckill\mall\service\AuthServiceTest.java:230
+Belongs to class: AuthServiceTest
+
+Method name: AuthServiceTest.logout_shouldIgnoreBlankToken
+File: src\test\java\com\seckill\mall\service\AuthServiceTest.java:243
+Belongs to class: AuthServiceTest
+
+Method name: OrderServiceTest.setField
+File: src\test\java\com\seckill\mall\service\OrderServiceTest.java:70
+Belongs to class: OrderServiceTest
+
+Method name: OrderServiceTest.createSeckillOrder_shouldGenerateOrderNoAndInsert
+File: src\test\java\com\seckill\mall\service\OrderServiceTest.java:105
+Belongs to class: OrderServiceTest
+
+Method name: OrderServiceTest.createSeckillOrder_shouldThrowWhenGoodsMissing
+File: src\test\java\com\seckill\mall\service\OrderServiceTest.java:126
+Belongs to class: OrderServiceTest
+
+Method name: OrderServiceTest.createSeckillOrder_shouldThrowRepeatOnDuplicateKey
+File: src\test\java\com\seckill\mall\service\OrderServiceTest.java:140
+Belongs to class: OrderServiceTest
+
+Method name: OrderServiceTest.doThrow
+File: src\test\java\com\seckill\mall\service\OrderServiceTest.java:144
+Belongs to class: OrderServiceTest
+
+Method name: OrderServiceTest.payOrder_shouldMarkPaidAndSendEmail
+File: src\test\java\com\seckill\mall\service\OrderServiceTest.java:156
+Belongs to class: OrderServiceTest
+
+Method name: OrderServiceTest.payOrder_shouldThrowWhenAlreadyPaid
+File: src\test\java\com\seckill\mall\service\OrderServiceTest.java:179
+Belongs to class: OrderServiceTest
+
+Method name: OrderServiceTest.payOrder_shouldThrowWhenExpired
+File: src\test\java\com\seckill\mall\service\OrderServiceTest.java:193
+Belongs to class: OrderServiceTest
+
+Method name: OrderServiceTest.payOrder_shouldThrowWhenNotOwner
+File: src\test\java\com\seckill\mall\service\OrderServiceTest.java:208
+Belongs to class: OrderServiceTest
+
+Method name: OrderServiceTest.cancelOrder_shouldCancelAndRollbackStock
+File: src\test\java\com\seckill\mall\service\OrderServiceTest.java:223
+Belongs to class: OrderServiceTest
+
+Method name: OrderServiceTest.cancelOrder_shouldThrowWhenNotUnpaid
+File: src\test\java\com\seckill\mall\service\OrderServiceTest.java:242
+Belongs to class: OrderServiceTest
+
+Method name: OrderServiceTest.timeoutCancel_shouldCancelAndRollback
+File: src\test\java\com\seckill\mall\service\OrderServiceTest.java:256
+Belongs to class: OrderServiceTest
+
+Method name: OrderServiceTest.timeoutCancel_shouldIdempotentlySkipTerminal
+File: src\test\java\com\seckill\mall\service\OrderServiceTest.java:273
+Belongs to class: OrderServiceTest
+
+Method name: ProductServiceTest.listProducts_shouldReturnPagedResult
+File: src\test\java\com\seckill\mall\service\ProductServiceTest.java:99
+Belongs to class: ProductServiceTest
+
+Method name: ProductServiceTest.listProducts_shouldReturnEmptyWithoutCategoryLookup
+File: src\test\java\com\seckill\mall\service\ProductServiceTest.java:126
+Belongs to class: ProductServiceTest
+
+Method name: ProductServiceTest.listProducts_shouldFilterByStatusWhenSpecified
+File: src\test\java\com\seckill\mall\service\ProductServiceTest.java:147
+Belongs to class: ProductServiceTest
+
+Method name: ProductServiceTest.listProducts_shouldFilterByOffShelfWhenSpecified
+File: src\test\java\com\seckill\mall\service\ProductServiceTest.java:173
+Belongs to class: ProductServiceTest
+
+Method name: ProductServiceTest.getProductDetail_shouldReturnFromCache
+File: src\test\java\com\seckill\mall\service\ProductServiceTest.java:197
+Belongs to class: ProductServiceTest
+
+Method name: ProductServiceTest.getProductDetail_shouldThrowWhenCacheIsNullMarker
+File: src\test\java\com\seckill\mall\service\ProductServiceTest.java:217
+Belongs to class: ProductServiceTest
+
+Method name: ProductServiceTest.getProductDetail_shouldLoadFromDbAndFillCache
+File: src\test\java\com\seckill\mall\service\ProductServiceTest.java:232
+Belongs to class: ProductServiceTest
+
+Method name: ProductServiceTest.getProductDetail_shouldCacheNullWhenDbMiss
+File: src\test\java\com\seckill\mall\service\ProductServiceTest.java:256
+Belongs to class: ProductServiceTest
+
+Method name: ProductServiceTest.createProduct_shouldThrowWhenCategoryMissing
+File: src\test\java\com\seckill\mall\service\ProductServiceTest.java:274
+Belongs to class: ProductServiceTest
+
+Method name: ProductServiceTest.createProduct_shouldThrowWhenCategoryDisabled
+File: src\test\java\com\seckill\mall\service\ProductServiceTest.java:293
+Belongs to class: ProductServiceTest
+
+Method name: ProductServiceTest.createProduct_shouldInsertAndReturnVo
+File: src\test\java\com\seckill\mall\service\ProductServiceTest.java:313
+Belongs to class: ProductServiceTest
+
+Method name: SeckillServiceTest.doSeckill_shouldThrowWhenNotStarted
+File: src\test\java\com\seckill\mall\service\SeckillServiceTest.java:94
+Belongs to class: SeckillServiceTest
+
+Method name: SeckillServiceTest.doSeckill_shouldThrowWhenStockEmpty
+File: src\test\java\com\seckill\mall\service\SeckillServiceTest.java:118
+Belongs to class: SeckillServiceTest
+
+Method name: SeckillServiceTest.doSeckill_shouldThrowWhenRepeat
+File: src\test\java\com\seckill\mall\service\SeckillServiceTest.java:137
+Belongs to class: SeckillServiceTest
+
+Method name: SeckillServiceTest.doSeckill_shouldThrowWhenTokenInvalid
+File: src\test\java\com\seckill\mall\service\SeckillServiceTest.java:156
+Belongs to class: SeckillServiceTest
+
+Method name: SeckillServiceTest.doSeckill_shouldReturnRequestIdOnSuccess
+File: src\test\java\com\seckill\mall\service\SeckillServiceTest.java:173
+Belongs to class: SeckillServiceTest
+
+Method name: SeckillServiceTest.doSeckill_shouldFallbackToSyncOrderWhenMqDown
+File: src\test\java\com\seckill\mall\service\SeckillServiceTest.java:199
+Belongs to class: SeckillServiceTest
+
+Method name: SeckillServiceTest.doSeckill_shouldFallbackToDbModeWhenRedisDown
+File: src\test\java\com\seckill\mall\service\SeckillServiceTest.java:227
+Belongs to class: SeckillServiceTest
+
+Method name: SeckillServiceTest.getSeckillResult_shouldReturnNotFoundWhenAbsent
+File: src\test\java\com\seckill\mall\service\SeckillServiceTest.java:255
+Belongs to class: SeckillServiceTest
+
+Method name: CacheDegradeService.isMqAvailable
+File: src\main\java\com\seckill\mall\cache\CacheDegradeService.java:48
+Belongs to class: CacheDegradeService
+
+Method name: RedisKeyConstants.seckillMark
+File: src\main\java\com\seckill\mall\cache\RedisKeyConstants.java:41
+Belongs to class: RedisKeyConstants
+
+Method name: RedisKeyConstants.rateSeckill
+File: src\main\java\com\seckill\mall\cache\RedisKeyConstants.java:57
+Belongs to class: RedisKeyConstants
+
+Method name: RedisKeyConstants.rateIp
+File: src\main\java\com\seckill\mall\cache\RedisKeyConstants.java:61
+Belongs to class: RedisKeyConstants
+
+Method name: RedisKeyConstants.loginFail
+File: src\main\java\com\seckill\mall\cache\RedisKeyConstants.java:65
+Belongs to class: RedisKeyConstants
+
+Method name: RedisService.incrBy
+File: src\main\java\com\seckill\mall\cache\RedisService.java:56
+Belongs to class: RedisService
+
+Method name: RedisService.sAdd
+File: src\main\java\com\seckill\mall\cache\RedisService.java:64
+Belongs to class: RedisService
+
+Method name: RedisService.sIsMember
+File: src\main\java\com\seckill\mall\cache\RedisService.java:72
+Belongs to class: RedisService
+
+Method name: RedisService.scanKeys
+File: src\main\java\com\seckill\mall\cache\RedisService.java:109
+Belongs to class: RedisService
+
+Method name: RedisService.scanOptions
+File: src\main\java\com\seckill\mall\cache\RedisService.java:111
+Belongs to class: RedisService
+
+Method name: MetaObjectHandler.insertFill
+File: src\main\java\com\seckill\mall\config\MetaObjectHandler.java:18
+Belongs to class: MetaObjectHandler
+
+Method name: MetaObjectHandler.updateFill
+File: src\main\java\com\seckill\mall\config\MetaObjectHandler.java:24
+Belongs to class: MetaObjectHandler
+
+Method name: MetaObjectHandler.strictUpdateFill
+File: src\main\java\com\seckill\mall\config\MetaObjectHandler.java:25
+Belongs to class: MetaObjectHandler
+
+Method name: ProductQueryRequest.既灵活
+File: src\main\java\com\seckill\mall\dto\ProductQueryRequest.java:48
+Belongs to class: ProductQueryRequest
+
+Method name: ProductQueryRequest.商品状态筛选
+File: src\main\java\com\seckill\mall\dto\ProductQueryRequest.java:58
+Belongs to class: ProductQueryRequest
+
+Method name: ProductQueryRequest.返回所有状态商品
+File: src\main\java\com\seckill\mall\dto\ProductQueryRequest.java:59
+Belongs to class: ProductQueryRequest
+
+Method name: SeckillGoodsMapper.selectActiveList
+File: src\main\java\com\seckill\mall\mapper\SeckillGoodsMapper.java:26
+Belongs to class: SeckillGoodsMapper
+
+Method name: JwtAuthenticationFilter.setDetails
+File: src\main\java\com\seckill\mall\security\JwtAuthenticationFilter.java:52
+Belongs to class: JwtAuthenticationFilter
+
+Method name: JwtAuthenticationFilter.clearContext
+File: src\main\java\com\seckill\mall\security\JwtAuthenticationFilter.java:57
+Belongs to class: JwtAuthenticationFilter
+
+Method name: JwtUtils.hmacShaKeyFor
+File: src\main\java\com\seckill\mall\security\JwtUtils.java:49
+Belongs to class: JwtUtils
+
+Method name: JwtUtils.issuedAt
+File: src\main\java\com\seckill\mall\security\JwtUtils.java:69
+Belongs to class: JwtUtils
+
+Method name: JwtUtils.signWith
+File: src\main\java\com\seckill\mall\security\JwtUtils.java:71
+Belongs to class: JwtUtils
+
+Method name: JwtUtils.compact
+File: src\main\java\com\seckill\mall\security\JwtUtils.java:72
+Belongs to class: JwtUtils
+
+Method name: JwtUtils.verifyWith
+File: src\main\java\com\seckill\mall\security\JwtUtils.java:77
+Belongs to class: JwtUtils
+
+Method name: JwtUtils.parseSignedClaims
+File: src\main\java\com\seckill\mall\security\JwtUtils.java:79
+Belongs to class: JwtUtils
+
+Method name: JwtUtils.getPayload
+File: src\main\java\com\seckill\mall\security\JwtUtils.java:80
+Belongs to class: JwtUtils
+
+Method name: JwtUtils.isAccessTokenExpired
+File: src\main\java\com\seckill\mall\security\JwtUtils.java:113
+Belongs to class: JwtUtils
+
+Method name: SecurityUserDetails.isAccountNonExpired
+File: src\main\java\com\seckill\mall\security\SecurityUserDetails.java:57
+Belongs to class: SecurityUserDetails
+
+Method name: SecurityUserDetails.isAccountNonLocked
+File: src\main\java\com\seckill\mall\security\SecurityUserDetails.java:62
+Belongs to class: SecurityUserDetails
+
+Method name: SecurityUserDetails.isCredentialsNonExpired
+File: src\main\java\com\seckill\mall\security\SecurityUserDetails.java:67
+Belongs to class: SecurityUserDetails
+
+Method name: SecurityUserDetails.isEnabled
+File: src\main\java\com\seckill\mall\security\SecurityUserDetails.java:72
+Belongs to class: SecurityUserDetails
+
+Method name: SecurityUserDetailsService.loadUserByUsername
+File: src\main\java\com\seckill\mall\security\SecurityUserDetailsService.java:24
+Belongs to class: SecurityUserDetailsService
+
+Method name: SecurityUtils.setUserMapper
+File: src\main\java\com\seckill\mall\security\SecurityUtils.java:25
+Belongs to class: SecurityUtils
+
+Method name: SecurityUtils.getCurrentUsername
+File: src\main\java\com\seckill\mall\security\SecurityUtils.java:34
+Belongs to class: SecurityUtils
+
+Method name: SecurityUtils.getCurrentUserRole
+File: src\main\java\com\seckill\mall\security\SecurityUtils.java:39
+Belongs to class: SecurityUtils
+
+Method name: CaptchaService.setCaptchaId
+File: src\main\java\com\seckill\mall\service\CaptchaService.java:52
+Belongs to class: CaptchaService
+
+Method name: CaptchaService.setCaptchaImage
+File: src\main\java\com\seckill\mall\service\CaptchaService.java:53
+Belongs to class: CaptchaService
+
+Method name: CaptchaService.createGraphics
+File: src\main\java\com\seckill\mall\service\CaptchaService.java:79
+Belongs to class: CaptchaService
+
+Method name: CaptchaService.fillRect
+File: src\main\java\com\seckill\mall\service\CaptchaService.java:82
+Belongs to class: CaptchaService
+
+Method name: CaptchaService.drawLine
+File: src\main\java\com\seckill\mall\service\CaptchaService.java:92
+Belongs to class: CaptchaService
+
+Method name: CaptchaService.drawString
+File: src\main\java\com\seckill\mall\service\CaptchaService.java:98
+Belongs to class: CaptchaService
+
+Method name: CaptchaService.setRGB
+File: src\main\java\com\seckill\mall\service\CaptchaService.java:104
+Belongs to class: CaptchaService
+
+Method name: CaptchaService.dispose
+File: src\main\java\com\seckill\mall\service\CaptchaService.java:107
+Belongs to class: CaptchaService
+
+Method name: CaptchaService.toByteArray
+File: src\main\java\com\seckill\mall\service\CaptchaService.java:115
+Belongs to class: CaptchaService
+
+Method name: CaptchaService.getEncoder
+File: src\main\java\com\seckill\mall\service\CaptchaService.java:116
+Belongs to class: CaptchaService
+
+Method name: CategoryVO.该分类及其所有子孙分类下的商品总数
+File: src\main\java\com\seckill\mall\vo\CategoryVO.java:27
+Belongs to class: CategoryVO
+
+Method name: SystemHealthVO.isAllHealthy
+File: src\main\java\com\seckill\mall\vo\SystemHealthVO.java:115
+Belongs to class: SystemHealthVO
+
+Method name: AdminOrderServiceImpl.setSortByColumn
+File: src\main\java\com\seckill\mall\service\impl\AdminOrderServiceImpl.java:57
+Belongs to class: AdminOrderServiceImpl
+
+Method name: AdminOrderServiceImpl.setStartLdt
+File: src\main\java\com\seckill\mall\service\impl\AdminOrderServiceImpl.java:67
+Belongs to class: AdminOrderServiceImpl
+
+Method name: AdminOrderServiceImpl.setEndLdt
+File: src\main\java\com\seckill\mall\service\impl\AdminOrderServiceImpl.java:68
+Belongs to class: AdminOrderServiceImpl
+
+Method name: AdminOrderServiceImpl.setPayStartLdt
+File: src\main\java\com\seckill\mall\service\impl\AdminOrderServiceImpl.java:69
+Belongs to class: AdminOrderServiceImpl
+
+Method name: AdminOrderServiceImpl.setPayEndLdt
+File: src\main\java\com\seckill\mall\service\impl\AdminOrderServiceImpl.java:70
+Belongs to class: AdminOrderServiceImpl
+
+Method name: AdminUserServiceImpl.setLoginLocation
+File: src\main\java\com\seckill\mall\service\impl\AdminUserServiceImpl.java:128
+Belongs to class: AdminUserServiceImpl
+
+Method name: AdminUserServiceImpl.setUserAgent
+File: src\main\java\com\seckill\mall\service\impl\AdminUserServiceImpl.java:129
+Belongs to class: AdminUserServiceImpl
+
+Method name: AdminUserServiceImpl.getLoginResult
+File: src\main\java\com\seckill\mall\service\impl\AdminUserServiceImpl.java:130
+Belongs to class: AdminUserServiceImpl
+
+Method name: AdminUserServiceImpl.setLoginTime
+File: src\main\java\com\seckill\mall\service\impl\AdminUserServiceImpl.java:133
+Belongs to class: AdminUserServiceImpl
+
+Method name: CartServiceImpl.forEach
+File: src\main\java\com\seckill\mall\service\impl\CartServiceImpl.java:167
+Belongs to class: CartServiceImpl
+
+Method name: CategoryServiceImpl.setChildren
+File: src\main\java\com\seckill\mall\service\impl\CategoryServiceImpl.java:278
+Belongs to class: CategoryServiceImpl
+
+Method name: CouponServiceImpl.必须在
+File: src\main\java\com\seckill\mall\service\impl\CouponServiceImpl.java:277
+Belongs to class: CouponServiceImpl
+
+Method name: CouponServiceImpl.setRemainCount
+File: src\main\java\com\seckill\mall\service\impl\CouponServiceImpl.java:311
+Belongs to class: CouponServiceImpl
+
+Method name: CouponServiceImpl.setUseTime
+File: src\main\java\com\seckill\mall\service\impl\CouponServiceImpl.java:329
+Belongs to class: CouponServiceImpl
+
+Method name: CouponServiceImpl.setCouponName
+File: src\main\java\com\seckill\mall\service\impl\CouponServiceImpl.java:333
+Belongs to class: CouponServiceImpl
+
+Method name: CouponServiceImpl.setCouponType
+File: src\main\java\com\seckill\mall\service\impl\CouponServiceImpl.java:334
+Belongs to class: CouponServiceImpl
+
+Method name: CouponServiceImpl.setCouponAmount
+File: src\main\java\com\seckill\mall\service\impl\CouponServiceImpl.java:335
+Belongs to class: CouponServiceImpl
+
+Method name: CouponServiceImpl.setCouponStartTime
+File: src\main\java\com\seckill\mall\service\impl\CouponServiceImpl.java:337
+Belongs to class: CouponServiceImpl
+
+Method name: CouponServiceImpl.setCouponEndTime
+File: src\main\java\com\seckill\mall\service\impl\CouponServiceImpl.java:338
+Belongs to class: CouponServiceImpl
+
+Method name: EmailServiceImpl.recover
+File: src\main\java\com\seckill\mall\service\impl\EmailServiceImpl.java:132
+Belongs to class: EmailServiceImpl
+
+Method name: EmailServiceImpl.setVariables
+File: src\main\java\com\seckill\mall\service\impl\EmailServiceImpl.java:138
+Belongs to class: EmailServiceImpl
+
+Method name: EmailServiceImpl.process
+File: src\main\java\com\seckill\mall\service\impl\EmailServiceImpl.java:139
+Belongs to class: EmailServiceImpl
+
+Method name: EmailServiceImpl.createMimeMessage
+File: src\main\java\com\seckill\mall\service\impl\EmailServiceImpl.java:144
+Belongs to class: EmailServiceImpl
+
+Method name: EmailServiceImpl.MailSendException
+File: src\main\java\com\seckill\mall\service\impl\EmailServiceImpl.java:153
+Belongs to class: EmailServiceImpl
+
+Method name: LocalStorageService.transferTo
+File: src\main\java\com\seckill\mall\service\impl\LocalStorageService.java:45
+Belongs to class: LocalStorageService
+
+Method name: OrderServiceImpl.setAddressId
+File: src\main\java\com\seckill\mall\service\impl\OrderServiceImpl.java:522
+Belongs to class: OrderServiceImpl
+
+Method name: OrderServiceImpl.nullsLast
+File: src\main\java\com\seckill\mall\service\impl\OrderServiceImpl.java:631
+Belongs to class: OrderServiceImpl
+
+Method name: OrderServiceImpl.subList
+File: src\main\java\com\seckill\mall\service\impl\OrderServiceImpl.java:637
+Belongs to class: OrderServiceImpl
+
+Method name: ProductServiceImpl.未指定则返回所有商品
+File: src\main\java\com\seckill\mall\service\impl\ProductServiceImpl.java:94
+Belongs to class: ProductServiceImpl
+
+Method name: ProductServiceImpl.getMinPrice
+File: src\main\java\com\seckill\mall\service\impl\ProductServiceImpl.java:135
+Belongs to class: ProductServiceImpl
+
+Method name: ProductServiceImpl.getMaxPrice
+File: src\main\java\com\seckill\mall\service\impl\ProductServiceImpl.java:136
+Belongs to class: ProductServiceImpl
+
+Method name: ProductServiceImpl.currentThread
+File: src\main\java\com\seckill\mall\service\impl\ProductServiceImpl.java:209
+Belongs to class: ProductServiceImpl
+
+Method name: ProductServiceImpl.支持的标准字段
+File: src\main\java\com\seckill\mall\service\impl\ProductServiceImpl.java:303
+Belongs to class: ProductServiceImpl
+
+Method name: ProductServiceImpl.命中别名映射
+File: src\main\java\com\seckill\mall\service\impl\ProductServiceImpl.java:305
+Belongs to class: ProductServiceImpl
+
+Method name: ProductServiceImpl.命中白名单
+File: src\main\java\com\seckill\mall\service\impl\ProductServiceImpl.java:306
+Belongs to class: ProductServiceImpl
+
+Method name: RechargeCardServiceImpl.setUsedBy
+File: src\main\java\com\seckill\mall\service\impl\RechargeCardServiceImpl.java:236
+Belongs to class: RechargeCardServiceImpl
+
+Method name: RechargeCardServiceImpl.setUsedTime
+File: src\main\java\com\seckill\mall\service\impl\RechargeCardServiceImpl.java:237
+Belongs to class: RechargeCardServiceImpl
+
+Method name: SeckillGoodsServiceImpl.setCreatorId
+File: src\main\java\com\seckill\mall\service\impl\SeckillGoodsServiceImpl.java:111
+Belongs to class: SeckillGoodsServiceImpl
+
+Method name: SeckillServiceImpl.setTimestamp
+File: src\main\java\com\seckill\mall\service\impl\SeckillServiceImpl.java:136
+Belongs to class: SeckillServiceImpl
+
+Method name: StatsServiceImpl.setTodayUserCount
+File: src\main\java\com\seckill\mall\service\impl\StatsServiceImpl.java:84
+Belongs to class: StatsServiceImpl
+
+Method name: StatsServiceImpl.setTodayOrderCount
+File: src\main\java\com\seckill\mall\service\impl\StatsServiceImpl.java:87
+Belongs to class: StatsServiceImpl
+
+Method name: SystemServiceImpl.setDatabase
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:122
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setCpuUsage
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:125
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setMemoryUsage
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:126
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setDiskUsage
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:127
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setRedisHitRate
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:128
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setRedisResponseTime
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:129
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setDbPoolUsage
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:130
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setMqQueueBacklog
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:131
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setJvmHeapUsage
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:133
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setJvmNonHeapUsage
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:134
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setDbActiveConnections
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:136
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setDbIdleConnections
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:137
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setDbMaxConnections
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:138
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setOsName
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:140
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setJdkVersion
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:141
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setAppStartTime
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:142
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setAppUptime
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:143
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setSeckillActiveCount
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:145
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setSeckillPendingCount
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:146
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setSeckillCompletedToday
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:147
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setDates
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:194
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setOrderCounts
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:195
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.setSalesAmounts
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:196
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.divide
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:241
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.queryForObject
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:270
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.createConnection
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:280
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.isOpen
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:282
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.getSystemCpuLoad
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:301
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.getTotalPhysicalMemorySize
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:320
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.getFreePhysicalMemorySize
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:321
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.getTotalSpace
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:341
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.getFreeSpace
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:342
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.getHeapMemoryUsage
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:439
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.getNonHeapMemoryUsage
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:458
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.getIdleConnections
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:501
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.ofEpochMilli
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:555
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.getUptime
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:569
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.ofMillis
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:570
+Belongs to class: SystemServiceImpl
+
+Method name: SystemServiceImpl.toDays
+File: src\main\java\com\seckill\mall\service\impl\SystemServiceImpl.java:571
+Belongs to class: SystemServiceImpl
+
+Method name: UploadServiceImpl.getOriginalFilename
+File: src\main\java\com\seckill\mall\service\impl\UploadServiceImpl.java:63
+Belongs to class: UploadServiceImpl
+
+Method name: UploadServiceImpl.getWidth
+File: src\main\java\com\seckill\mall\service\impl\UploadServiceImpl.java:73
+Belongs to class: UploadServiceImpl
+
+Method name: UploadServiceImpl.getHeight
+File: src\main\java\com\seckill\mall\service\impl\UploadServiceImpl.java:74
+Belongs to class: UploadServiceImpl
+
+Method name: UploadServiceImpl.setUrl
+File: src\main\java\com\seckill\mall\service\impl\UploadServiceImpl.java:86
+Belongs to class: UploadServiceImpl
+
+Method name: UploadServiceImpl.setOriginalName
+File: src\main\java\com\seckill\mall\service\impl\UploadServiceImpl.java:87
+Belongs to class: UploadServiceImpl
+
+Method name: UploadServiceImpl.setSize
+File: src\main\java\com\seckill\mall\service\impl\UploadServiceImpl.java:88
+Belongs to class: UploadServiceImpl
+
+Method name: UploadServiceImpl.setWidth
+File: src\main\java\com\seckill\mall\service\impl\UploadServiceImpl.java:89
+Belongs to class: UploadServiceImpl
+
+Method name: UploadServiceImpl.setHeight
+File: src\main\java\com\seckill\mall\service\impl\UploadServiceImpl.java:90
+Belongs to class: UploadServiceImpl
+
+Method name: UserFavoriteServiceImpl.setFavoriteCount
+File: src\main\java\com\seckill\mall\service\impl\UserFavoriteServiceImpl.java:184
+Belongs to class: UserFavoriteServiceImpl
+
+Method name: SeckillOrderConsumer.setExpireTime
+File: src\main\java\com\seckill\mall\mq\consumer\SeckillOrderConsumer.java:130
+Belongs to class: SeckillOrderConsumer
+
+Method name: SeckillOrderProducer.getMessageProperties
+File: src\main\java\com\seckill\mall\mq\producer\SeckillOrderProducer.java:38
+Belongs to class: SeckillOrderProducer
+
+================================================================================
+Report generation complete
+================================================================================

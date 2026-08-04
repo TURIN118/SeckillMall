@@ -1,0 +1,5 @@
+product: 戴尔 U2723QE 27英寸显示器
+query: 戴尔 U2723QE 显示器 外观
+01_main.jpg	https://2b.zol-img.com.cn/product/221_400x300/687/ceuhB0UNr4SEw.jpg
+02_detail.png	https://qny.smzdm.com/202203/15/62303d7aa3e632260.png_d320.jpg
+03_detail.jpg	https://2c.zol-img.com.cn/product/221_698x437/482/ceAVRPWWw4k.jpg

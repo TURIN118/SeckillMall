@@ -1,0 +1,4 @@
+# 图片来源溯源（图片均来自对应商品的官方/权威媒体页面，非随机生成）
+01_main.jpg	https://imgservice.suning.cn/uimg1/b2c/image/rXwuB34ySaqPmHpuTZCDnA.jpg_800w_800h_4e
+02_detail.jpg	https://y.zdmimg.com/202308/29/64ed71cf8db1b7975.jpg
+03_detail.jpg	https://qny.smzdm.com/202406/15/666d8f76a45929599.jpg_e600.jpg

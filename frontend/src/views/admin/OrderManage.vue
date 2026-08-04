@@ -6,12 +6,7 @@
       <div class="admin-table-header">
         <div class="admin-table-title">全部订单</div>
         <div class="admin-table-actions">
-          <input
-            v-model="orderNo"
-            class="admin-search-input"
-            placeholder="搜索订单号..."
-            @keyup.enter="handleQuery"
-          />
+          <input v-model="orderNo" class="admin-search-input" placeholder="搜索订单号..." @keyup.enter="handleQuery" />
           <select v-model="statusFilter" class="admin-filter-select" @change="handleQuery">
             <option value="">全部状态</option>
             <option value="UNPAID">待支付</option>
@@ -20,13 +15,12 @@
             <option value="TIMEOUT">已超时</option>
             <option value="COMPLETED">已完成</option>
           </select>
-          <input
-            v-model="dateSingle"
-            type="date"
-            class="admin-search-input date-input"
-          />
+          <input v-model="dateSingle" type="date" class="admin-search-input date-input" />
           <button class="btn-sm" @click="handleQuery">查询</button>
           <button class="btn-sm" @click="handleReset">重置</button>
+          <button class="btn-sm primary" :disabled="exportLoading" @click="handleExport">
+            {{ exportLoading ? '导出中...' : '导出Excel' }}
+          </button>
         </div>
       </div>
 
@@ -57,7 +51,7 @@
             <td>{{ formatTime(row.createTime) }}</td>
             <td>
               <div class="table-actions">
-                <button class="table-action-btn" @click="openDetail(row as SeckillOrder)">详情</button>
+                <button class="table-action-btn" @click="openDetail(row as AdminOrderVO)">详情</button>
               </div>
             </td>
           </tr>
@@ -71,23 +65,11 @@
       <div class="admin-table-footer">
         <span class="page-info">共 {{ total }} 条记录</span>
         <div class="pagination">
-          <div
-            class="page-btn"
-            :class="{ disabled: pageNum <= 1 }"
-            @click="handlePageChange(pageNum - 1)"
-          >&lt;</div>
-          <div
-            v-for="p in displayPages"
-            :key="p"
-            class="page-btn"
-            :class="{ active: p === pageNum }"
-            @click="handlePageChange(p)"
-          >{{ p }}</div>
-          <div
-            class="page-btn"
-            :class="{ disabled: pageNum >= totalPages }"
-            @click="handlePageChange(pageNum + 1)"
-          >&gt;</div>
+          <div class="page-btn" :class="{ disabled: pageNum <= 1 }" @click="handlePageChange(pageNum - 1)">&lt;</div>
+          <div v-for="p in displayPages" :key="p" class="page-btn" :class="{ active: p === pageNum }"
+            @click="handlePageChange(p)">{{ p }}</div>
+          <div class="page-btn" :class="{ disabled: pageNum >= totalPages }" @click="handlePageChange(pageNum + 1)">&gt;
+          </div>
         </div>
       </div>
     </div>
@@ -95,14 +77,22 @@
     <!-- 详情弹窗 -->
     <el-dialog v-model="detailVisible" title="订单详情" width="600px">
       <div v-if="detailRow" class="detail-list">
-        <div class="detail-row"><span class="detail-label">订单号</span><span class="detail-value">{{ detailRow.orderNo }}</span></div>
-        <div class="detail-row"><span class="detail-label">用户 ID</span><span class="detail-value">{{ detailRow.userId }}</span></div>
-        <div class="detail-row"><span class="detail-label">商品 ID</span><span class="detail-value">{{ detailRow.productId }}</span></div>
-        <div class="detail-row"><span class="detail-label">秒杀价</span><span class="detail-value">¥{{ formatPrice(detailRow.seckillPrice) }}</span></div>
-        <div class="detail-row"><span class="detail-label">总金额</span><span class="detail-value">¥{{ formatPrice(detailRow.totalAmount) }}</span></div>
-        <div class="detail-row"><span class="detail-label">状态</span><span class="detail-value">{{ getStatusLabel(detailRow.status) }}</span></div>
-        <div class="detail-row"><span class="detail-label">创建时间</span><span class="detail-value">{{ formatDateTime(detailRow.createTime) }}</span></div>
-        <div class="detail-row"><span class="detail-label">支付时间</span><span class="detail-value">{{ detailRow.payTime ? formatDateTime(detailRow.payTime) : '—' }}</span></div>
+        <div class="detail-row"><span class="detail-label">订单号</span><span class="detail-value">{{ detailRow.orderNo
+            }}</span></div>
+        <div class="detail-row"><span class="detail-label">用户 ID</span><span class="detail-value">{{ detailRow.userId
+            }}</span></div>
+        <div class="detail-row"><span class="detail-label">商品 ID</span><span class="detail-value">{{ detailRow.productId
+            }}</span></div>
+        <div class="detail-row"><span class="detail-label">秒杀价</span><span class="detail-value">¥{{
+          formatPrice(detailRow.seckillPrice) }}</span></div>
+        <div class="detail-row"><span class="detail-label">总金额</span><span class="detail-value">¥{{
+          formatPrice(detailRow.totalAmount) }}</span></div>
+        <div class="detail-row"><span class="detail-label">状态</span><span class="detail-value">{{
+          getStatusLabel(detailRow.status) }}</span></div>
+        <div class="detail-row"><span class="detail-label">创建时间</span><span class="detail-value">{{
+          formatDateTime(detailRow.createTime) }}</span></div>
+        <div class="detail-row"><span class="detail-label">支付时间</span><span class="detail-value">{{ detailRow.payTime ?
+          formatDateTime(detailRow.payTime) : '—' }}</span></div>
       </div>
       <template #footer>
         <el-button @click="detailVisible = false">关闭</el-button>
@@ -118,12 +108,15 @@
  */
 import { ref, computed, onMounted } from 'vue'
 import dayjs from 'dayjs'
-import { getOrderList } from '@/api/order'
-import type { SeckillOrder, OrderStatus } from '@/types'
+import * as XLSX from 'xlsx'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { getAdminOrderList } from '@/api/order'
+import type { AdminOrderVO, OrderStatus } from '@/types'
 
 /* === 列表数据 === */
 const loading = ref(false)
-const orderList = ref<SeckillOrder[]>([])
+const exportLoading = ref(false)
+const orderList = ref<AdminOrderVO[]>([])
 const total = ref(0)
 const pageNum = ref(1)
 const pageSize = ref(10)
@@ -188,25 +181,17 @@ function getStatusTagClass(status: OrderStatus): string {
 async function fetchOrderList(): Promise<void> {
   loading.value = true
   try {
-    const res = await getOrderList({
+    // 后端搜索：将 orderNo / date / status 传给后端 /api/v1/admin/orders
+    // 后端在 SQL 中进行模糊查询和按天筛选，避免前端仅过滤当前页 10 条的 BUG-005
+    const res = await getAdminOrderList({
       status: statusFilter.value || undefined,
+      orderNo: orderNo.value || undefined,
+      date: dateSingle.value || undefined,
       pageNum: pageNum.value,
       pageSize: pageSize.value
     })
-    let list = res.data.list
-    if (orderNo.value) {
-      list = list.filter((o) => o.orderNo.includes(orderNo.value))
-    }
-    if (dateSingle.value) {
-      const startTs = dayjs(dateSingle.value).startOf('day').valueOf()
-      const endTs = dayjs(dateSingle.value).endOf('day').valueOf()
-      list = list.filter((o) => {
-        const ts = dayjs(o.createTime).valueOf()
-        return ts >= startTs && ts <= endTs
-      })
-    }
-    orderList.value = list
-    total.value = orderNo.value || dateSingle.value ? list.length : res.data.total
+    orderList.value = res.data.list
+    total.value = res.data.total
   } catch {
     // 错误已由全局拦截器提示
   } finally {
@@ -229,6 +214,114 @@ function handleReset(): void {
   fetchOrderList()
 }
 
+/* === 导出 Excel（多 Sheet） === */
+async function handleExport(): Promise<void> {
+  // BUG-009: 未选择日期范围时硬编码 pageSize=10000 可能导致导出不全或内存溢出
+  // 强制提示用户先选择日期范围，未选择时需用户二次确认才继续
+  if (!dateSingle.value) {
+    try {
+      await ElMessageBox.confirm(
+        '未选择日期范围，仅导出最近10000条订单，建议先选择日期范围后再导出。是否继续？',
+        '导出提示',
+        { confirmButtonText: '继续导出', cancelButtonText: '取消', type: 'warning' }
+      )
+    } catch {
+      // 用户取消导出
+      return
+    }
+  }
+
+  exportLoading.value = true
+  try {
+    // 1. 查询当前筛选条件下所有订单（传大 pageSize 获取全量）
+    //    后端搜索：orderNo / date / status 由后端 SQL 过滤，避免前端仅过滤当前页的 BUG-005
+    const res = await getAdminOrderList({
+      status: statusFilter.value || undefined,
+      orderNo: orderNo.value || undefined,
+      date: dateSingle.value || undefined,
+      pageNum: 1,
+      pageSize: 10000
+    })
+    const orders: AdminOrderVO[] = res.data.list || []
+
+    if (orders.length === 0) {
+      ElMessage.warning('没有可导出的订单数据')
+      return
+    }
+
+    // 2. 创建工作簿
+    const wb = XLSX.utils.book_new()
+
+    // === Sheet1: 订单明细 ===
+    const detailData = orders.map((o) => ({
+      订单号: o.orderNo,
+      用户ID: o.userId,
+      商品ID: o.productId,
+      秒杀价: o.seckillPrice || 0,
+      购买数量: o.quantity || 0,
+      金额: o.totalAmount || 0,
+      状态: getStatusLabel(o.status),
+      下单时间: formatDateTime(o.createTime)
+    }))
+    const ws1 = XLSX.utils.json_to_sheet(detailData)
+    ws1['!cols'] = [
+      { wch: 25 }, // 订单号
+      { wch: 12 }, // 用户ID
+      { wch: 12 }, // 商品ID
+      { wch: 12 }, // 秒杀价
+      { wch: 10 }, // 购买数量
+      { wch: 12 }, // 金额
+      { wch: 10 }, // 状态
+      { wch: 22 }  // 下单时间
+    ]
+    XLSX.utils.book_append_sheet(wb, ws1, '订单明细')
+
+    // === Sheet2: 统计汇总 ===
+    const totalAmount = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0)
+    const statusCount = {
+      UNPAID: orders.filter((o) => o.status === 'UNPAID').length,
+      PAID: orders.filter((o) => o.status === 'PAID').length,
+      CANCELLED: orders.filter((o) => o.status === 'CANCELLED').length,
+      TIMEOUT: orders.filter((o) => o.status === 'TIMEOUT').length,
+      COMPLETED: orders.filter((o) => o.status === 'COMPLETED').length
+    }
+    const orderCount = orders.length
+    const summaryData = [
+      { 指标: '总订单数', 值: orderCount, 说明: '当前筛选条件下' },
+      { 指标: '总金额(元)', 值: totalAmount.toFixed(2), 说明: '所有订单金额合计' },
+      { 指标: '待支付', 值: statusCount.UNPAID, 说明: `${(statusCount.UNPAID / orderCount * 100).toFixed(1)}%` },
+      { 指标: '已支付', 值: statusCount.PAID, 说明: `${(statusCount.PAID / orderCount * 100).toFixed(1)}%` },
+      { 指标: '已取消', 值: statusCount.CANCELLED, 说明: `${(statusCount.CANCELLED / orderCount * 100).toFixed(1)}%` },
+      { 指标: '已超时', 值: statusCount.TIMEOUT, 说明: `${(statusCount.TIMEOUT / orderCount * 100).toFixed(1)}%` },
+      { 指标: '已完成', 值: statusCount.COMPLETED, 说明: `${(statusCount.COMPLETED / orderCount * 100).toFixed(1)}%` }
+    ]
+    const ws2 = XLSX.utils.json_to_sheet(summaryData)
+    ws2['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 25 }]
+    XLSX.utils.book_append_sheet(wb, ws2, '统计汇总')
+
+    // === Sheet3: 状态分布 ===
+    const distributionData = [
+      { 状态: '待支付', 订单数: statusCount.UNPAID, '占比(%)': (statusCount.UNPAID / orderCount * 100).toFixed(1) },
+      { 状态: '已支付', 订单数: statusCount.PAID, '占比(%)': (statusCount.PAID / orderCount * 100).toFixed(1) },
+      { 状态: '已取消', 订单数: statusCount.CANCELLED, '占比(%)': (statusCount.CANCELLED / orderCount * 100).toFixed(1) },
+      { 状态: '已超时', 订单数: statusCount.TIMEOUT, '占比(%)': (statusCount.TIMEOUT / orderCount * 100).toFixed(1) },
+      { 状态: '已完成', 订单数: statusCount.COMPLETED, '占比(%)': (statusCount.COMPLETED / orderCount * 100).toFixed(1) }
+    ]
+    const ws3 = XLSX.utils.json_to_sheet(distributionData)
+    ws3['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 12 }]
+    XLSX.utils.book_append_sheet(wb, ws3, '状态分布')
+
+    // 3. 生成文件并下载
+    const fileName = `订单数据_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
+    XLSX.writeFile(wb, fileName)
+    ElMessage.success(`导出成功，共 ${orderCount} 条订单`)
+  } catch {
+    ElMessage.error('导出失败')
+  } finally {
+    exportLoading.value = false
+  }
+}
+
 /* === 分页 === */
 function handlePageChange(page: number): void {
   if (page < 1 || page > totalPages.value) return
@@ -238,8 +331,8 @@ function handlePageChange(page: number): void {
 
 /* === 详情弹窗 === */
 const detailVisible = ref(false)
-const detailRow = ref<SeckillOrder | null>(null)
-function openDetail(row: SeckillOrder): void {
+const detailRow = ref<AdminOrderVO | null>(null)
+function openDetail(row: AdminOrderVO): void {
   detailRow.value = row
   detailVisible.value = true
 }
@@ -268,10 +361,12 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 8px;
 }
+
 .admin-table-title {
   font-size: 15px;
   font-weight: 700;
 }
+
 .admin-table-actions {
   display: flex;
   gap: 8px;
@@ -289,9 +384,11 @@ onMounted(() => {
   width: 180px;
   outline: none;
 }
+
 .admin-search-input:focus {
   border-color: var(--color-primary);
 }
+
 .date-input {
   width: 140px;
 }
@@ -319,11 +416,13 @@ onMounted(() => {
   color: var(--color-text-primary);
   letter-spacing: 0.02em;
 }
+
 .btn-sm.primary {
   background: var(--color-primary);
   color: #fff;
   border-color: var(--color-primary);
 }
+
 .btn-sm:hover {
   opacity: 0.9;
 }
@@ -334,6 +433,7 @@ onMounted(() => {
   border-collapse: collapse;
   font-size: 13px;
 }
+
 .admin-table thead th {
   background: var(--color-bg-subtle);
   padding: 10px 16px;
@@ -344,17 +444,21 @@ onMounted(() => {
   border-bottom: 1px solid var(--color-border);
   letter-spacing: 0.02em;
 }
+
 .admin-table tbody td {
   padding: 12px 16px;
   border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
 }
+
 .admin-table tbody tr:hover {
   background: var(--color-bg-subtle);
 }
+
 .admin-table tbody tr:last-child td {
   border-bottom: none;
 }
+
 .empty-cell {
   text-align: center;
   color: var(--color-text-secondary);
@@ -381,22 +485,27 @@ onMounted(() => {
   font-weight: 700;
   letter-spacing: 0.02em;
 }
+
 .status-tag.unpaid {
   background: var(--tag-unpaid-bg);
   color: var(--tag-unpaid-fg);
 }
+
 .status-tag.paid {
   background: var(--tag-paid-bg);
   color: var(--tag-paid-fg);
 }
+
 .status-tag.cancelled {
   background: var(--tag-cancelled-bg);
   color: var(--tag-cancelled-fg);
 }
+
 .status-tag.timeout {
   background: var(--tag-timeout-bg);
   color: var(--tag-timeout-fg);
 }
+
 .status-tag.completed {
   background: var(--tag-completed-bg);
   color: var(--tag-completed-fg);
@@ -407,6 +516,7 @@ onMounted(() => {
   display: flex;
   gap: 8px;
 }
+
 .table-action-btn {
   font-size: 13px;
   color: var(--color-primary-blue);
@@ -416,6 +526,7 @@ onMounted(() => {
   font-weight: 600;
   padding: 0;
 }
+
 .table-action-btn:hover {
   text-decoration: underline;
 }
@@ -427,15 +538,18 @@ onMounted(() => {
   justify-content: space-between;
   padding: 12px 20px;
 }
+
 .page-info {
   font-size: 13px;
   color: var(--color-text-secondary);
 }
+
 .pagination {
   display: flex;
   align-items: center;
   gap: 4px;
 }
+
 .page-btn {
   min-width: 32px;
   height: 32px;
@@ -450,19 +564,23 @@ onMounted(() => {
   color: var(--color-text-primary);
   user-select: none;
 }
+
 .page-btn:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
+
 .page-btn.active {
   background: var(--color-primary);
   color: #fff;
   border-color: var(--color-primary);
 }
+
 .page-btn.disabled {
   color: #ccc;
   cursor: not-allowed;
 }
+
 .page-btn.disabled:hover {
   border-color: var(--color-border);
   color: #ccc;
@@ -474,6 +592,7 @@ onMounted(() => {
   flex-direction: column;
   gap: 12px;
 }
+
 .detail-row {
   display: flex;
   justify-content: space-between;
@@ -481,12 +600,15 @@ onMounted(() => {
   border-bottom: 1px solid var(--color-border-light);
   font-size: 13px;
 }
+
 .detail-row:last-child {
   border-bottom: none;
 }
+
 .detail-label {
   color: var(--color-text-secondary);
 }
+
 .detail-value {
   font-weight: 600;
   color: var(--color-text-primary);

@@ -48,4 +48,10 @@ public interface CategoryService {
      * @param request 状态更新请求
      */
     void updateCategoryStatus(Long id, CategoryStatusUpdateRequest request);
+
+    /**
+     * 失效分类树缓存。
+     * 商品增删改后需调用，以保证分类树 productCount 及时更新。
+     */
+    void evictCategoryCache();
 }

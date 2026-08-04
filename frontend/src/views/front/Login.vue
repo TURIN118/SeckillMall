@@ -69,6 +69,10 @@
           </button>
         </form>
 
+        <div class="form-footer">
+          <span class="forgot-link" @click="router.push('/forgot-password')">忘记密码？</span>
+        </div>
+
         <div class="form-link">没有账号？<router-link to="/register">立即注册</router-link></div>
       </div>
     </div>
@@ -327,6 +331,24 @@ onMounted(() => {
 }
 
 .form-link a:hover {
+  text-decoration: underline;
+}
+
+/* 忘记密码链接 */
+.form-footer {
+  text-align: right;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.forgot-link {
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.forgot-link:hover {
+  color: var(--color-primary);
   text-decoration: underline;
 }
 

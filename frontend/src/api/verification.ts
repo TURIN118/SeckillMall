@@ -14,8 +14,3 @@ export function sendEmailCode(data: VerificationSendRequest): Promise<Result<voi
 export function sendSmsCode(data: VerificationSendRequest): Promise<Result<void>> {
     return post<void>('/api/v1/verification/send-sms', data)
 }
-
-/** 校验验证码 */
-export function verifyCode(data: VerificationCheckRequest): Promise<Result<boolean>> {
-    return post<boolean>('/api/v1/verification/verify', data)
-}

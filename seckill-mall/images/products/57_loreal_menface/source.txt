@@ -1,0 +1,5 @@
+product: 欧莱雅 男士控油洗面奶
+query: 欧莱雅 男士 洗面奶 外观
+01_main.png	https://qny.smzdm.com/202311/05/65476cd90d1c9227.png_d250.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN0115mZ8I1rO0webGN0t_!!3329435620-0-cib.310x310.jpg
+03_detail.jpg	https://y.zdmimg.com/202108/11/6113b22cdb8a76737.jpg_d250.jpg

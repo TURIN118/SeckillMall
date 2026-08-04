@@ -1,0 +1,5 @@
+product: 钓鱼郎 碳素钓鱼竿 5.4米
+query: 碳素 钓鱼竿 5.4米 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01v0kMTA2KylX17H8Cm_!!2033649626-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/2019/930/002/12455200039_287155197.310x310.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01Z8UO692HKViqldiQe_!!2816549132-0-cib.310x310.jpg

@@ -1,0 +1,5 @@
+product: 《海底两万里》少儿版
+query: 海底两万里 少儿版 封面
+01_main.jpg	https://wfqqreader-1252317822.image.myqcloud.com/cover/146/54059146/t5_54059146.jpg
+02_detail.jpg	https://img13.360buyimg.com/n1/jfs/t1/129930/37/6888/562200/5f365fc0E3dd2cd1c/8f67799a663d9b2a.jpg
+03_detail.jpg	https://cdn2.readlevel.com/image_resize/Public/Atlas/2017/11/08/1510126229_839011578.jpg

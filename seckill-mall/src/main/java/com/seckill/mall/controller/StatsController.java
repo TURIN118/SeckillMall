@@ -2,6 +2,7 @@ package com.seckill.mall.controller;
 
 import com.seckill.mall.common.Result;
 import com.seckill.mall.service.StatsService;
+import com.seckill.mall.vo.OrderStatusItemVO;
 import com.seckill.mall.vo.SeckillRankingVO;
 import com.seckill.mall.vo.StatsOverviewVO;
 import com.seckill.mall.vo.TrendItemVO;
@@ -58,5 +59,11 @@ public class StatsController {
     @GetMapping("/seckill-ranking")
     public Result<List<SeckillRankingVO>> seckillRanking(@RequestParam(required = false) Integer limit) {
         return Result.success(statsService.getSeckillRanking(limit));
+    }
+
+    @Operation(summary = "订单状态分布（按状态分组统计订单数量）")
+    @GetMapping("/order-status-distribution")
+    public Result<List<OrderStatusItemVO>> orderStatusDistribution() {
+        return Result.success(statsService.getOrderStatusDistribution());
     }
 }

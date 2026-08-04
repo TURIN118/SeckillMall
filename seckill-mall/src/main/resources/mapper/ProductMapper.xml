@@ -12,11 +12,23 @@
         <if test="categoryId != null">
             AND category_id = #{categoryId}
         </if>
+        <if test="categoryIds != null and categoryIds.size() > 0">
+            AND category_id IN
+            <foreach collection="categoryIds" item="cid" open="(" separator="," close=")">
+                #{cid}
+            </foreach>
+        </if>
         <if test="keyword != null and keyword != ''">
             AND name LIKE CONCAT('%', #{keyword}, '%')
         </if>
         <if test="status != null">
             AND status = #{status}
+        </if>
+        <if test="minPrice != null">
+            AND original_price &gt;= #{minPrice}
+        </if>
+        <if test="maxPrice != null">
+            AND original_price &lt;= #{maxPrice}
         </if>
         ORDER BY
         <choose>

@@ -1,0 +1,5 @@
+product: 罗技 MX Master 3S 鼠标
+query: 罗技 MX Master 3S 鼠标 外观
+01_main.jpg	https://am.zdmimg.com/202506/28/685f30cd3454d6272.jpg_e1080.jpg
+02_detail.jpg	https://am.zdmimg.com/202503/28/67e6b81b2a4516271.jpg_e1080.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01Cpm6Zv2DN1N0o2jgE_!!2208361058596-0-cib.310x310.jpg

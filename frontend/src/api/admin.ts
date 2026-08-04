@@ -19,7 +19,7 @@ export function getUserList(params: UserListRequest): Promise<Result<PageResult<
 
 /** 启用-禁用用户 */
 export function updateUserStatus(
-  userId: number,
+  userId: number | string,
   data: UserStatusUpdateRequest
 ): Promise<Result<void>> {
   return put<void>(`/api/v1/admin/users/${userId}/status`, data)
@@ -27,7 +27,7 @@ export function updateUserStatus(
 
 /** 修改用户角色 */
 export function updateUserRole(
-  userId: number,
+  userId: number | string,
   data: UserRoleUpdateRequest
 ): Promise<Result<void>> {
   return put<void>(`/api/v1/admin/users/${userId}/role`, data)
@@ -35,7 +35,7 @@ export function updateUserRole(
 
 /** 用户登录日志 (分页) */
 export function getUserLoginLogs(
-  userId: number,
+  userId: number | string,
   params: { pageNum?: number; pageSize?: number }
 ): Promise<Result<PageResult<LoginLogVO>>> {
   return get<PageResult<LoginLogVO>>(`/api/v1/admin/users/${userId}/logs`, params)

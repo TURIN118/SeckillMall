@@ -1,0 +1,5 @@
+product: 故宫文创 千里江山图书签
+query: 故宫文创 千里江山图 书签 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01QvWJWk1uHY9Ut7fmT_!!2218005246012-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01qpTfh528Dnbj3lSWd_!!2220022067899-0-cib.310x310.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01NInK451jSZegO61uI_!!1932484547.310x310.jpg

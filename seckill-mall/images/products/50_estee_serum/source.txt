@@ -1,0 +1,5 @@
+product: 雅诗兰黛 特润修护肌透精华露
+query: 雅诗兰黛 小棕瓶 精华 外观
+01_main.jpg	https://mall3.iqiyipic.com/mall/20200716/48/b3/mall_d7dad28c3a5c4ef79b2626cd8f1748b3_1x1.jpg
+02_detail.jpg	https://qny.smzdm.com/202311/20/655ad6df366e64332.jpg_d250.jpg
+03_detail.png	https://qny.smzdm.com/202208/27/6309f1afc72972308.png_d250.jpg

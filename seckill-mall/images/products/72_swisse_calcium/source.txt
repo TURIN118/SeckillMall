@@ -1,0 +1,5 @@
+product: Swisse 钙片+维生素D 150片
+query: Swisse 钙片 维生素D 外观
+01_main.jpg	https://img11.360buyimg.com/n1/jfs/t1/120791/26/39219/119095/6479bdb0F4eb199a6/5689607691201ac0.jpg
+02_detail.jpg	https://img12.360buyimg.com/n1/jfs/t1/214473/4/30810/175563/647b570bFe35306a1/eabfc41e99389081.jpg
+03_detail.jpg	https://img13.360buyimg.com/n1/jfs/t1/119056/14/37804/102066/647179dbF1400a696/19903d3472e75ddc.jpg

@@ -1,0 +1,5 @@
+product: 起点读书 VIP年卡
+query: 起点读书 VIP 年卡 海报
+01_main.png	https://creditcard.ecitic.com/source/zh/userpage/shenqing/zuozhe/image/rule3.png?v=1604491107489
+02_detail.png	https://eimg.smzdm.com/202010/15/5f88305ec89666482.png
+03_detail.jpg	https://img.iqnew.com/d/file/p/2022/05/15/6da2e76b94a6d3fe847f420dd1bdb42e.jpg

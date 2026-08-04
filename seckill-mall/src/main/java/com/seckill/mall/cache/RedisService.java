@@ -53,16 +53,8 @@ public class RedisService {
         return redisTemplate.opsForValue().increment(key);
     }
 
-    public Long incrBy(String key, long delta) {
-        return redisTemplate.opsForValue().increment(key, delta);
-    }
-
     public Long decr(String key) {
         return redisTemplate.opsForValue().decrement(key);
-    }
-
-    public Long sAdd(String key, String... values) {
-        return redisTemplate.opsForSet().add(key, values);
     }
 
     public Long sRem(String key, String... values) {

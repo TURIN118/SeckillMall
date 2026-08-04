@@ -1,5 +1,6 @@
 package com.seckill.mall.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -35,9 +36,11 @@ public class SeckillCreateRequest {
     @Min(value = 1, message = "秒杀库存至少为 1")
     private Integer stockCount;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @NotNull(message = "开始时间不能为空")
     private LocalDateTime startTime;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @NotNull(message = "结束时间不能为空")
     private LocalDateTime endTime;
 

@@ -46,7 +46,7 @@ public class ProductReviewController {
     }
 
     @Operation(summary = "发表评论（需登录）")
-    @PreAuthorize("hasRole('BUYER')")
+    @PreAuthorize("hasAnyRole('BUYER', 'SELLER', 'ADMIN')")
     @PostMapping("/create")
     public Result<ProductReviewVO> create(@Validated @RequestBody ReviewCreateRequest req) {
         Long userId = SecurityUtils.getCurrentUserId();

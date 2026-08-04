@@ -21,10 +21,6 @@ export function syncServerTime(serverTimestamp: string): void {
   timeOffset = serverTime - localTime
 }
 
-/** 获取校准后的当前时间 */
-export function getNow(): Date {
-  return new Date(Date.now() + timeOffset)
-}
 
 /** 获取时间偏移量 */
 export function getTimeOffset(): number {
@@ -60,6 +56,10 @@ request.interceptors.request.use(
 /** 响应拦截器: 处理业务码 + HTTP 错误 */
 request.interceptors.response.use(
   (response) => {
+    // blob 响应（如 Excel 导出）直接返回原始数据，跳过业务码解包
+    if (response.config.responseType === 'blob') {
+      return response.data as unknown as typeof response
+    }
     const res = response.data as Result
     // 同步服务器时间
     if (res?.timestamp) {
@@ -154,5 +154,3 @@ export function del<T = unknown>(
 ): Promise<Result<T>> {
   return http<T>({ method: 'DELETE', url, params, ...config })
 }
-
-export default request

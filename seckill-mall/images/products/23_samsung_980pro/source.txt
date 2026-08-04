@@ -1,0 +1,5 @@
+product: 三星 980 PRO 2TB SSD
+query: 三星 980 PRO 2TB SSD 固态硬盘 外观
+01_main.jpg	https://2e.zol-img.com.cn/product/211_320x240/254/ceHABUwstpIxU.jpg
+02_detail.jpg	https://p5.itc.cn/q_70/images03/20211121/47f0aae777b24d4abfb05c5d9d943f4a.jpeg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01nWSwTO1oLJYdiJIEF_!!968295208-0-cib.310x310.jpg

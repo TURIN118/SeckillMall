@@ -1,0 +1,5 @@
+product: 飞利浦 HX9924 电动牙刷
+query: 飞利浦 HX9924 电动牙刷 外观
+01_main.jpg	https://qny.smzdm.com/files/953a72c1e7d2c64bf5cd8984be125c49.jpg_d250.jpg
+02_detail.jpg	https://img12.360buyimg.com/n12/s400x400_jfs/t1/65608/19/2032/106721/5d05ffbaEecbec5f3/5e0374050c459898.jpg
+03_detail.png	http://www.icgan.com/uploadfile/ueditor/image/202410/1728437327717699.png

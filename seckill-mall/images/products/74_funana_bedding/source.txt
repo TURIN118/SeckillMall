@@ -1,0 +1,5 @@
+product: 富安娜 绣花床品四件套
+query: 富安娜 床品四件套 外观
+01_main.jpg	https://img.pchouse.com.cn/images/upload/upc/tx/houselib/1504/14/c2/5358687_1428948555373_690x460.jpg
+02_detail.jpg	https://img.pchouse.com.cn/images/upload/upc/tx/houselib/1509/18/c6/12850747_1442588881398_690x460.jpg
+03_detail.jpg	https://img.pchouse.com.cn/images/upload/upc/tx/houselib/1504/14/c3/5359269_1428950792070_690x460.jpg

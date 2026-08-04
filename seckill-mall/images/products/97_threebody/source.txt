@@ -1,0 +1,5 @@
+product: 《三体》全集
+query: 三体 全集 书 封面
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01FEHFfC1cpIAALEnEt_!!2216935793649-0-cib.310x310.jpg
+02_detail.jpg	https://qny.smzdm.com/202301/27/63d36ee1355e26434.jpg_d250.jpg
+03_detail.jpg	https://www0.kfzimg.com/sw/kfz-cos/kfzimg/ddbeffdf/15b3a45efb3e4405_s.jpg

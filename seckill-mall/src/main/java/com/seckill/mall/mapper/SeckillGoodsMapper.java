@@ -20,7 +20,8 @@ public interface SeckillGoodsMapper extends BaseMapper<SeckillGoods> {
 
     IPage<SeckillGoods> selectSeckillPage(IPage<SeckillGoods> page,
                                           @Param("status") SeckillStatus status,
-                                          @Param("keyword") String keyword);
+                                          @Param("keyword") String keyword,
+                                          @Param("categoryId") Long categoryId);
 
     List<SeckillGoods> selectActiveList();
 

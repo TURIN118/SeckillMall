@@ -1,27 +1,21 @@
 <template>
   <!-- 纯 div 结构，严格对照 index.html .p-card 样式 -->
-  <div
-    class="p-card"
-    :class="{ disabled }"
-    @click="handleClick"
-  >
+  <div class="p-card" :class="{ disabled }" @click="handleClick">
     <!-- 图片容器 -->
     <div class="p-card-img">
-      <el-image
-        v-if="displayImage"
-        :src="displayImage"
-        fit="cover"
-        lazy
-        class="card-image"
-      >
+      <el-image v-if="displayImage" :src="displayImage" fit="cover" lazy class="card-image">
         <template #error>
           <div class="img-placeholder">
-            <el-icon :size="48"><Picture /></el-icon>
+            <el-icon :size="48">
+              <Picture />
+            </el-icon>
           </div>
         </template>
       </el-image>
       <div v-else class="img-placeholder">
-        <el-icon :size="48"><Picture /></el-icon>
+        <el-icon :size="48">
+          <Picture />
+        </el-icon>
       </div>
       <!-- 售罄遮罩 -->
       <div v-if="disabled || isSoldOut" class="sold-out-overlay">已售罄</div>
@@ -43,11 +37,7 @@
       <!-- 库存进度条 -->
       <div v-if="showStock && stockCount > 0" class="stock-section">
         <div class="stock-bar">
-          <div
-            class="stock-bar-fill"
-            :class="stockLevel"
-            :style="{ width: soldPercent + '%' }"
-          ></div>
+          <div class="stock-bar-fill" :class="stockLevel" :style="{ width: soldPercent + '%' }"></div>
         </div>
         <div class="stock-text">已抢{{ soldPercent }}% · 剩余{{ availableCount }}件</div>
       </div>
@@ -70,6 +60,7 @@ import { computed } from 'vue'
 import { Picture } from '@element-plus/icons-vue'
 import SeckillCountdown from './SeckillCountdown.vue'
 import dayjs from 'dayjs'
+import { formatImageUrl } from '@/utils/image'
 import type { ProductVO, SeckillGoodsVO } from '@/types'
 
 interface Props {
@@ -109,7 +100,7 @@ const displayName = computed(() => {
 
 const displayImage = computed(() => {
   const images = props.product.images
-  return images && images.length > 0 ? images[0] : ''
+  return images && images.length > 0 ? formatImageUrl(images[0]) : ''
 })
 
 const seckillPrice = computed<number | null>(() => {

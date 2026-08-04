@@ -1,0 +1,5 @@
+product: 优衣库 男士羊毛衫
+query: 优衣库 男士 羊毛衫 毛衣 男装
+01_main.jpg	https://y.zdmimg.com/202510/30/690358ae1447e2556.jpg_d250.jpg
+02_detail.jpg	https://y.zdmimg.com/202501/09/677fda228734d6753.jpg_d250.jpg
+03_detail.jpg	https://y.zdmimg.com/201801/03/5a4ce34331bc76577.jpg_d250.jpg

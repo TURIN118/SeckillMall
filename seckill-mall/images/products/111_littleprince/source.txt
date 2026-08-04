@@ -1,0 +1,5 @@
+product: 《小王子》绘本版
+query: 小王子 绘本 封面
+01_main.webp	https://gd-hbimg.huaban.com/1b4d8a43e77730a32debcaaa060f1f85adfb0f8f168b8-5kGUY4_fw658webp
+02_detail.jpg	https://cdn2.readlevel.com/image_resize/Public/Atlas/2017/12/27/1514386577_2055457796.jpg
+03_detail.jpg	https://img.alicdn.com/bao/uploaded/i4/901384570/O1CN01rnHh6P1jd6mvoaZQA_!!901384570.jpg

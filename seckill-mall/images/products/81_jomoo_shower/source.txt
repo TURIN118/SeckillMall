@@ -1,0 +1,5 @@
+product: 九牧 360°旋转淋浴花洒
+query: 九牧 花洒 淋浴 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01e1odQG1j8spxYp8n1_!!2217739074504-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01WQ5s2Y1idHeAgp9lR_!!2220633454435-0-cib.310x310.jpg
+03_detail.png	https://y.zdmimg.com/202601/19/696ddf6ad928e6309.png_d250.jpg

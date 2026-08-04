@@ -34,4 +34,18 @@
         ORDER BY l.create_time DESC
     </select>
 
+    <select id="selectOperationLogVOList" resultType="com.seckill.mall.vo.OperationLogVO">
+        SELECT l.id, l.operator_id, u.username AS operator_name, l.module, l.action,
+               l.target_id, l.target_type, l.detail, l.ip_address, l.create_time AS operation_time
+        FROM t_operation_log l
+        LEFT JOIN t_user u ON u.id = l.operator_id AND u.is_deleted = 0
+        <where>
+            <if test="module != null and module != ''">
+                AND l.module = #{module}
+            </if>
+        </where>
+        ORDER BY l.create_time DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

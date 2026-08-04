@@ -1,0 +1,5 @@
+product: 美的 KFR-35GW 1.5匹空调
+query: 美的 KFR-35GW 1.5匹 空调 外观
+01_main.png	https://dsdcp.smartmidea.net/mcsp/prod/20251215/2ab9f29935e14b978d8f2a378972f11d.png?x-oss-process=image/resize,limit_0,w_530,h_530
+02_detail.jpg	https://y.zdmimg.com/202507/10/686f9504a51cf7663.jpg_d320.jpg
+03_detail.png	http://shop.kjcms.cn/upload/attatch/1/146329881316682.png

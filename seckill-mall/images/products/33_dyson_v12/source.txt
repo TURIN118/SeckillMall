@@ -1,0 +1,5 @@
+product: 戴森 V12 无线吸尘器
+query: 戴森 V12 无线吸尘器 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01sxoec01ulJvInOkj5_!!2208044916077-0-cib.310x310.jpg
+02_detail.jpg	https://qny.smzdm.com/202305/30/6475db34573f09631.jpg_d250.jpg
+03_detail.png	https://y.zdmimg.com/202408/02/66ac91f5488374397.png_a200.jpg

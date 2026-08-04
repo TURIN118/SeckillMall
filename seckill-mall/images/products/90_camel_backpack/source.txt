@@ -1,0 +1,5 @@
+product: 骆驼 登山包 40L
+query: 骆驼 登山包 40L 外观
+01_main.jpg	https://qny.smzdm.com/202311/03/65447022ba17d8386.jpg_d250.jpg
+02_detail.jpg	https://y.zdmimg.com/202004/19/5e9c70c69c2847893.jpg_d320.jpg
+03_detail.jpg	https://img12.360buyimg.com/n1/jfs/t1/102541/34/7237/400783/5dfb0c15E7e7e4d0c/744b7d02c5148ded.jpg

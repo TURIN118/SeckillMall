@@ -73,7 +73,11 @@ public class CategoryServiceImpl implements CategoryService {
                 new LambdaQueryWrapper<Category>()
                         .orderByAsc(Category::getSortOrder));
 
-        List<CategoryVO> tree = buildTree(categories, ROOT_PARENT_ID);
+        // 一次性查询每个分类直接挂载的商品数：SELECT category_id, COUNT(*) FROM t_product WHERE is_deleted=0 GROUP BY category_id
+        // is_deleted=0 由 @TableLogic 自动追加
+        Map<Long, Integer> directCountMap = buildDirectProductCountMap();
+
+        List<CategoryVO> tree = buildTree(categories, ROOT_PARENT_ID, directCountMap);
 
         // 写入缓存
         try {
@@ -217,7 +221,8 @@ public class CategoryServiceImpl implements CategoryService {
     /**
      * 失效分类树缓存，所有写操作后调用
      */
-    private void evictCategoryCache() {
+    @Override
+    public void evictCategoryCache() {
         try {
             stringRedisTemplate.delete(CACHE_KEY);
         } catch (Exception e) {
@@ -225,28 +230,81 @@ public class CategoryServiceImpl implements CategoryService {
         }
     }
 
-    // 递归构建分类树：按 parentId 分组后从根节点向下展开
-    private List<CategoryVO> buildTree(List<Category> categories, long parentId) {
+    /**
+     * 一次性查询每个分类直接挂载的未删除商品数，返回 categoryId → count 映射。
+     * 等价 SQL: SELECT category_id, COUNT(*) FROM t_product WHERE is_deleted=0 GROUP BY category_id
+     * is_deleted=0 由 @TableLogic 自动追加。
+     */
+    private Map<Long, Integer> buildDirectProductCountMap() {
+        // 使用 selectMaps 仅查 category_id 列，再在内存中分组计数，避免依赖自定义 SQL
+        List<Map<String, Object>> rows = productMapper.selectMaps(
+                new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<Product>()
+                        .select("category_id"));
+        Map<Long, Integer> countMap = new java.util.HashMap<>();
+        if (rows == null || rows.isEmpty()) {
+            return countMap;
+        }
+        for (Map<String, Object> row : rows) {
+            Object cidObj = row.get("category_id");
+            if (cidObj == null) {
+                continue;
+            }
+            Long cid = ((Number) cidObj).longValue();
+            countMap.merge(cid, 1, Integer::sum);
+        }
+        return countMap;
+    }
+
+    // 递归构建分类树：按 parentId 分组后从根节点向下展开。
+    // productCount 采用后递归回填：先构建子树并累加子树 productCount，再加上当前节点直接挂载商品数。
+    private List<CategoryVO> buildTree(List<Category> categories, long parentId,
+                                       Map<Long, Integer> directCountMap) {
         Map<Long, List<Category>> groupedByParent = categories.stream()
                 .collect(Collectors.groupingBy(c -> c.getParentId() == null ? 0L : c.getParentId()));
 
-        return buildChildren(groupedByParent, parentId);
+        return buildChildren(groupedByParent, parentId, directCountMap);
     }
 
-    private List<CategoryVO> buildChildren(Map<Long, List<Category>> groupedByParent, long parentId) {
+    private List<CategoryVO> buildChildren(Map<Long, List<Category>> groupedByParent, long parentId,
+                                           Map<Long, Integer> directCountMap) {
         List<Category> children = groupedByParent.get(parentId);
         if (children == null || children.isEmpty()) {
             return Collections.emptyList();
         }
         List<CategoryVO> result = new ArrayList<>(children.size());
         for (Category category : children) {
-            CategoryVO vo = toCategoryVO(category);
-            vo.setChildren(buildChildren(groupedByParent, category.getId()));
+            CategoryVO vo = toCategoryVO(category, directCountMap);
+            List<CategoryVO> childVOs = buildChildren(groupedByParent, category.getId(), directCountMap);
+            vo.setChildren(childVOs);
+            // 后递归回填：当前节点 productCount = 自身直接商品数 + 所有子节点 productCount 之和
+            int sum = 0;
+            for (CategoryVO child : childVOs) {
+                if (child.getProductCount() != null) {
+                    sum += child.getProductCount();
+                }
+            }
+            int selfDirect = directCountMap.getOrDefault(category.getId(), 0);
+            vo.setProductCount(selfDirect + sum);
             result.add(vo);
         }
         return result;
     }
 
+    private CategoryVO toCategoryVO(Category category, Map<Long, Integer> directCountMap) {
+        CategoryVO vo = new CategoryVO();
+        vo.setId(category.getId());
+        vo.setParentId(category.getParentId());
+        vo.setCategoryName(category.getName());
+        vo.setSortOrder(category.getSortOrder());
+        vo.setStatus(category.getStatus());
+        // 直接挂载商品数；子孙累加在 buildChildren 中回填
+        vo.setProductCount(directCountMap.getOrDefault(category.getId(), 0));
+        return vo;
+    }
+
+    /**
+     * 单分类 VO 转换(用于增删改返回)，不携带 productCount。
+     */
     private CategoryVO toCategoryVO(Category category) {
         CategoryVO vo = new CategoryVO();
         vo.setId(category.getId());

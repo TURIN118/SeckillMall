@@ -6,12 +6,7 @@
       <div class="admin-table-header">
         <div class="admin-table-title">用户列表</div>
         <div class="admin-table-actions">
-          <input
-            v-model="keyword"
-            class="admin-search-input"
-            placeholder="搜索用户名/手机号..."
-            @keyup.enter="handleSearch"
-          />
+          <input v-model="keyword" class="admin-search-input" placeholder="搜索用户名/手机号..." @keyup.enter="handleSearch" />
           <select v-model="roleFilter" class="admin-filter-select" @change="handleSearch">
             <option value="">全部角色</option>
             <option value="BUYER">买家</option>
@@ -53,11 +48,8 @@
             </td>
             <td>{{ formatDate(row.createTime) }}</td>
             <td>
-              <span
-                class="switch-toggle"
-                :class="{ off: row.status !== 'ACTIVE' }"
-                @click="handleStatusToggle(row as UserVO)"
-              ></span>
+              <span class="switch-toggle" :class="{ off: row.status !== 'ACTIVE' }"
+                @click="handleStatusToggle(row as UserVO)"></span>
             </td>
             <td>
               <div class="table-actions">
@@ -81,34 +73,17 @@
       <div class="admin-table-footer">
         <span class="page-info">共 {{ total }} 条记录</span>
         <div class="pagination">
-          <div
-            class="page-btn"
-            :class="{ disabled: pageNum <= 1 }"
-            @click="handlePageChange(pageNum - 1)"
-          >&lt;</div>
-          <div
-            v-for="p in displayPages"
-            :key="p"
-            class="page-btn"
-            :class="{ active: p === pageNum }"
-            @click="handlePageChange(p)"
-          >{{ p }}</div>
-          <div
-            class="page-btn"
-            :class="{ disabled: pageNum >= totalPages }"
-            @click="handlePageChange(pageNum + 1)"
-          >&gt;</div>
+          <div class="page-btn" :class="{ disabled: pageNum <= 1 }" @click="handlePageChange(pageNum - 1)">&lt;</div>
+          <div v-for="p in displayPages" :key="p" class="page-btn" :class="{ active: p === pageNum }"
+            @click="handlePageChange(p)">{{ p }}</div>
+          <div class="page-btn" :class="{ disabled: pageNum >= totalPages }" @click="handlePageChange(pageNum + 1)">&gt;
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 改角色弹窗：保留 el-dialog -->
-    <el-dialog
-      v-model="roleDialogVisible"
-      title="修改用户角色"
-      width="400px"
-      :close-on-click-modal="false"
-    >
+    <el-dialog v-model="roleDialogVisible" title="修改用户角色" width="400px" :close-on-click-modal="false">
       <el-form label-width="80px">
         <el-form-item label="用户名">
           <span>{{ roleDialogUser?.username }}</span>
@@ -133,12 +108,7 @@
     </el-dialog>
 
     <!-- 登录日志弹窗：保留 el-dialog -->
-    <el-dialog
-      v-model="logsDialogVisible"
-      title="登录日志"
-      width="800px"
-      :close-on-click-modal="false"
-    >
+    <el-dialog v-model="logsDialogVisible" title="登录日志" width="800px" :close-on-click-modal="false">
       <el-table v-loading="logsLoading" :data="loginLogs" stripe border max-height="400">
         <el-table-column prop="loginIp" label="登录 IP" width="140" />
         <el-table-column prop="loginLocation" label="登录地点" width="140" show-overflow-tooltip />
@@ -190,7 +160,7 @@ import { useUserStore } from '@/stores/user'
 import type { UserVO, UserRole, LoginLogVO } from '@/types'
 
 const userStore = useUserStore()
-const currentUserId = computed<number | null>(() => userStore.userInfo?.id ?? null)
+const currentUserId = computed<number | string | null>(() => userStore.userInfo?.id ?? null)
 
 /* === 列表数据 === */
 const loading = ref(false)
@@ -384,10 +354,12 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 8px;
 }
+
 .admin-table-title {
   font-size: 15px;
   font-weight: 700;
 }
+
 .admin-table-actions {
   display: flex;
   gap: 8px;
@@ -405,6 +377,7 @@ onMounted(() => {
   width: 180px;
   outline: none;
 }
+
 .admin-search-input:focus {
   border-color: var(--color-primary);
 }
@@ -426,6 +399,7 @@ onMounted(() => {
   border-collapse: collapse;
   font-size: 13px;
 }
+
 .admin-table thead th {
   background: var(--color-bg-subtle);
   padding: 10px 16px;
@@ -436,17 +410,21 @@ onMounted(() => {
   border-bottom: 1px solid var(--color-border);
   letter-spacing: 0.02em;
 }
+
 .admin-table tbody td {
   padding: 12px 16px;
   border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
 }
+
 .admin-table tbody tr:hover {
   background: var(--color-bg-subtle);
 }
+
 .admin-table tbody tr:last-child td {
   border-bottom: none;
 }
+
 .empty-cell {
   text-align: center;
   color: var(--color-text-secondary);
@@ -475,14 +453,17 @@ onMounted(() => {
   font-size: 13px;
   font-weight: 700;
 }
+
 .role-badge.admin {
   background: var(--tag-timeout-bg);
   color: var(--tag-timeout-fg);
 }
+
 .role-badge.seller {
   background: var(--tag-unpaid-bg);
   color: var(--tag-unpaid-fg);
 }
+
 .role-badge.buyer {
   background: var(--tag-completed-bg);
   color: var(--tag-completed-fg);
@@ -499,6 +480,7 @@ onMounted(() => {
   display: inline-block;
   transition: background 0.2s;
 }
+
 .switch-toggle::after {
   content: '';
   position: absolute;
@@ -510,9 +492,11 @@ onMounted(() => {
   background: #fff;
   transition: all 0.2s;
 }
+
 .switch-toggle.off {
   background: var(--btn-disabled-bg);
 }
+
 .switch-toggle.off::after {
   right: auto;
   left: 2px;
@@ -523,6 +507,7 @@ onMounted(() => {
   display: flex;
   gap: 8px;
 }
+
 .table-action-btn {
   font-size: 13px;
   color: var(--color-primary-blue);
@@ -532,15 +517,19 @@ onMounted(() => {
   font-weight: 600;
   padding: 0;
 }
+
 .table-action-btn.danger {
   color: var(--color-danger);
 }
+
 .table-action-btn.muted {
   color: var(--color-text-secondary);
 }
+
 .table-action-btn:hover:not(:disabled) {
   text-decoration: underline;
 }
+
 .table-action-btn:disabled {
   cursor: default;
 }
@@ -552,15 +541,18 @@ onMounted(() => {
   justify-content: space-between;
   padding: 12px 20px;
 }
+
 .page-info {
   font-size: 13px;
   color: var(--color-text-secondary);
 }
+
 .pagination {
   display: flex;
   align-items: center;
   gap: 4px;
 }
+
 .page-btn {
   min-width: 32px;
   height: 32px;
@@ -575,19 +567,23 @@ onMounted(() => {
   color: var(--color-text-primary);
   user-select: none;
 }
+
 .page-btn:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
+
 .page-btn.active {
   background: var(--color-primary);
   color: #fff;
   border-color: var(--color-primary);
 }
+
 .page-btn.disabled {
   color: #ccc;
   cursor: not-allowed;
 }
+
 .page-btn.disabled:hover {
   border-color: var(--color-border);
   color: #ccc;

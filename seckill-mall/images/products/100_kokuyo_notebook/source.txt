@@ -1,0 +1,5 @@
+product: 国誉 Campus 笔记本 A5
+query: 国誉 Campus 笔记本 A5 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01ZlZqFj1ugHQJCI5j1_!!2365826066-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01aSayKE1YiBZw1yuSS_!!2216863903092-0-cib.310x310.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/2020/472/103/17147301274_1796811151.310x310.jpg

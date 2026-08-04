@@ -1,0 +1,5 @@
+product: arena 阿瑞娜 男士泳裤
+query: arena 男士 泳裤 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN019h6xhS1lGKbb1cahs_!!2216030664791-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01afTPSe1lGKbbGoTjB_!!2216030664791-0-cib.310x310.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01UgRDtW2MAVFTyOhdd_!!2217779269787-0-cib.310x310.jpg

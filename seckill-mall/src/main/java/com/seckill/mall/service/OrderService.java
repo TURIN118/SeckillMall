@@ -1,8 +1,13 @@
 package com.seckill.mall.service;
 
 import com.seckill.mall.common.PageResult;
+import com.seckill.mall.entity.NormalOrder;
 import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.enums.OrderStatus;
+import com.seckill.mall.vo.NormalOrderDetailVO;
+import com.seckill.mall.vo.OrderListItemVO;
+
+import java.util.List;
 
 /**
  * 创建人：@author WNJ
@@ -33,4 +38,91 @@ public interface OrderService {
      * @return true 表示本次执行了超时取消
      */
     boolean timeoutCancel(Long orderId);
+
+    // ==================== 普通订单（需求5 立即购买 + 需求13 购物车结算） ====================
+
+    /**
+     * 立即购买创建普通订单（需求5）。
+     * <p>
+     * 校验商品状态/库存 → 扣库存（乐观锁）→ 建普通订单与明细 → 返回订单。
+     *
+     * @param userId    用户 ID
+     * @param productId 商品 ID
+     * @param quantity  购买数量
+     * @param addressId 收货地址 ID
+     * @param remark    备注（可空）
+     * @return 普通订单（含明细）
+     */
+    NormalOrderDetailVO createNormalOrder(Long userId, Long productId, Integer quantity,
+                                          Long addressId, String remark);
+
+    /**
+     * 从购物车结算创建普通订单（需求13）。
+     * <p>
+     * 校验地址归属 → 校验购物车项归属 + 商品在售 + 库存 → 计算总额 →
+     * 建普通订单与多个明细（事务）→ 扣库存 → 删除已结算购物车项 → 返回订单。
+     *
+     * @param userId   用户 ID
+     * @param addressId 收货地址 ID
+     * @param cartIds  待结算购物车项 ID 列表
+     * @param remark   备注（可空）
+     * @return 普通订单（含明细）
+     */
+    NormalOrderDetailVO createOrderFromCart(Long userId, Long addressId,
+                                            List<Long> cartIds, String remark);
+
+    /**
+     * 查询普通订单详情（含明细列表）。
+     *
+     * @param userId  用户 ID
+     * @param orderId 订单 ID
+     * @return 订单详情视图
+     */
+    NormalOrderDetailVO getNormalOrderDetail(Long userId, Long orderId);
+
+    /**
+     * 支付普通订单。
+     * <p>
+     * 当 payMethod="WALLET" 时：原子扣减钱包余额（WHERE balance>=amount），
+     * 余额不足抛 {@code WALLET_BALANCE_NOT_ENOUGH}，扣减成功后更新订单 PAID；
+     * 其他 payMethod 走模拟支付直接置 PAID。
+     *
+     * @param userId    用户 ID
+     * @param orderId   普通订单 ID
+     * @param payMethod 支付方式
+     * @return 支付后的订单详情
+     */
+    NormalOrderDetailVO payNormalOrder(Long userId, Long orderId, String payMethod);
+
+    /**
+     * 取消普通订单（BUG-002 修复）。
+     * <p>
+     * 仅允许 UNPAID 状态的普通订单取消，取消后：
+     * <ul>
+     *   <li>订单状态置为 CANCELLED，记录取消时间与原因</li>
+     *   <li>回补各明细对应商品的库存与销量（乐观锁）</li>
+     *   <li>异步发送取消邮件通知，失败不影响主流程</li>
+     * </ul>
+     *
+     * @param userId  用户 ID
+     * @param orderId 普通订单 ID
+     * @return 取消后的订单详情
+     */
+    NormalOrderDetailVO cancelNormalOrder(Long userId, Long orderId);
+
+    /**
+     * 统一订单列表（秒杀订单 + 普通订单合并展示，需求1）。
+     * <p>
+     * 按 userId + status 过滤两套订单表，合并后按 createTime 降序排序，
+     * 在内存中分页（订单量不大，内存分页可接受）。
+     *
+     * @param userId   用户 ID
+     * @param status   订单状态筛选（可空，传 null 表示不筛选）；可选值：
+     *                 UNPAID/PAID/CANCELLED/TIMEOUT/COMPLETED
+     * @param pageNum  页码（从 1 开始，默认 1）
+     * @param pageSize 每页大小（默认 10，上限 50）
+     * @return 统一订单列表分页结果
+     */
+    PageResult<OrderListItemVO> getUnifiedOrderList(Long userId, String status,
+                                                    Integer pageNum, Integer pageSize);
 }

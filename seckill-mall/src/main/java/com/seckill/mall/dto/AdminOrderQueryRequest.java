@@ -29,6 +29,12 @@ public class AdminOrderQueryRequest {
     private String orderNo;
 
     /**
+     * 按天筛选订单创建日期，格式 yyyy-MM-dd
+     * 前端 dateSingle 传入，Mapper 中使用 DATE(create_time) = #{date} 精确匹配当天
+     */
+    private String date;
+
+    /**
      * 订单状态：UNPAID/PAID/CANCELLED/TIMEOUT/COMPLETED
      */
     private String status;

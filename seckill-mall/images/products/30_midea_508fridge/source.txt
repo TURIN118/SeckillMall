@@ -1,0 +1,5 @@
+product: 美的 BCD-508WTPZM 冰箱
+query: 美的 BCD-508 冰箱 外观
+01_main.jpg	http://www.mcxxkj.com.cn/images/202302/goods_img/213_P_1675985121151.jpg
+02_detail.jpg	https://dsdcp.smartmidea.net/mcsp/prod/20221210/3a3a5a0873a647a6a263da790dd39c9b.jpg
+03_detail.jpg	https://www.youpingce.cn/uploads/allimg/20240913/-240913092625450.jpg

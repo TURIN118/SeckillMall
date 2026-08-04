@@ -1,0 +1,5 @@
+product: 嫚熙 待产包 入院全套
+query: 嫚熙 待产包 外观
+01_main.jpg	https://qny.smzdm.com/202302/07/63e1f35ed13027768.jpg_d250.jpg
+02_detail.jpg	https://qny.smzdm.com/202201/19/61e7c3ea6a14a4228.jpg_d250.jpg
+03_detail.jpg	https://y.zdmimg.com/202402/08/65c47041fc3341667.jpg_d250.jpg

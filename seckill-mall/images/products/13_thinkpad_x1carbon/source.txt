@@ -1,0 +1,5 @@
+product: 联想 ThinkPad X1 Carbon 14
+query: 联想 ThinkPad X1 Carbon 笔记本 外观
+01_main.jpg	https://a.zdmimg.com/202601/15/69687612637e41463.jpg_e1080.jpg
+02_detail.jpg	https://img12.360buyimg.com/n1/jfs/t1/150883/40/12173/169648/5fe5c763Eba56a7df/3d05a1d7135bd680.jpg
+03_detail.jpg	https://product-stock.oss-cn-beijing.aliyuncs.com/static/img_dir/img139/tu_ku_img1202.jpg

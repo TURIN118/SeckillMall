@@ -29,6 +29,6 @@ export function adminGenerateRechargeCards(
 }
 
 /** 后台禁用充值卡 (仅未使用的卡可禁用) */
-export function adminDisableRechargeCard(id: number): Promise<Result<void>> {
+export function adminDisableRechargeCard(id: number | string): Promise<Result<void>> {
     return put<void>(`/api/v1/admin/recharge-cards/${id}/disable`)
 }

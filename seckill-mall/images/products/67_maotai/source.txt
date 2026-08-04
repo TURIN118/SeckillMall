@@ -1,0 +1,5 @@
+product: 茅台 飞天 500ml
+query: 茅台 飞天 53度 500ml 外观
+01_main.jpg	https://y.zdmimg.com/202505/26/683457b0fb10c3655.jpg_d250.jpg
+02_detail.jpg	https://imgservice5.suning.cn/uimg1/b2c/image/ks7hxK8V4p1NfAvyVxxBVw.jpg_400w_400h_4e
+03_detail.jpg	https://imgservice3.suning.cn/uimg1/b2c/image/_wRqA3lE8XPZuYRkSpRZsA.jpg_400w_400h_4e

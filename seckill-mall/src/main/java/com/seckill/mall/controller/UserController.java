@@ -72,7 +72,12 @@ public class UserController {
         if (!verificationCodeService.verifyCode(req.getEmail(), req.getCode())) {
             throw new BusinessException(ErrorCode.VERIFICATION_CODE_INVALID);
         }
-        // 更新邮箱（邮箱唯一性可在 Service 层扩展，此处简化）
+        // 校验邮箱唯一性
+        User existing = userMapper.findByEmail(req.getEmail());
+        if (existing != null && !existing.getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.EMAIL_EXISTS);
+        }
+        // 更新邮箱
         User update = new User();
         update.setId(userId);
         update.setEmail(req.getEmail());

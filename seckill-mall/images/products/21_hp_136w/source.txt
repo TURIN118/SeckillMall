@@ -1,0 +1,5 @@
+product: 惠普 136w 激光打印机
+query: 惠普 136w 激光打印机 外观
+01_main.jpg	https://pro-fd.zol-img.com.cn/t_s400x300c4/g2/M00/0F/05/ChMlWlzSSIyIfCJlAAPgxV-i910AAJ3NgK_dIwAA-Dd711.jpg
+02_detail.jpg	https://img12.360buyimg.com/n1/s450x450_jfs/t1/73814/23/17454/68305/614153cfEa86c8f86/157a88cb60179065.jpg
+03_detail.jpg	http://www.fj3c.net/ow-content/uploads/pic/hp/M136W/M136W_00.jpg

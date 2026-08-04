@@ -16,6 +16,7 @@ import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.enums.ProductStatus;
 import com.seckill.mall.mapper.CategoryMapper;
 import com.seckill.mall.mapper.ProductMapper;
+import com.seckill.mall.service.CategoryService;
 import com.seckill.mall.service.ProductService;
 import com.seckill.mall.vo.ProductVO;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 
 import java.util.Collections;
 import java.util.List;
@@ -78,6 +80,7 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductMapper productMapper;
     private final CategoryMapper categoryMapper;
+    private final CategoryService categoryService;
     private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
     private final ObjectMapper objectMapper;
@@ -96,11 +99,41 @@ public class ProductServiceImpl implements ProductService {
         // 排序字段/方向白名单过滤，防 SQL 注入；非法值回退默认值
         String sortField = sanitizeSortBy(req.getSortBy());
         String sortOrder = sanitizeSortOrder(req.getSortOrder());
+
+        // 分类筛选：一级分类(parentId=0)展开为所有二级分类 ID 集合，按 IN 查询；
+        // 二级分类保持等值查询；空子分类直接返回空结果避免 IN() 语法错误。
+        Long categoryId = req.getCategoryId();
+        List<Long> categoryIds = null;
+        if (categoryId != null) {
+            Category category = categoryMapper.selectById(categoryId);
+            if (category != null) {
+                Long parentId = category.getParentId();
+                if (parentId == null || parentId == 0L) {
+                    // 一级分类：展开子分类
+                    List<Category> children = categoryMapper.selectByParentId(categoryId);
+                    if (children == null || children.isEmpty()) {
+                        // 一级分类下无二级分类，直接返回空结果
+                        return PageResult.of(Collections.emptyList(), 0L, pageNum, pageSize);
+                    }
+                    categoryIds = children.stream()
+                            .map(Category::getId)
+                            .collect(Collectors.toList());
+                    // 不再用等值
+                    categoryId = null;
+                }
+                // 二级分类：保持 categoryId 等值查询
+            }
+            // 分类不存在时忽略分类筛选条件（与原行为一致：不抛错）
+        }
+
         IPage<Product> result = productMapper.selectProductPage(
                 page,
-                req.getCategoryId(),
+                categoryId,
+                categoryIds,
                 req.getKeyword(),
                 statusFilter,
+                req.getMinPrice(),
+                req.getMaxPrice(),
                 sortField,
                 sortOrder);
 
@@ -203,6 +236,8 @@ public class ProductServiceImpl implements ProductService {
         product.setStatus(req.getStatus() == null ? ProductStatus.ON_SALE : req.getStatus());
 
         productMapper.insert(product);
+        // 商品新增后分类树 productCount 需更新，失效分类树缓存
+        categoryService.evictCategoryCache();
         return toProductVO(product, Map.of(req.getCategoryId(), getCategoryName(req.getCategoryId())));
     }
 
@@ -244,6 +279,8 @@ public class ProductServiceImpl implements ProductService {
         productMapper.updateById(product);
         // 更新后删除缓存，保证后续读取一致
         evictCache(id);
+        // 商品分类可能变更，失效分类树缓存以更新 productCount
+        categoryService.evictCategoryCache();
         return toProductVO(product, Map.of(product.getCategoryId(), getCategoryName(product.getCategoryId())));
     }
 
@@ -257,6 +294,8 @@ public class ProductServiceImpl implements ProductService {
         // MyBatis-Plus @TableLogic 自动转为逻辑删除
         productMapper.deleteById(id);
         evictCache(id);
+        // 商品删除后分类树 productCount 需更新，失效分类树缓存
+        categoryService.evictCategoryCache();
     }
 
     /**

@@ -1,0 +1,5 @@
+product: 联想 拯救者刃7000K 台式机
+query: 联想 拯救者 刃7000K 台式机 主机 外观
+01_main.png	https://mercrt-fd.zol-img.com.cn/t_s640x546/g7/M00/0C/08/ChMkLGMFhNCIA-5RAAoCINgXB6sAAGxqQEFsVUACgI4227.png
+02_detail.jpg	https://qny.smzdm.com/202405/22/664d57476ba611965.jpg_d320.jpg
+03_detail.jpg	https://qnam.smzdm.com/202503/12/67d15da6f0ab28674.jpg_e1080.jpg

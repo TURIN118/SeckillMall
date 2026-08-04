@@ -15,16 +15,11 @@ export function addFavorite(data: FavoriteAddRequest): Promise<Result<void>> {
 }
 
 /** 取消收藏 */
-export function removeFavorite(productId: number): Promise<Result<void>> {
+export function removeFavorite(productId: number | string): Promise<Result<void>> {
     return del<void>(`/api/v1/favorites/${productId}`)
 }
 
 /** 检查商品是否已收藏 */
-export function checkFavorite(productId: number): Promise<Result<boolean>> {
+export function checkFavorite(productId: number | string): Promise<Result<boolean>> {
     return get<boolean>(`/api/v1/favorites/check/${productId}`)
-}
-
-/** 获取收藏数量 */
-export function getFavoriteCount(): Promise<Result<number>> {
-    return get<number>('/api/v1/favorites/count')
 }

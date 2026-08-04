@@ -6,6 +6,7 @@ import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.service.StatsService;
+import com.seckill.mall.vo.OrderStatusItemVO;
 import com.seckill.mall.vo.SeckillRankingVO;
 import com.seckill.mall.vo.StatsOverviewVO;
 import com.seckill.mall.vo.TrendItemVO;
@@ -120,6 +121,35 @@ public class StatsServiceImpl implements StatsService {
         List<SeckillRankingVO> rows = seckillOrderMapper.selectSeckillRanking(
                 List.of(OrderStatus.PAID, OrderStatus.COMPLETED), n);
         return rows == null ? Collections.emptyList() : rows;
+    }
+
+    @Override
+    public List<OrderStatusItemVO> getOrderStatusDistribution() {
+        // 复用现有 selectStatusDistribution：按 status 分组统计订单数（不限时间范围）
+        List<Map<String, Object>> rows = seckillOrderMapper.selectStatusDistribution(null, null);
+
+        // 按状态码建立计数索引
+        Map<String, Long> countByStatus = new HashMap<>();
+        if (rows != null) {
+            for (Map<String, Object> row : rows) {
+                Object statusObj = row.get("status");
+                if (statusObj == null) {
+                    continue;
+                }
+                String code = statusObj.toString();
+                countByStatus.put(code, toLong(row.get("cnt")));
+            }
+        }
+
+        // 按 OrderStatus 枚举自然顺序组装，即使 count=0 也输出，便于前端饼图直接消费
+        List<OrderStatusItemVO> result = new ArrayList<>(OrderStatus.values().length);
+        for (OrderStatus os : OrderStatus.values()) {
+            OrderStatusItemVO item = new OrderStatusItemVO();
+            item.setStatus(os.getCode());
+            item.setCount(countByStatus.getOrDefault(os.getCode(), 0L));
+            result.add(item);
+        }
+        return result;
     }
 
     // ==================== 私有工具方法 ====================

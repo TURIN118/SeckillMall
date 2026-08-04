@@ -1,0 +1,5 @@
+product: DIOR 迪奥 真我香水
+query: 迪奥 真我 香水 外观
+01_main.jpg	https://gd-hbimg.huaban.com/c11f1f54a2cdf8b4c128166e4eb9501e06214000763f-5f3xAq_fw658
+02_detail.jpg	https://img14.360buyimg.com/n1/s450x450_jfs/t13216/152/521754515/193026/953ecccd/5a0d377bN9b09d93b.jpg
+03_detail.jpg	https://img11.360buyimg.com/n1/jfs/t9490/173/2109183048/72914/d6b48ca5/59c4864fNa4a88c51.jpg

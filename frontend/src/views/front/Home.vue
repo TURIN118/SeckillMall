@@ -5,70 +5,48 @@
       <div class="banner-row">
         <!-- 左侧分类侧边栏 (淘宝风格: 竖向一级分类, 悬停弹出二级分类大面板) -->
         <aside class="category-sidebar">
-          <div
-            v-for="cat in categoryTree"
-            :key="cat.id"
-            class="sidebar-item"
-            @click="goCategory(cat.id)"
-          >
-            <span class="sidebar-name">{{ cat.categoryName }}</span>
-            <span v-if="cat.children && cat.children.length > 0" class="sidebar-arrow">&#8250;</span>
-
-            <!-- 二级分类浮层 (悬停时右侧弹出大面板) -->
-            <div
-              v-if="cat.children && cat.children.length > 0"
-              class="sidebar-panel"
-            >
-              <div class="panel-header">
-                <span class="panel-title">{{ cat.categoryName }}</span>
-                <span class="panel-hint">全部分类</span>
-              </div>
-              <div class="panel-content">
-                <div
-                  v-for="child in cat.children"
-                  :key="child.id"
-                  class="panel-item"
-                  @click.stop="goCategory(child.id)"
-                >{{ child.categoryName }}</div>
-              </div>
+          <!-- 滚动容器：包裹分类项，超出可滚动（隐藏滚动条但保留滚动能力） -->
+          <div ref="sidebarScrollRef" class="sidebar-scroll">
+            <div v-for="cat in categoryTree" :key="cat.id" class="sidebar-item"
+              :class="{ 'is-hover': hoverCategoryId === cat.id }" @click="goCategory(cat.id)"
+              @mouseenter="handleSidebarEnter(cat.id, $event)" @mouseleave="handleSidebarLeave(cat.id)">
+              <span class="sidebar-name">{{ cat.categoryName }}</span>
+              <span v-if="cat.children && cat.children.length > 0" class="sidebar-arrow">&#8250;</span>
             </div>
+
+            <!-- 空状态 -->
+            <div v-if="categoryTree.length === 0" class="sidebar-empty">暂无分类</div>
           </div>
 
-          <!-- 空状态 -->
-          <div v-if="categoryTree.length === 0" class="sidebar-empty">暂无分类</div>
+          <!-- 二级分类浮层提取到外层，不受滚动容器 overflow 裁剪 -->
+          <div v-if="hoverPanelData" class="sidebar-panel" :style="{ top: panelTop + 'px' }">
+            <div class="panel-header">
+              <span class="panel-title">{{ hoverPanelData.categoryName }}</span>
+              <span class="panel-hint">全部分类</span>
+            </div>
+            <div class="panel-content">
+              <div v-for="child in hoverPanelData.children" :key="child.id" class="panel-item"
+                @click.stop="goCategory(child.id)">{{ child.categoryName }}</div>
+            </div>
+          </div>
         </aside>
 
         <!-- 主 Banner：从 API 获取启用轮播图 -->
         <div class="banner-main">
-          <el-carousel
-            v-if="bannerList.length > 0"
-            height="280px"
-            :interval="4000"
-            arrow="hover"
-            indicator-position="outside"
-            class="banner-carousel"
-          >
+          <el-carousel v-if="bannerList.length > 0" height="280px" :interval="4000" arrow="hover"
+            indicator-position="outside" class="banner-carousel">
             <el-carousel-item v-for="banner in bannerList" :key="banner.id">
               <div class="banner-slide" @click="handleBannerClick(banner)">
-                <img
-                  :src="banner.imageUrl"
-                  :alt="banner.title || ''"
-                  class="banner-slide-img"
-                  loading="lazy"
-                />
+                <img :src="formatImageUrl(banner.imageUrl)" :alt="banner.title || ''" class="banner-slide-img"
+                  loading="lazy" />
                 <div v-if="banner.title" class="banner-slide-title">{{ banner.title }}</div>
               </div>
             </el-carousel-item>
           </el-carousel>
           <!-- 无数据占位（不使用模拟数据） -->
           <div v-else class="banner-empty">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="rgba(255,255,255,0.4)"
-              stroke-width="1"
-              class="banner-empty-svg"
-            >
+            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"
+              class="banner-empty-svg">
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <circle cx="8.5" cy="8.5" r="1.5" />
               <path d="m21 15-5-5L5 21" />
@@ -94,29 +72,12 @@
       </div>
     </div>
 
-    <!-- === 2. 分类快捷导航 (对照 index.html 第805-833行) === -->
-    <div class="category-wrap">
-      <div class="category-row">
-        <div
-          v-for="(cat, idx) in categories"
-          :key="cat.name"
-          class="category-item"
-          :class="{ 'no-border': idx === categories.length - 1 }"
-          @click="router.push('/products')"
-        >
-          <svg viewBox="0 0 24 24" fill="none" :stroke="cat.color" stroke-width="1.8" class="category-icon">
-            <component :is="cat.svg" />
-          </svg>
-          <div class="category-name">{{ cat.name }}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- === 3. 限时秒杀区域 (对照 index.html 第835-924行) === -->
+    <!-- === 2. 限时秒杀区域 (对照 index.html 第835-924行) === -->
     <section ref="seckillSectionRef" class="seckill-zone">
       <div class="zone-header">
         <!-- 闪电图标 -->
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e53935" stroke-width="2" class="zone-lightning">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e53935" stroke-width="2"
+          class="zone-lightning">
           <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
         </svg>
         <span class="zone-title">限时秒杀</span>
@@ -131,48 +92,52 @@
           <span class="cd-block">{{ cd.seconds }}</span>
         </div>
         <!-- 右侧更多链接 -->
-        <span class="zone-more" @click="router.push('/products')">更多秒杀 &gt;</span>
+        <span class="zone-more" @click="router.push('/seckill')">更多秒杀 &gt;</span>
       </div>
-      <!-- 商品横向滚动 -->
-      <div v-loading="seckillLoading" class="product-scroll">
-        <div
-          v-for="item in seckillItems"
-          :key="item.id"
-          class="p-card"
-          @click="goSeckillDetail(item.id)"
-        >
-          <div class="p-card-img">
-            <img v-if="item.image" :src="item.image" :alt="item.name" class="p-card-img-tag" loading="lazy" />
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="p-card-placeholder">
+      <!-- 2×3 网格纵向紧凑卡片布局，最多展示6个秒杀商品 -->
+      <div v-loading="seckillLoading" class="seckill-grid">
+        <div v-for="item in seckillItems" :key="item.id" class="sk-card">
+          <!-- 顶部：商品图片 -->
+          <div class="sk-card-img">
+            <img v-if="item.image" :src="formatImageUrl(item.image)" :alt="item.name" class="sk-card-img-tag"
+              loading="lazy" />
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+              class="sk-card-placeholder">
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <circle cx="8.5" cy="8.5" r="1.5" />
               <path d="m21 15-5-5L5 21" />
             </svg>
             <!-- 待开始遮罩 -->
-            <div v-if="item.pending" class="pending-overlay">
-              <span>距开始 {{ item.pendingStart }}</span>
-              <span class="pending-sub">{{ item.pendingTime }} 开抢</span>
+            <div v-if="item.pending" class="sk-pending-overlay">
+              <span class="sk-pending-badge">即将开始</span>
+              <span class="sk-pending-time">{{ item.pendingTime }} 开抢</span>
             </div>
           </div>
-          <div class="p-card-body">
-            <div class="p-card-name">{{ item.name }}</div>
-            <div class="p-card-prices">
-              <span class="p-card-price">{{ item.price }}</span>
-              <span v-if="item.original" class="p-card-original">¥{{ item.original }}</span>
+          <!-- 底部：商品信息 -->
+          <div class="sk-card-body">
+            <div class="sk-card-name" :title="item.name">{{ item.name }}</div>
+            <div class="sk-card-desc">{{ item.desc }}</div>
+            <div class="sk-card-prices">
+              <span class="sk-card-price">{{ item.price }}</span>
+              <span v-if="item.original" class="sk-card-original">¥{{ item.original }}</span>
             </div>
-            <div v-if="item.stockPercent !== undefined" class="stock-bar">
-              <div class="stock-bar-fill" :class="item.stockLevel" :style="{ width: item.stockPercent + '%' }"></div>
+            <!-- 秒杀进度条 -->
+            <div v-if="item.stockPercent !== undefined" class="sk-stock-bar">
+              <div class="sk-stock-bar-fill" :class="item.stockLevel" :style="{ width: item.stockPercent + '%' }"></div>
             </div>
-            <div class="stock-text" :class="{ danger: item.danger }">{{ item.stockText }}</div>
+            <div class="sk-stock-text" :class="{ danger: item.danger }">{{ item.stockText }}</div>
+            <!-- 立即抢购按钮 -->
+            <button class="sk-buy-btn" :disabled="item.pending || buyingId === item.id"
+              @click.stop="handleSeckillBuy(item)">
+              <span v-if="buyingId === item.id" class="sk-btn-loading">下单中...</span>
+              <template v-else-if="item.pending">即将开始</template>
+              <template v-else>立即抢购</template>
+            </button>
           </div>
         </div>
         <!-- 空状态：后端无数据时不使用模拟数据填充 -->
-        <el-empty
-          v-if="!seckillLoading && seckillItems.length === 0"
-          description="暂无秒杀活动，敬请期待"
-          :image-size="100"
-          class="scroll-empty"
-        />
+        <el-empty v-if="!seckillLoading && seckillItems.length === 0" description="暂无秒杀活动，敬请期待" :image-size="100"
+          class="sk-grid-empty" />
       </div>
     </section>
 
@@ -183,15 +148,12 @@
         <span class="recommend-refresh" @click="shuffleRecommend">换一换</span>
       </div>
       <div v-loading="recommendLoading" class="recommend-grid">
-        <div
-          v-for="item in recommendItems"
-          :key="item.id"
-          class="p-card"
-          @click="goProductDetail(item.id)"
-        >
+        <div v-for="item in recommendItems" :key="item.id" class="p-card" @click="goProductDetail(item.id)">
           <div class="p-card-img recommend-img">
-            <img v-if="item.image" :src="item.image" :alt="item.name" class="p-card-img-tag" loading="lazy" />
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="p-card-placeholder">
+            <img v-if="item.image" :src="formatImageUrl(item.image)" :alt="item.name" class="p-card-img-tag"
+              loading="lazy" />
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+              class="p-card-placeholder">
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <circle cx="8.5" cy="8.5" r="1.5" />
               <path d="m21 15-5-5L5 21" />
@@ -206,12 +168,8 @@
           </div>
         </div>
         <!-- 空状态：后端无数据时不使用模拟数据填充 -->
-        <el-empty
-          v-if="!recommendLoading && recommendItems.length === 0"
-          description="暂无推荐商品"
-          :image-size="100"
-          class="grid-empty"
-        />
+        <el-empty v-if="!recommendLoading && recommendItems.length === 0" description="暂无推荐商品" :image-size="100"
+          class="grid-empty" />
       </div>
     </div>
   </div>
@@ -222,16 +180,21 @@
  * P01 首页 / 秒杀大厅
  * 严格对照 index.html 第766-1035行 page-home 结构 + 第240-294行 CSS
  */
-import { ref, computed, onMounted, onUnmounted, h } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useSeckillStore } from '@/stores/seckill'
+import { useUserStore } from '@/stores/user'
 import { getActiveBanners } from '@/api/banner'
 import { getCategoryTree } from '@/api/category'
 import { getProductList } from '@/api/product'
+import { executeSeckill } from '@/api/seckill'
+import { formatImageUrl } from '@/utils/image'
 import type { SeckillGoodsVO, BannerVO, CategoryTreeNode, ProductVO } from '@/types'
 
 const router = useRouter()
 const seckillStore = useSeckillStore()
+const userStore = useUserStore()
 
 const seckillSectionRef = ref<HTMLElement | null>(null)
 
@@ -253,8 +216,62 @@ async function fetchCategoryTree(): Promise<void> {
 }
 
 /** 点击分类跳转商品列表 (URL query 携带 categoryId) */
-function goCategory(categoryId: number): void {
+function goCategory(categoryId: number | string): void {
   router.push({ path: '/products', query: { categoryId: String(categoryId) } })
+}
+
+/* === 左侧分类侧边栏 hover 交互（带 200ms 延迟避免快速划过时闪烁） === */
+const hoverCategoryId = ref<number | string | null>(null)
+let hoverEnterTimer: ReturnType<typeof setTimeout> | null = null
+let hoverLeaveTimer: ReturnType<typeof setTimeout> | null = null
+const HOVER_DELAY = 200 // ms
+
+/* 浮层提取到外层后，需要滚动容器引用与浮层 top 位置 */
+const sidebarScrollRef = ref<HTMLElement | null>(null)
+const panelTop = ref<number>(0)
+
+/** 当前 hover 的一级分类对象（含 children），用于外层浮层渲染 */
+const hoverPanelData = computed<CategoryTreeNode | null>(() => {
+  if (hoverCategoryId.value === null) return null
+  const cat = categoryTree.value.find(c => c.id === hoverCategoryId.value)
+  if (!cat || !cat.children || cat.children.length === 0) return null
+  return cat
+})
+
+/** 鼠标进入一级分类项：延迟显示浮层 */
+function handleSidebarEnter(categoryId: number | string, event: MouseEvent): void {
+  // 取消任何正在等待的隐藏
+  if (hoverLeaveTimer) {
+    clearTimeout(hoverLeaveTimer)
+    hoverLeaveTimer = null
+  }
+  // 若已显示同一项，直接返回
+  if (hoverCategoryId.value === categoryId) return
+  // 延迟 200ms 显示，避免快速划过时闪烁
+  hoverEnterTimer = setTimeout(() => {
+    // 计算浮层 top：hover 项相对于滚动容器的 offsetTop - 滚动容器的 scrollTop
+    const item = event.currentTarget as HTMLElement
+    const scrollContainer = sidebarScrollRef.value
+    if (item && scrollContainer) {
+      panelTop.value = item.offsetTop - scrollContainer.scrollTop
+    }
+    hoverCategoryId.value = categoryId
+  }, HOVER_DELAY)
+}
+
+/** 鼠标离开一级分类项：延迟隐藏浮层 */
+function handleSidebarLeave(categoryId: number | string): void {
+  // 取消任何正在等待的显示
+  if (hoverEnterTimer) {
+    clearTimeout(hoverEnterTimer)
+    hoverEnterTimer = null
+  }
+  // 若不是当前显示项，直接返回
+  if (hoverCategoryId.value !== categoryId) return
+  // 延迟 200ms 隐藏，给用户时间移到浮层上
+  hoverLeaveTimer = setTimeout(() => {
+    hoverCategoryId.value = null
+  }, HOVER_DELAY)
 }
 
 async function fetchBanners(): Promise<void> {
@@ -278,28 +295,6 @@ function handleBannerClick(banner: BannerVO): void {
   }
 }
 
-/* === 分类快捷导航 SVG 内容 === */
-const svgPhone = () => [h('rect', { x: 5, y: 2, width: 14, height: 20, rx: 2 }), h('path', { d: 'M12 18h.01' })]
-const svgComputer = () => [h('rect', { x: 2, y: 3, width: 20, height: 14, rx: 2 }), h('path', { d: 'M8 21h8M12 17v4' })]
-const svgHome = () => [h('path', { d: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z' }), h('path', { d: 'M9 22V12h6v10' })]
-const svgGame = () => [h('circle', { cx: 12, cy: 12, r: 10 }), h('path', { d: 'M8 14s1.5 2 4 2 4-2 4-2' }), h('path', { d: 'M9 9h.01M15 9h.01' })]
-const svgBeauty = () => [h('path', { d: 'M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z' })]
-const svgBag = () => [h('path', { d: 'M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z' }), h('path', { d: 'M3 6h18' }), h('path', { d: 'M16 10a4 4 0 01-8 0' })]
-
-interface CategoryItem {
-  name: string
-  color: string
-  svg: () => ReturnType<typeof h>[]
-}
-
-const categories: CategoryItem[] = [
-  { name: '手机数码', color: '#e53935', svg: svgPhone },
-  { name: '电脑办公', color: '#ff6d00', svg: svgComputer },
-  { name: '家用电器', color: '#4caf50', svg: svgHome },
-  { name: '游戏娱乐', color: '#1976d2', svg: svgGame },
-  { name: '美妆个护', color: '#e53935', svg: svgBeauty },
-  { name: '服饰鞋包', color: '#ff6d00', svg: svgBag }
-]
 
 /* === 倒计时 === */
 interface Countdown {
@@ -333,8 +328,9 @@ function updateCountdown(): void {
 
 /* === 秒杀商品卡片数据 === */
 interface SeckillCardItem {
-  id: number
+  id: number | string
   name: string
+  desc: string
   price: number
   original?: number
   image?: string
@@ -345,6 +341,18 @@ interface SeckillCardItem {
   pending?: boolean
   pendingStart?: string
   pendingTime?: string
+}
+
+/** 格式化时间为 MM-DD HH:mm */
+function formatStartTime(time: string): string {
+  // 简单格式化，避免引入 dayjs 依赖
+  const d = new Date(time)
+  if (isNaN(d.getTime())) return ''
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  return `${mm}-${dd} ${hh}:${mi}`
 }
 
 /** 把 store 中的 SeckillGoodsVO 转为卡片数据 */
@@ -363,20 +371,21 @@ function toCardItem(item: SeckillGoodsVO): SeckillCardItem {
   return {
     id: item.id,
     name: item.productName || item.seckillName || '未命名商品',
+    desc: item.seckillName || item.description || '限时秒杀 · 手慢无',
     price,
     original: price > 0 ? Math.round(price / 0.7) : undefined, // 原价近似（无字段时）
     image: item.images?.[0],
     stockPercent: isPending ? undefined : soldPercent,
     stockLevel: isPending ? undefined : level,
     stockText: isPending
-      ? `限量${total}件`
+      ? `限量${total}件 · 每人限购${item.perLimit}件`
       : isLowStock
         ? `仅剩${available}件！手慢无`
         : `已抢${soldPercent}% · 剩余${available}件`,
     danger: isLowStock,
     pending: isPending,
-    pendingStart: '15:30',
-    pendingTime: '20:00'
+    pendingStart: formatStartTime(item.startTime),
+    pendingTime: formatStartTime(item.startTime)
   }
 }
 
@@ -385,13 +394,67 @@ const seckillLoading = ref<boolean>(false)
 
 const seckillItems = computed<SeckillCardItem[]>(() => {
   // 全部从后端 store 获取，禁止使用模拟数据
+  // 优先展示进行中(ACTIVE)的秒杀，再补充待开始(PENDING)，最多取6个用于2×3网格
   const list = [...seckillStore.activeList, ...seckillStore.pendingList]
-  return list.map(toCardItem)
+  return list.slice(0, 6).map(toCardItem)
 })
+
+/* === 秒杀下单：弹出确认框 → 调用 executeSeckill === */
+const buyingId = ref<number | string | null>(null)
+
+async function handleSeckillBuy(item: SeckillCardItem): Promise<void> {
+  // 1. 登录检查
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录后再参与秒杀')
+    router.push(`/login?redirect=${encodeURIComponent(router.currentRoute.value.fullPath)}`)
+    return
+  }
+
+  // 2. 弹出确认框
+  try {
+    await ElMessageBox.confirm(
+      `确认以 ¥${item.price} 抢购「${item.name}」？`,
+      '秒杀确认',
+      {
+        confirmButtonText: '立即抢购',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+  } catch {
+    // 用户取消
+    return
+  }
+
+  // 3. 调用秒杀下单 API
+  buyingId.value = item.id
+  try {
+    const res = await executeSeckill(item.id)
+    const result = res.data
+    // status: 1=成功, 0=排队中, -1=库存不足, -2=重复购买
+    if (result.status === 1) {
+      ElMessage.success(`抢购成功！订单号：${result.orderNo}`)
+      // 刷新秒杀列表
+      await fetchList()
+    } else if (result.status === 0) {
+      ElMessage.info('抢购请求已提交，正在排队中，请稍后查看订单')
+    } else if (result.status === -1) {
+      ElMessage.error('手慢了，商品已抢完')
+    } else if (result.status === -2) {
+      ElMessage.warning('您已抢购过该商品，不能重复购买')
+    } else {
+      ElMessage.error('抢购失败，请重试')
+    }
+  } catch {
+    // 错误已由全局拦截器统一提示
+  } finally {
+    buyingId.value = null
+  }
+}
 
 /* === 猜你喜欢（从后端 /api/v1/products 获取，按销量排序） === */
 interface RecommendItem {
-  id: number
+  id: number | string
   name: string
   price: number
   sold: number
@@ -436,13 +499,9 @@ function shuffleRecommend(): void {
   }
 }
 
-/* === 跳转秒杀详情 === */
-function goSeckillDetail(id: number): void {
-  router.push(`/seckill/${id}`)
-}
 
 /* === 跳转商品详情 === */
-function goProductDetail(id: number): void {
+function goProductDetail(id: number | string): void {
   router.push(`/products/${id}`)
 }
 
@@ -470,6 +529,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (cdTimer) clearInterval(cdTimer)
+  if (hoverEnterTimer) clearTimeout(hoverEnterTimer)
+  if (hoverLeaveTimer) clearTimeout(hoverLeaveTimer)
   seckillStore.stopAllCountdowns()
 })
 </script>
@@ -499,24 +560,32 @@ onUnmounted(() => {
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 8px 0;
   box-sizing: border-box;
   /* 高度与 banner 主图对齐 (280px) */
   height: 280px;
-  overflow-y: auto;
+  /* overflow: visible 保证 sidebar-panel 二级分类浮层不被父容器裁剪。
+     分类项滚动由内部 .sidebar-scroll 容器承担，浮层置于该滚动容器外。 */
+  overflow: visible;
   position: relative;
-  /* 隐藏滚动条但保留滚动能力 */
+}
+
+/* 滚动容器：包裹分类项，超出可滚动；隐藏滚动条但保留滚动能力 */
+.sidebar-scroll {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 0;
+  box-sizing: border-box;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-.category-sidebar::-webkit-scrollbar {
+.sidebar-scroll::-webkit-scrollbar {
   display: none;
 }
 
 /* 一级分类项 */
 .sidebar-item {
-  position: relative;
   padding: 9px 16px;
   font-size: 14px;
   font-weight: 500;
@@ -529,7 +598,9 @@ onUnmounted(() => {
   box-sizing: border-box;
 }
 
-.sidebar-item:hover {
+/* hover 状态由 JS 控制 is-hover 类，避免纯 CSS :hover 与延迟逻辑冲突 */
+.sidebar-item:hover,
+.sidebar-item.is-hover {
   background: #e53935;
   color: #ffffff;
 }
@@ -550,29 +621,41 @@ onUnmounted(() => {
   transition: color 0.15s;
 }
 
-.sidebar-item:hover .sidebar-arrow {
+.sidebar-item:hover .sidebar-arrow,
+.sidebar-item.is-hover .sidebar-arrow {
   color: #ffffff;
 }
 
-/* 二级分类浮层: 悬停一级分类时右侧弹出大面板 */
+/* 二级分类浮层: 悬停一级分类时右侧弹出大面板 (从左侧滑出动画)。
+   浮层已提取到 .category-sidebar 直接子元素，top 由 JS 动态计算 */
 .sidebar-panel {
-  display: none;
   position: absolute;
-  top: 0;
   left: 100%;
-  width: 480px;
-  min-height: 280px;
+  width: 400px;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
   padding: 16px 20px;
-  z-index: 60;
+  /* z-index 跳够高，不被轮播图遮挡 */
+  z-index: 100;
   box-sizing: border-box;
+  /* 从左侧滑出 + 淡入动画 */
+  transform: translateX(-10px);
+  opacity: 0;
+  animation: sidebar-panel-slide-in 0.2s ease forwards;
 }
 
-.sidebar-item:hover > .sidebar-panel {
-  display: block;
+@keyframes sidebar-panel-slide-in {
+  from {
+    transform: translateX(-10px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* 浮层头部 */
@@ -596,32 +679,26 @@ onUnmounted(() => {
   color: #9ca3af;
 }
 
-/* 二级分类按列排列 (淘宝风格: 多列布局, 每列3-4个, 自动平衡列高) */
+/* 二级分类项: 用 flex-wrap 自动换行排列 */
 .panel-content {
-  column-count: 3;
-  column-gap: 16px;
-  /* 兼容性前缀 */
-  -webkit-column-count: 3;
-  -moz-column-count: 3;
-  -webkit-column-gap: 16px;
-  -moz-column-gap: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
 }
 
 .panel-item {
-  display: block;
+  display: inline-flex;
+  align-items: center;
   font-size: 13px;
   color: #4b5563;
   cursor: pointer;
   padding: 5px 12px;
   border-radius: 4px;
-  transition: all 0.15s;
+  transition: color 0.15s, background 0.15s;
   white-space: nowrap;
   line-height: 1.4;
-  margin-bottom: 6px;
-  /* 防止 item 被列分割断开 */
-  break-inside: avoid;
-  -webkit-column-break-inside: avoid;
-  page-break-inside: avoid;
+  /* hover 高亮效果 */
+  background: transparent;
 }
 
 .panel-item:hover {
@@ -761,52 +838,7 @@ onUnmounted(() => {
   color: #6b7280;
 }
 
-/* === 2. 分类快捷导航 (对照 index.html 第805-833行) === */
-.category-wrap {
-  padding: 20px 24px 0;
-}
-
-.category-row {
-  display: flex;
-  gap: 0;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.category-item {
-  flex: 1;
-  padding: 14px 0;
-  text-align: center;
-  cursor: pointer;
-  border-right: 1px solid #e5e7eb;
-  transition: background 0.15s;
-  box-sizing: border-box;
-}
-
-.category-item.no-border {
-  border-right: none;
-}
-
-.category-item:hover {
-  background: #f8f8f8;
-}
-
-.category-icon {
-  width: 22px;
-  height: 22px;
-  margin: 0 auto 6px;
-  display: block;
-}
-
-.category-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a1a2e;
-}
-
-/* === 3. 限时秒杀区域 (对照 index.html 第835-924行 + CSS 第240-294行) === */
+/* === 2. 限时秒杀区域 (对照 index.html 第835-924行 + CSS 第240-294行) === */
 .seckill-zone {
   margin-top: 20px;
   background: #ffffff;
@@ -884,34 +916,220 @@ onUnmounted(() => {
   text-decoration: underline;
 }
 
-/* 商品横向滚动 */
-.product-scroll {
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 8px;
+/* === 2×3 秒杀网格 + 纵向紧凑卡片 === */
+.seckill-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
 }
 
-.product-scroll::-webkit-scrollbar {
-  height: 4px;
-}
-
-.product-scroll::-webkit-scrollbar-thumb {
-  background: #ddd;
-  border-radius: 2px;
-}
-
-/* 空状态在横向滚动容器中居中显示 */
-.scroll-empty {
-  width: 100%;
+/* 空状态在网格容器中占满整行居中显示 */
+.sk-grid-empty {
+  grid-column: 1 / -1;
   margin: 32px auto;
-  flex-shrink: 0;
 }
 
-/* === 商品卡片 p-card (对照 index.html CSS 第261-294行) === */
-.p-card {
-  width: 200px;
+/* 单个秒杀卡片：左图右信息水平布局 */
+.sk-card {
+  display: flex;
+  flex-direction: row;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.2s;
+  box-sizing: border-box;
+}
+
+.sk-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+/* 左侧图片：水平布局固定宽度160px，高度填满卡片 */
+.sk-card-img {
+  width: 160px;
+  height: auto;
+  background: #f8f8f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
   flex-shrink: 0;
+  align-self: stretch;
+}
+
+.sk-card-img-tag {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sk-card-placeholder {
+  width: 48px;
+  height: 48px;
+  color: #ccc;
+}
+
+/* 待开始遮罩 */
+.sk-pending-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 26, 46, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sk-pending-badge {
+  background: #ff6d00;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 3px;
+}
+
+.sk-pending-time {
+  font-size: 12px;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* 右侧信息区：水平布局 flex:1 占满剩余空间，纵向排列内容 */
+.sk-card-body {
+  flex: 1;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.sk-card-name {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #1a1a2e;
+}
+
+.sk-card-desc {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sk-card-prices {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.sk-card-price {
+  font-family: 'DIN Alternate', 'Roboto', 'Arial', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: #e53935;
+  line-height: 1;
+}
+
+/* ¥ 前缀 */
+.sk-card-price::before {
+  content: '\A5';
+  font-size: 14px;
+}
+
+.sk-card-original {
+  font-size: 13px;
+  color: #9ca3af;
+  text-decoration: line-through;
+}
+
+/* 秒杀进度条 */
+.sk-stock-bar {
+  height: 6px;
+  background: #eee;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.sk-stock-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+.sk-stock-bar-fill.high {
+  background: #4caf50;
+}
+
+.sk-stock-bar-fill.mid {
+  background: #ff9800;
+}
+
+.sk-stock-bar-fill.low {
+  background: #e53935;
+}
+
+.sk-stock-text {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.sk-stock-text.danger {
+  color: #e53935;
+  font-weight: 700;
+}
+
+/* 立即抢购按钮：自适应宽度按钮 */
+.sk-buy-btn {
+  margin-top: auto;
+  width: auto;
+  align-self: flex-start;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #e53935, #ff6d00);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  box-sizing: border-box;
+}
+
+.sk-buy-btn:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.sk-buy-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.sk-buy-btn:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.sk-btn-loading {
+  display: inline-block;
+}
+
+/* === 商品卡片 p-card 通用样式 (猜你喜欢区域使用) === */
+.p-card {
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -946,27 +1164,6 @@ onUnmounted(() => {
   width: 48px;
   height: 48px;
   color: #ccc;
-}
-
-/* 待开始遮罩 */
-.pending-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  font-size: 12px;
-  color: #1a1a2e;
-  font-weight: 600;
-}
-
-.pending-sub {
-  font-size: 11px;
-  color: #6b7280;
-  margin-top: 4px;
-  font-weight: 400;
 }
 
 .p-card-body {
@@ -1004,45 +1201,9 @@ onUnmounted(() => {
   font-size: 12px;
 }
 
-.p-card-original {
-  font-size: 12px;
-  color: #6b7280;
-  text-decoration: line-through;
-}
-
-.stock-bar {
-  height: 6px;
-  background: #eee;
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 4px;
-}
-
-.stock-bar-fill {
-  height: 100%;
-  border-radius: 3px;
-}
-
-.stock-bar-fill.high {
-  background: #4caf50;
-}
-
-.stock-bar-fill.mid {
-  background: #ff9800;
-}
-
-.stock-bar-fill.low {
-  background: #e53935;
-}
-
 .stock-text {
   font-size: 11px;
   color: #6b7280;
-}
-
-.stock-text.danger {
-  color: #e53935;
-  font-weight: 700;
 }
 
 /* === 4. 猜你喜欢 (对照 index.html 第926-1035行) === */
@@ -1106,5 +1267,28 @@ onUnmounted(() => {
 .recommend-price::before {
   content: '\A5';
   font-size: 12px;
+}
+
+/* === 响应式：秒杀网格在小屏下退化为 2 列，超小屏退化为 1 列 === */
+@media (max-width: 768px) {
+  .seckill-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* 小屏下图片宽度减小到 120px */
+  .sk-card-img {
+    width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .seckill-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* 超小屏下图片宽度进一步减小到 120px */
+  .sk-card-img {
+    width: 120px;
+  }
 }
 </style>

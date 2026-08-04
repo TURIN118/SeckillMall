@@ -8,7 +8,9 @@
 
     <!-- 加载中 -->
     <div v-if="loading" class="loading-state">
-      <el-icon class="is-loading"><Loading /></el-icon>
+      <el-icon class="is-loading">
+        <Loading />
+      </el-icon>
       <span class="loading-text">加载中...</span>
     </div>
 
@@ -23,11 +25,8 @@
       <!-- 表头 -->
       <div class="cart-table-head">
         <div class="col-check">
-          <el-checkbox
-            :model-value="isAllSelected"
-            :indeterminate="isIndeterminate"
-            @change="handleToggleAll"
-          >全选</el-checkbox>
+          <el-checkbox :model-value="isAllSelected" :indeterminate="isIndeterminate"
+            @change="handleToggleAll">全选</el-checkbox>
         </div>
         <div class="col-info">商品信息</div>
         <div class="col-price">单价</div>
@@ -37,39 +36,21 @@
       </div>
 
       <!-- 商品行 -->
-      <div
-        v-for="item in cartList"
-        :key="item.id"
-        class="cart-row"
-        :class="{ disabled: item.productStatus !== 'ON_SALE' }"
-      >
+      <div v-for="item in cartList" :key="item.id" class="cart-row"
+        :class="{ disabled: item.productStatus !== 'ON_SALE' }">
         <!-- 复选框 -->
         <div class="col-check">
-          <el-checkbox
-            :model-value="item.selected"
-            :disabled="item.productStatus !== 'ON_SALE'"
-            @change="(val: boolean | string | number) => handleToggleSelect(item, Boolean(val))"
-          />
+          <el-checkbox :model-value="item.selected" :disabled="item.productStatus !== 'ON_SALE'"
+            @change="(val: boolean | string | number) => handleToggleSelect(item, Boolean(val))" />
         </div>
 
         <!-- 商品信息: 图片 + 名称 -->
         <div class="col-info">
           <div class="product-img" @click="goProductDetail(item.productId)">
-            <img
-              v-if="item.mainImage"
-              :src="item.mainImage"
-              :alt="item.productName"
-              class="product-img-tag"
-              loading="lazy"
-            />
-            <svg
-              v-else
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              class="product-img-placeholder"
-            >
+            <img v-if="item.mainImage" :src="formatImageUrl(item.mainImage)" :alt="item.productName"
+              class="product-img-tag" loading="lazy" />
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+              class="product-img-placeholder">
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <circle cx="8.5" cy="8.5" r="1.5" />
               <path d="m21 15-5-5L5 21" />
@@ -88,14 +69,9 @@
 
         <!-- 数量加减控件 -->
         <div class="col-quantity">
-          <el-input-number
-            v-model="item.quantity"
-            :min="1"
-            :max="Math.max(1, item.stock)"
-            :disabled="item.productStatus !== 'ON_SALE'"
-            size="small"
-            @change="(val: number | undefined) => handleQuantityChange(item, val)"
-          />
+          <el-input-number v-model="item.quantity" :min="1" :max="Math.max(1, item.stock)"
+            :disabled="item.productStatus !== 'ON_SALE'" size="small"
+            @change="(val: number | undefined) => handleQuantityChange(item, val)" />
           <div v-if="item.stock <= 5 && item.productStatus === 'ON_SALE'" class="stock-warn">
             仅剩 {{ item.stock }} 件
           </div>
@@ -115,17 +91,9 @@
       <!-- 底部操作栏 (固定在视口底部) -->
       <div class="cart-footer">
         <div class="footer-left">
-          <el-checkbox
-            :model-value="isAllSelected"
-            :indeterminate="isIndeterminate"
-            @change="handleToggleAll"
-          >全选</el-checkbox>
-          <button
-            class="btn-sm"
-            type="button"
-            :disabled="selectedCount === 0"
-            @click="handleBatchDelete"
-          >删除选中</button>
+          <el-checkbox :model-value="isAllSelected" :indeterminate="isIndeterminate"
+            @change="handleToggleAll">全选</el-checkbox>
+          <button class="btn-sm" type="button" :disabled="selectedCount === 0" @click="handleBatchDelete">删除选中</button>
           <button class="btn-sm" type="button" @click="handleClear">清空购物车</button>
         </div>
         <div class="footer-right">
@@ -133,12 +101,8 @@
             已选 <span class="total-count">{{ selectedCount }}</span> 件商品
             合计：<span class="total-amount">¥{{ formatPrice(totalAmount) }}</span>
           </div>
-          <button
-            class="btn-checkout"
-            type="button"
-            :disabled="selectedCount === 0"
-            @click="handleCheckout"
-          >去结算</button>
+          <button class="btn-checkout" type="button" :disabled="selectedCount === 0"
+            @click="handleCheckout">去结算</button>
         </div>
       </div>
     </div>
@@ -165,6 +129,7 @@ import {
   batchUpdateCartSelected
 } from '@/api/cart'
 import { useCartStore } from '@/stores/cart'
+import { formatImageUrl } from '@/utils/image'
 import type { CartItemVO } from '@/types'
 
 const router = useRouter()
@@ -177,7 +142,7 @@ const cartList = ref<CartItemVO[]>([])
 const loading = ref<boolean>(false)
 
 /** 数量更新防抖映射 (避免频繁请求) */
-const quantityTimers = new Map<number, ReturnType<typeof setTimeout>>()
+const quantityTimers = new Map<number | string, ReturnType<typeof setTimeout>>()
 
 /* === 计算属性 === */
 
@@ -222,7 +187,11 @@ async function loadCartList(): Promise<void> {
   loading.value = true
   try {
     const res = await getCartList()
-    cartList.value = res.data ?? []
+    // 规范化：后端 selected 可能是 Integer(0/1)，统一转为 boolean
+    cartList.value = (res.data ?? []).map(item => ({
+      ...item,
+      selected: Boolean(item.selected)
+    }))
   } catch {
     cartList.value = []
   } finally {
@@ -239,7 +208,7 @@ async function refreshAll(): Promise<void> {
 /* === 事件处理 === */
 
 /** 跳转商品详情 */
-function goProductDetail(id: number): void {
+function goProductDetail(id: number | string): void {
   router.push(`/products/${id}`)
 }
 
@@ -354,13 +323,35 @@ async function handleClear(): Promise<void> {
   }
 }
 
-/** 去结算 (暂未实现, 提示开发中) */
+/** 去结算: 校验选中 → 存 sessionStorage → 跳转 /checkout 结算确认页 */
 function handleCheckout(): void {
   if (selectedCount.value === 0) {
     ElMessage.warning('请先选择要结算的商品')
     return
   }
-  ElMessage.info('结算功能开发中，敬请期待！')
+  // 仅取选中且上架的商品 (与合计金额口径一致)
+  const selectedItems = cartList.value
+    .filter(item => item.selected && item.productStatus === 'ON_SALE')
+    .map(item => ({
+      cartId: item.id,
+      productId: item.productId,
+      productName: item.productName,
+      mainImage: item.mainImage,
+      price: item.originalPrice,
+      quantity: item.quantity,
+      subtotal: item.subtotal
+    }))
+  if (selectedItems.length === 0) {
+    ElMessage.warning('请先选择要结算的商品')
+    return
+  }
+  try {
+    sessionStorage.setItem('checkout_items', JSON.stringify(selectedItems))
+  } catch {
+    ElMessage.error('结算数据保存失败，请重试')
+    return
+  }
+  router.push('/checkout')
 }
 
 // 页面挂载时加载购物车列表
@@ -693,6 +684,7 @@ onActivated(() => {
 
 /* 响应式 */
 @media (max-width: 1024px) {
+
   .cart-table-head,
   .cart-row {
     grid-template-columns: 60px 1fr 100px 140px 100px 70px;
@@ -700,22 +692,27 @@ onActivated(() => {
 }
 
 @media (max-width: 768px) {
+
   .cart-table-head,
   .cart-row {
     grid-template-columns: 40px 1fr 80px 120px 80px 60px;
     padding: 12px 8px;
     font-size: 12px;
   }
+
   .product-img {
     width: 60px;
     height: 60px;
   }
+
   .cart-footer {
     padding: 10px 12px;
   }
+
   .footer-left {
     gap: 8px;
   }
+
   .footer-right {
     gap: 12px;
   }

@@ -1,0 +1,5 @@
+product: 福临门 东北珍珠米 5kg
+query: 福临门 东北珍珠米 5kg 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN0106tKw1279NziF2AGD_!!2216523827754-0-cib.310x310.jpg
+02_detail.jpg	https://y.zdmimg.com/202402/22/65d737f55b4a23371.jpg_d250.jpg
+03_detail.jpg	https://qny.smzdm.com/202412/03/674ed84366038178.jpg_d250.jpg

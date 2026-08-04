@@ -1,0 +1,5 @@
+product: 网易云音乐 黑胶VIP年卡
+query: 网易云音乐 黑胶VIP 年卡 海报
+01_main.jpg	https://y.zdmimg.com/202505/21/682d2b34e78b67756.jpg_d250.jpg
+02_detail.jpg	https://qny.smzdm.com/202408/14/66bc52761b2f02983.jpg_d250.jpg
+03_detail.jpg	https://y.zdmimg.com/202601/04/695a182fe2bea4141.jpg_d250.jpg

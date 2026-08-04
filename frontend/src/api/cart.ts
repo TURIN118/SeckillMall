@@ -15,12 +15,12 @@ export function addCart(data: CartAddRequest): Promise<Result<void>> {
 }
 
 /** 修改购物车项数量 */
-export function updateCartQuantity(cartId: number, quantity: number): Promise<Result<void>> {
+export function updateCartQuantity(cartId: number | string, quantity: number): Promise<Result<void>> {
     return put<void>(`/api/v1/cart/${cartId}/quantity`, { quantity })
 }
 
 /** 删除购物车项 */
-export function deleteCartItem(cartId: number): Promise<Result<void>> {
+export function deleteCartItem(cartId: number | string): Promise<Result<void>> {
     return del<void>(`/api/v1/cart/${cartId}`)
 }
 
@@ -30,12 +30,12 @@ export function clearCart(): Promise<Result<void>> {
 }
 
 /** 更新购物车项选中状态 */
-export function updateCartSelected(cartId: number, selected: boolean): Promise<Result<void>> {
+export function updateCartSelected(cartId: number | string, selected: boolean): Promise<Result<void>> {
     return put<void>(`/api/v1/cart/${cartId}/selected`, { selected })
 }
 
 /** 批量更新购物车项选中状态 */
-export function batchUpdateCartSelected(cartIds: number[], selected: boolean): Promise<Result<void>> {
+export function batchUpdateCartSelected(cartIds: (number | string)[], selected: boolean): Promise<Result<void>> {
     return put<void>('/api/v1/cart/batch-selected', { cartIds, selected })
 }
 

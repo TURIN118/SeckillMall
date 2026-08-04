@@ -1,0 +1,5 @@
+product: 西部数据 My Passport 2TB
+query: 西部数据 My Passport 2TB 移动硬盘 外观
+01_main.jpg	https://2c.zol-img.com.cn/product/179_320x240/564/ceXjB6l55woW6.jpg
+02_detail.jpg	https://qny.smzdm.com/202106/08/60bf302f6ab7a3578.jpg_d320.jpg
+03_detail.jpg	https://ym.zdmimg.com/201408/08/53e46951394fc.jpg_d250.jpg

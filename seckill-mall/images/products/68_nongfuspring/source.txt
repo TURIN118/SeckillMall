@@ -1,0 +1,5 @@
+product: 农夫山泉 矿泉水 550ml×24
+query: 农夫山泉 矿泉水 550ml 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01oAT35y1KMHsRFenJL_!!2200838851149-0-cib.310x310.jpg
+02_detail.png	http://zhengshihaihengzhaotoubiao.oss-cn-hangzhou.aliyuncs.com/zhengshihaihengzhaotoubiao/haihengzhaotoubiao/goods/C3DE138A0D2D4F59AFF054BDE42421D1.png_400x400
+03_detail.png	https://qny.smzdm.com/202007/25/5f1bc7e7bc77b1025.png_d250.jpg

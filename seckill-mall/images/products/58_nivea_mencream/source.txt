@@ -1,0 +1,5 @@
+product: 妮维雅 男士水活多效润肤霜
+query: 妮维雅 男士 润肤霜 外观
+01_main.jpg	https://qna.smzdm.com/202108/23/612399b0749879338.jpg_e680.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN0176RW4I22LgfqGRcGr_!!2215226017104-0-cib.310x310.jpg
+03_detail.jpg	https://img11.360buyimg.com/n1/jfs/t1/105751/32/10602/197617/5e1e95f5Ec6ea77f3/9c934ae54442fcc7.jpg

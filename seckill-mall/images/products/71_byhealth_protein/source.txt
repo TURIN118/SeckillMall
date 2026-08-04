@@ -1,0 +1,5 @@
+product: 汤臣倍健 蛋白粉 1kg
+query: 汤臣倍健 蛋白粉 外观
+01_main.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01KWhgOM2DkpxuJVbXG_!!3860788648-0-cib.310x310.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01SLt2hT1xBXqQSEv71_!!2218482626405-0-cib.310x310.jpg
+03_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN011bOdZD2DkqERbsnmO_!!3860788648-0-cib.310x310.jpg

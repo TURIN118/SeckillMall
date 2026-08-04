@@ -6,12 +6,7 @@
       <div class="admin-table-header">
         <div class="admin-table-title">商品列表</div>
         <div class="admin-table-actions">
-          <input
-            v-model="keyword"
-            class="admin-search-input"
-            placeholder="搜索商品名称..."
-            @keyup.enter="handleSearch"
-          />
+          <input v-model="keyword" class="admin-search-input" placeholder="搜索商品名称..." @keyup.enter="handleSearch" />
           <select v-model="categoryId" class="admin-filter-select" @change="handleSearch">
             <option :value="undefined">全部分类</option>
             <option v-for="cat in categories" :key="cat.id" :value="cat.id">
@@ -45,11 +40,7 @@
           <tr v-for="row in productList" :key="row.id">
             <td>
               <div class="table-avatar img">
-                <img
-                  v-if="row.images && row.images.length > 0"
-                  :src="row.images[0]"
-                  alt=""
-                />
+                <img v-if="row.images && row.images.length > 0" :src="formatImageUrl(row.images[0])" alt="" />
                 <span v-else>无图</span>
               </div>
             </td>
@@ -80,23 +71,11 @@
       <div class="admin-table-footer">
         <span class="page-info">共 {{ total }} 条记录</span>
         <div class="pagination">
-          <div
-            class="page-btn"
-            :class="{ disabled: pageNum <= 1 }"
-            @click="handlePageChange(pageNum - 1)"
-          >&lt;</div>
-          <div
-            v-for="p in displayPages"
-            :key="p"
-            class="page-btn"
-            :class="{ active: p === pageNum }"
-            @click="handlePageChange(p)"
-          >{{ p }}</div>
-          <div
-            class="page-btn"
-            :class="{ disabled: pageNum >= totalPages }"
-            @click="handlePageChange(pageNum + 1)"
-          >&gt;</div>
+          <div class="page-btn" :class="{ disabled: pageNum <= 1 }" @click="handlePageChange(pageNum - 1)">&lt;</div>
+          <div v-for="p in displayPages" :key="p" class="page-btn" :class="{ active: p === pageNum }"
+            @click="handlePageChange(p)">{{ p }}</div>
+          <div class="page-btn" :class="{ disabled: pageNum >= totalPages }" @click="handlePageChange(pageNum + 1)">&gt;
+          </div>
         </div>
       </div>
     </div>
@@ -114,6 +93,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getProductList, deleteProduct } from '@/api/product'
 import { getCategoryTree } from '@/api/category'
+import { formatImageUrl } from '@/utils/image'
 import type { ProductVO, CategoryVO, ProductStatus } from '@/types'
 
 const router = useRouter()
@@ -143,6 +123,7 @@ const displayPages = computed<number[]>(() => {
   for (let i = start; i <= end; i++) pages.push(i)
   return pages
 })
+
 
 /* === 格式化价格 === */
 function formatPrice(price: number): string {
@@ -250,10 +231,12 @@ onMounted(() => {
   padding: 16px 20px;
   border-bottom: 1px solid var(--color-border);
 }
+
 .admin-table-title {
   font-size: 15px;
   font-weight: 700;
 }
+
 .admin-table-actions {
   display: flex;
   gap: 8px;
@@ -270,6 +253,7 @@ onMounted(() => {
   width: 180px;
   outline: none;
 }
+
 .admin-search-input:focus {
   border-color: var(--color-primary);
 }
@@ -297,11 +281,13 @@ onMounted(() => {
   color: var(--color-text-primary);
   letter-spacing: 0.02em;
 }
+
 .btn-sm.primary {
   background: var(--color-primary);
   color: #fff;
   border-color: var(--color-primary);
 }
+
 .btn-sm:hover {
   opacity: 0.9;
 }
@@ -312,6 +298,7 @@ onMounted(() => {
   border-collapse: collapse;
   font-size: 13px;
 }
+
 .admin-table thead th {
   background: var(--color-bg-subtle);
   padding: 10px 16px;
@@ -322,17 +309,21 @@ onMounted(() => {
   border-bottom: 1px solid var(--color-border);
   letter-spacing: 0.02em;
 }
+
 .admin-table tbody td {
   padding: 12px 16px;
   border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
 }
+
 .admin-table tbody tr:hover {
   background: var(--color-bg-subtle);
 }
+
 .admin-table tbody tr:last-child td {
   border-bottom: none;
 }
+
 .empty-cell {
   text-align: center;
   color: var(--color-text-secondary);
@@ -353,11 +344,13 @@ onMounted(() => {
   color: var(--color-text-secondary);
   overflow: hidden;
 }
+
 .table-avatar.img {
   border-radius: 6px;
   width: 40px;
   height: 40px;
 }
+
 .table-avatar.img img {
   width: 100%;
   height: 100%;
@@ -373,10 +366,12 @@ onMounted(() => {
   font-weight: 700;
   letter-spacing: 0.02em;
 }
+
 .status-tag.paid {
   background: var(--tag-paid-bg);
   color: var(--tag-paid-fg);
 }
+
 .status-tag.cancelled {
   background: var(--tag-cancelled-bg);
   color: var(--tag-cancelled-fg);
@@ -387,6 +382,7 @@ onMounted(() => {
   display: flex;
   gap: 8px;
 }
+
 .table-action-btn {
   font-size: 12px;
   color: var(--color-primary-blue);
@@ -396,9 +392,11 @@ onMounted(() => {
   font-weight: 600;
   padding: 0;
 }
+
 .table-action-btn.danger {
   color: var(--color-danger);
 }
+
 .table-action-btn:hover {
   text-decoration: underline;
 }
@@ -410,15 +408,18 @@ onMounted(() => {
   justify-content: space-between;
   padding: 12px 20px;
 }
+
 .page-info {
   font-size: 12px;
   color: var(--color-text-secondary);
 }
+
 .pagination {
   display: flex;
   align-items: center;
   gap: 4px;
 }
+
 .page-btn {
   min-width: 32px;
   height: 32px;
@@ -433,19 +434,23 @@ onMounted(() => {
   color: var(--color-text-primary);
   user-select: none;
 }
+
 .page-btn:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
+
 .page-btn.active {
   background: var(--color-primary);
   color: #fff;
   border-color: var(--color-primary);
 }
+
 .page-btn.disabled {
   color: #ccc;
   cursor: not-allowed;
 }
+
 .page-btn.disabled:hover {
   border-color: var(--color-border);
   color: #ccc;

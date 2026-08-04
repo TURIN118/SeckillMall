@@ -28,10 +28,14 @@ public enum ErrorCode {
     CAPTCHA_ERROR(1005, "验证码错误或已过期"),
     USERNAME_EXISTS(1006, "用户名已存在"),
     PHONE_EXISTS(1007, "手机号已存在"),
+    EMAIL_EXISTS(1007, "邮箱已存在"),
     USER_NOT_FOUND(1008, "用户不存在"),
     PASSWORD_NOT_MATCH(1009, "两次密码不一致"),
     LOGIN_LOCKED(1010, "登录失败次数过多，账户已锁定30分钟"),
     REPLAY_DETECTED(1011, "请求签名校验失败"),
+    USER_NOT_FOUND_BY_ACCOUNT(1012, "通过手机号/邮箱找不到对应用户"),
+    VERIFICATION_CODE_EXPIRED(1013, "验证码已过期，请重新获取"),
+    VERIFICATION_CODE_ERROR(1014, "验证码错误"),
 
     // 秒杀相关
     SECKILL_NOT_FOUND(2001, "秒杀活动不存在"),

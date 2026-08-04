@@ -1,0 +1,5 @@
+product: 雅萌 MAX 二代射频仪
+query: 雅萌 MAX 射频美容仪 外观
+01_main.jpg	https://qny.smzdm.com/202310/24/65373a408801a6090.jpg_a200.jpg
+02_detail.jpg	https://cbu01.alicdn.com/img/ibank/O1CN01GoWEzE2J9BNooI8lq_!!2545749378-0-cib.310x310.jpg
+03_detail.jpg	http://www.ya-manchina.com/datacache/pic/390_270_69af2ceaaaf4107ecbae92fe1d434fba.jpg

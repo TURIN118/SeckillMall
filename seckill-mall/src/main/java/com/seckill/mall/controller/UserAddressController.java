@@ -6,6 +6,7 @@ import com.seckill.mall.service.UserAddressService;
 import com.seckill.mall.vo.UserAddressVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -49,7 +50,7 @@ public class UserAddressController {
 
     @Operation(summary = "新增收货地址")
     @PostMapping("/create")
-    public Result<UserAddressVO> create(@RequestBody UserAddressVO vo) {
+    public Result<UserAddressVO> create(@Valid @RequestBody UserAddressVO vo) {
         Long userId = SecurityUtils.getCurrentUserId();
         return Result.success("新增地址成功", userAddressService.create(userId, vo));
     }
@@ -57,7 +58,7 @@ public class UserAddressController {
     @Operation(summary = "编辑收货地址")
     @PutMapping("/{id}")
     public Result<UserAddressVO> update(@PathVariable Long id,
-                                        @RequestBody UserAddressVO vo) {
+                                        @Valid @RequestBody UserAddressVO vo) {
         Long userId = SecurityUtils.getCurrentUserId();
         return Result.success("编辑地址成功", userAddressService.update(userId, id, vo));
     }

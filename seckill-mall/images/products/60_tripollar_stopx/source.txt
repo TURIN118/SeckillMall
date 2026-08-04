@@ -1,0 +1,5 @@
+product: Tripollar STOP X 美容仪
+query: Tripollar STOP X 美容仪 外观
+01_main.jpg	https://img12.360buyimg.com/n1/jfs/t1/185845/40/17550/103869/610a3e14E17fcd12b/b406b34f3133980e.jpg
+02_detail.jpg	https://img12.360buyimg.com/n1/jfs/t1/141662/16/16683/109110/5fc72fc1E9e6358eb/25b46ab5b05a9709.jpg
+03_detail.png	https://www.metroer.com/upload/editor/20180810/15339081252684.png

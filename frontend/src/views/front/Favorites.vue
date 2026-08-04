@@ -9,7 +9,9 @@
 
     <!-- 加载中 -->
     <div v-if="loading" class="loading-state">
-      <el-icon class="is-loading"><Loading /></el-icon>
+      <el-icon class="is-loading">
+        <Loading />
+      </el-icon>
       <span class="loading-text">加载中...</span>
     </div>
 
@@ -21,29 +23,14 @@
 
     <!-- 收藏商品卡片网格 -->
     <div v-else class="favorites-grid">
-      <div
-        v-for="item in favoriteList"
-        :key="item.id"
-        class="fav-card"
-        :class="{ disabled: item.productStatus !== 'ON_SALE' }"
-      >
+      <div v-for="item in favoriteList" :key="item.id" class="fav-card"
+        :class="{ disabled: item.productStatus !== 'ON_SALE' }">
         <!-- 商品图片 (点击跳转详情) -->
         <div class="fav-card-img" @click="goProductDetail(item.productId)">
-          <img
-            v-if="item.mainImage"
-            :src="item.mainImage"
-            :alt="item.productName"
-            class="fav-img-tag"
-            loading="lazy"
-          />
-          <svg
-            v-else
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            class="fav-img-placeholder"
-          >
+          <img v-if="item.mainImage" :src="formatImageUrl(item.mainImage)" :alt="item.productName" class="fav-img-tag"
+            loading="lazy" />
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+            class="fav-img-placeholder">
             <rect x="3" y="3" width="18" height="18" rx="2" />
             <circle cx="8.5" cy="8.5" r="1.5" />
             <path d="m21 15-5-5L5 21" />
@@ -64,21 +51,14 @@
             <span class="fav-sales">已售 {{ item.salesCount || 0 }} 件</span>
           </div>
           <div class="fav-actions">
-            <button
-              class="btn-sm primary"
-              type="button"
+            <button class="btn-sm primary" type="button"
               :disabled="item.productStatus !== 'ON_SALE' || addingId === item.productId"
-              @click="handleAddToCart(item)"
-            >
+              @click="handleAddToCart(item)">
               <span v-if="addingId === item.productId">加入中...</span>
               <span v-else>加入购物车</span>
             </button>
-            <button
-              class="btn-sm text danger"
-              type="button"
-              :disabled="removingId === item.productId"
-              @click="handleRemoveFavorite(item)"
-            >
+            <button class="btn-sm text danger" type="button" :disabled="removingId === item.productId"
+              @click="handleRemoveFavorite(item)">
               <span v-if="removingId === item.productId">取消中...</span>
               <span v-else>取消收藏</span>
             </button>
@@ -102,6 +82,7 @@ import { Loading } from '@element-plus/icons-vue'
 import { getFavoriteList, removeFavorite } from '@/api/favorite'
 import { addCart } from '@/api/cart'
 import { useCartStore } from '@/stores/cart'
+import { formatImageUrl } from '@/utils/image'
 import type { FavoriteItemVO } from '@/types'
 
 const router = useRouter()
@@ -114,10 +95,10 @@ const favoriteList = ref<FavoriteItemVO[]>([])
 const loading = ref<boolean>(false)
 
 /** 正在加入购物车的商品 ID (按钮 loading 态) */
-const addingId = ref<number | null>(null)
+const addingId = ref<number | string | null>(null)
 
 /** 正在取消收藏的商品 ID (按钮 loading 态) */
-const removingId = ref<number | null>(null)
+const removingId = ref<number | string | null>(null)
 
 /* === 工具函数 === */
 
@@ -142,7 +123,7 @@ async function loadFavoriteList(): Promise<void> {
 /* === 事件处理 === */
 
 /** 跳转商品详情 */
-function goProductDetail(id: number): void {
+function goProductDetail(id: number | string): void {
   router.push(`/products/${id}`)
 }
 
@@ -440,9 +421,11 @@ onActivated(() => {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
+
   .fav-card-img {
     height: 160px;
   }
+
   .fav-price {
     font-size: 16px;
   }

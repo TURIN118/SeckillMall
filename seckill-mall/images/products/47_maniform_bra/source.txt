@@ -1,0 +1,5 @@
+product: 曼妮芬 文胸
+query: 曼妮芬 文胸 内衣 外观
+01_main.jpg	https://qny.smzdm.com/202304/04/642bbf42c77592200.jpg_d250.jpg
+02_detail.jpg	https://qny.smzdm.com/202211/17/63761ec3311737416.jpg_d250.jpg
+03_detail.jpg	https://y.zdmimg.com/202401/17/65a7987dcd67d4644.jpg_d250.jpg

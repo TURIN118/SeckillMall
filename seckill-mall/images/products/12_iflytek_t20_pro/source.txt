@@ -1,0 +1,4 @@
+# 图片来源溯源（图片均来自对应商品的官方/权威媒体页面，非随机生成）
+01_main.png	https://edu.iflytek.com/Public/Uploads/ueditor/upload/image/20230325/1679724996691426.png
+02_detail.jpg	https://2.zol-img.com.cn/product/229_640x2000/887/ce1IZXs7MnCr6.jpg
+03_detail.jpg	https://doc-fd.zol-img.com.cn/t_s640x2000/g8/M00/04/0D/ChMkLWpsX4WIUiPZAADLnJ_VmOAAAJSsAGCxEoAAMu0333.jpg

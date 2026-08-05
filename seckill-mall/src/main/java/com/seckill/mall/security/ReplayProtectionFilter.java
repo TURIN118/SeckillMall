@@ -24,7 +24,9 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -51,6 +53,9 @@ public class ReplayProtectionFilter extends OncePerRequestFilter {
 
     @Value("${seckill.security.replay-window-seconds:60}")
     private long replayWindowSeconds;
+
+    @Value("${seckill.security.cors.allowed-origins:http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173,http://192.168.176.71:5173}")
+    private String corsAllowedOrigins;
 
     /**
      * 安全修复（C2）：启动期校验签名密钥必须显式配置且长度 >= 32，避免使用默认弱密钥。
@@ -122,8 +127,26 @@ public class ReplayProtectionFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    /**
+     * 安全修复（H2-补全）：本 Filter 在 Spring Security 过滤链之前执行（@Order=HIGHEST_PRECEDENCE+20），
+     * reject 时 CorsFilter 尚未添加 CORS 头。对于跨域请求，浏览器会因缺少 CORS 头而阻止前端读取响应，
+     * 导致前端只能看到"网络错误"而非具体的 401 错误信息。
+     * 因此需在此处手动补充 CORS 头，逻辑与 SecurityConfig#corsConfigurationSource 保持一致。
+     */
     private void reject(HttpServletRequest request, HttpServletResponse response, ErrorCode errorCode) throws IOException {
-        // 安全修复（H2）：CORS 头统一由 SecurityConfig#corsConfigurationSource 管理，此处不再手动反射 Origin
+        // 补充 CORS 头：因为本 Filter 在 Spring Security 之前执行，
+        // reject 时 CorsFilter 尚未添加 CORS 头，需手动补充
+        String origin = request.getHeader("Origin");
+        if (origin != null) {
+            List<String> allowedOrigins = Arrays.asList(corsAllowedOrigins.split(","));
+            if (allowedOrigins.contains(origin)) {
+                response.setHeader("Access-Control-Allow-Origin", origin);
+                response.setHeader("Access-Control-Allow-Credentials", "true");
+                response.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS,PATCH");
+                response.setHeader("Access-Control-Allow-Headers", "*");
+                response.setHeader("Access-Control-Max-Age", "3600");
+            }
+        }
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());

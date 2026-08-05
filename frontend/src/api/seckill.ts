@@ -2,6 +2,7 @@
  * 秒杀 API - 严格匹配 default.md
  */
 import { get, post, put } from './request'
+import { generateReplayHeaders } from '@/utils/replayProtection'
 import type {
   Result,
   PageResult,
@@ -36,20 +37,29 @@ export function getSeckillToken(seckillId: number | string): Promise<Result<stri
   return get<string>(`/api/v1/seckill/${seckillId}/token`)
 }
 
-/** 执行秒杀 */
-export function doSeckill(
+/** 执行秒杀（带防重放签名） */
+export async function doSeckill(
   seckillId: number | string,
   seckillToken: string
 ): Promise<Result<SeckillResultVO>> {
-  return post<SeckillResultVO>(`/api/v1/seckill/${seckillId}`, undefined, {
+  const uri = `/api/v1/seckill/${seckillId}`
+  const replayHeaders = await generateReplayHeaders(uri)
+  return post<SeckillResultVO>(uri, undefined, {
     params: { seckillToken },
-    headers: { 'X-Seckill-Token': seckillToken }
+    headers: {
+      'X-Seckill-Token': seckillToken,
+      ...replayHeaders
+    }
   })
 }
 
-/** 一键执行秒杀下单（无需预取 token，后端在 /execute 端点内部处理资格校验） */
-export function executeSeckill(seckillId: number | string): Promise<Result<SeckillResultVO>> {
-  return post<SeckillResultVO>(`/api/v1/seckill/${seckillId}/execute`)
+/** 一键执行秒杀下单（无需预取 token，后端在 /execute 端点内部处理资格校验，带防重放签名） */
+export async function executeSeckill(seckillId: number | string): Promise<Result<SeckillResultVO>> {
+  const uri = `/api/v1/seckill/${seckillId}/execute`
+  const replayHeaders = await generateReplayHeaders(uri)
+  return post<SeckillResultVO>(uri, undefined, {
+    headers: replayHeaders
+  })
 }
 
 /** 查询秒杀结果 */

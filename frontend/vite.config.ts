@@ -35,9 +35,24 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       open: false,
       proxy: {
+        // API 接口代理：将 /api 开头的请求转发到后端
         '/api': {
-          target: env.VITE_API_BASE_URL || 'http://localhost:8080',
-          changeOrigin: true
+          // 后端地址从 VITE_PROXY_TARGET 读取，默认 http://localhost:8080
+          target: env.VITE_PROXY_TARGET || 'http://localhost:8080',
+          changeOrigin: true,   // 修改请求头中的 Host 为后端地址，避免后端 Host 校验失败
+          secure: false,        // 后端为 HTTP 时设为 false；HTTPS 自签名证书时也设为 false
+          ws: true              // 支持 WebSocket 代理（为后续秒杀结果推送预留）
+        },
+        // 图片/上传文件代理：将 /images 和 /upload 开头的请求也转发到后端
+        '/images': {
+          target: env.VITE_PROXY_TARGET || 'http://localhost:8080',
+          changeOrigin: true,
+          secure: false
+        },
+        '/upload': {
+          target: env.VITE_PROXY_TARGET || 'http://localhost:8080',
+          changeOrigin: true,
+          secure: false
         }
       }
     },

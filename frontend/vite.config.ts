@@ -37,22 +37,33 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // API 接口代理：将 /api 开头的请求转发到后端
         '/api': {
-          // 后端地址从 VITE_PROXY_TARGET 读取，默认 http://localhost:8080
-          target: env.VITE_PROXY_TARGET || 'http://localhost:8080',
+          // 后端地址从 VITE_PROXY_TARGET 读取，默认 http://127.0.0.1:8080（避免 IPv6 优先解析延迟）
+          target: env.VITE_PROXY_TARGET || 'http://127.0.0.1:8080',
           changeOrigin: true,   // 修改请求头中的 Host 为后端地址，避免后端 Host 校验失败
           secure: false,        // 后端为 HTTP 时设为 false；HTTPS 自签名证书时也设为 false
-          ws: true              // 支持 WebSocket 代理（为后续秒杀结果推送预留）
+          ws: true,             // 支持 WebSocket 代理（为后续秒杀结果推送预留）
+          configure: (proxy) => {
+            // 设置代理超时，避免连接异常时长时间阻塞
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              // 设置代理请求超时为30秒
+              proxyReq.setTimeout(30000, () => {
+                proxyReq.destroy()
+              })
+            })
+          }
         },
         // 图片/上传文件代理：将 /images 和 /upload 开头的请求也转发到后端
         '/images': {
-          target: env.VITE_PROXY_TARGET || 'http://localhost:8080',
+          target: env.VITE_PROXY_TARGET || 'http://127.0.0.1:8080',
           changeOrigin: true,
-          secure: false
+          secure: false,
+          ws: false             // 静态资源不需要 WebSocket
         },
         '/upload': {
-          target: env.VITE_PROXY_TARGET || 'http://localhost:8080',
+          target: env.VITE_PROXY_TARGET || 'http://127.0.0.1:8080',
           changeOrigin: true,
-          secure: false
+          secure: false,
+          ws: false             // 上传路径不需要 WebSocket
         }
       }
     },

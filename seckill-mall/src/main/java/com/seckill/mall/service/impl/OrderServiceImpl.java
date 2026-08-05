@@ -113,6 +113,9 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.UNPAID);
         order.setPayExpireTime(LocalDateTime.now().plusMinutes(payTimeoutMinutes));
 
+        // 物理删除同一(userId, seckillId)的终态订单，允许超时/取消后重新秒杀
+        seckillOrderMapper.deleteTerminalOrders(userId, seckillId);
+
         try {
             seckillOrderMapper.insert(order);
         } catch (DuplicateKeyException e) {

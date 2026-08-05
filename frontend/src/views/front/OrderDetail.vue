@@ -124,6 +124,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getOrderDetail, getNormalOrderDetail, payOrder, payNormalOrder, cancelOrder, cancelNormalOrder } from '@/api/order'
+import { getProductDetail } from '@/api/product'
 import { formatImageUrl } from '@/utils/image'
 import dayjs from 'dayjs'
 import type { OrderItemSnapshot } from '@/types'
@@ -233,20 +234,84 @@ function statusLabel(status: string): string {
   return map[status] || status
 }
 
-/** 获取订单ID */
-function getOrderId(): number {
-  return Number(route.params.id)
+/** 获取订单ID（使用字符串保留雪花算法ID精度，避免Number超出MAX_SAFE_INTEGER） */
+function getOrderId(): string {
+  return String(route.params.id)
 }
 
-/** 获取订单类型 (从 query 参数) */
-function getOrderType(): 'SECKILL' | 'NORMAL' {
-  return route.query.type === 'NORMAL' ? 'NORMAL' : 'SECKILL'
+/** 获取订单类型 (从 query 参数，可能为空表示未知) */
+function getOrderType(): 'SECKILL' | 'NORMAL' | null {
+  if (route.query.type === 'NORMAL') return 'NORMAL'
+  if (route.query.type === 'SECKILL') return 'SECKILL'
+  return null
 }
 
-/** 拉取订单详情 (根据订单类型调用不同接口) */
+/** 构建普通订单的统一详情对象 */
+function buildNormalOrder(detail: { order: any; items: any[] }): UnifiedOrderDetail {
+  return {
+    id: detail.order.id,
+    orderNo: detail.order.orderNo,
+    orderType: 'NORMAL',
+    status: detail.order.status,
+    totalAmount: detail.order.totalAmount,
+    payMethod: detail.order.payMethod || '',
+    createTime: detail.order.createTime,
+    payTime: detail.order.payTime || '',
+    payExpireTime: detail.order.payExpireTime,
+    cancelTime: detail.order.cancelTime,
+    cancelReason: detail.order.cancelReason,
+    items: (detail.items || []).map(item => ({
+      productId: item.productId,
+      productName: item.productName,
+      productImage: item.productImage,
+      unitPrice: item.unitPrice,
+      quantity: item.quantity
+    }))
+  }
+}
+
+/** 构建秒杀订单的统一详情对象（额外查询商品信息） */
+async function buildSeckillOrder(seckill: any): Promise<UnifiedOrderDetail> {
+  // 查询商品详情获取真实的商品名称和图片
+  let productName = `秒杀商品 #${seckill.productId}`
+  let productImage = ''
+  try {
+    const productRes = await getProductDetail(seckill.productId)
+    const product = productRes.data
+    if (product) {
+      productName = product.productName || productName
+      productImage = (product.images && product.images.length > 0) ? product.images[0] : productImage
+    }
+  } catch {
+    // 商品信息查询失败时保留默认值，不影响订单展示
+  }
+
+  return {
+    id: seckill.id,
+    orderNo: seckill.orderNo,
+    orderType: 'SECKILL',
+    status: seckill.status,
+    totalAmount: seckill.totalAmount,
+    payMethod: seckill.payMethod || '',
+    createTime: seckill.createTime,
+    payTime: seckill.payTime || '',
+    payExpireTime: seckill.payExpireTime,
+    cancelTime: seckill.cancelTime,
+    cancelReason: seckill.cancelReason,
+    items: [{
+      productId: seckill.productId,
+      productName,
+      productImage,
+      unitPrice: seckill.seckillPrice,
+      quantity: seckill.quantity
+    }]
+  }
+}
+
+/** 拉取订单详情 (根据订单类型调用不同接口，无type参数时自动fallback) */
 async function fetchOrderDetail(): Promise<void> {
   const id = getOrderId()
-  if (!id || Number.isNaN(id)) {
+  if (!id) {
     error.value = true
     return
   }
@@ -254,53 +319,24 @@ async function fetchOrderDetail(): Promise<void> {
   error.value = false
   try {
     const orderType = getOrderType()
+
     if (orderType === 'NORMAL') {
-      // 普通订单：调用 normal-detail 接口，返回嵌套 { order, items }
+      // 明确指定为普通订单：直接调普通订单接口
       const res = await getNormalOrderDetail(id)
-      const detail = res.data
-      order.value = {
-        id: detail.order.id,
-        orderNo: detail.order.orderNo,
-        orderType: 'NORMAL',
-        status: detail.order.status,
-        totalAmount: detail.order.totalAmount,
-        payMethod: detail.order.payMethod || '',
-        createTime: detail.order.createTime,
-        payTime: detail.order.payTime || '',
-        payExpireTime: detail.order.payExpireTime,
-        cancelTime: detail.order.cancelTime,
-        cancelReason: detail.order.cancelReason,
-        items: (detail.items || []).map(item => ({
-          productId: item.productId,
-          productName: item.productName,
-          productImage: item.productImage,
-          unitPrice: item.unitPrice,
-          quantity: item.quantity
-        }))
-      }
-    } else {
-      // 秒杀订单：调用原详情接口，返回 SeckillOrder
+      order.value = buildNormalOrder(res.data)
+    } else if (orderType === 'SECKILL') {
+      // 明确指定为秒杀订单：直接调秒杀订单接口
       const res = await getOrderDetail(id)
-      const seckill = res.data
-      order.value = {
-        id: seckill.id,
-        orderNo: seckill.orderNo,
-        orderType: 'SECKILL',
-        status: seckill.status,
-        totalAmount: seckill.totalAmount,
-        payMethod: seckill.payMethod || '',
-        createTime: seckill.createTime,
-        payTime: seckill.payTime || '',
-        payExpireTime: seckill.payExpireTime,
-        cancelTime: seckill.cancelTime,
-        cancelReason: seckill.cancelReason,
-        items: [{
-          productId: seckill.productId,
-          productName: `秒杀商品 #${seckill.productId}`,
-          productImage: '',
-          unitPrice: seckill.seckillPrice,
-          quantity: seckill.quantity
-        }]
+      order.value = await buildSeckillOrder(res.data)
+    } else {
+      // 无type参数：先尝试秒杀接口，失败后fallback到普通订单接口
+      try {
+        const res = await getOrderDetail(id)
+        order.value = await buildSeckillOrder(res.data)
+      } catch {
+        // 秒杀接口查询失败，尝试普通订单接口
+        const res = await getNormalOrderDetail(id)
+        order.value = buildNormalOrder(res.data)
       }
     }
   } catch {

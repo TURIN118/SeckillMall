@@ -7,6 +7,7 @@ import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.vo.AdminOrderVO;
 import com.seckill.mall.vo.SeckillRankingVO;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -85,4 +86,13 @@ public interface SeckillOrderMapper extends BaseMapper<SeckillOrder> {
      */
     List<SeckillRankingVO> selectSeckillRanking(@Param("statuses") List<OrderStatus> statuses,
                                                 @Param("limit") int limit);
+
+    /**
+     * 物理删除指定用户和秒杀活动的终态订单（TIMEOUT/CANCELLED）
+     * 用于允许用户超时/取消后重新秒杀同一商品
+     * 注意：使用物理删除而非逻辑删除，因为唯一索引 uk_user_seckill 不包含 is_deleted 字段
+     */
+    @Delete("DELETE FROM t_seckill_order WHERE user_id = #{userId} AND seckill_id = #{seckillId} " +
+            "AND status IN ('TIMEOUT', 'CANCELLED')")
+    int deleteTerminalOrders(@Param("userId") Long userId, @Param("seckillId") Long seckillId);
 }

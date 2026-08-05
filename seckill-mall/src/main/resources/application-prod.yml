@@ -17,3 +17,16 @@ logging:
     root: WARN
   file:
     name: /var/log/seckill-mall/app.log
+seckill:
+  security:
+    sign-secret: prod-seckill-mall-hmac-sha256-secret-key-2026
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+knife4j:
+  enable: false
+  production: true

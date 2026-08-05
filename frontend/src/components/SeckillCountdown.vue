@@ -187,9 +187,12 @@ onUnmounted(() => {
 }
 
 @keyframes pulse-red {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.15);
   }

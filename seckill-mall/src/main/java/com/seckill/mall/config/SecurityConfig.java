@@ -45,7 +45,7 @@ public class SecurityConfig {
      * 安全修复（H1）：CORS 允许的来源从配置读取，避免使用 "*" 携带凭证导致的 CORS 滥用。
      * 默认值仅用于本地开发环境，生产环境必须通过配置覆盖。
      */
-    @Value("${seckill.security.cors.allowed-origins:http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173}")
+    @Value("${seckill.security.cors.allowed-origins:http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173,http://192.168.176.71:5173}")
     private String corsAllowedOrigins;
 
     @Bean
@@ -73,17 +73,13 @@ public class SecurityConfig {
                                 "/api/v1/verification/**",
                                 "/upload/**",
                                 "/images/**"
-                                // 安全修复（M7）：API 文档端点（doc.html/swagger-ui/webjars/swagger-resources/v3/api-docs）
-                                // 不再无条件 permitAll，统一收敛到下方 hasRole('ADMIN')，避免生产环境接口暴露
                         ).permitAll()
-                        // 安全修复（M7）：API 文档端点仅 ADMIN 可访问
                         .requestMatchers(
                                 "/doc.html",
                                 "/swagger-ui/**",
                                 "/webjars/**",
                                 "/swagger-resources/**",
-                                "/v3/api-docs/**").hasRole("ADMIN")
-                        // 安全修复（C3）：Actuator 仅 health 端点公开，其余端点需 ADMIN 角色，避免敏感运维信息泄露
+                                "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()

@@ -1,11 +1,8 @@
 <template>
-  <button
-    class="seckill-btn"
-    :class="stateClass"
-    :disabled="isDisabled"
-    @click="handleClick"
-  >
-    <el-icon v-if="isLoading" class="loading-icon"><Loading /></el-icon>
+  <button class="seckill-btn" :class="stateClass" :disabled="isDisabled" @click="handleClick">
+    <el-icon v-if="isLoading" class="loading-icon">
+      <Loading />
+    </el-icon>
     <span class="btn-text">{{ buttonText }}</span>
   </button>
 </template>
@@ -206,7 +203,12 @@ function handleClick(): void {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

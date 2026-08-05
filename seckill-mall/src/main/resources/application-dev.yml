@@ -51,7 +51,7 @@ seckill:
   rate-limit-per-user: 1
   rate-limit-per-ip: 30
   security:
-    sign-secret: wnj-seckill-sign-secret-2024
+    sign-secret: wnj-seckill-mall-hmac-sha256-sign-secret-2026
     replay-window-seconds: 60
 
 logging:

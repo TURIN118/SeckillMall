@@ -19,43 +19,23 @@
         <form @submit.prevent="handleLogin">
           <div class="form-group">
             <label class="form-label">用户名 / 手机号</label>
-            <input
-              v-model.trim="form.username"
-              class="form-input"
-              :class="{ error: errors.username }"
-              type="text"
-              placeholder="请输入用户名"
-              autocomplete="username"
-            />
+            <input v-model.trim="form.username" class="form-input" :class="{ error: errors.username }" type="text"
+              placeholder="请输入用户名" autocomplete="username" />
             <div v-if="errors.username" class="form-error">{{ errors.username }}</div>
           </div>
 
           <div class="form-group">
             <label class="form-label">密码</label>
-            <input
-              v-model.trim="form.password"
-              class="form-input"
-              :class="{ error: errors.password }"
-              type="password"
-              placeholder="请输入密码"
-              autocomplete="current-password"
-              @keyup.enter="handleLogin"
-            />
+            <input v-model.trim="form.password" class="form-input" :class="{ error: errors.password }" type="password"
+              placeholder="请输入密码" autocomplete="current-password" @keyup.enter="handleLogin" />
             <div v-if="errors.password" class="form-error">{{ errors.password }}</div>
           </div>
 
           <div class="form-group">
             <label class="form-label">验证码</label>
             <div class="captcha-row">
-              <input
-                v-model.trim="form.captchaCode"
-                class="form-input"
-                :class="{ error: errors.captchaCode }"
-                type="text"
-                placeholder="请输入验证码"
-                maxlength="4"
-                @keyup.enter="handleLogin"
-              />
+              <input v-model.trim="form.captchaCode" class="form-input" :class="{ error: errors.captchaCode }"
+                type="text" placeholder="请输入验证码" maxlength="4" @keyup.enter="handleLogin" />
               <div class="captcha-img" @click="refreshCaptcha" title="点击刷新验证码">
                 <img v-if="captchaImage" :src="captchaImage" alt="验证码" />
                 <span v-else>点击获取</span>
@@ -406,9 +386,11 @@ onMounted(() => {
     width: 100%;
     max-width: 420px;
   }
+
   .auth-brand {
     padding: 32px 24px;
   }
+
   .auth-form {
     padding: 32px 24px;
   }

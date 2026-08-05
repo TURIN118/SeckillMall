@@ -120,6 +120,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             cachedUser.setUsername(cached.username());
             cachedUser.setRole(cached.role());
             cachedUser.setStatus(cached.status());
+            cachedUser.setAvatarUrl(cached.avatarUrl());
             return new SecurityUserDetails(cachedUser);
         }
 

@@ -42,7 +42,6 @@ spring:
             enable: true
 
 jwt:
-
   access-token-expiration: 1800000
   refresh-token-expiration: 604800000
 

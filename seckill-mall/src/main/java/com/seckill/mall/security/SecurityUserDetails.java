@@ -32,7 +32,7 @@ public class SecurityUserDetails implements UserDetails {
         this.userId = user.getId();
         this.username = user.getUsername();
         this.nickname = user.getNickname();
-        this.avatar = user.getAvatar();
+        this.avatar = user.getAvatarUrl();
         this.password = user.getPassword();
         this.role = user.getRole();
         this.enabled = user.getStatus() != null && user.getStatus().name().equals("ACTIVE");

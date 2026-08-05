@@ -32,7 +32,7 @@ public class UserStatusCacheService {
     /**
      * 用户缓存数据载体
      */
-    public record UserAuthCache(UserStatus status, UserRole role, String username) {}
+    public record UserAuthCache(UserStatus status, UserRole role, String username, String avatarUrl) {}
 
     /**
      * 获取用户缓存。命中返回缓存数据，未命中返回 null。
@@ -49,10 +49,12 @@ public class UserStatusCacheService {
             if (statusStr == null || roleStr == null) {
                 return null;
             }
+            String avatarUrl = (String) entries.get("avatarUrl");
             return new UserAuthCache(
                     UserStatus.valueOf(statusStr),
                     UserRole.fromCode(roleStr),
-                    username
+                    username,
+                    avatarUrl
             );
         } catch (Exception e) {
             log.warn("读取用户缓存失败，降级查 DB: userId={}, error={}", userId, e.getMessage());
@@ -69,6 +71,7 @@ public class UserStatusCacheService {
             data.put("status", user.getStatus().name());
             data.put("role", user.getRole().getCode());
             data.put("username", user.getUsername());
+            data.put("avatarUrl", user.getAvatarUrl() != null ? user.getAvatarUrl() : "");
             stringRedisTemplate.opsForHash().putAll(KEY_PREFIX + userId, data);
             stringRedisTemplate.expire(KEY_PREFIX + userId, CACHE_TTL_SECONDS, TimeUnit.SECONDS);
         } catch (Exception e) {

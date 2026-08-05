@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: jdbc:mysql://localhost:3307/seckill_mall?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: root
-    password: abc123
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       minimum-idle: 5
@@ -17,8 +17,8 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
-    username: guest
-    password: guest
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
     listener:
       simple:
         acknowledge-mode: manual
@@ -29,8 +29,8 @@ spring:
   mail:
     host: smtp.qq.com
     port: 465
-    username: turin118@qq.com
-    password: mztzyzeusvsrdgcb
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     default-encoding: UTF-8
     properties:
       mail:
@@ -50,7 +50,7 @@ seckill:
   rate-limit-per-user: 1
   rate-limit-per-ip: 30
   security:
-    sign-secret: wnj-seckill-mall-hmac-sha256-sign-secret-2026
+    sign-secret: ${SECKILL_SIGN_SECRET}
     replay-window-seconds: 60
 
 logging:

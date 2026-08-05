@@ -18,14 +18,16 @@ spring:
       max-file-size: 5MB
       max-request-size: 10MB
   mail:
-    host: smtp.example.com
-    port: 587
-    username: your-email@example.com
-    password: your-password
+    host: ${MAIL_HOST:smtp.qq.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     properties:
       mail:
         smtp:
           auth: true
+          ssl:
+            enable: true
           starttls:
             enable: true
 

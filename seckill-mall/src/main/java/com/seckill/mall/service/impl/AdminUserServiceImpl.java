@@ -15,6 +15,8 @@ import com.seckill.mall.entity.enums.UserStatus;
 import com.seckill.mall.mapper.LoginLogMapper;
 import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.service.AdminUserService;
+import com.seckill.mall.security.TokenVersionService;
+import com.seckill.mall.security.UserStatusCacheService;
 import com.seckill.mall.vo.LoginLogVO;
 import com.seckill.mall.vo.UserVO;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,8 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     private final UserMapper userMapper;
     private final LoginLogMapper loginLogMapper;
+    private final TokenVersionService tokenVersionService;
+    private final UserStatusCacheService userStatusCacheService;
 
     @Override
     public PageResult<UserVO> getUserList(UserListRequest req) {
@@ -71,6 +75,10 @@ public class AdminUserServiceImpl implements AdminUserService {
         update.setId(user.getId());
         update.setStatus(status);
         userMapper.updateById(update);
+        // 禁用/锁定用户后递增 Token 版本号（踢下所有设备）
+        tokenVersionService.incrementVersion(userId);
+        // 刷新用户状态缓存
+        userStatusCacheService.refreshUserAuth(userId);
     }
 
     @Override
@@ -81,6 +89,8 @@ public class AdminUserServiceImpl implements AdminUserService {
         update.setId(user.getId());
         update.setRole(role);
         userMapper.updateById(update);
+        // 修改角色后刷新用户状态缓存
+        userStatusCacheService.refreshUserAuth(userId);
     }
 
     @Override

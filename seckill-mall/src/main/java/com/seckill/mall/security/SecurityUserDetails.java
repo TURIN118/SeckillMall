@@ -21,6 +21,8 @@ public class SecurityUserDetails implements UserDetails {
 
     private final Long userId;
     private final String username;
+    private final String nickname;
+    private final String avatar;
     private final String password;
     private final UserRole role;
     private final boolean enabled;
@@ -29,6 +31,8 @@ public class SecurityUserDetails implements UserDetails {
     public SecurityUserDetails(User user) {
         this.userId = user.getId();
         this.username = user.getUsername();
+        this.nickname = user.getNickname();
+        this.avatar = user.getAvatar();
         this.password = user.getPassword();
         this.role = user.getRole();
         this.enabled = user.getStatus() != null && user.getStatus().name().equals("ACTIVE");

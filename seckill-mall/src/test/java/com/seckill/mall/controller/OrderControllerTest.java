@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mockStatic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -44,6 +43,8 @@ class OrderControllerTest {
 
     @MockBean
     private OrderService orderService;
+    @MockBean
+    private SecurityUtils securityUtils;
     // 安全 Filter 依赖
     @MockBean
     private JwtUtils jwtUtils;
@@ -68,54 +69,48 @@ class OrderControllerTest {
     @Test
     @DisplayName("pay：确认支付成功返回 PAID 订单")
     void pay_shouldReturnPaidOrder() throws Exception {
-        try (var mocked = mockStatic(SecurityUtils.class)) {
-            // given
-            mocked.when(SecurityUtils::getCurrentUserId).thenReturn(USER_ID);
-            given(orderService.payOrder(eq(USER_ID), eq(ORDER_ID), eq("ALIPAY")))
-                    .willReturn(buildPaidOrder());
+        // given
+        given(securityUtils.getCurrentUserId()).willReturn(USER_ID);
+        given(orderService.payOrder(eq(USER_ID), eq(ORDER_ID), eq("ALIPAY")))
+                .willReturn(buildPaidOrder());
 
-            // when / then
-            mockMvc.perform(post("/api/v1/orders/{orderId}/pay", ORDER_ID)
-                            .param("payMethod", "ALIPAY"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(200))
-                    .andExpect(jsonPath("$.data.status").value("PAID"))
-                    .andExpect(jsonPath("$.data.payMethod").value("ALIPAY"));
-        }
+        // when / then
+        mockMvc.perform(post("/api/v1/orders/{orderId}/pay", ORDER_ID)
+                        .param("payMethod", "ALIPAY"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.status").value("PAID"))
+                .andExpect(jsonPath("$.data.payMethod").value("ALIPAY"));
     }
 
     @Test
     @DisplayName("detail：查询订单详情")
     void detail_shouldReturnOrder() throws Exception {
-        try (var mocked = mockStatic(SecurityUtils.class)) {
-            // given
-            mocked.when(SecurityUtils::getCurrentUserId).thenReturn(USER_ID);
-            given(orderService.getOrderDetail(eq(USER_ID), eq(ORDER_ID)))
-                    .willReturn(buildPaidOrder());
+        // given
+        given(securityUtils.getCurrentUserId()).willReturn(USER_ID);
+        given(orderService.getOrderDetail(eq(USER_ID), eq(ORDER_ID)))
+                .willReturn(buildPaidOrder());
 
-            // when / then
-            mockMvc.perform(get("/api/v1/orders/{orderId}", ORDER_ID))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(200))
-                    .andExpect(jsonPath("$.data.id").value(ORDER_ID.intValue()))
-                    .andExpect(jsonPath("$.data.orderNo").value("SK20260731120000"));
-        }
+        // when / then
+        mockMvc.perform(get("/api/v1/orders/{orderId}", ORDER_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.id").value(ORDER_ID.intValue()))
+                .andExpect(jsonPath("$.data.orderNo").value("SK20260731120000"));
     }
 
     @Test
     @DisplayName("status：查询订单状态")
     void status_shouldReturnOrderStatus() throws Exception {
-        try (var mocked = mockStatic(SecurityUtils.class)) {
-            // given
-            mocked.when(SecurityUtils::getCurrentUserId).thenReturn(USER_ID);
-            given(orderService.getOrderStatus(eq(USER_ID), eq(ORDER_ID)))
-                    .willReturn(OrderStatus.PAID);
+        // given
+        given(securityUtils.getCurrentUserId()).willReturn(USER_ID);
+        given(orderService.getOrderStatus(eq(USER_ID), eq(ORDER_ID)))
+                .willReturn(OrderStatus.PAID);
 
-            // when / then
-            mockMvc.perform(get("/api/v1/orders/{orderId}/status", ORDER_ID))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(200))
-                    .andExpect(jsonPath("$.data").value("PAID"));
-        }
+        // when / then
+        mockMvc.perform(get("/api/v1/orders/{orderId}/status", ORDER_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").value("PAID"));
     }
 }

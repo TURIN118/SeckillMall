@@ -39,6 +39,7 @@ public class OperationLogAspect {
 
     private final OperationLogRecorder operationLogRecorder;
     private final UserMapper userMapper;
+    private final SecurityUtils securityUtils;
 
     private final ExpressionParser parser = new SpelExpressionParser();
     private final ParameterNameDiscoverer discoverer = new DefaultParameterNameDiscoverer();
@@ -73,7 +74,7 @@ public class OperationLogAspect {
 
     private void fillOperator(OperationLog entity, Object[] args) {
         try {
-            entity.setOperatorId(SecurityUtils.getCurrentUserId());
+            entity.setOperatorId(securityUtils.getCurrentUserId());
         } catch (Exception e) {
             // SecurityContext 无用户（如登录场景），尝试从参数回查
             if (args != null) {

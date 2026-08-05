@@ -37,6 +37,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtils jwtUtils;
     private final TokenBlacklistService tokenBlacklistService;
     private final UserMapper userMapper;
+    private final UserStatusCacheService userStatusCacheService;
+    private final TokenVersionService tokenVersionService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -46,8 +48,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 && !tokenBlacklistService.isBlacklisted(token)) {
             try {
                 Claims claims = jwtUtils.parseToken(token);
+                Object userIdVal = claims.get("userId");
+                Long userId = userIdVal instanceof Number num ? num.longValue()
+                        : (userIdVal == null ? null : Long.valueOf(userIdVal.toString()));
                 // 仅 ACCESS 类型 Token 用于业务请求鉴权
                 if (JwtUtils.TOKEN_TYPE_ACCESS.equals(claims.get("tokenType", String.class))) {
+                    // Token 版本号校验
+                    long tokenVersion = jwtUtils.getTokenVersionFromToken(token);
+                    long currentVersion = tokenVersionService.getCurrentVersion(userId);
+                    if (tokenVersion != currentVersion) {
+                        log.debug("Token 版本号不匹配，拒绝鉴权: userId={}, tokenVersion={}, currentVersion={}",
+                                userId, tokenVersion, currentVersion);
+                        SecurityContextHolder.clearContext();
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+
                     SecurityUserDetails userDetails = buildUserDetailsFromClaims(claims);
                     // 用户不存在或已被禁用/锁定，拒绝鉴权并清空上下文
                     if (userDetails == null || !userDetails.isEnabled()) {
@@ -80,11 +96,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     /**
      * 从 JWT Claims 构建 UserDetails。
      * <p>
-     * 安全修复（C1）：不再硬编码用户状态为 ACTIVE，而是根据 userId 从数据库实时查询用户状态，
+     * 优先从 Redis 缓存获取用户状态/角色，未命中再查 DB 并回填缓存。
      * 若用户不存在或状态非 ACTIVE，则返回 null，由调用方清空 SecurityContext 拒绝鉴权。
-     * <p>
-     * 性能建议：高频接口可引入 Redis 缓存用户状态（key=user:status:{userId}，TTL 60s），
-     * 用户禁用/锁定操作需同步失效缓存。
      */
     private SecurityUserDetails buildUserDetailsFromClaims(Claims claims) {
         Object userIdVal = claims.get("userId");
@@ -93,13 +106,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (userId == null) {
             return null;
         }
-        // 从数据库实时查询用户最新状态，避免已禁用/锁定用户的 Token 仍可鉴权
+
+        // 先查 Redis 缓存，未命中再查 DB
+        UserStatusCacheService.UserAuthCache cached = userStatusCacheService.getUserAuth(userId);
+        if (cached != null) {
+            // 缓存命中，直接构建 UserDetails
+            if (cached.status() != UserStatus.ACTIVE) {
+                return null;
+            }
+            // 从缓存构建 User 对象（仅填充 SecurityUserDetails 所需字段）
+            User cachedUser = new User();
+            cachedUser.setId(userId);
+            cachedUser.setUsername(cached.username());
+            cachedUser.setRole(cached.role());
+            cachedUser.setStatus(cached.status());
+            return new SecurityUserDetails(cachedUser);
+        }
+
+        // 缓存未命中，查 DB 并回填缓存
         User dbUser = userMapper.selectById(userId);
         if (dbUser == null || dbUser.getStatus() == null
                 || dbUser.getStatus() != UserStatus.ACTIVE) {
             return null;
         }
-        // 使用数据库中的真实角色与状态构建 UserDetails
+        userStatusCacheService.putUserAuth(userId, dbUser);
         return new SecurityUserDetails(dbUser);
     }
 }

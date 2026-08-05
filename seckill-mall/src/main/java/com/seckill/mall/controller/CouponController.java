@@ -36,6 +36,7 @@ import java.util.List;
 public class CouponController {
 
     private final CouponService couponService;
+    private final SecurityUtils securityUtils;
 
     @Operation(summary = "可领取的优惠券列表")
     @GetMapping("/available")
@@ -46,7 +47,7 @@ public class CouponController {
     @Operation(summary = "领取优惠券")
     @PostMapping("/{id}/receive")
     public Result<Void> receive(@PathVariable Long id) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         couponService.receive(id, userId);
         return Result.<Void>success("领取成功", null);
     }
@@ -54,7 +55,7 @@ public class CouponController {
     @Operation(summary = "我的优惠券（可按状态筛选）")
     @GetMapping("/mine")
     public Result<List<UserCouponVO>> mine(@RequestParam(required = false) String status) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return Result.success(couponService.listMine(userId, status));
     }
 }

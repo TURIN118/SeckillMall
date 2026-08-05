@@ -77,7 +77,7 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  /** 检查 token 是否过期 (提前 5 分钟视为过期) */
+  /** 检查 token 是否过期 (提前 2 分钟视为过期) */
   function isTokenExpired(): boolean {
     if (!accessToken.value) return true
     try {
@@ -85,8 +85,8 @@ export const useUserStore = defineStore('user', () => {
       if (parts.length !== 3) return true
       const payload = JSON.parse(atob(parts[1]))
       if (!payload.exp) return true
-      // 提前 5 分钟过期缓冲
-      return payload.exp * 1000 - 5 * 60 * 1000 < Date.now()
+      // 提前 2 分钟过期缓冲
+      return payload.exp * 1000 - 2 * 60 * 1000 < Date.now()
     } catch {
       return true
     }

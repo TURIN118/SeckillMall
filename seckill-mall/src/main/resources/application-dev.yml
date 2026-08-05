@@ -42,8 +42,8 @@ spring:
             enable: true
 
 jwt:
-  secret: MySecretKeyForJwtHS256Algorithm2024SeckillMall
-  access-token-expiration: 7200000
+
+  access-token-expiration: 1800000
   refresh-token-expiration: 604800000
 
 seckill:

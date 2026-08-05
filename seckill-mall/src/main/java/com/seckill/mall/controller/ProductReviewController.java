@@ -36,6 +36,7 @@ import org.springframework.web.util.HtmlUtils;
 public class ProductReviewController {
 
     private final ProductReviewService productReviewService;
+    private final SecurityUtils securityUtils;
 
     @Operation(summary = "查商品评论分页（公开接口）")
     @GetMapping("/product/{productId}")
@@ -50,7 +51,7 @@ public class ProductReviewController {
     @PreAuthorize("hasAnyRole('BUYER', 'SELLER', 'ADMIN')")
     @PostMapping("/create")
     public Result<ProductReviewVO> create(@Validated @RequestBody ReviewCreateRequest req) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         // 安全修复（M5）：对评论内容做 HTML 转义，防止存储型 XSS
         String safeContent = HtmlUtils.htmlEscape(req.getContent());
         return Result.success(productReviewService.create(

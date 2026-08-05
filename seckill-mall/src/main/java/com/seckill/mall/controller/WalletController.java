@@ -52,11 +52,12 @@ public class WalletController {
     private final RechargeCardService rechargeCardService;
     private final com.seckill.mall.mapper.UserMapper userMapper;
     private final RechargeCardMapper rechargeCardMapper;
+    private final SecurityUtils securityUtils;
 
     @Operation(summary = "查询当前用户余额")
     @GetMapping("/balance")
     public Result<BigDecimal> balance() {
-        User user = SecurityUtils.getCurrentUser();
+        User user = securityUtils.getCurrentUser();
         BigDecimal bal = user.getBalance() == null ? BigDecimal.ZERO : user.getBalance();
         return Result.success(bal);
     }
@@ -64,7 +65,7 @@ public class WalletController {
     @Operation(summary = "充值（通过充值卡）")
     @PostMapping("/recharge")
     public Result<BigDecimal> recharge(@Valid @RequestBody WalletRechargeRequest req) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         BigDecimal newBalance = rechargeCardService.recharge(req.getCardNo(), req.getCardPassword(), userId);
         return Result.success("充值成功", newBalance);
     }
@@ -72,7 +73,7 @@ public class WalletController {
     @Operation(summary = "交易记录（充值记录）")
     @GetMapping("/records")
     public Result<List<WalletRecordVO>> records() {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         // 查询当前用户已使用的充值卡作为交易记录
         List<RechargeCard> cards = rechargeCardMapper.selectList(
                 new LambdaQueryWrapper<RechargeCard>()

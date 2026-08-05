@@ -12,6 +12,8 @@ import com.seckill.mall.mapper.LoginLogMapper;
 import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.security.JwtUtils;
 import com.seckill.mall.security.TokenBlacklistService;
+import com.seckill.mall.security.TokenVersionService;
+import com.seckill.mall.security.UserStatusCacheService;
 import com.seckill.mall.service.impl.AuthServiceImpl;
 import com.seckill.mall.vo.LoginVO;
 import com.seckill.mall.vo.UserVO;
@@ -61,6 +63,10 @@ class AuthServiceTest {
     private ValueOperations<String, String> valueOperations;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private TokenVersionService tokenVersionService;
+    @Mock
+    private UserStatusCacheService userStatusCacheService;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -144,8 +150,9 @@ class AuthServiceTest {
         given(valueOperations.get("login:fail:" + user.getUsername())).willReturn(null);
         given(userMapper.findByUsername(user.getUsername())).willReturn(user);
         given(passwordEncoder.matches(req.getPassword(), user.getPassword())).willReturn(true);
-        given(jwtUtils.generateAccessToken(user.getId(), user.getUsername(), user.getRole())).willReturn("access-token");
-        given(jwtUtils.generateRefreshToken(user.getId(), user.getUsername(), user.getRole())).willReturn("refresh-token");
+        given(tokenVersionService.getCurrentVersion(user.getId())).willReturn(1L);
+        given(jwtUtils.generateAccessToken(user.getId(), user.getUsername(), user.getRole(), 1L)).willReturn("access-token");
+        given(jwtUtils.generateRefreshToken(user.getId(), user.getUsername(), user.getRole(), 1L)).willReturn("refresh-token");
 
         // when
         LoginVO vo = authService.login(req, "127.0.0.1");

@@ -5,14 +5,14 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
 import java.util.UUID;
 
@@ -24,17 +24,16 @@ import java.util.UUID;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class JwtUtils {
 
     private static final String CLAIM_USER_ID = "userId";
     private static final String CLAIM_USERNAME = "username";
     private static final String CLAIM_ROLE = "role";
     private static final String CLAIM_TOKEN_TYPE = "tokenType";
+    private static final String CLAIM_TOKEN_VERSION = "tokenVersion";
     public static final String TOKEN_TYPE_ACCESS = "ACCESS";
     public static final String TOKEN_TYPE_REFRESH = "REFRESH";
-
-    @Value("${jwt.secret}")
-    private String secret;
 
     @Value("${jwt.access-token-expiration}")
     private long accessTokenExpiration;
@@ -42,42 +41,47 @@ public class JwtUtils {
     @Value("${jwt.refresh-token-expiration}")
     private long refreshTokenExpiration;
 
-    private SecretKey key;
+    private final RsaKeyProvider rsaKeyProvider;
+
+    private RSAPrivateKey privateKey;
+    private RSAPublicKey publicKey;
 
     @PostConstruct
     public void init() {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.privateKey = rsaKeyProvider.loadPrivateKey();
+        this.publicKey = rsaKeyProvider.loadPublicKey();
+        log.info("RSA 密钥对加载成功，JWT 签名算法: RS256");
     }
 
-    public String generateAccessToken(Long userId, String username, UserRole role) {
-        return buildToken(userId, username, role, accessTokenExpiration, TOKEN_TYPE_ACCESS);
+    public String generateAccessToken(Long userId, String username, UserRole role, long tokenVersion) {
+        return buildToken(userId, username, role, accessTokenExpiration, TOKEN_TYPE_ACCESS, tokenVersion);
     }
 
-    public String generateRefreshToken(Long userId, String username, UserRole role) {
-        return buildToken(userId, username, role, refreshTokenExpiration, TOKEN_TYPE_REFRESH);
+    public String generateRefreshToken(Long userId, String username, UserRole role, long tokenVersion) {
+        return buildToken(userId, username, role, refreshTokenExpiration, TOKEN_TYPE_REFRESH, tokenVersion);
     }
 
-    private String buildToken(Long userId, String username, UserRole role, long expirationMs, String tokenType) {
+    private String buildToken(Long userId, String username, UserRole role, long expirationMs, String tokenType, long tokenVersion) {
         Date now = new Date();
         Date expiration = new Date(now.getTime() + expirationMs);
         return Jwts.builder()
+                .issuer("seckill-mall")
+                .audience().add("seckill-mall-api").and()
                 .id(UUID.randomUUID().toString())
                 .claim(CLAIM_USER_ID, userId)
                 .claim(CLAIM_USERNAME, username)
                 .claim(CLAIM_ROLE, role.getCode())
                 .claim(CLAIM_TOKEN_TYPE, tokenType)
+                .claim(CLAIM_TOKEN_VERSION, tokenVersion)
                 .issuedAt(now)
                 .expiration(expiration)
-                // 安全修复（L5）：当前使用 HS256 对称签名，密钥泄露后可伪造任意 Token。
-                // 建议升级为 RS256/ES256 非对称签名：私钥签发、公钥校验，降低密钥泄露影响面。
-                // 暂不修改算法以保持与现有已签发 Token 的兼容性，需在密钥轮换窗口期统一升级。
-                .signWith(key, Jwts.SIG.HS256)
+                .signWith(privateKey, Jwts.SIG.RS256)
                 .compact();
     }
 
     public Claims parseToken(String token) {
         return Jwts.parser()
-                .verifyWith(key)
+                .verifyWith(publicKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
@@ -133,5 +137,13 @@ public class JwtUtils {
 
     public String getTokenId(String token) {
         return parseToken(token).getId();
+    }
+
+    public long getTokenVersionFromToken(String token) {
+        Object value = parseToken(token).get(CLAIM_TOKEN_VERSION);
+        if (value instanceof Number num) {
+            return num.longValue();
+        }
+        return value == null ? 1L : Long.valueOf(value.toString());
     }
 }

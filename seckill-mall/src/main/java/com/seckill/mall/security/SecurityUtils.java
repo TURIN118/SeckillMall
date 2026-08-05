@@ -5,7 +5,7 @@ import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.entity.User;
 import com.seckill.mall.entity.enums.UserRole;
 import com.seckill.mall.mapper.UserMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -17,31 +17,55 @@ import org.springframework.stereotype.Component;
  * 邮箱：nj651217@163.com
  */
 @Component
+@RequiredArgsConstructor
 public class SecurityUtils {
 
-    private static UserMapper userMapper;
+    private final UserMapper userMapper;
 
-    @Autowired
-    public void setUserMapper(UserMapper userMapper) {
-        SecurityUtils.userMapper = userMapper;
-    }
-
-    public static Long getCurrentUserId() {
+    /**
+     * 获取当前用户 ID
+     */
+    public Long getCurrentUserId() {
         SecurityUserDetails details = getDetails();
         return details.getUserId();
     }
 
-    public static String getCurrentUsername() {
+    /**
+     * 获取当前用户名
+     */
+    public String getCurrentUsername() {
         SecurityUserDetails details = getDetails();
         return details.getUsername();
     }
 
-    public static UserRole getCurrentUserRole() {
+    /**
+     * 获取当前用户角色
+     */
+    public UserRole getCurrentUserRole() {
         SecurityUserDetails details = getDetails();
         return details.getRole();
     }
 
-    public static User getCurrentUser() {
+    /**
+     * 获取当前用户昵称
+     */
+    public String getCurrentNickname() {
+        SecurityUserDetails details = getDetails();
+        return details.getNickname();
+    }
+
+    /**
+     * 获取当前用户头像
+     */
+    public String getCurrentAvatar() {
+        SecurityUserDetails details = getDetails();
+        return details.getAvatar();
+    }
+
+    /**
+     * 获取当前用户完整信息（需查 DB，谨慎使用）
+     */
+    public User getCurrentUser() {
         Long userId = getCurrentUserId();
         User user = userMapper.selectById(userId);
         if (user == null) {
@@ -50,7 +74,7 @@ public class SecurityUtils {
         return user;
     }
 
-    private static SecurityUserDetails getDetails() {
+    private SecurityUserDetails getDetails() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()
                 || !(authentication.getPrincipal() instanceof SecurityUserDetails details)) {

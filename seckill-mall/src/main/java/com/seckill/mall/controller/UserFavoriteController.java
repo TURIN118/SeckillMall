@@ -39,39 +39,40 @@ import java.util.List;
 public class UserFavoriteController {
 
     private final UserFavoriteService userFavoriteService;
+    private final SecurityUtils securityUtils;
 
     @Operation(summary = "获取收藏列表")
     @GetMapping("/list")
     public Result<List<FavoriteItemVO>> list() {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return userFavoriteService.getFavoriteList(userId);
     }
 
     @Operation(summary = "添加收藏")
     @PostMapping("/add")
     public Result<Void> add(@RequestBody AddFavoriteRequest req) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return userFavoriteService.addFavorite(userId, req.getProductId());
     }
 
     @Operation(summary = "取消收藏")
     @DeleteMapping("/{productId}")
     public Result<Void> remove(@PathVariable Long productId) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return userFavoriteService.removeFavorite(userId, productId);
     }
 
     @Operation(summary = "检查是否已收藏")
     @GetMapping("/check/{productId}")
     public Result<Boolean> check(@PathVariable Long productId) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return userFavoriteService.isFavorited(userId, productId);
     }
 
     @Operation(summary = "获取收藏数量")
     @GetMapping("/count")
     public Result<Integer> count() {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return userFavoriteService.getFavoriteCount(userId);
     }
 

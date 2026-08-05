@@ -5,6 +5,8 @@ server:
     accept-count: 100
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   jackson:
@@ -37,6 +39,11 @@ mybatis-plus:
       logic-not-delete-value: 0
   configuration:
     map-underscore-to-camel-case: true
+
+jwt:
+  rsa:
+    private-key-path: ${JWT_RSA_PRIVATE_KEY_PATH:classpath:keys/private.pem}
+    public-key-path: ${JWT_RSA_PUBLIC_KEY_PATH:classpath:keys/public.pem}
 
 springdoc:
   swagger-ui:

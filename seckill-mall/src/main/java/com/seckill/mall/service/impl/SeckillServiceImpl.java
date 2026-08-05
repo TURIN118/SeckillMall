@@ -55,10 +55,11 @@ public class SeckillServiceImpl implements SeckillService {
     private final CacheDegradeService cacheDegradeService;
     private final SeckillDbStrategy seckillDbStrategy;
     private final SeckillGoodsMapper seckillGoodsMapper;
+    private final SecurityUtils securityUtils;
 
     @Override
     public SeckillResultVO doSeckill(Long seckillId, String seckillToken) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
 
         // 容错降级：Redis 不可用时切换为数据库直降模式，跳过缓存校验与 Lua 预减
         if (!cacheDegradeService.isRedisAvailable()) {
@@ -218,7 +219,7 @@ public class SeckillServiceImpl implements SeckillService {
 
     @Override
     public SeckillResultVO getSeckillResult(Long seckillId, String requestId) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         String json = redisService.get(RedisKeyConstants.seckillResult(seckillId, userId));
 
         SeckillResultVO vo = new SeckillResultVO();

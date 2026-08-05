@@ -43,11 +43,12 @@ import java.util.List;
 public class CartController {
 
     private final CartService cartService;
+    private final SecurityUtils securityUtils;
 
     @Operation(summary = "获取购物车列表")
     @GetMapping("/list")
     public Result<List<CartItemVO>> list() {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return cartService.getCartList(userId);
     }
 
@@ -55,7 +56,7 @@ public class CartController {
     @PostMapping("/add")
     // 安全修复（M3）：添加 @Validated 触发请求体字段校验
     public Result<Void> add(@Validated @RequestBody AddToCartRequest req) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return cartService.addToCart(userId, req.getProductId(), req.getQuantity());
     }
 
@@ -64,21 +65,21 @@ public class CartController {
     // 安全修复（M3）：添加 @Validated 触发请求体字段校验
     public Result<Void> updateQuantity(@PathVariable Long cartId,
                                        @Validated @RequestBody UpdateQuantityRequest req) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return cartService.updateQuantity(userId, cartId, req.getQuantity());
     }
 
     @Operation(summary = "删除购物车项")
     @DeleteMapping("/{cartId}")
     public Result<Void> remove(@PathVariable Long cartId) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return cartService.removeFromCart(userId, cartId);
     }
 
     @Operation(summary = "清空购物车")
     @DeleteMapping("/clear")
     public Result<Void> clear() {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return cartService.clearCart(userId);
     }
 
@@ -86,21 +87,21 @@ public class CartController {
     @PutMapping("/{cartId}/selected")
     public Result<Void> updateSelected(@PathVariable Long cartId,
                                        @RequestBody UpdateSelectedRequest req) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return cartService.updateSelected(userId, cartId, req.getSelected());
     }
 
     @Operation(summary = "批量更新购物车项选中状态")
     @PutMapping("/batch-selected")
     public Result<Void> batchUpdateSelected(@RequestBody BatchUpdateSelectedRequest req) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return cartService.batchUpdateSelected(userId, req.getCartIds(), req.getSelected());
     }
 
     @Operation(summary = "获取购物车数量")
     @GetMapping("/count")
     public Result<Integer> count() {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return cartService.getCartCount(userId);
     }
 

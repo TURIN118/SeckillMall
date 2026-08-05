@@ -57,6 +57,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
     private final RedisService redisService;
     private final RedissonClient redissonClient;
     private final ObjectMapper objectMapper;
+    private final SecurityUtils securityUtils;
 
     @Override
     public PageResult<SeckillGoodsVO> listSeckill(String status, Long categoryId, Integer pageNum, Integer pageSize) {
@@ -110,7 +111,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         goods.setStartTime(req.getStartTime());
         goods.setEndTime(req.getEndTime());
         goods.setStatus(SeckillStatus.PENDING);
-        goods.setCreatorId(SecurityUtils.getCurrentUserId());
+        goods.setCreatorId(securityUtils.getCurrentUserId());
         // 落库秒杀活动扩展字段
         goods.setSeckillName(req.getSeckillName());
         goods.setPerLimit(req.getPerLimit() != null && req.getPerLimit() > 0 ? req.getPerLimit() : DEFAULT_PER_LIMIT);

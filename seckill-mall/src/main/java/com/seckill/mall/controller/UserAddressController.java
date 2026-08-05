@@ -40,18 +40,19 @@ import java.util.List;
 public class UserAddressController {
 
     private final UserAddressService userAddressService;
+    private final SecurityUtils securityUtils;
 
     @Operation(summary = "查询当前用户地址列表")
     @GetMapping("/list")
     public Result<List<UserAddressVO>> list() {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return Result.success(userAddressService.listByUserId(userId));
     }
 
     @Operation(summary = "新增收货地址")
     @PostMapping("/create")
     public Result<UserAddressVO> create(@Valid @RequestBody UserAddressVO vo) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return Result.success("新增地址成功", userAddressService.create(userId, vo));
     }
 
@@ -59,14 +60,14 @@ public class UserAddressController {
     @PutMapping("/{id}")
     public Result<UserAddressVO> update(@PathVariable Long id,
                                         @Valid @RequestBody UserAddressVO vo) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         return Result.success("编辑地址成功", userAddressService.update(userId, id, vo));
     }
 
     @Operation(summary = "删除收货地址（逻辑删除）")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         userAddressService.delete(userId, id);
         return Result.<Void>success("删除地址成功", null);
     }
@@ -74,7 +75,7 @@ public class UserAddressController {
     @Operation(summary = "设置默认收货地址")
     @PutMapping("/{id}/default")
     public Result<Void> setDefault(@PathVariable Long id) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         userAddressService.setDefault(userId, id);
         return Result.<Void>success("设置默认地址成功", null);
     }

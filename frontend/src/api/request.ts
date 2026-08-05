@@ -4,7 +4,7 @@
  */
 import axios, { type AxiosInstance, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
-import type { Result } from '@/types'
+import type { Result, TokenVO } from '@/types'
 
 /** localStorage token 键名 */
 export const ACCESS_TOKEN_KEY = 'access_token'
@@ -30,6 +30,20 @@ export function getTimeOffset(): number {
 /** 从 localStorage 读取 token (避免循环依赖, 不引入 store) */
 function getAccessToken(): string | null {
   return localStorage.getItem(ACCESS_TOKEN_KEY)
+}
+
+/** 刷新锁：防止并发请求时重复刷新 */
+let isRefreshing = false
+/** 等待刷新完成的请求队列 */
+let pendingRequests: Array<(token: string) => void> = []
+
+/** 清空 Token 并跳转登录页 */
+function clearTokensAndRedirect(currentPath: string) {
+  localStorage.removeItem(ACCESS_TOKEN_KEY)
+  localStorage.removeItem(REFRESH_TOKEN_KEY)
+  if (!currentPath.startsWith('/login')) {
+    window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`
+  }
 }
 
 /** 创建 Axios 实例 */
@@ -73,25 +87,59 @@ request.interceptors.response.use(
     // 返回解包后的 Result<T> (而非 AxiosResponse)
     return res as unknown as typeof response
   },
-  (error) => {
+  async (error) => {
     const { response, message } = error
     if (response) {
       const status = response.status
       const currentPath = window.location.pathname + window.location.search
       switch (status) {
-        case 401:
-          // 登录过期, 清除 token, 跳转登录
-          localStorage.removeItem(ACCESS_TOKEN_KEY)
-          localStorage.removeItem(REFRESH_TOKEN_KEY)
-          ElMessage.warning('登录已过期，请重新登录')
-          if (!currentPath.startsWith('/login')) {
-            // M40 说明: 此处使用 window.location.href 而非 router.push 是有意为之。
-            // axios 拦截器中无法安全访问 router 实例 (循环依赖风险)，
-            // 且 401 时需彻底重置应用状态 (清空 Pinia store、组件状态等)，
-            // 完整刷新比 SPA 跳转更安全可靠。redirect 参数保证登录后可回到原页面。
-            window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`
+        case 401: {
+          const refreshTokenValue = localStorage.getItem(REFRESH_TOKEN_KEY)
+          if (!refreshTokenValue) {
+            clearTokensAndRedirect(currentPath)
+            break
           }
-          break
+          if (isRefreshing) {
+            // 正在刷新中，将请求加入等待队列
+            return new Promise((resolve) => {
+              pendingRequests.push((newToken: string) => {
+                error.config.headers.Authorization = `Bearer ${newToken}`
+                resolve(request(error.config))
+              })
+            })
+          }
+          isRefreshing = true
+          try {
+            // 直接用 axios 发刷新请求，避免走拦截器循环
+            const refreshRes = await axios.post<Result<TokenVO>>(
+              (import.meta.env.VITE_API_BASE_URL || '') + '/api/v1/auth/refresh',
+              { refreshToken: refreshTokenValue },
+              { headers: { 'Content-Type': 'application/json' }, timeout: 10000 }
+            )
+            if (refreshRes.data?.code === 200 && refreshRes.data?.data) {
+              const newAccessToken = refreshRes.data.data.accessToken
+              const newRefreshToken = refreshRes.data.data.refreshToken
+              localStorage.setItem(ACCESS_TOKEN_KEY, newAccessToken)
+              localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken)
+              // 处理等待队列中的请求
+              pendingRequests.forEach(cb => cb(newAccessToken))
+              pendingRequests = []
+              // 重试原请求
+              error.config.headers.Authorization = `Bearer ${newAccessToken}`
+              return request(error.config)
+            } else {
+              pendingRequests = []
+              clearTokensAndRedirect(currentPath)
+              break
+            }
+          } catch {
+            pendingRequests = []
+            clearTokensAndRedirect(currentPath)
+            break
+          } finally {
+            isRefreshing = false
+          }
+        }
         case 403:
           ElMessage.error('您没有权限访问该页面')
           if (!currentPath.startsWith('/403')) {

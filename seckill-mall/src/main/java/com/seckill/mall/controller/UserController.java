@@ -40,11 +40,12 @@ public class UserController {
 
     private final UserMapper userMapper;
     private final VerificationCodeService verificationCodeService;
+    private final SecurityUtils securityUtils;
 
     @Operation(summary = "修改手机号（需验证码校验）")
     @PutMapping("/profile/phone")
     public Result<UserVO> updatePhone(@Valid @RequestBody PhoneUpdateRequest req) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         // 先校验验证码（target 为新手机号）
         if (!verificationCodeService.verifyCode(req.getPhone(), req.getCode())) {
             throw new BusinessException(ErrorCode.VERIFICATION_CODE_INVALID);
@@ -67,7 +68,7 @@ public class UserController {
     @Operation(summary = "修改邮箱（需验证码校验）")
     @PutMapping("/profile/email")
     public Result<UserVO> updateEmail(@Valid @RequestBody EmailUpdateRequest req) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         // 先校验验证码（target 为新邮箱）
         if (!verificationCodeService.verifyCode(req.getEmail(), req.getCode())) {
             throw new BusinessException(ErrorCode.VERIFICATION_CODE_INVALID);

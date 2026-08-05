@@ -19,6 +19,8 @@ import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.security.JwtUtils;
 import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.security.TokenBlacklistService;
+import com.seckill.mall.security.TokenVersionService;
+import com.seckill.mall.security.UserStatusCacheService;
 import com.seckill.mall.service.AuthService;
 import com.seckill.mall.service.CaptchaService;
 import com.seckill.mall.service.UploadService;
@@ -72,6 +74,9 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final UploadService uploadService;
     private final VerificationCodeService verificationCodeService;
+    private final TokenVersionService tokenVersionService;
+    private final UserStatusCacheService userStatusCacheService;
+    private final SecurityUtils securityUtils;
 
     /** 头像文件最大大小：2MB */
     private static final long AVATAR_MAX_SIZE = 2L * 1024 * 1024;
@@ -131,8 +136,13 @@ public class AuthServiceImpl implements AuthService {
         stringRedisTemplate.delete(failKey);
         writeLoginLog(user.getId(), ip, LoginResult.SUCCESS, null);
 
-        String accessToken = jwtUtils.generateAccessToken(user.getId(), user.getUsername(), user.getRole());
-        String refreshToken = jwtUtils.generateRefreshToken(user.getId(), user.getUsername(), user.getRole());
+        // 登录成功后签发 Token（携带 tokenVersion）
+        long tokenVersion = tokenVersionService.getCurrentVersion(user.getId());
+        String accessToken = jwtUtils.generateAccessToken(user.getId(), user.getUsername(), user.getRole(), tokenVersion);
+        String refreshToken = jwtUtils.generateRefreshToken(user.getId(), user.getUsername(), user.getRole(), tokenVersion);
+
+        // 登录预热：将用户状态写入 Redis 缓存
+        userStatusCacheService.putUserAuth(user.getId(), user);
 
         LoginVO vo = new LoginVO();
         vo.setAccessToken(accessToken);
@@ -161,15 +171,22 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         Long userId = jwtUtils.getUserIdFromToken(refreshToken);
-        String username = jwtUtils.getUsernameFromToken(refreshToken);
-        String roleCode = jwtUtils.getRoleFromToken(refreshToken);
-        UserRole role = UserRole.fromCode(roleCode);
+
+        // 查数据库获取最新状态和角色
+        User dbUser = userMapper.selectById(userId);
+        if (dbUser == null || dbUser.getStatus() != UserStatus.ACTIVE) {
+            // 用户已被禁用/删除，吊销 Refresh Token 并拒绝
+            tokenBlacklistService.addToBlacklist(refreshToken);
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        // 使用数据库中的最新角色，而非 Token 中的旧角色
+        long tokenVersion = tokenVersionService.getCurrentVersion(userId);
+        String newAccessToken = jwtUtils.generateAccessToken(userId, dbUser.getUsername(), dbUser.getRole(), tokenVersion);
+        String newRefreshToken = jwtUtils.generateRefreshToken(userId, dbUser.getUsername(), dbUser.getRole(), tokenVersion);
 
         // 旧 refreshToken 失效（一次性轮换）
         tokenBlacklistService.addToBlacklist(refreshToken);
-
-        String newAccessToken = jwtUtils.generateAccessToken(userId, username, role);
-        String newRefreshToken = jwtUtils.generateRefreshToken(userId, username, role);
 
         TokenVO vo = new TokenVO();
         vo.setAccessToken(newAccessToken);
@@ -179,7 +196,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserVO getMe() {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
@@ -193,7 +210,7 @@ public class AuthServiceImpl implements AuthService {
         if (!req.getNewPassword().equals(req.getConfirmPassword())) {
             throw new BusinessException(ErrorCode.PASSWORD_NOT_MATCH);
         }
-        User user = SecurityUtils.getCurrentUser();
+        User user = securityUtils.getCurrentUser();
         if (!passwordEncoder.matches(req.getOldPassword(), user.getPassword())) {
             throw new BusinessException(ErrorCode.PASSWORD_NOT_MATCH);
         }
@@ -201,6 +218,10 @@ public class AuthServiceImpl implements AuthService {
         update.setId(user.getId());
         update.setPassword(passwordEncoder.encode(req.getNewPassword()));
         userMapper.updateById(update);
+        // 修改密码后递增 Token 版本号，踢下所有设备
+        tokenVersionService.incrementVersion(user.getId());
+        // 清除用户状态缓存
+        userStatusCacheService.invalidateUserAuth(user.getId());
         // TODO M9: 密码重置/修改成功后可调用 emailService.sendPasswordReset(user.getEmail(), resetToken)
         //  当前重置流程未独立成接口，待密码重置 API 落地后集成
     }
@@ -208,7 +229,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public UserVO updateProfile(ProfileUpdateRequest req) {
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         User user = userMapper.selectById(userId);
         if (user == null) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
@@ -257,7 +278,7 @@ public class AuthServiceImpl implements AuthService {
         UploadResultVO result = uploadService.uploadImage(file, "avatar", null);
         String url = result.getUrl();
         // 持久化头像 URL 到当前用户
-        Long userId = SecurityUtils.getCurrentUserId();
+        Long userId = securityUtils.getCurrentUserId();
         User update = new User();
         update.setId(userId);
         update.setAvatarUrl(url);
@@ -363,6 +384,11 @@ public class AuthServiceImpl implements AuthService {
         update.setId(user.getId());
         update.setPassword(passwordEncoder.encode(newPassword));
         userMapper.updateById(update);
+
+        // 重置密码后递增 Token 版本号，踢下所有设备
+        tokenVersionService.incrementVersion(user.getId());
+        // 清除用户状态缓存
+        userStatusCacheService.invalidateUserAuth(user.getId());
 
         // 删除找回密码标记 key
         stringRedisTemplate.delete(forgotKey);

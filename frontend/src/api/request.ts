@@ -94,6 +94,17 @@ request.interceptors.response.use(
       const currentPath = window.location.pathname + window.location.search
       switch (status) {
         case 401: {
+          // 区分"Token过期401"和"业务拒绝401"：
+          // - 业务码 1002 (UNAUTHORIZED) = Token过期/无效，需要刷新
+          // - 其他业务码 (如 1011 REPLAY_DETECTED) = 业务拒绝，不刷新不重试
+          const resData = response.data
+          if (resData?.code && resData.code !== 1002) {
+            // 非Token过期的401（如签名校验失败、防重放拦截等），直接显示错误，不触发token刷新
+            const msg = typeof resData === 'string' ? resData : (resData.message || '请求失败')
+            ElMessage.error(msg)
+            return Promise.reject(error)
+          }
+          // Token过期的401，执行刷新逻辑
           const refreshTokenValue = localStorage.getItem(REFRESH_TOKEN_KEY)
           if (!refreshTokenValue) {
             clearTokensAndRedirect(currentPath)

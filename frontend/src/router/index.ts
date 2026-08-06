@@ -170,6 +170,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '分类管理', requiresAuth: true, roles: ['ADMIN'] }
       },
       {
+        path: 'category-attribute',
+        name: 'CategoryAttributeManage',
+        component: () => import('@/views/admin/CategoryAttributeManage.vue'),
+        meta: { title: '分类规格模板', requiresAuth: true, roles: ['ADMIN'] }
+      },
+      {
         path: 'seckills',
         name: 'SeckillManage',
         component: () => import('@/views/admin/SeckillManage.vue'),

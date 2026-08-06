@@ -39,6 +39,64 @@
               <span class="form-unit">件</span>
             </el-form-item>
 
+            <!-- 商品规格区域：模板驱动 + 自定义扩展 -->
+            <el-form-item label="商品规格" class="form-item-full">
+              <div class="sku-attribute-area">
+                <el-alert
+                  v-if="templateAttributes.length > 0"
+                  type="info"
+                  :closable="false"
+                  title="以下属性来自分类规格模板，可在此基础上增删"
+                  style="margin-bottom: 8px"
+                />
+                <el-button type="primary" plain size="small" @click="addAttribute">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="margin-right: 2px">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  添加自定义属性
+                </el-button>
+                <div v-for="(attr, idx) in formData.attributes" :key="idx" class="attribute-row">
+                  <el-tag v-if="attr.categoryAttributeId" type="success" size="small">模板</el-tag>
+                  <el-tag v-else type="info" size="small">自定义</el-tag>
+                  <el-input v-model="attr.name" placeholder="属性名（如：颜色）" style="width: 120px" />
+                  <el-select v-model="attr.type" placeholder="类型" style="width: 100px">
+                    <el-option label="图片型" value="IMAGE" />
+                    <el-option label="文字型" value="TEXT" />
+                  </el-select>
+                  <div class="attribute-values">
+                    <el-tag
+                      v-for="(val, vIdx) in attr.values"
+                      :key="vIdx"
+                      closable
+                      @close="removeAttrValue(idx, vIdx)"
+                    >
+                      {{ val.value }}
+                    </el-tag>
+                    <el-input
+                      v-if="attr.valueInputVisible"
+                      v-model="attr.valueInput"
+                      size="small"
+                      style="width: 100px"
+                      @keyup.enter="confirmAttrValue(idx)"
+                      @blur="confirmAttrValue(idx)"
+                    />
+                    <el-button v-else size="small" @click="showAttrValueInput(idx)">+ 添加值</el-button>
+                  </div>
+                  <el-button type="danger" plain size="small" @click="removeAttribute(idx)">删除属性</el-button>
+                </div>
+                <el-button
+                  v-if="formData.attributes.length > 0"
+                  type="success"
+                  plain
+                  size="small"
+                  :loading="generatingSkus"
+                  @click="generateSkus"
+                >
+                  生成 SKU 组合
+                </el-button>
+              </div>
+            </el-form-item>
+
             <el-form-item label="状态" prop="status">
               <el-radio-group v-model="formData.status">
                 <el-radio value="ON_SALE">上架</el-radio>
@@ -65,6 +123,66 @@
             </el-form-item>
           </div>
         </div>
+
+        <!-- 全宽：SKU 组合表格 -->
+        <el-form-item v-if="formData.skus.length > 0" label="SKU组合" class="form-item-full">
+          <div class="sku-table-wrap">
+            <el-table :data="paginatedSkus" border style="width: 100%">
+              <el-table-column label="组合" min-width="200">
+                <template #default="{ row }">{{ formatSkuAttributes(row.attributes) }}</template>
+              </el-table-column>
+              <el-table-column label="价格" width="120">
+                <template #default="{ row }">
+                  <el-input-number
+                    v-model="row.price"
+                    :min="0.01"
+                    :precision="2"
+                    :controls="false"
+                    size="small"
+                  />
+                </template>
+              </el-table-column>
+              <el-table-column label="库存" width="100">
+                <template #default="{ row }">
+                  <el-input-number
+                    v-model="row.stock"
+                    :min="0"
+                    :controls="false"
+                    size="small"
+                  />
+                </template>
+              </el-table-column>
+              <el-table-column label="主图" width="120">
+                <template #default="{ row }">
+                  <ImageUploader v-model="row.mainImageList" :max-count="1" />
+                </template>
+              </el-table-column>
+              <el-table-column label="编码" width="140">
+                <template #default="{ row }">
+                  <el-input v-model="row.skuCode" size="small" placeholder="自动生成" />
+                </template>
+              </el-table-column>
+              <el-table-column label="状态" width="100">
+                <template #default="{ row }">
+                  <el-switch v-model="row.status" :active-value="1" :inactive-value="0" />
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="80">
+                <template #default="{ row }">
+                  <el-button type="danger" plain size="small" @click="removeSkuByRow(row)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <el-pagination
+              v-if="formData.skus.length > 20"
+              v-model:current-page="skuCurrentPage"
+              :page-size="20"
+              :total="formData.skus.length"
+              layout="prev, pager, next, total"
+              style="margin-top: 12px; justify-content: flex-end"
+            />
+          </div>
+        </el-form-item>
 
         <!-- 全宽：富文本编辑器 -->
         <el-form-item label="商品详情" prop="detailHtml" class="form-item-full">
@@ -102,7 +220,17 @@ import {
   updateProduct
 } from '@/api/product'
 import { getCategoryTree } from '@/api/category'
-import type { ProductVO, CategoryVO, CategoryTreeNode, ProductStatus } from '@/types'
+import { getCategoryAttributes } from '@/api/categoryAttribute'
+import { generateSkuCombinations } from '@/api/sku'
+import type {
+  ProductVO,
+  CategoryVO,
+  CategoryTreeNode,
+  ProductStatus,
+  ProductAttributeDTO,
+  ProductSkuDTO,
+  CategoryAttribute
+} from '@/types'
 import ImageUploader from '@/components/ImageUploader.vue'
 // wangEditor 富文本编辑器（Vue3 版本）
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
@@ -137,6 +265,9 @@ interface ProductFormData {
   detailHtml: string
   images: string[]
   status: ProductStatus
+  // 新增 SKU 相关字段
+  attributes: ProductAttributeDTO[]
+  skus: ProductSkuDTO[]
 }
 
 const formData = reactive<ProductFormData>({
@@ -147,7 +278,9 @@ const formData = reactive<ProductFormData>({
   description: '',
   detailHtml: '',
   images: [],
-  status: 'ON_SALE'
+  status: 'ON_SALE',
+  attributes: [],
+  skus: []
 })
 
 /* === 主图（单图，独立于多图 images） ===
@@ -155,6 +288,20 @@ const formData = reactive<ProductFormData>({
  * 多图作为 images[1..n]。提交时合并；编辑时拆分。
  */
 const mainImageList = ref<string[]>([])
+
+/* === SKU 相关状态 === */
+/** 分类规格模板（用于区分模板属性 / 自定义属性） */
+const templateAttributes = ref<CategoryAttribute[]>([])
+/** SKU 生成中加载态 */
+const generatingSkus = ref(false)
+/** SKU 表格分页 */
+const skuCurrentPage = ref(1)
+const SKU_PAGE_SIZE = 20
+/** 分页后的 SKU 列表 */
+const paginatedSkus = computed(() => {
+  const start = (skuCurrentPage.value - 1) * SKU_PAGE_SIZE
+  return formData.skus.slice(start, start + SKU_PAGE_SIZE)
+})
 
 /* === 表单校验规则 === */
 const formRules: FormRules = {
@@ -229,6 +376,162 @@ async function fetchCategoryTree(): Promise<void> {
   }
 }
 
+/* === 选择分类后自动带出规格模板 ===
+ *  仅在 attributes 为空（首次选择分类）时自动带出，避免覆盖用户已编辑的属性
+ */
+watch(
+  () => formData.categoryId,
+  async (newCategoryId) => {
+    if (!newCategoryId) {
+      templateAttributes.value = []
+      return
+    }
+    try {
+      const res = await getCategoryAttributes(newCategoryId as number)
+      templateAttributes.value = res.data || []
+      // 仅在 attributes 为空（首次选择分类）时自动带出
+      if (formData.attributes.length === 0 && templateAttributes.value.length > 0) {
+        formData.attributes = templateAttributes.value.map((t) => ({
+          categoryAttributeId: t.id,
+          name: t.name,
+          type: t.type,
+          sortOrder: t.sortOrder,
+          values: t.values.map((v) => ({
+            value: v.value,
+            imageUrl: v.imageUrl || undefined,
+            sortOrder: v.sortOrder
+          })),
+          valueInputVisible: false,
+          valueInput: ''
+        }))
+        ElMessage.info(`已带出分类模板 ${templateAttributes.value.length} 个属性`)
+      }
+    } catch {
+      templateAttributes.value = []
+    }
+  }
+)
+
+/* === 添加自定义属性 === */
+function addAttribute(): void {
+  formData.attributes.push({
+    categoryAttributeId: undefined,  // 自定义属性
+    name: '',
+    type: 'TEXT',
+    sortOrder: formData.attributes.length,
+    values: [],
+    valueInputVisible: false,
+    valueInput: ''
+  })
+}
+
+/* === 删除属性 === */
+function removeAttribute(idx: number): void {
+  formData.attributes.splice(idx, 1)
+}
+
+/* === 显示属性值输入框 === */
+function showAttrValueInput(idx: number): void {
+  formData.attributes[idx].valueInputVisible = true
+  formData.attributes[idx].valueInput = ''
+}
+
+/* === 确认添加属性值 === */
+function confirmAttrValue(idx: number): void {
+  const attr = formData.attributes[idx]
+  const val = (attr.valueInput || '').trim()
+  if (val && !attr.values.some((v) => v.value === val)) {
+    attr.values.push({
+      value: val,
+      imageUrl: attr.type === 'IMAGE' ? '' : undefined,
+      sortOrder: attr.values.length
+    })
+  }
+  attr.valueInputVisible = false
+  attr.valueInput = ''
+}
+
+/* === 删除属性值 === */
+function removeAttrValue(idx: number, vIdx: number): void {
+  formData.attributes[idx].values.splice(vIdx, 1)
+}
+
+/* === 建议10 已落实：SKU 笛卡尔积后端生成，前端仅传属性定义 ===
+ *  SKU 数量可能爆炸（3 属性 × 10 值 = 1000 个 SKU），前端生成会导致：
+ *  1. 大量计算阻塞 UI
+ *  2. 一次性渲染过多 DOM 导致页面卡顿
+ *  3. 前端笛卡尔积逻辑与后端重复，维护成本高
+ *  改为：前端传属性定义，后端返回笛卡尔积 SKU 列表，前端表格分页展示
+ */
+async function generateSkus(): Promise<void> {
+  if (formData.attributes.length === 0) {
+    ElMessage.warning('请先添加属性')
+    return
+  }
+  for (const attr of formData.attributes) {
+    if (!attr.name || attr.values.length === 0) {
+      ElMessage.warning('属性名和属性值不能为空')
+      return
+    }
+  }
+  generatingSkus.value = true
+  try {
+    // 调用后端接口生成笛卡尔积 SKU
+    const res = await generateSkuCombinations({
+      productId: editingId.value,  // 编辑时传，新增时为 null
+      attributes: formData.attributes.map((a) => ({
+        name: a.name,
+        type: a.type,
+        values: a.values.map((v) => ({ value: v.value, imageUrl: v.imageUrl }))
+      })),
+      defaultPrice: formData.originalPrice  // 默认价格
+    })
+    formData.skus = res.data.map((sku) => ({
+      ...sku,
+      mainImageList: sku.mainImage ? [sku.mainImage] : []
+    }))
+    skuCurrentPage.value = 1
+    ElMessage.success(`已生成 ${res.data.length} 个 SKU 组合`)
+  } catch {
+    ElMessage.error('生成 SKU 失败')
+  } finally {
+    generatingSkus.value = false
+  }
+}
+
+/* === 笛卡尔积工具函数（保留供前端小规模预览用，大规模生成走后端） === */
+function cartesianProduct<T>(arrays: T[][]): T[][] {
+  if (arrays.length === 0) return [[]]
+  const [first, ...rest] = arrays
+  const restProduct = cartesianProduct(rest)
+  return first.flatMap((x) => restProduct.map((r) => [x, ...r]))
+}
+
+/* === 格式化 SKU 属性为可读字符串 === */
+function formatSkuAttributes(attributesJson: string): string {
+  try {
+    const obj = JSON.parse(attributesJson) as Record<string, unknown>
+    return Object.entries(obj)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(' / ')
+  } catch {
+    return attributesJson
+  }
+}
+
+/* === 删除 SKU 行（通过行引用找到全局索引，兼容分页） === */
+function removeSkuByRow(row: unknown): void {
+  const idx = formData.skus.indexOf(row as ProductSkuDTO)
+  if (idx >= 0) {
+    formData.skus.splice(idx, 1)
+  }
+}
+
+/* === 删除 SKU 行（按全局索引） === */
+function removeSku(idx: number): void {
+  formData.skus.splice(idx, 1)
+}
+
 /* === wangEditor 富文本编辑器实例 === */
 // 使用 shallowRef 避免对编辑器实例做递归响应式化（官方推荐）
 // M41 修复: 使用 IDomEditor 类型替代 any，保证类型安全
@@ -264,6 +567,24 @@ async function fetchProductDetail(id: number): Promise<void> {
       mainImageList.value = []
       formData.images = []
     }
+    // 回填 SKU 相关字段
+    //  使用类型断言：ProductAttributeVO.type 为 string，ProductAttributeDTO.type 为 AttributeType
+    //  后端返回的 type 实际为 'IMAGE' | 'TEXT'，运行时安全
+    formData.attributes = p.attributes
+      ? (p.attributes.map((a) => ({
+          ...a,
+          values: a.values.map((v) => ({ ...v })),
+          valueInputVisible: false,
+          valueInput: ''
+        })) as unknown as ProductAttributeDTO[])
+      : []
+    //  ProductSkuVO.skuCode 为可选，ProductSkuDTO.skuCode 为必选；后端总会返回 skuCode
+    formData.skus = p.skus
+      ? (p.skus.map((s) => ({
+          ...s,
+          mainImageList: s.mainImage ? [s.mainImage] : []
+        })) as unknown as ProductSkuDTO[])
+      : []
     // 同步 cascader 选中值
     cascaderValue.value = p.categoryId
   } catch {
@@ -316,7 +637,34 @@ async function handleSubmit(): Promise<void> {
       description: formData.description,
       detailHtml: formData.detailHtml,
       images: mergedImages,
-      status: formData.status
+      status: formData.status,
+      // 新增：仅当有属性时才提交 SKU 数据
+      attributes: formData.attributes.length > 0
+        ? formData.attributes.map((a) => ({
+            categoryAttributeId: a.categoryAttributeId || null,  // 关联模板
+            name: a.name,
+            type: a.type,
+            sortOrder: a.sortOrder,
+            values: a.values.map((v) => ({
+              value: v.value,
+              imageUrl: v.imageUrl,
+              sortOrder: v.sortOrder
+            }))
+          }))
+        : undefined,
+      skus: formData.skus.length > 0
+        ? formData.skus.map((s) => ({
+            skuCode: s.skuCode,
+            price: s.price,
+            stock: s.stock,
+            mainImage:
+              s.mainImageList && s.mainImageList.length > 0
+                ? s.mainImageList[0]
+                : null,
+            attributes: s.attributes,
+            status: s.status
+          }))
+        : undefined
     }
     if (isEdit.value && editingId.value !== null) {
       await updateProduct(editingId.value, payload)
@@ -438,6 +786,31 @@ onMounted(async () => {
   width: 100%;
   border-radius: 4px;
   overflow: hidden;
+}
+
+/* === 商品规格区域 === */
+.sku-attribute-area {
+  width: 100%;
+}
+
+.attribute-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.attribute-values {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* === SKU 表格容器 === */
+.sku-table-wrap {
+  width: 100%;
 }
 
 /* === 响应式：小屏改为单列 === */

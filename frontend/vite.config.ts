@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-import { ElementPlusIconsVueResolver } from 'unplugin-vue-components/resolvers'
+
 import viteCompression from 'vite-plugin-compression'
 import { resolve } from 'path'
 
@@ -15,16 +15,14 @@ export default defineConfig(({ mode }) => {
       vue(),
       AutoImport({
         // ElementPlusResolver 自动按需引入 Element Plus 的 API (如 ElMessage, ElMessageBox)
-        // ElementPlusIconsVueResolver 自动按需引入 Element Plus 图标组件
-        resolvers: [ElementPlusResolver(), ElementPlusIconsVueResolver()],
+        resolvers: [ElementPlusResolver()],
         imports: ['vue', 'vue-router', 'pinia'],
         dts: 'src/auto-imports.d.ts',
         eslintrc: { enabled: false }
       }),
       Components({
         // ElementPlusResolver 自动按需引入 Element Plus 组件及其样式
-        // ElementPlusIconsVueResolver 自动按需引入图标组件
-        resolvers: [ElementPlusResolver(), ElementPlusIconsVueResolver()],
+        resolvers: [ElementPlusResolver()],
         dts: 'src/components.d.ts'
       }),
       // gzip 压缩: 对 > 10KB 的资源生成 .gz 文件, 配合 nginx 静态 gzip 进一步减小传输体积

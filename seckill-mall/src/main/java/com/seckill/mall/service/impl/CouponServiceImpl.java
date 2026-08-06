@@ -9,12 +9,15 @@ import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.CouponCreateRequest;
 import com.seckill.mall.entity.Coupon;
+import com.seckill.mall.entity.User;
 import com.seckill.mall.entity.UserCoupon;
 import com.seckill.mall.entity.enums.CouponType;
 import com.seckill.mall.entity.enums.UserCouponStatus;
 import com.seckill.mall.mapper.CouponMapper;
 import com.seckill.mall.mapper.UserCouponMapper;
+import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.service.CouponService;
+import com.seckill.mall.vo.AdminCouponRecordVO;
 import com.seckill.mall.vo.CouponVO;
 import com.seckill.mall.vo.UserCouponVO;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +57,7 @@ public class CouponServiceImpl implements CouponService {
 
     private final CouponMapper couponMapper;
     private final UserCouponMapper userCouponMapper;
+    private final UserMapper userMapper;
 
     // ==================== 后台管理 ====================
 
@@ -138,10 +142,15 @@ public class CouponServiceImpl implements CouponService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void distribute(Long couponId, Long userId) {
+    public String distribute(Long couponId, Long userId) {
         Coupon coupon = getExistingCoupon(couponId);
         if (coupon.getStatus() != STATUS_ENABLED) {
             throw new BusinessException(ErrorCode.COUPON_DISABLED);
+        }
+        // 校验用户存在
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
         // 检查是否已领取过
         Long existCount = userCouponMapper.selectCount(
@@ -168,6 +177,39 @@ public class CouponServiceImpl implements CouponService {
             throw new BusinessException(ErrorCode.COUPON_OUT_OF_STOCK);
         }
         log.info("发放优惠券成功，couponId={}, userId={}", couponId, userId);
+        return user.getUsername();
+    }
+
+    @Override
+    public PageResult<AdminCouponRecordVO> listRecords(Long couponId, Integer pageNum, Integer pageSize) {
+        int pn = pageNum == null || pageNum < 1 ? 1 : pageNum;
+        int ps = pageSize == null || pageSize < 1 ? 10 : pageSize;
+        // 分页查询该优惠券的领取记录
+        IPage<UserCoupon> page = userCouponMapper.selectPage(
+                new Page<>(pn, ps),
+                new LambdaQueryWrapper<UserCoupon>()
+                        .eq(UserCoupon::getCouponId, couponId)
+                        .orderByDesc(UserCoupon::getCreateTime));
+        List<UserCoupon> records = page.getRecords();
+        if (records.isEmpty()) {
+            return PageResult.of(Collections.emptyList(), page.getTotal(), page.getCurrent(), page.getSize());
+        }
+        // 批量查询关联用户名
+        List<Long> userIds = records.stream()
+                .map(UserCoupon::getUserId)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, String> usernameMap = userMapper.selectList(
+                        new LambdaQueryWrapper<User>().in(User::getId, userIds))
+                .stream().collect(Collectors.toMap(User::getId, User::getUsername));
+        // 查询优惠券名称
+        Coupon coupon = couponMapper.selectById(couponId);
+        String couponName = coupon == null ? null : coupon.getName();
+        // 组装 VO
+        List<AdminCouponRecordVO> voList = records.stream()
+                .map(uc -> toAdminRecordVO(uc, usernameMap.get(uc.getUserId()), couponName))
+                .collect(Collectors.toList());
+        return PageResult.of(voList, page.getTotal(), page.getCurrent(), page.getSize());
     }
 
     // ==================== 前台 ====================
@@ -255,8 +297,11 @@ public class CouponServiceImpl implements CouponService {
         Map<Long, Coupon> couponMap = couponMapper.selectList(
                         new LambdaQueryWrapper<Coupon>().in(Coupon::getId, couponIds))
                 .stream().collect(Collectors.toMap(Coupon::getId, c -> c));
+        // 查询当前用户名（批量场景下仅一个用户，单查即可）
+        User user = userMapper.selectById(userId);
+        String username = user == null ? null : user.getUsername();
         return userCoupons.stream()
-                .map(uc -> toUserCouponVO(uc, couponMap.get(uc.getCouponId())))
+                .map(uc -> toUserCouponVO(uc, couponMap.get(uc.getCouponId()), username))
                 .collect(Collectors.toList());
     }
 
@@ -327,11 +372,12 @@ public class CouponServiceImpl implements CouponService {
         return vo;
     }
 
-    /** UserCoupon + Coupon → UserCouponVO */
-    private UserCouponVO toUserCouponVO(UserCoupon userCoupon, Coupon coupon) {
+    /** UserCoupon + Coupon + username → UserCouponVO */
+    private UserCouponVO toUserCouponVO(UserCoupon userCoupon, Coupon coupon, String username) {
         UserCouponVO vo = new UserCouponVO();
         vo.setId(userCoupon.getId());
         vo.setUserId(userCoupon.getUserId());
+        vo.setUsername(username);
         vo.setCouponId(userCoupon.getCouponId());
         vo.setStatus(userCoupon.getStatus() == null ? null : userCoupon.getStatus().getCode());
         vo.setReceiveTime(userCoupon.getReceiveTime());
@@ -346,6 +392,22 @@ public class CouponServiceImpl implements CouponService {
             vo.setCouponStartTime(coupon.getStartTime());
             vo.setCouponEndTime(coupon.getEndTime());
         }
+        return vo;
+    }
+
+    /** UserCoupon → AdminCouponRecordVO（后台领取记录） */
+    private AdminCouponRecordVO toAdminRecordVO(UserCoupon userCoupon, String username, String couponName) {
+        AdminCouponRecordVO vo = new AdminCouponRecordVO();
+        vo.setId(userCoupon.getId());
+        vo.setUserId(userCoupon.getUserId());
+        vo.setUsername(username);
+        vo.setCouponId(userCoupon.getCouponId());
+        vo.setCouponName(couponName);
+        vo.setStatus(userCoupon.getStatus() == null ? null : userCoupon.getStatus().getCode());
+        vo.setReceiveTime(userCoupon.getReceiveTime());
+        vo.setUseTime(userCoupon.getUseTime());
+        vo.setOrderId(userCoupon.getOrderId());
+        vo.setCreateTime(userCoupon.getCreateTime());
         return vo;
     }
 }

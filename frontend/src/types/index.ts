@@ -602,6 +602,42 @@ export interface SeckillCreateRequest {
   description?: string
 }
 
+/** 秒杀场次视图对象（含场次下商品列表） */
+export interface SeckillActivityVO {
+  id: number | string
+  name: string
+  startTime: string
+  endTime: string
+  /** 0=待开始 1=进行中 2=已结束 */
+  status: number
+  perLimit: number
+  description?: string
+  images?: string[]
+  createTime: string
+  goodsList: SeckillGoodsVO[]
+}
+
+/** 场次下的单个秒杀商品项（创建场次时使用） */
+export interface ActivityGoodsItem {
+  productId: number | string
+  seckillName: string
+  seckillPrice: number
+  stockCount: number
+  images?: string[]
+  description?: string
+}
+
+/** 创建秒杀场次请求 */
+export interface SeckillActivityCreateRequest {
+  name: string
+  startTime: string
+  endTime: string
+  perLimit?: number
+  description?: string
+  images?: string[]
+  goodsItems: ActivityGoodsItem[]
+}
+
 /** 用户列表请求 */
 export interface UserListRequest extends PageRequest {
   role?: string
@@ -664,6 +700,8 @@ export interface UserCouponVO {
   id: number | string
   /** 用户 ID */
   userId: number | string
+  /** 用户名（关联 t_user.username） */
+  username?: string
   couponId: number | string
   /** 状态: UNUSED-未使用 / USED-已使用 / EXPIRED-已过期 */
   status: UserCouponStatus
@@ -688,6 +726,29 @@ export interface CouponRequest {
   startTime: string
   endTime: string
   status?: number
+}
+
+/** 后台优惠券领取记录视图对象 (匹配后端 AdminCouponRecordVO) */
+export interface AdminCouponRecordVO {
+  id: number | string
+  /** 用户 ID */
+  userId: number | string
+  /** 用户名（关联 t_user.username） */
+  username: string
+  /** 优惠券 ID */
+  couponId: number | string
+  /** 优惠券名称（关联 t_coupon.name） */
+  couponName: string
+  /** 状态: UNUSED-未使用 / USED-已使用 / EXPIRED-已过期 */
+  status: UserCouponStatus
+  /** 领取时间 */
+  receiveTime: string
+  /** 使用时间 */
+  useTime: string | null
+  /** 关联订单 ID (使用后才有值) */
+  orderId: number | string | null
+  /** 创建时间 */
+  createTime: string
 }
 
 /* ==================== 充值卡类型 ==================== */

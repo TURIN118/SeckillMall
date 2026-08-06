@@ -4,11 +4,14 @@ import com.seckill.mall.annotation.OperationLog;
 import com.seckill.mall.annotation.RateLimit;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.Result;
+import com.seckill.mall.dto.SeckillActivityCreateRequest;
 import com.seckill.mall.dto.SeckillCreateRequest;
 import com.seckill.mall.security.SecurityUtils;
+import com.seckill.mall.service.SeckillActivityService;
 import com.seckill.mall.service.SeckillGoodsService;
 import com.seckill.mall.service.SeckillService;
 import com.seckill.mall.service.SeckillTokenService;
+import com.seckill.mall.vo.SeckillActivityVO;
 import com.seckill.mall.vo.SeckillGoodsVO;
 import com.seckill.mall.vo.SeckillResultVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +29,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * 创建人：@author WNJ
@@ -41,6 +47,7 @@ public class SeckillController {
     private final SeckillGoodsService seckillGoodsService;
     private final SeckillService seckillService;
     private final SeckillTokenService seckillTokenService;
+    private final SeckillActivityService seckillActivityService;
     private final SecurityUtils securityUtils;
 
     @Operation(summary = "秒杀活动列表")
@@ -135,6 +142,37 @@ public class SeckillController {
     @PutMapping("/admin/{seckillId}/cancel")
     public Result<Void> cancel(@PathVariable Long seckillId) {
         seckillGoodsService.cancelSeckill(seckillId);
+        return Result.success();
+    }
+
+    /* ==================== 秒杀场次管理 API（场次化重构） ==================== */
+
+    @Operation(summary = "创建秒杀场次（含商品列表）")
+    @OperationLog(module = "SECKILL", action = "CREATE_ACTIVITY", targetType = "SECKILL_ACTIVITY")
+    @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
+    @PostMapping("/activities")
+    public Result<SeckillActivityVO> createActivity(@Valid @RequestBody SeckillActivityCreateRequest req) {
+        return Result.success(seckillActivityService.createActivity(req));
+    }
+
+    @Operation(summary = "查询所有秒杀场次列表")
+    @GetMapping("/activities")
+    public Result<List<SeckillActivityVO>> listActivities() {
+        return Result.success(seckillActivityService.listActivities());
+    }
+
+    @Operation(summary = "查询秒杀场次详情")
+    @GetMapping("/activities/{activityId}")
+    public Result<SeckillActivityVO> getActivityDetail(@PathVariable Long activityId) {
+        return Result.success(seckillActivityService.getActivityDetail(activityId));
+    }
+
+    @Operation(summary = "删除秒杀场次")
+    @OperationLog(module = "SECKILL", action = "DELETE_ACTIVITY", targetIdSpEL = "#activityId", targetType = "SECKILL_ACTIVITY")
+    @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
+    @DeleteMapping("/activities/{activityId}")
+    public Result<Void> deleteActivity(@PathVariable Long activityId) {
+        seckillActivityService.deleteActivity(activityId);
         return Result.success();
     }
 }

@@ -2,6 +2,7 @@ package com.seckill.mall.service;
 
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.CouponCreateRequest;
+import com.seckill.mall.vo.AdminCouponRecordVO;
 import com.seckill.mall.vo.CouponVO;
 import com.seckill.mall.vo.UserCouponVO;
 
@@ -69,8 +70,19 @@ public interface CouponService {
      *
      * @param couponId 优惠券ID
      * @param userId   用户ID
+     * @return 被发放用户的用户名（用于前端展示，避免显示数字ID）
      */
-    void distribute(Long couponId, Long userId);
+    String distribute(Long couponId, Long userId);
+
+    /**
+     * 后台分页查询某优惠券的领取记录
+     *
+     * @param couponId 优惠券ID
+     * @param pageNum  页码
+     * @param pageSize 每页大小
+     * @return 领取记录分页结果（含用户名、优惠券名称等关联字段）
+     */
+    PageResult<AdminCouponRecordVO> listRecords(Long couponId, Integer pageNum, Integer pageSize);
 
     // ==================== 前台 ====================
 

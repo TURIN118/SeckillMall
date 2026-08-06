@@ -6,56 +6,43 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.seckill.mall.entity.enums.SeckillStatus;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
- * 文件名称：SeckillGoods.java
+ * 文件名称：SeckillActivity.java
  * 邮箱：nj651217@163.com
+ * <p>
+ * 秒杀活动场次实体。一个场次可包含多个秒杀商品（t_seckill_goods.activity_id），
+ * 场次统一管理 startTime/endTime/perLimit，商品继承场次时间窗口。
  */
 @Data
-@TableName("t_seckill_goods")
-public class SeckillGoods {
+@TableName("t_seckill_activity")
+public class SeckillActivity {
 
-    @TableId(type = IdType.ASSIGN_ID)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
-    private Long productId;
-
-    /** 关联秒杀场次 ID（场次化重构后新增，可为空表示独立活动） */
-    private Long activityId;
-
-    private BigDecimal seckillPrice;
-
-    private Integer stockCount;
-
-    private Integer availableCount;
+    /** 场次名称 */
+    private String name;
 
     private LocalDateTime startTime;
 
     private LocalDateTime endTime;
 
-    @TableField("status")
-    private SeckillStatus status;
-
-    private Long creatorId;
-
-    /** 秒杀活动名称 */
-    private String seckillName;
+    /** 0=待开始 1=进行中 2=已结束 */
+    private Integer status;
 
     /** 每人限购数量 */
     private Integer perLimit;
 
-    /** 活动图片(JSON数组字符串) */
-    private String images;
-
-    /** 活动描述 */
     private String description;
+
+    /** 场次图片(JSON数组字符串) */
+    private String images;
 
     @TableLogic
     private Integer isDeleted;

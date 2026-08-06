@@ -3,6 +3,7 @@ package com.seckill.mall.controller;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.service.StatsService;
 import com.seckill.mall.vo.OrderStatusItemVO;
+import com.seckill.mall.vo.SeckillOverviewVO;
 import com.seckill.mall.vo.SeckillRankingVO;
 import com.seckill.mall.vo.StatsOverviewVO;
 import com.seckill.mall.vo.TrendItemVO;
@@ -65,5 +66,11 @@ public class StatsController {
     @GetMapping("/order-status-distribution")
     public Result<List<OrderStatusItemVO>> orderStatusDistribution() {
         return Result.success(statsService.getOrderStatusDistribution());
+    }
+
+    @Operation(summary = "秒杀活动概览（进行中/待开始/今日已完成）")
+    @GetMapping("/seckill-overview")
+    public Result<SeckillOverviewVO> seckillOverview() {
+        return Result.success(statsService.getSeckillOverview());
     }
 }

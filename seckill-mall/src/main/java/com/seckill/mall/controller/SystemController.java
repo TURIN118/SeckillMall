@@ -5,7 +5,7 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.OperationLogQueryRequest;
 import com.seckill.mall.service.SystemService;
-import com.seckill.mall.vo.DashboardVO;
+
 import com.seckill.mall.vo.OperationLogVO;
 import com.seckill.mall.vo.OrderStatusDistributionVO;
 import com.seckill.mall.vo.OrderTrendVO;
@@ -55,11 +55,6 @@ public class SystemController {
 
     private final SystemService systemService;
 
-    @Operation(summary = "仪表盘统计")
-    @GetMapping("/dashboard")
-    public Result<DashboardVO> dashboard() {
-        return Result.success(systemService.getDashboard());
-    }
 
     @Operation(summary = "操作日志列表（分页+模块筛选）")
     @GetMapping("/operation-logs")

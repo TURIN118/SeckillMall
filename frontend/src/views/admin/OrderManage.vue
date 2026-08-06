@@ -42,8 +42,8 @@
         <tbody>
           <tr v-for="row in orderList" :key="row.orderNo">
             <td class="order-no-cell">{{ row.orderNo }}</td>
-            <td>{{ row.userId }}</td>
-            <td>{{ row.productId }}</td>
+            <td>{{ row.username || row.userId }}</td>
+            <td>{{ row.productName || row.productId }}</td>
             <td class="amount-cell">¥{{ formatPrice(row.totalAmount) }}</td>
             <td>
               <span class="status-tag" :class="getStatusTagClass(row.status)">
@@ -94,9 +94,9 @@
       <div v-if="detailRow" class="detail-list">
         <div class="detail-row"><span class="detail-label">订单号</span><span class="detail-value">{{ detailRow.orderNo
             }}</span></div>
-        <div class="detail-row"><span class="detail-label">用户 ID</span><span class="detail-value">{{ detailRow.userId
+        <div class="detail-row"><span class="detail-label">用户</span><span class="detail-value">{{ detailRow.username || detailRow.userId
             }}</span></div>
-        <div class="detail-row"><span class="detail-label">商品 ID</span><span class="detail-value">{{ detailRow.productId
+        <div class="detail-row"><span class="detail-label">商品</span><span class="detail-value">{{ detailRow.productName || detailRow.productId
             }}</span></div>
         <div class="detail-row"><span class="detail-label">秒杀价</span><span class="detail-value">¥{{
           formatPrice(detailRow.seckillPrice) }}</span></div>
@@ -295,8 +295,8 @@ async function handleExport(): Promise<void> {
     // === Sheet1: 订单明细 ===
     const detailData = orders.map((o) => ({
       订单号: o.orderNo,
-      用户ID: o.userId,
-      商品ID: o.productId,
+      用户: o.username || o.userId,
+      商品: o.productName || o.productId,
       秒杀价: o.seckillPrice || 0,
       购买数量: o.quantity || 0,
       金额: o.totalAmount || 0,
@@ -306,8 +306,8 @@ async function handleExport(): Promise<void> {
     const ws1 = XLSX.utils.json_to_sheet(detailData)
     ws1['!cols'] = [
       { wch: 25 }, // 订单号
-      { wch: 12 }, // 用户ID
-      { wch: 12 }, // 商品ID
+      { wch: 14 }, // 用户
+      { wch: 14 }, // 商品
       { wch: 12 }, // 秒杀价
       { wch: 10 }, // 购买数量
       { wch: 12 }, // 金额

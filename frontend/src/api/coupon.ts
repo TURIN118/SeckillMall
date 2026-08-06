@@ -9,7 +9,8 @@ import type {
     CouponVO,
     UserCouponVO,
     CouponRequest,
-    UserCouponStatus
+    UserCouponStatus,
+    AdminCouponRecordVO
 } from '@/types'
 
 /* ==================== 前台接口 (需登录) ==================== */
@@ -52,7 +53,16 @@ export function adminUpdateCouponStatus(id: number | string, status: number): Pr
     return put<void>(`/api/v1/admin/coupons/${id}/status`, { status })
 }
 
-/** 后台发放优惠券给指定用户 */
-export function adminDistributeCoupon(id: number | string, userId: number): Promise<Result<void>> {
-    return post<void>(`/api/v1/admin/coupons/${id}/distribute`, { userId })
+/** 后台发放优惠券给指定用户，返回被发放用户的用户名 */
+export function adminDistributeCoupon(id: number | string, userId: number): Promise<Result<string>> {
+    return post<string>(`/api/v1/admin/coupons/${id}/distribute`, { userId })
+}
+
+/** 后台分页查询某优惠券的领取记录 */
+export function adminGetCouponRecords(
+    id: number | string,
+    pageNum = 1,
+    pageSize = 10
+): Promise<Result<PageResult<AdminCouponRecordVO>>> {
+    return get<PageResult<AdminCouponRecordVO>>(`/api/v1/admin/coupons/${id}/records`, { pageNum, pageSize })
 }

@@ -8,7 +8,6 @@
 import { get } from './request'
 import type {
   Result,
-  DashboardVO,
   PageResult,
   OperationLogVO,
   OperationLogQueryRequest
@@ -24,7 +23,9 @@ import type {
  * - jvmHeapUsage/jvmNonHeapUsage：JVM 堆/非堆内存使用率（0-100）。
  * - dbActiveConnections/dbIdleConnections/dbMaxConnections：HikariCP 连接池详情。
  * - osName/jdkVersion/appStartTime/appUptime：系统信息。
- * - seckillActiveCount/seckillPendingCount/seckillCompletedToday：秒杀活动概览。
+ *
+ * 说明：秒杀活动概览已迁移至 /api/v1/admin/stats/seckill-overview，
+ * 由 stats.ts 中的 getSeckillOverview 提供，不再混入系统健康响应。
  *
  * 详见 API-GAP-2.md「系统资源监控接口」一节。
  */
@@ -54,10 +55,6 @@ export interface SystemResourceVO {
   jdkVersion?: string
   appStartTime?: string
   appUptime?: string
-  // 秒杀活动概览
-  seckillActiveCount?: number
-  seckillPendingCount?: number
-  seckillCompletedToday?: number
 }
 
 

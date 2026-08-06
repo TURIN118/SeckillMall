@@ -24,6 +24,9 @@ public class UserCouponVO {
     /** 用户ID */
     private Long userId;
 
+    /** 用户名（关联 t_user.username） */
+    private String username;
+
     /** 优惠券ID */
     private Long couponId;
 

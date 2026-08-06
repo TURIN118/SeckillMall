@@ -1,19 +1,13 @@
 package com.seckill.mall.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.OperationLogQueryRequest;
-import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.enums.OrderStatus;
-import com.seckill.mall.entity.enums.SeckillStatus;
 import com.seckill.mall.mapper.OperationLogMapper;
-import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
-import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.service.SystemService;
-import com.seckill.mall.vo.DashboardVO;
 import com.seckill.mall.vo.OperationLogVO;
 import com.seckill.mall.vo.OrderStatusDistributionVO;
 import com.seckill.mall.vo.OrderTrendVO;
@@ -66,9 +60,7 @@ public class SystemServiceImpl implements SystemService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private final UserMapper userMapper;
     private final SeckillOrderMapper seckillOrderMapper;
-    private final SeckillGoodsMapper seckillGoodsMapper;
     private final OperationLogMapper operationLogMapper;
     private final StringRedisTemplate stringRedisTemplate;
     private final JdbcTemplate jdbcTemplate;
@@ -79,21 +71,7 @@ public class SystemServiceImpl implements SystemService {
     private final DataSource dataSource;
 
     @Override
-    public DashboardVO getDashboard() {
-        DashboardVO vo = new DashboardVO();
-        vo.setUserCount(userMapper.selectCount(null));
 
-        long orderCount = seckillOrderMapper.selectCount(null);
-        vo.setOrderCount(orderCount);
-
-        BigDecimal sales = seckillOrderMapper.sumSalesAmount(List.of(OrderStatus.PAID, OrderStatus.COMPLETED));
-        vo.setTotalSales(sales == null ? BigDecimal.ZERO : sales);
-
-        vo.setSeckillCount(seckillGoodsMapper.selectCount(null));
-        return vo;
-    }
-
-    @Override
     public PageResult<OperationLogVO> getOperationLogs(OperationLogQueryRequest req) {
         int pageNum = req.getPageNum() == null || req.getPageNum() < 1 ? 1 : req.getPageNum();
         int pageSize = req.getPageSize() == null || req.getPageSize() < 1 ? 10 : req.getPageSize();
@@ -141,10 +119,7 @@ public class SystemServiceImpl implements SystemService {
         vo.setJdkVersion(getJdkVersion());
         vo.setAppStartTime(getAppStartTime());
         vo.setAppUptime(getAppUptime());
-        // 秒杀活动概览
-        vo.setSeckillActiveCount(getSeckillActiveCount());
-        vo.setSeckillPendingCount(getSeckillPendingCount());
-        vo.setSeckillCompletedToday(getSeckillCompletedToday());
+
         return vo;
     }
 
@@ -590,69 +565,6 @@ public class SystemServiceImpl implements SystemService {
         }
     }
 
-    // ==================== 秒杀活动概览 ====================
-
-    /**
-     * 统计进行中的秒杀活动数量（status = ACTIVE）
-     * <p>
-     * M17: DB 中 status 字段不会随时间自动更新（创建时为 PENDING，仅取消时改为 CANCELLED），
-     * 直接按 status=ACTIVE 查询会漏掉所有已开始但 status 仍为 PENDING 的活动。
-     * 正确做法应基于时间窗口动态计算：start_time <= now < end_time 且 status != CANCELLED。
-     */
-    private Integer getSeckillActiveCount() {
-        try {
-            LocalDateTime now = LocalDateTime.now();
-            LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
-            wrapper.ne(SeckillGoods::getStatus, SeckillStatus.CANCELLED)
-                    .le(SeckillGoods::getStartTime, now)
-                    .gt(SeckillGoods::getEndTime, now);
-            return Math.toIntExact(seckillGoodsMapper.selectCount(wrapper));
-        } catch (Exception e) {
-            log.debug("进行中秒杀数采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 统计待开始的秒杀活动数量（status = PENDING）
-     * <p>
-     * M17: 基于 start_time > now 且未取消动态计算，不依赖 DB status 字段。
-     */
-    private Integer getSeckillPendingCount() {
-        try {
-            LocalDateTime now = LocalDateTime.now();
-            LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
-            wrapper.ne(SeckillGoods::getStatus, SeckillStatus.CANCELLED)
-                    .gt(SeckillGoods::getStartTime, now);
-            return Math.toIntExact(seckillGoodsMapper.selectCount(wrapper));
-        } catch (Exception e) {
-            log.debug("待开始秒杀数采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 统计今日已完成的秒杀活动数量（status = ENDED 且 endTime 在今日）
-     * <p>
-     * M17: 基于 end_time < now 且 endTime 在今日、未取消动态计算，不依赖 DB status 字段。
-     */
-    private Integer getSeckillCompletedToday() {
-        try {
-            LocalDate today = LocalDate.now();
-            LocalDateTime startOfDay = today.atStartOfDay();
-            LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
-            LocalDateTime now = LocalDateTime.now();
-            LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
-            wrapper.ne(SeckillGoods::getStatus, SeckillStatus.CANCELLED)
-                    .lt(SeckillGoods::getEndTime, now)
-                    .ge(SeckillGoods::getEndTime, startOfDay)
-                    .lt(SeckillGoods::getEndTime, endOfDay);
-            return Math.toIntExact(seckillGoodsMapper.selectCount(wrapper));
-        } catch (Exception e) {
-            log.debug("今日已完成秒杀数采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
 
     /**
      * 保留 1 位小数（HALF_UP）后转 double

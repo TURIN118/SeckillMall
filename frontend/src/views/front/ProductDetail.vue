@@ -25,8 +25,10 @@
           </svg>
           首页
         </span>
-        <span class="breadcrumb-sep">›</span>
-        <span>{{ product.categoryName }}</span>
+        <template v-for="cat in categoryPath" :key="cat.id">
+          <span class="breadcrumb-sep">›</span>
+          <span class="breadcrumb-link" @click="goCategory(cat.id)">{{ cat.categoryName }}</span>
+        </template>
         <span class="breadcrumb-sep">›</span>
         <span class="breadcrumb-current">{{ product.productName }}</span>
       </nav>
@@ -618,6 +620,7 @@ import { getWalletBalance } from '@/api/wallet'
 import { createOrder, payNormalOrder } from '@/api/order'
 import { checkFavorite, addFavorite, removeFavorite } from '@/api/favorite'
 import { addCart } from '@/api/cart'
+import { getCategoryTree } from '@/api/category'
 import { useUserStore } from '@/stores/user'
 import { useCartStore } from '@/stores/cart'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -625,7 +628,7 @@ import { ElImageViewer } from 'element-plus'
 import dayjs from 'dayjs'
 import { formatImageUrl } from '@/utils/image'
 import DOMPurify from 'dompurify'
-import type { ProductVO, ProductReviewVO, ProductAttributeVO, ProductSkuVO } from '@/types'
+import type { ProductVO, ProductReviewVO, ProductAttributeVO, ProductSkuVO, CategoryTreeNode } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -636,6 +639,40 @@ const loading = ref<boolean>(false)
 const error = ref<boolean>(false)
 const product = ref<ProductVO | null>(null)
 const currentImageIdx = ref<number>(0)
+
+/* === 面包屑分类树（问题8修复） === */
+// 后端 getCategoryTree 返回树形结构(一级分类对象含 children 数组)
+// 接口签名是 CategoryVO[]，但实际数据满足 CategoryTreeNode 结构，做类型断言
+const categoryTree = ref<CategoryTreeNode[]>([])
+
+/** 拉取分类树，用于面包屑路径计算 */
+async function fetchCategoryTree(): Promise<void> {
+  try {
+    const res = await getCategoryTree()
+    categoryTree.value = (res.data as CategoryTreeNode[]) || []
+  } catch {
+    categoryTree.value = []
+  }
+}
+
+/** 当前商品分类路径 (一级 + 二级)，用于面包屑显示 */
+const categoryPath = computed<CategoryTreeNode[]>(() => {
+  if (!product.value) return []
+  const idStr = String(product.value.categoryId)
+  for (const cat of categoryTree.value) {
+    if (String(cat.id) === idStr) return [cat]
+    if (cat.children && cat.children.length > 0) {
+      const child = cat.children.find(c => String(c.id) === idStr)
+      if (child) return [cat, child]
+    }
+  }
+  return []
+})
+
+/** 跳转到分类商品列表 */
+function goCategory(categoryId: number | string): void {
+  router.push({ path: '/products', query: { categoryId: String(categoryId) } })
+}
 
 /** 是否显示图片预览 */
 const showImageViewer = ref<boolean>(false)
@@ -1338,6 +1375,7 @@ watch(currentSku, () => {
 onMounted(() => {
   fetchDetail()
   initFavoriteStatus()
+  fetchCategoryTree()
 })
 
 onUnmounted(() => {
@@ -1459,6 +1497,15 @@ onUnmounted(() => {
 }
 
 .breadcrumb-home:hover {
+  color: var(--color-primary);
+}
+
+.breadcrumb-link {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.breadcrumb-link:hover {
   color: var(--color-primary);
 }
 

@@ -193,6 +193,9 @@ import { executeSeckill } from '@/api/seckill'
 import { formatImageUrl } from '@/utils/image'
 import type { SeckillGoodsVO, BannerVO, CategoryTreeNode, ProductVO } from '@/types'
 
+// 显式声明组件名, 使 keep-alive 的 include 匹配生效 (FrontLayout 已将 Home 加入缓存列表)
+defineOptions({ name: 'Home' })
+
 const router = useRouter()
 const seckillStore = useSeckillStore()
 const userStore = useUserStore()
@@ -449,8 +452,6 @@ async function handleSeckillBuy(item: SeckillCardItem): Promise<void> {
     // status: 1=成功, 0=排队中, -1=库存不足, -2=重复购买
     if (result.status === 1) {
       ElMessage.success(`抢购成功！订单号：${result.orderNo}`)
-      // 刷新秒杀列表
-      await fetchList()
     } else if (result.status === 0) {
       ElMessage.info('抢购请求已提交，正在排队中，请稍后查看订单')
     } else if (result.status === -1) {
@@ -460,6 +461,9 @@ async function handleSeckillBuy(item: SeckillCardItem): Promise<void> {
     } else {
       ElMessage.error('抢购失败，请重试')
     }
+    // M6 修复: 无论何种状态（包括排队中 status===0），都刷新秒杀列表，
+    // 让前端展示的 availableCount / 已抢 / 剩余 与后端保持同步
+    await fetchList()
   } catch {
     // 错误已由全局拦截器统一提示
   } finally {
@@ -533,6 +537,10 @@ async function fetchList(): Promise<void> {
   }
 }
 
+// M6 修复: 秒杀列表定时轮询定时器，每 8 秒刷新一次，
+// 让前端展示的 availableCount / 已抢 / 剩余 与后端保持同步
+let seckillRefreshTimer: ReturnType<typeof setInterval> | null = null
+
 onMounted(() => {
   fetchBanners()
   fetchCategoryTree()
@@ -540,10 +548,18 @@ onMounted(() => {
   fetchRecommendProducts()
   updateCountdown()
   cdTimer = setInterval(updateCountdown, 1000)
+  // 启动秒杀列表定时轮询
+  seckillRefreshTimer = setInterval(() => {
+    fetchList()
+  }, 8000)
 })
 
 onUnmounted(() => {
   if (cdTimer) clearInterval(cdTimer)
+  if (seckillRefreshTimer) {
+    clearInterval(seckillRefreshTimer)
+    seckillRefreshTimer = null
+  }
   if (hoverEnterTimer) clearTimeout(hoverEnterTimer)
   if (hoverLeaveTimer) clearTimeout(hoverLeaveTimer)
   seckillStore.stopAllCountdowns()

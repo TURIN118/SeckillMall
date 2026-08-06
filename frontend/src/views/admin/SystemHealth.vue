@@ -126,7 +126,7 @@
       </div>
     </div>
 
-    <!-- 系统信息 + 秒杀活动概览 -->
+    <!-- 系统信息 -->
     <div class="chart-grid" style="margin-top: 16px;">
       <div class="chart-card">
         <h4>系统信息</h4>
@@ -146,23 +146,6 @@
           <div class="info-item">
             <span class="info-label">运行时长</span>
             <span class="info-value">{{ appUptimeText }}</span>
-          </div>
-        </div>
-      </div>
-      <div class="chart-card">
-        <h4>秒杀活动概览</h4>
-        <div class="seckill-overview">
-          <div class="seckill-stat">
-            <div class="seckill-stat-value seckill-stat-active">{{ seckillActiveText }}</div>
-            <div class="seckill-stat-label">进行中</div>
-          </div>
-          <div class="seckill-stat">
-            <div class="seckill-stat-value seckill-stat-pending">{{ seckillPendingText }}</div>
-            <div class="seckill-stat-label">待开始</div>
-          </div>
-          <div class="seckill-stat">
-            <div class="seckill-stat-value seckill-stat-completed">{{ seckillCompletedTodayText }}</div>
-            <div class="seckill-stat-label">今日已完成</div>
           </div>
         </div>
       </div>
@@ -291,22 +274,6 @@ const jdkVersionText = computed<string>(() => health.value?.jdkVersion ?? '—')
 const appStartTimeText = computed<string>(() => health.value?.appStartTime ?? '—')
 const appUptimeText = computed<string>(() => health.value?.appUptime ?? '—')
 
-/* === 秒杀活动概览 === */
-const seckillActiveText = computed<string>(() =>
-  health.value && health.value.seckillActiveCount !== undefined
-    ? String(health.value.seckillActiveCount)
-    : '—'
-)
-const seckillPendingText = computed<string>(() =>
-  health.value && health.value.seckillPendingCount !== undefined
-    ? String(health.value.seckillPendingCount)
-    : '—'
-)
-const seckillCompletedTodayText = computed<string>(() =>
-  health.value && health.value.seckillCompletedToday !== undefined
-    ? String(health.value.seckillCompletedToday)
-    : '—'
-)
 
 /* === 进度条颜色 class：对照设计稿 stock-bar-fill.high/mid === */
 function getBarClass(value: number): string {
@@ -594,42 +561,4 @@ onUnmounted(() => {
   color: var(--color-text);
 }
 
-/* === 秒杀活动概览 === */
-.seckill-overview {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.seckill-stat {
-  text-align: center;
-  padding: 16px 8px;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-}
-
-.seckill-stat-value {
-  font-family: var(--font-price);
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-
-.seckill-stat-active {
-  color: var(--color-success);
-}
-
-.seckill-stat-pending {
-  color: var(--color-warning);
-}
-
-.seckill-stat-completed {
-  color: var(--color-primary);
-}
-
-.seckill-stat-label {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-}
 </style>

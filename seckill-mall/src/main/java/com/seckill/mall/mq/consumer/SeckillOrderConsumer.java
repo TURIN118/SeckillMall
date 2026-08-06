@@ -80,6 +80,16 @@ public class SeckillOrderConsumer {
                 int rows = seckillGoodsMapper.deductStockOptimistic(message.getSeckillId());
                 if (rows == 0) {
                     log.warn("MQ Consumer扣减DB库存失败（库存可能已为0），seckillId={}", message.getSeckillId());
+                } else {
+                    // M6 修复: DB 扣减成功后同步更新 Redis 缓存，避免前端轮询拿到过期库存
+                    // 1) Redis 库存计数 -1
+                    redisService.decr(RedisKeyConstants.seckillStock(message.getSeckillId()));
+                    // 2) 同步 info hash 中的 stock 字段为 DB 最新值
+                    SeckillGoods sg = seckillGoodsMapper.selectById(message.getSeckillId());
+                    if (sg != null && sg.getAvailableCount() != null) {
+                        redisService.hSet(RedisKeyConstants.seckillInfo(message.getSeckillId()),
+                                "stock", String.valueOf(sg.getAvailableCount()));
+                    }
                 }
             } catch (Exception e) {
                 log.error("MQ Consumer扣减DB库存异常，seckillId={}", message.getSeckillId(), e);

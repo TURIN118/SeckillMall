@@ -1,7 +1,7 @@
 /**
  * 秒杀 API - 严格匹配 default.md
  */
-import { get, post, put } from './request'
+import { get, post, put, del } from './request'
 import { generateReplayHeaders } from '@/utils/replayProtection'
 import type {
   Result,
@@ -9,7 +9,9 @@ import type {
   SeckillGoodsVO,
   SeckillResultVO,
   SeckillCreateRequest,
-  SeckillStatus
+  SeckillStatus,
+  SeckillActivityVO,
+  SeckillActivityCreateRequest
 } from '@/types'
 
 /** 秒杀活动列表 */
@@ -86,4 +88,30 @@ export function updateSeckill(
 /** 取消秒杀活动 */
 export function cancelSeckill(seckillId: number | string): Promise<Result<void>> {
   return put<void>(`/api/v1/seckill/admin/${seckillId}/cancel`)
+}
+
+/* ==================== 秒杀场次管理 API（场次化重构） ==================== */
+
+/** 创建秒杀场次（含商品列表） */
+export function createSeckillActivity(
+  data: SeckillActivityCreateRequest
+): Promise<Result<SeckillActivityVO>> {
+  return post<SeckillActivityVO>('/api/v1/seckill/activities', data)
+}
+
+/** 查询所有秒杀场次列表 */
+export function listSeckillActivities(): Promise<Result<SeckillActivityVO[]>> {
+  return get<SeckillActivityVO[]>('/api/v1/seckill/activities')
+}
+
+/** 查询秒杀场次详情 */
+export function getSeckillActivityDetail(
+  activityId: number | string
+): Promise<Result<SeckillActivityVO>> {
+  return get<SeckillActivityVO>(`/api/v1/seckill/activities/${activityId}`)
+}
+
+/** 删除秒杀场次 */
+export function deleteSeckillActivity(activityId: number | string): Promise<Result<void>> {
+  return del<void>(`/api/v1/seckill/activities/${activityId}`)
 }

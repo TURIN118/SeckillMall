@@ -177,28 +177,31 @@
  * 布局: 顶部面包屑 + 左侧分类树 + 右侧商品区(筛选排序+价格区间+商品网格+分页)
  * 搜索和分类浏览共用此页面 (通过 URL query 的 keyword 或 categoryId 区分)
  */
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onActivated, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Picture } from '@element-plus/icons-vue'
 import { getProductList } from '@/api/product'
-import { getCategoryTree } from '@/api/category'
 import { addCart } from '@/api/cart'
 import { useCartStore } from '@/stores/cart'
+import { useCategoryStore } from '@/stores/category'
 import { formatImageUrl } from '@/utils/image'
 import PaginationWrapper from '@/components/PaginationWrapper.vue'
 import type { ProductVO, CategoryTreeNode, ProductQueryRequest } from '@/types'
 
+// 显式声明组件名, 使 keep-alive 的 include 匹配生效
+defineOptions({ name: 'ProductList' })
+
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
+const categoryStore = useCategoryStore()
 
 /* === 状态 === */
 const loading = ref<boolean>(false)
 const productList = ref<ProductVO[]>([])
-// 后端 getCategoryTree 返回树形结构(一级分类对象含 children 数组)
-// 接口签名是 CategoryVO[]，但实际数据满足 CategoryTreeNode 结构，做类型断言
-const categoryList = ref<CategoryTreeNode[]>([])
+// 分类列表改为从 categoryStore 获取 (全站缓存, 避免重复请求)
+const categoryList = computed<CategoryTreeNode[]>(() => categoryStore.tree)
 const total = ref<number>(0)
 
 // 统一使用 string 类型: 后端 Long 字段经 JSON 序列化为 string,
@@ -317,15 +320,9 @@ async function fetchProducts(): Promise<void> {
   }
 }
 
-/** 拉取分类树 */
+/** 拉取分类树 (通过 categoryStore 缓存, 避免重复请求) */
 async function fetchCategories(): Promise<void> {
-  try {
-    const res = await getCategoryTree()
-    // 后端返回树形结构, 一级分类对象中包含 children 数组存放二级分类
-    categoryList.value = (res.data as CategoryTreeNode[]) || []
-  } catch {
-    // 忽略
-  }
+  await categoryStore.fetchTree()
 }
 
 /* === 工具函数 === */
@@ -534,6 +531,17 @@ onMounted(() => {
   syncFromRoute()
   fetchCategories()
   fetchProducts()
+})
+
+/**
+ * keep-alive 激活时 (从其他页面返回商品列表):
+ *   - 确保分类树已加载 (categoryStore.fetchTree 走缓存, 无重复请求)
+ *   - 商品数据不主动重新拉取, 由下方 watch route.query 处理:
+ *     若路由 query 变化 (如从首页点击不同分类), watch 会触发重新拉取;
+ *     若 query 未变 (如从详情页返回), 保持缓存数据, 减少 loading 闪烁.
+ */
+onActivated(() => {
+  fetchCategories()
 })
 
 // 组件卸载时清理 hover 定时器，避免内存泄漏与卸载后状态变更

@@ -113,14 +113,16 @@ const searchKeyword = ref('')
 
 /**
  * keep-alive 缓存的组件名列表.
- * 仅缓存不需要每次刷新数据的页面:
- *   购物车(Cart) / 收藏夹(Favorites) / 个人中心(UserProfile) / 钱包(Wallet) / 我的优惠券(MyCoupons)
- * 不缓存: 首页(Home) / 商品列表(ProductList) / 商品详情(ProductDetail) (这些需每次刷新数据)
+ * 缓存前台高频页面以减少切换卡顿与重复请求:
+ *   首页(Home) / 商品列表(ProductList) / 购物车(Cart) / 收藏夹(Favorites) / 个人中心(UserProfile) / 钱包(Wallet) / 我的优惠券(MyCoupons)
+ * 注意: 被缓存组件需通过 defineOptions({ name: 'XXX' }) 显式声明组件名, 否则 keep-alive 无法匹配.
+ *   - Home.vue / ProductList.vue 已显式声明组件名
+ *   - 各组件在 onActivated 中按需判断是否刷新数据
  * 未登录时不缓存需鉴权页面 (避免缓存重定向前的空实例).
  */
 const cachedViewNames = computed<string[]>(() => {
   if (!userStore.isLoggedIn) return []
-  return ['Cart', 'Favorites', 'UserProfile', 'Wallet', 'MyCoupons']
+  return ['Home', 'ProductList', 'Cart', 'Favorites', 'UserProfile', 'Wallet', 'MyCoupons']
 })
 
 /** 购物车数量徽标文本：超过 99 显示 99+ */
@@ -190,15 +192,14 @@ watch(
   { immediate: true }
 )
 
-/** 路由变化时刷新购物车数量(购物车页面操作后徽标实时更新) */
-watch(
-  () => route.path,
-  () => {
-    if (userStore.isLoggedIn) {
-      cartStore.fetchCount()
-    }
-  }
-)
+/**
+ * 购物车数量刷新说明:
+ *   原实现 watch route.path 每次路由变化都调用 cartStore.fetchCount(),
+ *   导致频繁切换页面时产生大量冗余请求. 现改为仅在关键操作后手动刷新:
+ *     - 用户登录时 (上方 watch isLoggedIn 已处理)
+ *     - 添加商品到购物车后 (Cart.vue / ProductDetail.vue 加购操作后调用 cartStore.increment / fetchCount)
+ *     - 购物车页面操作后 (Cart.vue 内部已调用 cartStore.fetchCount)
+ */
 
 /** 搜索 (立即触发, 用于回车和按钮点击) */
 function handleSearch(): void {

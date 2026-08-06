@@ -39,6 +39,13 @@ export interface OrderStatusItemVO {
     count: number
 }
 
+/** 秒杀活动概览（进行中/待开始/今日已完成） */
+export interface SeckillOverviewVO {
+    activeCount?: number
+    pendingCount?: number
+    completedToday?: number
+}
+
 /** 总览统计 */
 export function getStatsOverview(): Promise<Result<StatsOverviewVO>> {
     return get<StatsOverviewVO>('/api/v1/admin/stats/overview')
@@ -62,4 +69,9 @@ export function getSeckillRanking(limit: number): Promise<Result<SeckillRankingV
 /** 订单状态分布 (按状态分组统计订单数量) */
 export function getOrderStatusDistribution(): Promise<Result<OrderStatusItemVO[]>> {
     return get<OrderStatusItemVO[]>('/api/v1/admin/stats/order-status-distribution')
+}
+
+/** 秒杀活动概览 (进行中/待开始/今日已完成) */
+export function getSeckillOverview(): Promise<Result<SeckillOverviewVO>> {
+    return get<SeckillOverviewVO>('/api/v1/admin/stats/seckill-overview')
 }

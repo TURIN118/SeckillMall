@@ -1,6 +1,7 @@
 package com.seckill.mall.service;
 
 import com.seckill.mall.vo.OrderStatusItemVO;
+import com.seckill.mall.vo.SeckillOverviewVO;
 import com.seckill.mall.vo.SeckillRankingVO;
 import com.seckill.mall.vo.StatsOverviewVO;
 import com.seckill.mall.vo.TrendItemVO;
@@ -60,4 +61,19 @@ public interface StatsService {
      * @return 状态分布项列表，每项包含 status 与 count
      */
     List<OrderStatusItemVO> getOrderStatusDistribution();
+
+    /**
+     * 秒杀活动概览：进行中 / 待开始 / 今日已完成三项实时指标
+     *
+     * <p>所有指标均基于时间窗口动态计算（不依赖 DB status 字段，M17 修正）：
+     * <ul>
+     *   <li>activeCount：start_time &lt;= now &lt; end_time 且未取消</li>
+     *   <li>pendingCount：start_time &gt; now 且未取消</li>
+     *   <li>completedToday：end_time 在今日且已结束、未取消</li>
+     * </ul>
+     * 采集失败时对应字段为 null，不影响其他字段。</p>
+     *
+     * @return 秒杀活动概览 VO
+     */
+    SeckillOverviewVO getSeckillOverview();
 }

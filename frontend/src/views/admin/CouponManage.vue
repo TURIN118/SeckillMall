@@ -51,6 +51,7 @@
               <div class="table-actions">
                 <button class="table-action-btn" @click="openEditDialog(row)">编辑</button>
                 <button class="table-action-btn" @click="openDistributeDialog(row)">发放</button>
+                <button class="table-action-btn" @click="openRecordsDialog(row)">领取记录</button>
                 <button class="table-action-btn danger" @click="handleDelete(row)">删除</button>
               </div>
             </td>
@@ -141,9 +142,11 @@
         </div>
         <el-form ref="distributeFormRef" :model="distributeForm" :rules="distributeRules" label-width="80px"
           style="margin-top: 16px">
-          <el-form-item label="用户 ID" prop="userId">
-            <el-input-number v-model="distributeForm.userId" :min="1" :step="1" :precision="0" controls-position="right"
-              placeholder="请输入用户 ID" style="width: 100%" />
+          <el-form-item label="用户" prop="userId">
+            <el-select v-model="distributeForm.userId" filterable remote :remote-method="searchUser"
+              :loading="userLoading" placeholder="请输入用户名搜索" style="width: 100%">
+              <el-option v-for="u in userOptions" :key="u.id" :label="`${u.username} (ID: ${u.id})`" :value="u.id" />
+            </el-select>
           </el-form-item>
         </el-form>
       </div>
@@ -151,6 +154,56 @@
         <el-button @click="distributeVisible = false">取消</el-button>
         <el-button type="primary" :loading="distributeSubmitting" @click="handleDistribute">确认发放</el-button>
       </template>
+    </el-dialog>
+
+    <!-- 领取记录弹窗 -->
+    <el-dialog v-model="recordsVisible" :title="recordsTitle" width="780px" :close-on-click-modal="false"
+      destroy-on-close @closed="resetRecords">
+      <div v-if="recordsRow" class="records-info">
+        <span class="info-label">优惠券：</span>
+        <span class="info-value">{{ recordsRow.name }}</span>
+        <span class="info-divider">|</span>
+        <span class="info-label">已领：</span>
+        <span class="info-value">{{ recordsRow.receivedCount }} / {{ recordsRow.totalCount }}</span>
+      </div>
+      <table class="admin-table" v-loading="recordsLoading" style="margin-top: 12px">
+        <thead>
+          <tr>
+            <th>用户名</th>
+            <th>状态</th>
+            <th>领取时间</th>
+            <th>使用时间</th>
+            <th>订单ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="r in recordsList" :key="r.id">
+            <td class="coupon-name-cell">{{ r.username || `用户 ${r.userId}` }}</td>
+            <td>
+              <span class="status-tag" :class="recordsStatusClass(r.status)">
+                {{ recordsStatusText(r.status) }}
+              </span>
+            </td>
+            <td class="time-cell">{{ formatDate(r.receiveTime) }}</td>
+            <td class="time-cell">{{ r.useTime ? formatDate(r.useTime) : '—' }}</td>
+            <td>{{ r.orderId || '—' }}</td>
+          </tr>
+          <tr v-if="recordsList.length === 0 && !recordsLoading">
+            <td colspan="5" class="empty-cell">暂无领取记录</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="admin-table-footer">
+        <span class="page-info">共 {{ recordsTotal }} 条记录</span>
+        <div class="pagination">
+          <div class="page-btn" :class="{ disabled: recordsPageNum <= 1 }"
+            @click="handleRecordsPageChange(recordsPageNum - 1)">&lt;</div>
+          <div v-for="p in recordsDisplayPages" :key="p" class="page-btn"
+            :class="{ active: p === recordsPageNum }" @click="handleRecordsPageChange(p)">{{ p }}</div>
+          <div class="page-btn" :class="{ disabled: recordsPageNum >= recordsTotalPages }"
+            @click="handleRecordsPageChange(recordsPageNum + 1)">&gt;</div>
+        </div>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -170,9 +223,11 @@ import {
   adminUpdateCoupon,
   adminDeleteCoupon,
   adminUpdateCouponStatus,
-  adminDistributeCoupon
+  adminDistributeCoupon,
+  adminGetCouponRecords
 } from '@/api/coupon'
-import type { CouponVO, CouponType, CouponRequest } from '@/types'
+import { getUserList } from '@/api/admin'
+import type { CouponVO, CouponType, CouponRequest, AdminCouponRecordVO, UserVO } from '@/types'
 
 /* === 列表数据 === */
 const loading = ref<boolean>(false)
@@ -399,16 +454,37 @@ const distributeSubmitting = ref<boolean>(false)
 const distributeFormRef = ref<FormInstance | null>(null)
 
 const distributeForm = reactive({
-  userId: 1
+  userId: null as number | null
 })
 
 const distributeRules: FormRules = {
-  userId: [{ required: true, message: '请输入用户 ID', trigger: 'blur' }]
+  userId: [{ required: true, message: '请选择用户', trigger: 'change' }]
+}
+
+/* === 用户远程搜索 === */
+const userOptions = ref<UserVO[]>([])
+const userLoading = ref<boolean>(false)
+
+async function searchUser(query: string): Promise<void> {
+  if (!query || !query.trim()) {
+    userOptions.value = []
+    return
+  }
+  userLoading.value = true
+  try {
+    const res = await getUserList({ keyword: query.trim(), pageNum: 1, pageSize: 20 })
+    userOptions.value = res.data?.list || []
+  } catch {
+    // 错误已由全局拦截器提示
+  } finally {
+    userLoading.value = false
+  }
 }
 
 function openDistributeDialog(row: CouponVO): void {
   distributeRow.value = row
-  distributeForm.userId = 1
+  distributeForm.userId = null
+  userOptions.value = []
   distributeVisible.value = true
 }
 
@@ -421,8 +497,12 @@ async function handleDistribute(): Promise<void> {
   }
   distributeSubmitting.value = true
   try {
-    await adminDistributeCoupon(distributeRow.value.id, distributeForm.userId)
-    ElMessage.success(`已发放给用户 ${distributeForm.userId}`)
+    const res = await adminDistributeCoupon(distributeRow.value.id, distributeForm.userId as number)
+    // 优先使用后端返回的 username，回退到 userOptions 中的 username
+    const username = res.data
+      || userOptions.value.find(u => u.id === distributeForm.userId)?.username
+      || `用户 ${distributeForm.userId}`
+    ElMessage.success(`已发放给用户 ${username}`)
     distributeVisible.value = false
     await fetchCouponList()
   } catch {
@@ -430,6 +510,88 @@ async function handleDistribute(): Promise<void> {
   } finally {
     distributeSubmitting.value = false
   }
+}
+
+/* === 领取记录弹窗 === */
+const recordsVisible = ref<boolean>(false)
+const recordsRow = ref<CouponVO | null>(null)
+const recordsLoading = ref<boolean>(false)
+const recordsList = ref<AdminCouponRecordVO[]>([])
+const recordsTotal = ref<number>(0)
+const recordsPageNum = ref<number>(1)
+const recordsPageSize = ref<number>(10)
+
+const recordsTitle = computed<string>(() =>
+  recordsRow.value ? `领取记录 - ${recordsRow.value.name}` : '领取记录'
+)
+
+const recordsTotalPages = computed(() => Math.max(1, Math.ceil(recordsTotal.value / recordsPageSize.value)))
+
+const recordsDisplayPages = computed<number[]>(() => {
+  const pages: number[] = []
+  const t = recordsTotalPages.value
+  let start = Math.max(1, recordsPageNum.value - 2)
+  const end = Math.min(t, start + 4)
+  start = Math.max(1, end - 4)
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
+})
+
+function recordsStatusText(status: string): string {
+  switch (status) {
+    case 'UNUSED': return '未使用'
+    case 'USED': return '已使用'
+    case 'EXPIRED': return '已过期'
+    default: return status || '—'
+  }
+}
+
+function recordsStatusClass(status: string): string {
+  switch (status) {
+    case 'UNUSED': return 'completed'
+    case 'USED': return 'paid'
+    default: return ''
+  }
+}
+
+function openRecordsDialog(row: CouponVO): void {
+  recordsRow.value = row
+  recordsPageNum.value = 1
+  recordsList.value = []
+  recordsTotal.value = 0
+  recordsVisible.value = true
+  fetchRecordsList()
+}
+
+async function fetchRecordsList(): Promise<void> {
+  if (!recordsRow.value) return
+  recordsLoading.value = true
+  try {
+    const res = await adminGetCouponRecords(
+      recordsRow.value.id,
+      recordsPageNum.value,
+      recordsPageSize.value
+    )
+    recordsList.value = res.data?.list || []
+    recordsTotal.value = res.data?.total || 0
+  } catch {
+    // 错误已由全局拦截器提示
+  } finally {
+    recordsLoading.value = false
+  }
+}
+
+function handleRecordsPageChange(page: number): void {
+  if (page < 1 || page > recordsTotalPages.value) return
+  recordsPageNum.value = page
+  fetchRecordsList()
+}
+
+function resetRecords(): void {
+  recordsRow.value = null
+  recordsList.value = []
+  recordsTotal.value = 0
+  recordsPageNum.value = 1
 }
 
 onMounted(() => {
@@ -678,5 +840,28 @@ onMounted(() => {
 .distribute-info .info-value {
   color: var(--color-text-primary);
   font-weight: 600;
+}
+
+/* === 领取记录弹窗 === */
+.records-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.records-info .info-label {
+  color: var(--color-text-secondary);
+}
+
+.records-info .info-value {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.records-info .info-divider {
+  color: var(--color-border);
+  margin: 0 8px;
 }
 </style>

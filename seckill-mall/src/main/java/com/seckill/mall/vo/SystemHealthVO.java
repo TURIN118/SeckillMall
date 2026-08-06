@@ -97,20 +97,6 @@ public class SystemHealthVO {
      */
     private String appUptime;
 
-    /**
-     * 进行中秒杀活动数量，采集失败为 null
-     */
-    private Integer seckillActiveCount;
-
-    /**
-     * 待开始秒杀活动数量，采集失败为 null
-     */
-    private Integer seckillPendingCount;
-
-    /**
-     * 今日已完成秒杀活动数量（已结束且 endTime 在今日），采集失败为 null
-     */
-    private Integer seckillCompletedToday;
 
     public boolean isAllHealthy() {
         return "UP".equals(redis) && "UP".equals(database) && "UP".equals(mq);

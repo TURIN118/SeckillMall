@@ -1,0 +1,77 @@
+package com.seckill.mall.dto;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * 创建人：@author WNJ
+ * 项目名称：seckill-mall
+ * 文件名称：SeckillActivityCreateRequest.java
+ * 邮箱：nj651217@163.com
+ * <p>
+ * 创建秒杀场次请求：场次信息 + 场次下的商品列表。
+ * 每个商品项复用 SeckillCreateRequest 的核心字段（productId/seckillPrice/stockCount），
+ * startTime/endTime/perLimit 由场次统一管理，商品项不单独指定。
+ */
+@Data
+public class SeckillActivityCreateRequest {
+
+    @NotBlank(message = "场次名称不能为空")
+    @Size(max = 128, message = "场次名称最大 128 字符")
+    private String name;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @NotNull(message = "开始时间不能为空")
+    private LocalDateTime startTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @NotNull(message = "结束时间不能为空")
+    private LocalDateTime endTime;
+
+    @Min(value = 1, message = "每人限购至少为 1")
+    private Integer perLimit = 1;
+
+    @Size(max = 512, message = "场次描述最大 512 字符")
+    private String description;
+
+    private List<String> images;
+
+    /** 场次下的秒杀商品列表（至少 1 个） */
+    @NotNull(message = "秒杀商品列表不能为空")
+    private List<ActivityGoodsItem> goodsItems;
+
+    /**
+     * 场次下的单个秒杀商品项
+     */
+    @Data
+    public static class ActivityGoodsItem {
+        @NotNull(message = "商品 ID 不能为空")
+        private Long productId;
+
+        @NotBlank(message = "秒杀活动名称不能为空")
+        @Size(max = 100, message = "秒杀活动名称最大 100 字符")
+        private String seckillName;
+
+        @NotNull(message = "秒杀价格不能为空")
+        @DecimalMin(value = "0.01", message = "秒杀价格必须大于 0")
+        private BigDecimal seckillPrice;
+
+        @NotNull(message = "秒杀库存不能为空")
+        @Min(value = 1, message = "秒杀库存至少为 1")
+        private Integer stockCount;
+
+        private List<String> images;
+
+        @Size(max = 500, message = "秒杀描述最大 500 字符")
+        private String description;
+    }
+}

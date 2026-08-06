@@ -45,7 +45,7 @@
         </div>
         <template v-else>
           <div v-if="activeList.length > 0" class="seckill-grid">
-            <div v-for="item in activeList" :key="item.id" class="seckill-card" @click="goDetail(item.id)">
+            <div v-for="item in activeList" :key="item.id" class="seckill-card" @click="goDetail(item)">
               <!-- 商品图片 -->
               <div class="card-img">
                 <el-image v-if="cardImage(item)" :src="cardImage(item)" fit="cover" class="card-img-tag" lazy>
@@ -91,7 +91,7 @@
 
                 <!-- 立即抢购按钮 -->
                 <div class="card-action">
-                  <button class="btn-seckill" @click.stop="goDetail(item.id)">立即抢购</button>
+                  <button class="btn-seckill" @click.stop="goDetail(item)">立即抢购</button>
                 </div>
               </div>
             </div>
@@ -109,7 +109,7 @@
         </div>
         <template v-else>
           <div v-if="pendingList.length > 0" class="seckill-grid">
-            <div v-for="item in pendingList" :key="item.id" class="seckill-card" @click="goDetail(item.id)">
+            <div v-for="item in pendingList" :key="item.id" class="seckill-card" @click="goDetail(item)">
               <!-- 商品图片 -->
               <div class="card-img">
                 <el-image v-if="cardImage(item)" :src="cardImage(item)" fit="cover" class="card-img-tag" lazy>
@@ -158,7 +158,7 @@
                       <span class="cd-block">{{ countdown(item.startTime).seconds }}</span>
                     </div>
                   </template>
-                  <button v-else class="btn-seckill" @click.stop="goDetail(item.id)">立即抢购</button>
+                  <button v-else class="btn-seckill" @click.stop="goDetail(item)">立即抢购</button>
                 </div>
                 <div class="start-time-text">{{ formatTime(item.startTime) }} 开抢</div>
               </div>
@@ -299,9 +299,9 @@ function selectFirst(id: number | string | null): void {
   fetchPending()
 }
 
-/* === 跳转秒杀详情 === */
-function goDetail(id: number | string): void {
-  router.push(`/seckill/${id}`)
+/* === 跳转商品详情（M4 场次化重构: 移除独立秒杀详情页，改为跳转普通商品详情） === */
+function goDetail(item: SeckillGoodsVO): void {
+  router.push(`/products/${item.productId}`)
 }
 
 /* === 工具函数 === */
@@ -390,6 +390,10 @@ function checkPendingExpired(): void {
 }
 
 /* === 生命周期 === */
+// M6 修复: 数据刷新定时器，每 8 秒静默刷新秒杀列表，
+// 让前端展示的 availableCount / 已抢 / 剩余 与后端保持同步（与倒计时 tickTimer 分开）
+let dataRefreshTimer: ReturnType<typeof setInterval> | null = null
+
 onMounted(() => {
   fetchCategories()
   fetchActive()
@@ -398,10 +402,19 @@ onMounted(() => {
     now.value = Date.now()
     checkPendingExpired()
   }, 1000)
+  // 启动数据定时轮询（静默刷新，不触发 loading 闪烁）
+  dataRefreshTimer = setInterval(() => {
+    fetchActive(true)
+    fetchPending(true)
+  }, 8000)
 })
 
 onUnmounted(() => {
   if (tickTimer) clearInterval(tickTimer)
+  if (dataRefreshTimer) {
+    clearInterval(dataRefreshTimer)
+    dataRefreshTimer = null
+  }
 })
 </script>
 

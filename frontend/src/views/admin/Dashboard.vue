@@ -102,7 +102,7 @@
       </div>
     </div>
 
-    <!-- 第四行：快捷操作 + 系统信息 -->
+    <!-- 第四行：快捷操作 + 秒杀活动概览 -->
     <div class="info-grid">
       <div class="info-card">
         <h4>快捷操作</h4>
@@ -114,24 +114,20 @@
           <button class="quick-link-btn" @click="goTo('/admin/products')">商品管理</button>
         </div>
       </div>
-      <div class="info-card">
-        <h4>系统信息</h4>
-        <div class="info-list">
-          <div class="info-item">
-            <span class="info-label">系统版本</span>
-            <span class="info-value">v1.0.0</span>
+      <div class="info-card" v-loading="seckillOverviewLoading">
+        <h4>秒杀活动概览</h4>
+        <div class="seckill-overview">
+          <div class="seckill-stat">
+            <div class="seckill-stat-value seckill-stat-active">{{ seckillActiveText }}</div>
+            <div class="seckill-stat-label">进行中</div>
           </div>
-          <div class="info-item">
-            <span class="info-label">运行环境</span>
-            <span class="info-value">生产环境</span>
+          <div class="seckill-stat">
+            <div class="seckill-stat-value seckill-stat-pending">{{ seckillPendingText }}</div>
+            <div class="seckill-stat-label">待开始</div>
           </div>
-          <div class="info-item">
-            <span class="info-label">服务状态</span>
-            <span class="info-value healthy">运行中</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">当前时间</span>
-            <span class="info-value">{{ currentTime }}</span>
+          <div class="seckill-stat">
+            <div class="seckill-stat-value seckill-stat-completed">{{ seckillCompletedTodayText }}</div>
+            <div class="seckill-stat-label">今日已完成</div>
           </div>
         </div>
       </div>
@@ -147,14 +143,33 @@
  * - 第一行：7 个核心指标卡片（getStatsOverview）
  * - 第二行：3 个图表（订单趋势柱状图 / 用户注册趋势折线图 / 订单状态分布饼图）
  * - 第三行：双栏 - 秒杀排行榜 Top10 + 最近订单前 5 条
- * - 第四行：快捷操作 + 系统信息
+ * - 第四行：快捷操作 + 秒杀活动概览（getSeckillOverview）
  *
  * 数据来源：全部从后端实时 API 获取，禁止任何 mock/随机数据。
  * 30 秒自动刷新总览与图表数据。
  */
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import * as echarts from 'echarts'
+// ECharts 按需引入: 仅引入实际使用的图表/组件/渲染器, 减小 echarts chunk 体积
+import * as echarts from 'echarts/core'
+import { BarChart, LineChart, PieChart } from 'echarts/charts'
+import {
+  TitleComponent,
+  TooltipComponent,
+  GridComponent,
+  LegendComponent
+} from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+echarts.use([
+  BarChart,
+  LineChart,
+  PieChart,
+  TitleComponent,
+  TooltipComponent,
+  GridComponent,
+  LegendComponent,
+  CanvasRenderer
+])
 import dayjs from 'dayjs'
 import {
   getStatsOverview,
@@ -162,10 +177,12 @@ import {
   getOrderTrend,
   getSeckillRanking,
   getOrderStatusDistribution,
+  getSeckillOverview,
   type StatsOverviewVO,
   type TrendItemVO,
   type SeckillRankingVO,
-  type OrderStatusItemVO
+  type OrderStatusItemVO,
+  type SeckillOverviewVO
 } from '@/api/stats'
 import { getOrderList } from '@/api/order'
 import type { SeckillOrder, OrderStatus } from '@/types'
@@ -323,7 +340,7 @@ let userTrendChart: echarts.ECharts | null = null
 let pieChart: echarts.ECharts | null = null
 
 /* === 订单趋势柱状图 === */
-function buildOrderTrendOption(data: TrendItemVO[]): echarts.EChartsOption {
+function buildOrderTrendOption(data: TrendItemVO[]): echarts.EChartsCoreOption {
   const days = data.map((d) => formatDateLabel(d.date))
   const counts = data.map((d) => d.count)
   return {
@@ -353,7 +370,7 @@ function buildOrderTrendOption(data: TrendItemVO[]): echarts.EChartsOption {
 }
 
 /* === 用户注册趋势折线图 === */
-function buildUserTrendOption(data: TrendItemVO[]): echarts.EChartsOption {
+function buildUserTrendOption(data: TrendItemVO[]): echarts.EChartsCoreOption {
   const days = data.map((d) => formatDateLabel(d.date))
   const counts = data.map((d) => d.count)
   return {
@@ -405,7 +422,7 @@ const STATUS_COLOR_MAP: Record<string, string> = {
 }
 
 /* === 订单状态分布饼图 === */
-function buildPieOption(data: OrderStatusItemVO[]): echarts.EChartsOption {
+function buildPieOption(data: OrderStatusItemVO[]): echarts.EChartsCoreOption {
   const pieData = data.map((item) => ({
     value: item.count,
     name: STATUS_LABEL_MAP[item.status] || item.status,
@@ -549,9 +566,37 @@ function formatDateTime(time: string): string {
   return dayjs(time).format('YYYY-MM-DD HH:mm:ss')
 }
 
-/* ==================== 第四行：系统信息 ==================== */
-const currentTime = ref(dayjs().format('YYYY-MM-DD HH:mm:ss'))
-let clockTimer: ReturnType<typeof setInterval> | null = null
+/* ==================== 第四行：秒杀活动概览 ==================== */
+const seckillOverview = reactive<SeckillOverviewVO>({
+  activeCount: undefined,
+  pendingCount: undefined,
+  completedToday: undefined
+})
+const seckillOverviewLoading = ref(false)
+
+const seckillActiveText = computed<string>(() =>
+  seckillOverview.activeCount !== undefined ? String(seckillOverview.activeCount) : '—'
+)
+const seckillPendingText = computed<string>(() =>
+  seckillOverview.pendingCount !== undefined ? String(seckillOverview.pendingCount) : '—'
+)
+const seckillCompletedTodayText = computed<string>(() =>
+  seckillOverview.completedToday !== undefined ? String(seckillOverview.completedToday) : '—'
+)
+
+async function fetchSeckillOverview(): Promise<void> {
+  seckillOverviewLoading.value = true
+  try {
+    const res = await getSeckillOverview()
+    if (res?.data) {
+      Object.assign(seckillOverview, res.data)
+    }
+  } catch {
+    // 错误已由全局拦截器提示
+  } finally {
+    seckillOverviewLoading.value = false
+  }
+}
 
 /* ==================== 生命周期与定时器 ==================== */
 let refreshTimer: ReturnType<typeof setInterval> | null = null
@@ -563,7 +608,8 @@ async function refreshAll(): Promise<void> {
     fetchOrderTrend(),
     fetchStatusDist(),
     fetchRanking(),
-    fetchRecentOrders()
+    fetchRecentOrders(),
+    fetchSeckillOverview()
   ])
   renderOrderTrendChart()
   renderUserTrendChart()
@@ -578,7 +624,8 @@ onMounted(async () => {
     fetchOrderTrend(),
     fetchStatusDist(),
     fetchRanking(),
-    fetchRecentOrders()
+    fetchRecentOrders(),
+    fetchSeckillOverview()
   ])
   await nextTick()
   initCharts()
@@ -587,10 +634,6 @@ onMounted(async () => {
   refreshTimer = setInterval(() => {
     refreshAll()
   }, 30000)
-  // 每秒更新当前时间
-  clockTimer = setInterval(() => {
-    currentTime.value = dayjs().format('YYYY-MM-DD HH:mm:ss')
-  }, 1000)
 })
 
 onUnmounted(() => {
@@ -598,10 +641,6 @@ onUnmounted(() => {
   if (refreshTimer) {
     clearInterval(refreshTimer)
     refreshTimer = null
-  }
-  if (clockTimer) {
-    clearInterval(clockTimer)
-    clockTimer = null
   }
   orderTrendChart?.dispose()
   userTrendChart?.dispose()
@@ -910,7 +949,7 @@ onUnmounted(() => {
   color: var(--tag-completed-fg);
 }
 
-/* === 第四行：快捷操作 + 系统信息双栏 === */
+/* === 第四行：快捷操作 + 秒杀活动概览双栏 === */
 .info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -938,30 +977,43 @@ onUnmounted(() => {
   margin-bottom: 16px;
 }
 
-.info-list {
-  display: flex;
-  flex-direction: column;
+/* === 秒杀活动概览 === */
+.seckill-overview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
-.info-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 13px;
+.seckill-stat {
+  text-align: center;
+  padding: 16px 8px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
 }
 
-.info-label {
-  color: var(--color-text-secondary);
+.seckill-stat-value {
+  font-family: var(--font-price);
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 6px;
 }
 
-.info-value {
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.info-value.healthy {
+.seckill-stat-active {
   color: var(--color-success);
+}
+
+.seckill-stat-pending {
+  color: var(--color-warning);
+}
+
+.seckill-stat-completed {
+  color: var(--color-primary);
+}
+
+.seckill-stat-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }
 
 .quick-links {

@@ -6,6 +6,7 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.CouponCreateRequest;
 import com.seckill.mall.service.CouponService;
+import com.seckill.mall.vo.AdminCouponRecordVO;
 import com.seckill.mall.vo.CouponVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -85,13 +86,23 @@ public class AdminCouponController {
 
     @Operation(summary = "发放优惠券给指定用户")
     @PostMapping("/{id}/distribute")
-    public Result<Void> distribute(@PathVariable Long id, @RequestBody Map<String, Long> body) {
+    public Result<String> distribute(@PathVariable Long id, @RequestBody Map<String, Long> body) {
         // 安全修复（M4）：服务端校验 userId 非空且为正数
         Long userId = body == null ? null : body.get("userId");
         if (userId == null || userId <= 0) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "用户ID不能为空且必须为正数");
         }
-        couponService.distribute(id, userId);
-        return Result.<Void>success("发放成功", null);
+        // 返回被发放用户的用户名，前端展示用（避免显示数字ID）
+        String username = couponService.distribute(id, userId);
+        return Result.success("发放成功", username);
+    }
+
+    @Operation(summary = "分页查询某优惠券的领取记录")
+    @GetMapping("/{id}/records")
+    public Result<PageResult<AdminCouponRecordVO>> records(
+            @PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "1") Integer pageNum,
+            @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
+        return Result.success(couponService.listRecords(id, pageNum, pageSize));
     }
 }

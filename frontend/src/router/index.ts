@@ -35,12 +35,7 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '商品详情' }
       },
       {
-        path: 'seckill/:id',
-        name: 'SeckillDetail',
-        component: () => import('@/views/front/SeckillDetail.vue'),
-        meta: { title: '秒杀详情' }
-      },
-      {
+
         path: 'user/orders',
         name: 'UserOrders',
         component: () => import('@/views/front/UserOrders.vue'),
@@ -331,8 +326,9 @@ router.beforeEach(async (to, _from, next) => {
  * 避免点击顶部菜单时新组件仍在加载导致的卡顿.
  * 分两批次预取:
  *   批次1(首屏空闲立即): 首页 + 商品列表 (最高频)
- *   批次2(延迟 1.5s):   商品详情 + 购物车 + 收藏夹 + 个人中心 + 秒杀专区
+ *   批次2(延迟 3s):     商品详情 + 购物车 + 收藏夹 + 个人中心 + 秒杀专区
  * 注意: 不预取所有页面, 避免首屏加载过多 chunk; 低频页面(订单/钱包/优惠券/后台等)按需加载.
+ * 批次2延迟 3s 确保首屏完全加载后再预取, 避免抢占首屏带宽.
  */
 if (typeof window !== 'undefined') {
   /** 预取指定路径列表对应的路由组件 chunk (错误静默) */
@@ -375,7 +371,7 @@ if (typeof window !== 'undefined') {
     setTimeout(prefetchBatch1, 200)
   }
 
-  // 批次2: 延迟 1500ms 后预取 (避免抢占首屏带宽)
+  // 批次2: 延迟 3000ms 后预取 (确保首屏完全加载后再预取, 避免抢占首屏带宽)
   setTimeout(() => {
     if ('requestIdleCallback' in window) {
       ; (window as unknown as { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(
@@ -384,7 +380,7 @@ if (typeof window !== 'undefined') {
     } else {
       prefetchBatch2()
     }
-  }, 1500)
+  }, 3000)
 }
 
 export default router

@@ -3,6 +3,8 @@ import vue from '@vitejs/plugin-vue'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import { ElementPlusIconsVueResolver } from 'unplugin-vue-components/resolvers'
+import viteCompression from 'vite-plugin-compression'
 import { resolve } from 'path'
 
 // https://vitejs.dev/config/
@@ -12,14 +14,26 @@ export default defineConfig(({ mode }) => {
     plugins: [
       vue(),
       AutoImport({
-        resolvers: [ElementPlusResolver()],
+        // ElementPlusResolver 自动按需引入 Element Plus 的 API (如 ElMessage, ElMessageBox)
+        // ElementPlusIconsVueResolver 自动按需引入 Element Plus 图标组件
+        resolvers: [ElementPlusResolver(), ElementPlusIconsVueResolver()],
         imports: ['vue', 'vue-router', 'pinia'],
         dts: 'src/auto-imports.d.ts',
         eslintrc: { enabled: false }
       }),
       Components({
-        resolvers: [ElementPlusResolver()],
+        // ElementPlusResolver 自动按需引入 Element Plus 组件及其样式
+        // ElementPlusIconsVueResolver 自动按需引入图标组件
+        resolvers: [ElementPlusResolver(), ElementPlusIconsVueResolver()],
         dts: 'src/components.d.ts'
+      }),
+      // gzip 压缩: 对 > 10KB 的资源生成 .gz 文件, 配合 nginx 静态 gzip 进一步减小传输体积
+      viteCompression({
+        verbose: true,
+        disable: false,
+        threshold: 10240,
+        algorithm: 'gzip',
+        ext: '.gz'
       })
     ],
     resolve: {
@@ -75,19 +89,29 @@ export default defineConfig(({ mode }) => {
       chunkSizeWarningLimit: 1500,
       // CSS 代码分割: 每个异步 chunk 的 CSS 单独提取, 减少首屏 CSS 体积
       cssCodeSplit: true,
+      // terser 压缩: 移除 console 和 debugger, 减小生产包体积
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true,
+          drop_debugger: true
+        }
+      },
+      // 不计算 gzip 压缩大小报告, 加快构建速度 (由 vite-plugin-compression 生成实际 .gz 文件)
+      reportCompressedSize: false,
       rollupOptions: {
         output: {
           // 代码分割: 将第三方大库分离为独立 chunk, 减少业务代码 chunk 体积, 提升缓存命中率
           manualChunks: {
             // Vue 核心 (vue + vue-router + pinia)
             'vue-vendor': ['vue', 'vue-router', 'pinia'],
-            // Element Plus UI 库 + 图标
-            'element-plus': ['element-plus', '@element-plus/icons-vue'],
-            // ECharts 图表库 (仅数据看台使用, 按需加载)
-            'echarts': ['echarts'],
             // wangEditor 富文本编辑器 (仅商品编辑使用, 按需加载)
             'wangeditor': ['@wangeditor/editor', '@wangeditor/editor-for-vue']
           }
+          // 注意: element-plus 和 echarts 不再配置 manualChunks,
+          // 因为已改为按需引入, 强制合并会抵消按需引入的体积优化效果.
+          // - element-plus: 各组件由 ElementPlusResolver 自动按需引入, rollup 自动分割
+          // - echarts: 仅 Dashboard 使用, 按需引入后随 Dashboard chunk 加载
         }
       }
     }

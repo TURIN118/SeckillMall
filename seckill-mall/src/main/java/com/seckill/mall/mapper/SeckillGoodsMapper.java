@@ -30,4 +30,20 @@ public interface SeckillGoodsMapper extends BaseMapper<SeckillGoods> {
      * 返回受影响行数（1=成功，0=库存不足或活动不存在）。
      */
     int deductStockOptimistic(@Param("id") Long id);
+
+    /**
+     * Bug6修复：将已到开始时间但仍为PENDING状态的秒杀活动更新为ACTIVE。
+     * 条件：status=PENDING AND start_time <= NOW() AND end_time > NOW() AND is_deleted=0
+     *
+     * @return 受影响行数
+     */
+    int updatePendingToActive();
+
+    /**
+     * Bug6修复：将已过结束时间的ACTIVE秒杀活动更新为ENDED。
+     * 条件：status=ACTIVE AND end_time <= NOW() AND is_deleted=0
+     *
+     * @return 受影响行数
+     */
+    int updateActiveToEnded();
 }

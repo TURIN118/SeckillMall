@@ -39,6 +39,14 @@ public interface OrderService {
      */
     boolean timeoutCancel(Long orderId);
 
+    /**
+     * 普通订单超时取消（延迟消费者触发）：UNPAID → TIMEOUT 并回补库存，已支付等终态幂等忽略。
+     *
+     * @param orderId 普通订单 ID
+     * @return true 表示本次执行了超时取消
+     */
+    boolean timeoutCancelNormalOrder(Long orderId);
+
     // ==================== 普通订单（需求5 立即购买 + 需求13 购物车结算） ====================
 
     /**
@@ -109,6 +117,40 @@ public interface OrderService {
      * @return 取消后的订单详情
      */
     NormalOrderDetailVO cancelNormalOrder(Long userId, Long orderId);
+
+    // ==================== 发货与确认收货流程（Bug2修复） ====================
+
+    /**
+     * 秒杀订单发货：PAID → SHIPPED，设置发货时间。
+     *
+     * @param userId  操作人 ID（管理员）
+     * @param orderId 秒杀订单 ID
+     */
+    void shipOrder(Long userId, Long orderId);
+
+    /**
+     * 秒杀订单确认收货：SHIPPED → COMPLETED，设置确认收货时间。
+     *
+     * @param userId  用户 ID
+     * @param orderId 秒杀订单 ID
+     */
+    void confirmOrder(Long userId, Long orderId);
+
+    /**
+     * 普通订单发货：PAID → SHIPPED，设置发货时间。
+     *
+     * @param userId  操作人 ID（管理员）
+     * @param orderId 普通订单 ID
+     */
+    void shipNormalOrder(Long userId, Long orderId);
+
+    /**
+     * 普通订单确认收货：SHIPPED → COMPLETED，设置确认收货时间。
+     *
+     * @param userId  用户 ID
+     * @param orderId 普通订单 ID
+     */
+    void confirmNormalOrder(Long userId, Long orderId);
 
     /**
      * 统一订单列表（秒杀订单 + 普通订单合并展示，需求1）。

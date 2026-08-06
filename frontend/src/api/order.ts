@@ -109,6 +109,24 @@ export function cancelNormalOrder(orderId: number | string): Promise<Result<Norm
   return post<NormalOrder>(`/api/v1/orders/${orderId}/cancel-normal`)
 }
 
+/**
+ * 确认收货（秒杀订单）
+ * POST /api/v1/orders/{orderId}/confirm
+ * 仅允许 SHIPPED 状态的秒杀订单确认收货
+ */
+export function confirmOrder(orderId: number | string): Promise<Result<SeckillOrder>> {
+  return post<SeckillOrder>(`/api/v1/orders/${orderId}/confirm`)
+}
+
+/**
+ * 确认收货（普通订单）
+ * POST /api/v1/orders/{orderId}/confirm-normal
+ * 仅允许 SHIPPED 状态的普通订单确认收货
+ */
+export function confirmNormalOrder(orderId: number | string): Promise<Result<NormalOrder>> {
+  return post<NormalOrder>(`/api/v1/orders/${orderId}/confirm-normal`)
+}
+
 /* ==================== 统一订单列表 API (需求1 合并秒杀+普通) ==================== */
 
 /**

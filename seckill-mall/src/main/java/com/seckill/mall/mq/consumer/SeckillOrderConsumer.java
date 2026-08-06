@@ -75,6 +75,15 @@ public class SeckillOrderConsumer {
         try {
             SeckillOrder order = orderService.createSeckillOrder(
                     message.getSeckillId(), message.getUserId(), message.getRequestId());
+            // Bug4修复：MQ Consumer创建订单后同步扣减DB的available_count，确保首页进度百分比正确
+            try {
+                int rows = seckillGoodsMapper.deductStockOptimistic(message.getSeckillId());
+                if (rows == 0) {
+                    log.warn("MQ Consumer扣减DB库存失败（库存可能已为0），seckillId={}", message.getSeckillId());
+                }
+            } catch (Exception e) {
+                log.error("MQ Consumer扣减DB库存异常，seckillId={}", message.getSeckillId(), e);
+            }
             writeSuccessResult(message, order);
             sendDelayMessage(order);
             sendResultBroadcast(order, message.getSeckillId());
@@ -127,6 +136,7 @@ public class SeckillOrderConsumer {
         OrderDelayMessage delay = new OrderDelayMessage();
         delay.setOrderId(order.getId());
         delay.setOrderNo(order.getOrderNo());
+        delay.setOrderType("SECKILL");
         delay.setExpireTime(order.getPayExpireTime() == null ? null
                 : order.getPayExpireTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
         rabbitTemplate.convertAndSend(

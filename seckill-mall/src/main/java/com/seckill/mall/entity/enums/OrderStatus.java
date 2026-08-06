@@ -14,6 +14,7 @@ public enum OrderStatus implements IEnum<String> {
 
     UNPAID("UNPAID", "待支付"),
     PAID("PAID", "已支付"),
+    SHIPPED("SHIPPED", "已发货"),
     CANCELLED("CANCELLED", "已取消"),
     TIMEOUT("TIMEOUT", "已超时"),
     COMPLETED("COMPLETED", "已完成");

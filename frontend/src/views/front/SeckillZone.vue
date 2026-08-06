@@ -230,9 +230,13 @@ let tickTimer: ReturnType<typeof setInterval> | null = null
 // M43 修复: refreshing 改为 ref，使其在模板中可响应式使用，并保持类型安全
 const refreshing = ref<boolean>(false)
 
+/* === 自动刷新冷却机制（防止后端PENDING列表包含已到期商品导致无限刷新循环） === */
+let lastAutoRefreshTime = 0
+const AUTO_REFRESH_COOLDOWN = 30_000 // 30秒冷却期
+
 /* === 拉取进行中列表 === */
-async function fetchActive(): Promise<void> {
-  activeLoading.value = true
+async function fetchActive(silent = false): Promise<void> {
+  if (!silent) activeLoading.value = true
   try {
     const res = await getSeckillList({ status: 'ACTIVE', categoryId: currentCategoryId.value, pageNum: 1, pageSize: 10 })
     activeList.value = res.data?.list || []
@@ -241,13 +245,13 @@ async function fetchActive(): Promise<void> {
   } catch {
     // 错误已由请求拦截器处理
   } finally {
-    activeLoading.value = false
+    if (!silent) activeLoading.value = false
   }
 }
 
 /* === 拉取待开始列表 === */
-async function fetchPending(): Promise<void> {
-  pendingLoading.value = true
+async function fetchPending(silent = false): Promise<void> {
+  if (!silent) pendingLoading.value = true
   try {
     const res = await getSeckillList({ status: 'PENDING', categoryId: currentCategoryId.value, pageNum: 1, pageSize: 10 })
     pendingList.value = res.data?.list || []
@@ -255,7 +259,7 @@ async function fetchPending(): Promise<void> {
   } catch {
     // 错误已由请求拦截器处理
   } finally {
-    pendingLoading.value = false
+    if (!silent) pendingLoading.value = false
   }
 }
 
@@ -290,6 +294,7 @@ async function fetchCategories(): Promise<void> {
 function selectFirst(id: number | string | null): void {
   if (selectedFirstId.value === id) return
   selectedFirstId.value = id
+  lastAutoRefreshTime = 0 // 用户手动切换分类时重置冷却时间
   fetchActive()
   fetchPending()
 }
@@ -366,16 +371,19 @@ function formatTime(time: string): string {
   return dayjs(time).format('MM-DD HH:mm')
 }
 
-/* === 检查待开始商品是否到期，到期则刷新列表 === */
+/* === 检查待开始商品是否到期，到期则刷新列表（带冷却机制防止无限刷新） === */
 function checkPendingExpired(): void {
   if (pendingList.value.length === 0 || refreshing.value) return
+  // 冷却检查：30秒内不重复触发自动刷新
+  if (Date.now() - lastAutoRefreshTime < AUTO_REFRESH_COOLDOWN) return
   const offset = getTimeOffset()
   const hasExpired = pendingList.value.some(
     (item) => dayjs(item.startTime).valueOf() <= (now.value + offset)
   )
   if (hasExpired) {
     refreshing.value = true
-    Promise.all([fetchActive(), fetchPending()]).finally(() => {
+    lastAutoRefreshTime = Date.now() // 记录自动刷新时间
+    Promise.all([fetchActive(true), fetchPending(true)]).finally(() => {
       refreshing.value = false
     })
   }

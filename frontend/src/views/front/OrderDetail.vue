@@ -17,9 +17,13 @@
     <!-- 订单详情内容 -->
     <template v-else-if="order">
       <!-- 面包屑 -->
-      <p class="breadcrumb">我的订单 &gt; 订单详情</p>
+      <nav class="breadcrumb">
+        <router-link to="/user/orders" class="breadcrumb-link">我的订单</router-link>
+        <span class="breadcrumb-sep">&gt;</span>
+        <span class="breadcrumb-current">订单详情</span>
+      </nav>
 
-      <!-- 进度步骤条 -->
+      <!-- 进度步骤条（4步：下单→支付→发货→完成） -->
       <div class="order-steps">
         <div class="step">
           <div class="step-dot done">&#10003;</div>
@@ -36,6 +40,12 @@
         <div class="step">
           <div class="step-dot" :class="step3DotClass">{{ step3DotContent }}</div>
           <span class="step-label">{{ step3Label }}</span>
+          <span class="step-time">{{ step3Time }}</span>
+          <div class="step-line" :class="{ done: step3LineDone }"></div>
+        </div>
+        <div class="step">
+          <div class="step-dot" :class="step4DotClass">{{ step4DotContent }}</div>
+          <span class="step-label">{{ step4Label }}</span>
         </div>
       </div>
 
@@ -109,6 +119,14 @@
             {{ payLoading ? '支付中...' : '去支付' }}
           </button>
         </template>
+        <template v-else-if="order.status === 'PAID'">
+          <span class="waiting-hint">等待发货</span>
+        </template>
+        <template v-else-if="order.status === 'SHIPPED'">
+          <button class="btn-sm primary large" :disabled="confirmLoading" @click="handleConfirm">
+            {{ confirmLoading ? '确认中...' : '确认收货' }}
+          </button>
+        </template>
         <button class="btn-sm large" @click="router.push('/user/orders')">返回订单列表</button>
       </div>
     </template>
@@ -123,7 +141,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getOrderDetail, getNormalOrderDetail, payOrder, payNormalOrder, cancelOrder, cancelNormalOrder } from '@/api/order'
+import { getOrderDetail, getNormalOrderDetail, payOrder, payNormalOrder, cancelOrder, cancelNormalOrder, confirmOrder, confirmNormalOrder } from '@/api/order'
 import { getProductDetail } from '@/api/product'
 import { formatImageUrl } from '@/utils/image'
 import dayjs from 'dayjs'
@@ -141,6 +159,7 @@ interface UnifiedOrderDetail {
   createTime: string
   payTime: string
   payExpireTime?: string
+  shipTime?: string
   cancelTime?: string
   cancelReason?: string
   items: OrderItemSnapshot[]
@@ -154,20 +173,21 @@ const error = ref<boolean>(false)
 const order = ref<UnifiedOrderDetail | null>(null)
 const payLoading = ref<boolean>(false)
 const cancelLoading = ref<boolean>(false)
+const confirmLoading = ref<boolean>(false)
 
-/** 步骤 2 状态 */
+/** 步骤 2 状态（支付完成） */
 const step2DotClass = computed<string>(() => {
   if (!order.value) return 'pending'
   const s = order.value.status
   if (s === 'UNPAID') return 'current'
-  if (s === 'PAID' || s === 'COMPLETED') return 'done'
+  if (s === 'PAID' || s === 'SHIPPED' || s === 'COMPLETED') return 'done'
   return 'pending'
 })
 
 const step2DotContent = computed<string>(() => {
   if (!order.value) return '2'
   const s = order.value.status
-  if (s === 'PAID' || s === 'COMPLETED') return '✓'
+  if (s === 'PAID' || s === 'SHIPPED' || s === 'COMPLETED') return '✓'
   return '2'
 })
 
@@ -192,21 +212,61 @@ const step2Time = computed<string>(() => {
 const step2LineDone = computed<boolean>(() => {
   if (!order.value) return false
   const s = order.value.status
-  return s === 'PAID' || s === 'COMPLETED'
+  return s === 'PAID' || s === 'SHIPPED' || s === 'COMPLETED'
 })
 
-/** 步骤 3 状态 */
+/** 步骤 3 状态（已发货） */
 const step3DotClass = computed<string>(() => {
   if (!order.value) return 'pending'
-  return order.value.status === 'COMPLETED' ? 'done' : 'pending'
+  const s = order.value.status
+  if (s === 'SHIPPED' || s === 'COMPLETED') return 'done'
+  if (s === 'PAID') return 'current'
+  return 'pending'
 })
 
 const step3DotContent = computed<string>(() => {
   if (!order.value) return '3'
-  return order.value.status === 'COMPLETED' ? '✓' : '3'
+  const s = order.value.status
+  if (s === 'SHIPPED' || s === 'COMPLETED') return '✓'
+  return '3'
 })
 
 const step3Label = computed<string>(() => {
+  if (!order.value) return '待发货'
+  const s = order.value.status
+  if (s === 'SHIPPED') return '已发货'
+  if (s === 'COMPLETED') return '已发货'
+  if (s === 'PAID') return '待发货'
+  return '待发货'
+})
+
+const step3Time = computed<string>(() => {
+  if (!order.value) return ''
+  const s = order.value.status
+  if (s === 'SHIPPED' || s === 'COMPLETED') {
+    // 如果有发货时间可以展示，暂用短横线
+    return order.value.shipTime ? formatTimeShort(order.value.shipTime) : '—'
+  }
+  return ''
+})
+
+const step3LineDone = computed<boolean>(() => {
+  if (!order.value) return false
+  return order.value.status === 'COMPLETED'
+})
+
+/** 步骤 4 状态（订单完成） */
+const step4DotClass = computed<string>(() => {
+  if (!order.value) return 'pending'
+  return order.value.status === 'COMPLETED' ? 'done' : 'pending'
+})
+
+const step4DotContent = computed<string>(() => {
+  if (!order.value) return '4'
+  return order.value.status === 'COMPLETED' ? '✓' : '4'
+})
+
+const step4Label = computed<string>(() => {
   if (!order.value) return '订单完成'
   return order.value.status === 'COMPLETED' ? '订单完成' : '待完成'
 })
@@ -216,6 +276,7 @@ function statusClass(status: string): string {
   const map: Record<string, string> = {
     UNPAID: 'unpaid',
     PAID: 'paid',
+    SHIPPED: 'shipped',
     CANCELLED: 'cancelled',
     TIMEOUT: 'timeout',
     COMPLETED: 'completed'
@@ -227,6 +288,7 @@ function statusLabel(status: string): string {
   const map: Record<string, string> = {
     UNPAID: '待支付',
     PAID: '已支付',
+    SHIPPED: '已发货',
     CANCELLED: '已取消',
     TIMEOUT: '已超时',
     COMPLETED: '已完成'
@@ -416,6 +478,30 @@ async function handleCancel(): Promise<void> {
   }
 }
 
+/** 确认收货 */
+async function handleConfirm(): Promise<void> {
+  if (!order.value) return
+  try {
+    await ElMessageBox.confirm('确认已收到商品吗？', '确认收货', {
+      type: 'info',
+      confirmButtonText: '确认收货',
+      cancelButtonText: '再想想'
+    })
+    confirmLoading.value = true
+    if (order.value.orderType === 'NORMAL') {
+      await confirmNormalOrder(order.value.id)
+    } else {
+      await confirmOrder(order.value.id)
+    }
+    ElMessage.success('已确认收货')
+    await fetchOrderDetail()
+  } catch {
+    // 取消操作或请求错误
+  } finally {
+    confirmLoading.value = false
+  }
+}
+
 watch(
   () => route.params.id,
   () => {
@@ -505,6 +591,25 @@ onMounted(() => {
   font-size: 12px;
   color: var(--color-text-secondary);
   margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.breadcrumb-link {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.breadcrumb-link:hover {
+  color: var(--color-primary);
+}
+.breadcrumb-sep {
+  color: var(--color-text-muted);
+}
+.breadcrumb-current {
+  color: var(--color-text-primary);
+  font-weight: 600;
 }
 
 /* 进度步骤条：对照 .order-steps 样式 */
@@ -761,12 +866,27 @@ onMounted(() => {
   color: var(--tag-completed-fg);
 }
 
+.status-tag.shipped {
+  background: #e6f4ff;
+  color: #1677ff;
+}
+
 /* 操作栏 */
 .action-bar {
   margin-top: 20px;
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+  align-items: center;
+}
+
+/* 等待发货提示 */
+.waiting-hint {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding: 8px 16px;
+  background: var(--color-bg-subtle);
+  border-radius: 4px;
 }
 
 /* 小按钮 */

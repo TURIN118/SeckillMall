@@ -58,4 +58,25 @@
           AND available_count > 0
     </update>
 
+    <!-- Bug6修复：将已到开始时间的PENDING秒杀活动更新为ACTIVE -->
+    <update id="updatePendingToActive">
+        UPDATE t_seckill_goods
+        SET status = 'ACTIVE',
+            update_time = NOW()
+        WHERE status = 'PENDING'
+          AND is_deleted = 0
+          AND start_time &lt;= NOW()
+          AND end_time &gt; NOW()
+    </update>
+
+    <!-- Bug6修复：将已过结束时间的ACTIVE秒杀活动更新为ENDED -->
+    <update id="updateActiveToEnded">
+        UPDATE t_seckill_goods
+        SET status = 'ENDED',
+            update_time = NOW()
+        WHERE status = 'ACTIVE'
+          AND is_deleted = 0
+          AND end_time &lt;= NOW()
+    </update>
+
 </mapper>

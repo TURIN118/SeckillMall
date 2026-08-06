@@ -20,4 +20,7 @@ public class OrderDelayMessage implements Serializable {
     private String orderNo;
 
     private Long expireTime;
+
+    /** 订单类型：SECKILL=秒杀订单，NORMAL=普通订单 */
+    private String orderType;
 }

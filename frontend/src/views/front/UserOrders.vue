@@ -107,15 +107,17 @@ const tabs = [
   { label: '全部', name: 'all' },
   { label: '待支付', name: 'UNPAID' },
   { label: '已支付', name: 'PAID' },
+  { label: '已发货', name: 'SHIPPED' },
   { label: '已取消', name: 'CANCELLED' },
   { label: '已完成', name: 'COMPLETED' }
 ]
 
-/** 状态标签 class 映射：unpaid 橙 / paid 绿 / cancelled 灰 / timeout 红 / completed 蓝 */
+/** 状态标签 class 映射：unpaid 橙 / paid 绿 / shipped 蓝 / cancelled 灰 / timeout 红 / completed 蓝 */
 function statusClass(status: string): string {
   const map: Record<string, string> = {
     UNPAID: 'unpaid',
     PAID: 'paid',
+    SHIPPED: 'shipped',
     CANCELLED: 'cancelled',
     TIMEOUT: 'timeout',
     COMPLETED: 'completed'
@@ -127,6 +129,7 @@ function statusLabel(status: string): string {
   const map: Record<string, string> = {
     UNPAID: '待支付',
     PAID: '已支付',
+    SHIPPED: '已发货',
     CANCELLED: '已取消',
     TIMEOUT: '已超时',
     COMPLETED: '已完成'
@@ -428,6 +431,11 @@ onMounted(() => {
 .status-tag.paid {
   background: var(--tag-paid-bg);
   color: var(--tag-paid-fg);
+}
+
+.status-tag.shipped {
+  background: #e6f4ff;
+  color: #1677ff;
 }
 
 .status-tag.cancelled {

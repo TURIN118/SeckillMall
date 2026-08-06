@@ -9,6 +9,7 @@ import com.seckill.mall.cache.RedisService;
 import com.seckill.mall.common.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
+import com.seckill.mall.config.RabbitMQConfig;
 import com.seckill.mall.entity.Cart;
 import com.seckill.mall.entity.NormalOrder;
 import com.seckill.mall.entity.NormalOrderItem;
@@ -27,12 +28,14 @@ import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.mapper.UserAddressMapper;
 import com.seckill.mall.mapper.UserMapper;
+import com.seckill.mall.mq.message.OrderDelayMessage;
 import com.seckill.mall.service.EmailService;
 import com.seckill.mall.service.OrderService;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -86,6 +89,7 @@ public class OrderServiceImpl implements OrderService {
     private final NormalOrderItemMapper normalOrderItemMapper;
     private final CartMapper cartMapper;
     private final UserAddressMapper userAddressMapper;
+    private final RabbitTemplate rabbitTemplate;
 
     @Value("${seckill.pay-timeout-minutes:15}")
     private long payTimeoutMinutes;
@@ -264,6 +268,67 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
+     * Bug1修复：普通订单超时取消（延迟消费者触发）。
+     * UNPAID → TIMEOUT，回补商品库存与销量，已支付等终态幂等忽略。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean timeoutCancelNormalOrder(Long orderId) {
+        NormalOrder order = normalOrderMapper.selectById(orderId);
+        if (order == null) {
+            return false;
+        }
+        if (order.getStatus() != OrderStatus.UNPAID) {
+            return false;
+        }
+        // 查询订单明细，用于回补库存
+        List<NormalOrderItem> items = normalOrderItemMapper.selectList(
+                new LambdaQueryWrapper<NormalOrderItem>()
+                        .eq(NormalOrderItem::getOrderId, orderId));
+        // 回补商品库存与销量
+        rollbackProductStock(items);
+        // 更新订单状态为 TIMEOUT
+        order.setStatus(OrderStatus.TIMEOUT);
+        order.setCancelTime(LocalDateTime.now());
+        order.setCancelReason(CANCEL_REASON_TIMEOUT);
+        normalOrderMapper.updateById(order);
+
+        log.info("普通订单超时取消成功，orderNo={}, orderId={}", order.getOrderNo(), orderId);
+
+        // 超时取消邮件：异步发送，失败不影响主流程
+        String email = getUserEmail(order.getUserId());
+        if (email != null) {
+            try {
+                emailService.sendOrderCancel(email, order.getOrderNo(), CANCEL_REASON_TIMEOUT);
+            } catch (Exception e) {
+                log.error("普通订单超时取消邮件发送失败，orderId={}", orderId, e);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Bug1修复：发送普通订单延迟消息，超时后自动取消。
+     */
+    private void sendNormalOrderDelayMessage(NormalOrder order) {
+        try {
+            OrderDelayMessage delay = new OrderDelayMessage();
+            delay.setOrderId(order.getId());
+            delay.setOrderNo(order.getOrderNo());
+            delay.setOrderType("NORMAL");
+            delay.setExpireTime(order.getPayExpireTime() == null ? null
+                    : order.getPayExpireTime().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli());
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.ORDER_DELAY_EXCHANGE,
+                    RabbitMQConfig.ORDER_DELAY_ROUTING_KEY,
+                    delay);
+            log.info("普通订单延迟消息已发送，orderNo={}, orderId={}", order.getOrderNo(), order.getId());
+        } catch (Exception e) {
+            log.error("普通订单延迟消息发送失败，orderNo={}，依赖补偿任务兜底", order.getOrderNo(), e);
+        }
+    }
+
+    /**
      * H10: 将 Redis 操作注册到事务提交后执行；无事务上下文时直接执行。
      * 避免事务回滚后缓存与 DB 不一致。
      */
@@ -313,9 +378,10 @@ public class OrderServiceImpl implements OrderService {
         return switch (status) {
             case 0 -> OrderStatus.UNPAID;
             case 1 -> OrderStatus.PAID;
-            case 2 -> OrderStatus.CANCELLED;
-            case 3 -> OrderStatus.TIMEOUT;
-            case 4 -> OrderStatus.COMPLETED;
+            case 2 -> OrderStatus.SHIPPED;
+            case 3 -> OrderStatus.CANCELLED;
+            case 4 -> OrderStatus.TIMEOUT;
+            case 5 -> OrderStatus.COMPLETED;
             default -> null;
         };
     }
@@ -369,6 +435,8 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("立即购买创建普通订单成功，orderNo={}, userId={}, productId={}, quantity={}",
                 order.getOrderNo(), userId, productId, quantity);
+        // Bug1修复：创建普通订单后发送延迟消息，超时自动取消
+        sendNormalOrderDelayMessage(order);
         return assembleDetail(order, List.of(item));
     }
 
@@ -452,6 +520,8 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("购物车结算创建普通订单成功，orderNo={}, userId={}, cartIds={}, itemCount={}",
                 order.getOrderNo(), userId, cartIds, carts.size());
+        // Bug1修复：创建普通订单后发送延迟消息，超时自动取消
+        sendNormalOrderDelayMessage(order);
         return assembleDetail(order, items);
     }
 
@@ -553,6 +623,66 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         return assembleDetail(order, items);
+    }
+
+    // ==================== 发货与确认收货流程（Bug2修复） ====================
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void shipOrder(Long userId, Long orderId) {
+        SeckillOrder order = seckillOrderMapper.selectById(orderId);
+        if (order == null) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+        }
+        if (order.getStatus() != OrderStatus.PAID) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_ERROR, "仅已支付订单可发货");
+        }
+        order.setStatus(OrderStatus.SHIPPED);
+        order.setShipTime(LocalDateTime.now());
+        seckillOrderMapper.updateById(order);
+        log.info("秒杀订单发货成功，orderId={}, orderNo={}", orderId, order.getOrderNo());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void confirmOrder(Long userId, Long orderId) {
+        SeckillOrder order = loadAndCheckOwnership(userId, orderId);
+        if (order.getStatus() != OrderStatus.SHIPPED) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_ERROR, "仅已发货订单可确认收货");
+        }
+        order.setStatus(OrderStatus.COMPLETED);
+        order.setConfirmTime(LocalDateTime.now());
+        seckillOrderMapper.updateById(order);
+        log.info("秒杀订单确认收货成功，orderId={}, orderNo={}", orderId, order.getOrderNo());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void shipNormalOrder(Long userId, Long orderId) {
+        NormalOrder order = normalOrderMapper.selectById(orderId);
+        if (order == null) {
+            throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+        }
+        if (order.getStatus() != OrderStatus.PAID) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_ERROR, "仅已支付订单可发货");
+        }
+        order.setStatus(OrderStatus.SHIPPED);
+        order.setShipTime(LocalDateTime.now());
+        normalOrderMapper.updateById(order);
+        log.info("普通订单发货成功，orderId={}, orderNo={}", orderId, order.getOrderNo());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void confirmNormalOrder(Long userId, Long orderId) {
+        NormalOrder order = loadAndCheckNormalOrderOwnership(userId, orderId);
+        if (order.getStatus() != OrderStatus.SHIPPED) {
+            throw new BusinessException(ErrorCode.ORDER_STATUS_ERROR, "仅已发货订单可确认收货");
+        }
+        order.setStatus(OrderStatus.COMPLETED);
+        order.setConfirmTime(LocalDateTime.now());
+        normalOrderMapper.updateById(order);
+        log.info("普通订单确认收货成功，orderId={}, orderNo={}", orderId, order.getOrderNo());
     }
 
     // ==================== 普通订单私有辅助方法 ====================

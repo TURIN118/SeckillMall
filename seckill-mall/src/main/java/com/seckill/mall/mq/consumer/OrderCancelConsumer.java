@@ -24,6 +24,8 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class OrderCancelConsumer {
 
+    private static final String ORDER_TYPE_NORMAL = "NORMAL";
+
     private final OrderService orderService;
 
     @RabbitListener(queues = RabbitMQConfig.ORDER_CANCEL_QUEUE)
@@ -31,12 +33,25 @@ public class OrderCancelConsumer {
                                   Channel channel,
                                   @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
         try {
-            // 已支付/已取消等终态在 timeoutCancel 内幂等忽略；仅 UNPAID 才置 TIMEOUT 并回补库存
-            boolean cancelled = orderService.timeoutCancel(message.getOrderId());
-            if (cancelled) {
-                log.info("订单超时取消成功 orderId={} orderNo={}", message.getOrderId(), message.getOrderNo());
+            String orderType = message.getOrderType();
+            boolean cancelled;
+
+            if (ORDER_TYPE_NORMAL.equalsIgnoreCase(orderType)) {
+                // Bug1修复：普通订单超时取消
+                cancelled = orderService.timeoutCancelNormalOrder(message.getOrderId());
+                if (cancelled) {
+                    log.info("普通订单超时取消成功 orderId={} orderNo={}", message.getOrderId(), message.getOrderNo());
+                } else {
+                    log.info("普通订单超时取消跳过（已支付或不存在）orderId={}", message.getOrderId());
+                }
             } else {
-                log.info("订单超时取消跳过（已支付或不存在）orderId={}", message.getOrderId());
+                // 秒杀订单超时取消（默认行为）
+                cancelled = orderService.timeoutCancel(message.getOrderId());
+                if (cancelled) {
+                    log.info("秒杀订单超时取消成功 orderId={} orderNo={}", message.getOrderId(), message.getOrderNo());
+                } else {
+                    log.info("秒杀订单超时取消跳过（已支付或不存在）orderId={}", message.getOrderId());
+                }
             }
             channel.basicAck(deliveryTag, false);
         } catch (Exception e) {

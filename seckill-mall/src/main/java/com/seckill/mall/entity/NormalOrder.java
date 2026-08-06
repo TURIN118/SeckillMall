@@ -73,6 +73,12 @@ public class NormalOrder {
     /** 取消原因 */
     private String cancelReason;
 
+    /** 发货时间 */
+    private LocalDateTime shipTime;
+
+    /** 确认收货时间 */
+    private LocalDateTime confirmTime;
+
     /** 备注（用户下单时填写，可选） */
     private String remark;
 

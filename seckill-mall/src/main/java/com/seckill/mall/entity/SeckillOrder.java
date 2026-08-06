@@ -54,6 +54,12 @@ public class SeckillOrder {
 
     private String cancelReason;
 
+    /** 发货时间 */
+    private LocalDateTime shipTime;
+
+    /** 确认收货时间 */
+    private LocalDateTime confirmTime;
+
     @TableLogic
     private Integer isDeleted;
 

@@ -148,4 +148,44 @@ public class OrderController {
         Long userId = securityUtils.getCurrentUserId();
         return Result.success(orderService.getNormalOrderDetail(userId, orderId));
     }
+
+    // ==================== 发货与确认收货（Bug2修复） ====================
+
+    @Operation(summary = "秒杀订单发货（管理员）")
+    @OperationLog(module = "ORDER", action = "SHIP", targetIdSpEL = "#orderId", targetType = "ORDER")
+    @PostMapping("/{orderId}/ship")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<Void> shipOrder(@PathVariable Long orderId) {
+        Long userId = securityUtils.getCurrentUserId();
+        orderService.shipOrder(userId, orderId);
+        return Result.success("发货成功", null);
+    }
+
+    @Operation(summary = "秒杀订单确认收货（用户）")
+    @OperationLog(module = "ORDER", action = "CONFIRM", targetIdSpEL = "#orderId", targetType = "ORDER")
+    @PostMapping("/{orderId}/confirm")
+    public Result<Void> confirmOrder(@PathVariable Long orderId) {
+        Long userId = securityUtils.getCurrentUserId();
+        orderService.confirmOrder(userId, orderId);
+        return Result.success("确认收货成功", null);
+    }
+
+    @Operation(summary = "普通订单发货（管理员）")
+    @OperationLog(module = "ORDER", action = "SHIP", targetIdSpEL = "#orderId", targetType = "ORDER")
+    @PostMapping("/{orderId}/normal-ship")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Result<Void> shipNormalOrder(@PathVariable Long orderId) {
+        Long userId = securityUtils.getCurrentUserId();
+        orderService.shipNormalOrder(userId, orderId);
+        return Result.success("发货成功", null);
+    }
+
+    @Operation(summary = "普通订单确认收货（用户）")
+    @OperationLog(module = "ORDER", action = "CONFIRM", targetIdSpEL = "#orderId", targetType = "ORDER")
+    @PostMapping("/{orderId}/normal-confirm")
+    public Result<Void> confirmNormalOrder(@PathVariable Long orderId) {
+        Long userId = securityUtils.getCurrentUserId();
+        orderService.confirmNormalOrder(userId, orderId);
+        return Result.success("确认收货成功", null);
+    }
 }

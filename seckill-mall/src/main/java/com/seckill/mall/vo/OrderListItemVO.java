@@ -29,7 +29,7 @@ public class OrderListItemVO {
     /** 订单类型：SECKILL-秒杀订单 / NORMAL-普通订单 */
     private String orderType;
 
-    /** 订单状态：UNPAID/PAID/CANCELLED/TIMEOUT/COMPLETED */
+    /** 订单状态：UNPAID/PAID/SHIPPED/CANCELLED/TIMEOUT/COMPLETED */
     private String status;
 
     /** 订单总金额 */
@@ -43,6 +43,9 @@ public class OrderListItemVO {
 
     /** 支付时间 */
     private LocalDateTime payTime;
+
+    /** 发货时间 */
+    private LocalDateTime shipTime;
 
     /** 商品快照列表（用于列表展示） */
     private List<OrderItemSnapshot> items;

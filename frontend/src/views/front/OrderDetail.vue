@@ -109,6 +109,25 @@
         </div>
       </div>
 
+      <!-- 物流信息（SHIPPED/COMPLETED状态显示） -->
+      <div v-if="order.shippingCompany || order.shippingNo" class="pay-summary shipping-summary">
+        <div class="pay-summary-row">
+          <span>物流公司</span>
+          <span>{{ order.shippingCompany }}</span>
+        </div>
+        <div class="pay-summary-row">
+          <span>快递单号</span>
+          <span class="shipping-no-value" @click="copyShippingNo">
+            {{ order.shippingNo }}
+            <span class="copy-hint">复制</span>
+          </span>
+        </div>
+        <div class="pay-summary-row">
+          <span>发货时间</span>
+          <span>{{ formatTime(order.shipTime) }}</span>
+        </div>
+      </div>
+
       <!-- 操作栏 -->
       <div class="action-bar">
         <template v-if="order.status === 'UNPAID'">
@@ -160,6 +179,8 @@ interface UnifiedOrderDetail {
   payTime: string
   payExpireTime?: string
   shipTime?: string
+  shippingCompany?: string
+  shippingNo?: string
   cancelTime?: string
   cancelReason?: string
   items: OrderItemSnapshot[]
@@ -320,6 +341,9 @@ function buildNormalOrder(detail: { order: any; items: any[] }): UnifiedOrderDet
     createTime: detail.order.createTime,
     payTime: detail.order.payTime || '',
     payExpireTime: detail.order.payExpireTime,
+    shipTime: detail.order.shipTime,
+    shippingCompany: detail.order.shippingCompany,
+    shippingNo: detail.order.shippingNo,
     cancelTime: detail.order.cancelTime,
     cancelReason: detail.order.cancelReason,
     items: (detail.items || []).map(item => ({
@@ -358,6 +382,9 @@ async function buildSeckillOrder(seckill: any): Promise<UnifiedOrderDetail> {
     createTime: seckill.createTime,
     payTime: seckill.payTime || '',
     payExpireTime: seckill.payExpireTime,
+    shipTime: seckill.shipTime,
+    shippingCompany: seckill.shippingCompany,
+    shippingNo: seckill.shippingNo,
     cancelTime: seckill.cancelTime,
     cancelReason: seckill.cancelReason,
     items: [{
@@ -430,6 +457,17 @@ async function copyOrderNo(): Promise<void> {
   try {
     await navigator.clipboard.writeText(order.value.orderNo)
     ElMessage.success('订单号已复制')
+  } catch {
+    ElMessage.warning('复制失败，请手动复制')
+  }
+}
+
+/** 复制快递单号 */
+async function copyShippingNo(): Promise<void> {
+  if (!order.value?.shippingNo) return
+  try {
+    await navigator.clipboard.writeText(order.value.shippingNo)
+    ElMessage.success('快递单号已复制')
   } catch {
     ElMessage.warning('复制失败，请手动复制')
   }
@@ -810,6 +848,23 @@ onMounted(() => {
 }
 
 .order-no-value:hover .copy-hint {
+  color: var(--color-primary);
+}
+
+/* 物流信息区域 */
+.shipping-summary {
+  margin-top: 16px;
+}
+
+.shipping-no-value {
+  font-family: var(--font-mono);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shipping-no-value:hover .copy-hint {
   color: var(--color-primary);
 }
 

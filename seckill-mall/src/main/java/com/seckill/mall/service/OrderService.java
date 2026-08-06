@@ -121,12 +121,14 @@ public interface OrderService {
     // ==================== 发货与确认收货流程（Bug2修复） ====================
 
     /**
-     * 秒杀订单发货：PAID → SHIPPED，设置发货时间。
+     * 秒杀订单发货：PAID → SHIPPED，设置发货时间与物流信息。
      *
-     * @param userId  操作人 ID（管理员）
-     * @param orderId 秒杀订单 ID
+     * @param userId          操作人 ID（管理员）
+     * @param orderId         秒杀订单 ID
+     * @param shippingCompany 物流公司
+     * @param shippingNo      快递单号
      */
-    void shipOrder(Long userId, Long orderId);
+    void shipOrder(Long userId, Long orderId, String shippingCompany, String shippingNo);
 
     /**
      * 秒杀订单确认收货：SHIPPED → COMPLETED，设置确认收货时间。
@@ -137,12 +139,14 @@ public interface OrderService {
     void confirmOrder(Long userId, Long orderId);
 
     /**
-     * 普通订单发货：PAID → SHIPPED，设置发货时间。
+     * 普通订单发货：PAID → SHIPPED，设置发货时间与物流信息。
      *
-     * @param userId  操作人 ID（管理员）
-     * @param orderId 普通订单 ID
+     * @param userId          操作人 ID（管理员）
+     * @param orderId         普通订单 ID
+     * @param shippingCompany 物流公司
+     * @param shippingNo      快递单号
      */
-    void shipNormalOrder(Long userId, Long orderId);
+    void shipNormalOrder(Long userId, Long orderId, String shippingCompany, String shippingNo);
 
     /**
      * 普通订单确认收货：SHIPPED → COMPLETED，设置确认收货时间。

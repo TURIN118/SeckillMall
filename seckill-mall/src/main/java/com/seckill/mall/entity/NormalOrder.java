@@ -51,9 +51,15 @@ public class NormalOrder {
     /** 实付金额 = totalAmount + freightAmount */
     private BigDecimal payAmount;
 
-    /** 订单状态：UNPAID/PAID/CANCELLED/TIMEOUT/COMPLETED */
+    /** 订单状态：UNPAID/PAID/SHIPPED/CANCELLED/TIMEOUT/COMPLETED */
     @TableField("status")
     private OrderStatus status;
+
+    /** 物流公司 */
+    private String shippingCompany;
+
+    /** 快递单号 */
+    private String shippingNo;
 
     /** 支付方式：WALLET/ALIPAY/WECHAT 等 */
     private String payMethod;

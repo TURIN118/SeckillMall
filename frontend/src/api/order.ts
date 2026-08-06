@@ -141,3 +141,15 @@ export function getUnifiedOrderList(params: {
 }): Promise<Result<PageResult<OrderListItemVO>>> {
   return get<PageResult<OrderListItemVO>>('/api/v1/orders/unified', params)
 }
+
+/* ==================== 发货 API ==================== */
+
+/** 管理员发货 - 秒杀订单 */
+export function shipOrder(orderId: string | number, data: { shippingCompany: string; shippingNo: string }) {
+  return post(`/api/v1/orders/${orderId}/ship`, data)
+}
+
+/** 管理员发货 - 普通订单 */
+export function shipNormalOrder(orderId: string | number, data: { shippingCompany: string; shippingNo: string }) {
+  return post(`/api/v1/orders/${orderId}/normal-ship`, data)
+}

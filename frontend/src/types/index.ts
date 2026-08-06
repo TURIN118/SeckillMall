@@ -260,7 +260,10 @@ export interface SeckillResultVO {
 /* ==================== 订单类型 ==================== */
 
 /** 订单状态 */
-export type OrderStatus = 'UNPAID' | 'PAID' | 'CANCELLED' | 'TIMEOUT' | 'COMPLETED'
+export type OrderStatus = 'UNPAID' | 'PAID' | 'SHIPPED' | 'CANCELLED' | 'TIMEOUT' | 'COMPLETED'
+
+/** 物流公司 */
+export type ShippingCompany = '顺丰速运' | '中通快递' | '圆通速递' | '韵达快递' | '极兔速递' | 'EMS' | '申通快递' | '京东物流' | '百世快递' | '天天快递'
 
 /** 秒杀订单 */
 export interface SeckillOrder {
@@ -279,6 +282,10 @@ export interface SeckillOrder {
   payMethod: string
   cancelTime: string
   cancelReason: string
+  shippingCompany?: string
+  shippingNo?: string
+  shipTime?: string
+  confirmTime?: string
   isDeleted: number
   createTime: string
   updateTime: string
@@ -307,6 +314,10 @@ export interface AdminOrderVO {
   payMethod: string
   cancelTime: string
   cancelReason: string
+  shippingCompany?: string
+  shippingNo?: string
+  shipTime?: string
+  confirmTime?: string
   createTime: string
   updateTime: string
 }
@@ -351,6 +362,10 @@ export interface NormalOrder {
   payExpireTime?: string
   cancelTime?: string
   cancelReason?: string
+  shippingCompany?: string
+  shippingNo?: string
+  shipTime?: string
+  confirmTime?: string
   createTime: string
   updateTime: string
   items?: NormalOrderItem[]
@@ -382,6 +397,7 @@ export interface OrderListItemVO {
   payMethod: string
   createTime: string
   payTime: string
+  shipTime?: string
   items: OrderItemSnapshot[]
 }
 

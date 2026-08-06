@@ -105,8 +105,12 @@ CREATE TABLE `t_seckill_order` (
     `seckill_price`   DECIMAL(10,2) NOT NULL            COMMENT '下单时秒杀价（价格快照）',
     `quantity`        INT           NOT NULL DEFAULT 1  COMMENT '购买数量',
     `total_amount`    DECIMAL(10,2) NOT NULL            COMMENT '订单总金额（秒杀价×数量）',
-    `status`          ENUM('UNPAID','PAID','CANCELLED','TIMEOUT','COMPLETED')
-                                   NOT NULL DEFAULT 'UNPAID' COMMENT 'UNPAID-待支付/PAID-已支付/CANCELLED-已取消/TIMEOUT-超时/COMPLETED-已完成',
+    `status`          ENUM('UNPAID','PAID','SHIPPED','CANCELLED','TIMEOUT','COMPLETED')
+                                   NOT NULL DEFAULT 'UNPAID' COMMENT 'UNPAID-待支付/PAID-已支付/SHIPPED-已发货/CANCELLED-已取消/TIMEOUT-超时/COMPLETED-已完成',
+    `shipping_company` VARCHAR(50)  DEFAULT NULL        COMMENT '物流公司',
+    `shipping_no`     VARCHAR(64)   DEFAULT NULL        COMMENT '快递单号',
+    `ship_time`       DATETIME      DEFAULT NULL        COMMENT '发货时间',
+    `confirm_time`    DATETIME      DEFAULT NULL        COMMENT '确认收货时间',
     `pay_time`        DATETIME      DEFAULT NULL        COMMENT '支付时间',
     `pay_expire_time` DATETIME      DEFAULT NULL        COMMENT '支付截止时间（超时自动取消）',
     `transaction_id`  VARCHAR(64)   DEFAULT NULL        COMMENT '第三方支付流水号',
@@ -120,7 +124,8 @@ CREATE TABLE `t_seckill_order` (
     UNIQUE KEY `uk_order_no` (`order_no`),
     UNIQUE KEY `uk_user_seckill` (`user_id`, `seckill_id`) COMMENT '一人一单约束（核心）',
     KEY `idx_user_status` (`user_id`, `status`),
-    KEY `idx_seckill_status` (`seckill_id`, `status`)
+    KEY `idx_seckill_status` (`seckill_id`, `status`),
+    KEY `idx_shipping_no` (`shipping_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='秒杀订单表';
 
 -- ------------------------------------------------------------

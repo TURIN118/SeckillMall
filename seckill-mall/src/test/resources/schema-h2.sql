@@ -32,6 +32,10 @@ CREATE TABLE IF NOT EXISTS t_seckill_order (
     quantity        INT           NOT NULL DEFAULT 1,
     total_amount    DECIMAL(10,2) NOT NULL,
     status          VARCHAR(20)   NOT NULL DEFAULT 'UNPAID',
+    shipping_company VARCHAR(50)  DEFAULT NULL,
+    shipping_no     VARCHAR(64)   DEFAULT NULL,
+    ship_time       TIMESTAMP     DEFAULT NULL,
+    confirm_time    TIMESTAMP     DEFAULT NULL,
     pay_time        TIMESTAMP     DEFAULT NULL,
     pay_expire_time TIMESTAMP     DEFAULT NULL,
     transaction_id  VARCHAR(64)   DEFAULT NULL,
@@ -44,4 +48,31 @@ CREATE TABLE IF NOT EXISTS t_seckill_order (
     PRIMARY KEY (id),
     CONSTRAINT uk_order_no_h2      UNIQUE (order_no),
     CONSTRAINT uk_user_seckill_h2  UNIQUE (user_id, seckill_id)
+);
+
+CREATE TABLE IF NOT EXISTS t_normal_order (
+    id              BIGINT        NOT NULL,
+    order_no        VARCHAR(32)   NOT NULL,
+    user_id         BIGINT        NOT NULL,
+    address_id      BIGINT        NOT NULL,
+    total_amount    DECIMAL(10,2) NOT NULL,
+    freight_amount  DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    pay_amount      DECIMAL(10,2) NOT NULL,
+    status          VARCHAR(20)   NOT NULL DEFAULT 'UNPAID',
+    shipping_company VARCHAR(50)  DEFAULT NULL,
+    shipping_no     VARCHAR(64)   DEFAULT NULL,
+    ship_time       TIMESTAMP     DEFAULT NULL,
+    confirm_time    TIMESTAMP     DEFAULT NULL,
+    pay_method      VARCHAR(20)   DEFAULT NULL,
+    transaction_id  VARCHAR(64)   DEFAULT NULL,
+    pay_time        TIMESTAMP     DEFAULT NULL,
+    pay_expire_time TIMESTAMP     DEFAULT NULL,
+    cancel_time     TIMESTAMP     DEFAULT NULL,
+    cancel_reason   VARCHAR(255)  DEFAULT NULL,
+    remark          VARCHAR(255)  DEFAULT NULL,
+    is_deleted      TINYINT       NOT NULL DEFAULT 0,
+    create_time     TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+    update_time     TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_normal_order_no_h2 UNIQUE (order_no)
 );

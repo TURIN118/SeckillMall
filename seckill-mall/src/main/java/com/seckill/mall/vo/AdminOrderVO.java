@@ -46,9 +46,21 @@ public class AdminOrderVO {
     private BigDecimal totalAmount;
 
     /**
-     * 订单状态：UNPAID/PAID/CANCELLED/TIMEOUT/COMPLETED
+     * 订单状态：UNPAID/PAID/SHIPPED/CANCELLED/TIMEOUT/COMPLETED
      */
     private String status;
+
+    /** 物流公司 */
+    private String shippingCompany;
+
+    /** 快递单号 */
+    private String shippingNo;
+
+    /** 发货时间 */
+    private LocalDateTime shipTime;
+
+    /** 确认收货时间 */
+    private LocalDateTime confirmTime;
 
     private LocalDateTime payTime;
 

@@ -5,7 +5,8 @@
 
     <select id="findByUserAndSeckill" resultType="com.seckill.mall.entity.SeckillOrder">
         SELECT id, order_no, user_id, seckill_id, product_id, seckill_price,
-               quantity, total_amount, status, pay_time, pay_expire_time,
+               quantity, total_amount, status, shipping_company, shipping_no,
+               ship_time, confirm_time, pay_time, pay_expire_time,
                transaction_id, pay_method, cancel_time, cancel_reason,
                is_deleted, create_time, update_time
         FROM t_seckill_order
@@ -16,7 +17,8 @@
 
     <select id="selectOrderPage" resultType="com.seckill.mall.entity.SeckillOrder">
         SELECT id, order_no, user_id, seckill_id, product_id, seckill_price,
-               quantity, total_amount, status, pay_time, pay_expire_time,
+               quantity, total_amount, status, shipping_company, shipping_no,
+               ship_time, confirm_time, pay_time, pay_expire_time,
                transaction_id, pay_method, cancel_time, cancel_reason,
                is_deleted, create_time, update_time
         FROM t_seckill_order
@@ -89,6 +91,10 @@
                o.quantity,
                o.total_amount,
                o.status,
+               o.shipping_company,
+               o.shipping_no,
+               o.ship_time,
+               o.confirm_time,
                o.pay_time,
                o.pay_expire_time,
                o.transaction_id,

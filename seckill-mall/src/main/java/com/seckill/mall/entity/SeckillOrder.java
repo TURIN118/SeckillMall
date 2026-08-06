@@ -42,6 +42,18 @@ public class SeckillOrder {
     @TableField("status")
     private OrderStatus status;
 
+    /** 物流公司 */
+    private String shippingCompany;
+
+    /** 快递单号 */
+    private String shippingNo;
+
+    /** 发货时间 */
+    private LocalDateTime shipTime;
+
+    /** 确认收货时间 */
+    private LocalDateTime confirmTime;
+
     private LocalDateTime payTime;
 
     private LocalDateTime payExpireTime;
@@ -53,12 +65,6 @@ public class SeckillOrder {
     private LocalDateTime cancelTime;
 
     private String cancelReason;
-
-    /** 发货时间 */
-    private LocalDateTime shipTime;
-
-    /** 确认收货时间 */
-    private LocalDateTime confirmTime;
 
     @TableLogic
     private Integer isDeleted;

@@ -11,6 +11,7 @@
             <option value="">全部状态</option>
             <option value="UNPAID">待支付</option>
             <option value="PAID">已支付</option>
+            <option value="SHIPPED">已发货</option>
             <option value="CANCELLED">已取消</option>
             <option value="TIMEOUT">已超时</option>
             <option value="COMPLETED">已完成</option>
@@ -33,6 +34,7 @@
             <th>商品</th>
             <th>金额</th>
             <th>状态</th>
+            <th>物流信息</th>
             <th>下单时间</th>
             <th>操作</th>
           </tr>
@@ -48,15 +50,28 @@
                 {{ getStatusLabel(row.status) }}
               </span>
             </td>
+            <td>
+              <template v-if="row.shippingCompany && row.shippingNo">
+                <div class="shipping-info">
+                  <span class="shipping-company">{{ row.shippingCompany }}</span>
+                  <span class="shipping-no" @click="copyShippingNo(row.shippingNo)">
+                    {{ row.shippingNo }}
+                    <el-icon><CopyDocument /></el-icon>
+                  </span>
+                </div>
+              </template>
+              <span v-else class="text-muted">—</span>
+            </td>
             <td>{{ formatTime(row.createTime) }}</td>
             <td>
               <div class="table-actions">
                 <button class="table-action-btn" @click="openDetail(row as AdminOrderVO)">详情</button>
+                <button v-if="row.status === 'PAID'" class="table-action-btn ship-btn" @click="openShipDialog(row as AdminOrderVO)">发货</button>
               </div>
             </td>
           </tr>
           <tr v-if="orderList.length === 0 && !loading">
-            <td colspan="7" class="empty-cell">暂无订单数据</td>
+            <td colspan="8" class="empty-cell">暂无订单数据</td>
           </tr>
         </tbody>
       </table>
@@ -98,6 +113,28 @@
         <el-button @click="detailVisible = false">关闭</el-button>
       </template>
     </el-dialog>
+
+    <!-- 发货对话框 -->
+    <el-dialog v-model="shipDialogVisible" title="订单发货" width="500px" :close-on-click-modal="false">
+      <div class="ship-order-info">
+        <p><strong>订单编号：</strong>{{ currentOrder?.orderNo }}</p>
+        <p><strong>订单金额：</strong>¥{{ currentOrder?.totalAmount?.toFixed(2) }}</p>
+      </div>
+      <el-form :model="shipForm" :rules="shipRules" ref="shipFormRef" label-width="100px">
+        <el-form-item label="物流公司" prop="shippingCompany">
+          <el-select v-model="shipForm.shippingCompany" placeholder="请选择物流公司" style="width: 100%">
+            <el-option v-for="company in shippingCompanies" :key="company" :label="company" :value="company" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="快递单号" prop="shippingNo">
+          <el-input v-model="shipForm.shippingNo" placeholder="请输入快递单号" maxlength="64" show-word-limit />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="shipDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="shipLoading" @click="handleShip">确认发货</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -106,11 +143,12 @@
  * P14 后台订单管理 - 严格对照 index.html .page-admin-orders
  * 筛选栏 + 原生 table + 分页 + 详情弹窗
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import dayjs from 'dayjs'
 import * as XLSX from 'xlsx'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getAdminOrderList } from '@/api/order'
+import { CopyDocument } from '@element-plus/icons-vue'
+import { getAdminOrderList, shipOrder, shipNormalOrder } from '@/api/order'
 import type { AdminOrderVO, OrderStatus } from '@/types'
 
 /* === 列表数据 === */
@@ -159,6 +197,7 @@ function getStatusLabel(status: OrderStatus): string {
   const map: Record<OrderStatus, string> = {
     UNPAID: '待支付',
     PAID: '已支付',
+    SHIPPED: '已发货',
     CANCELLED: '已取消',
     TIMEOUT: '已超时',
     COMPLETED: '已完成'
@@ -170,6 +209,7 @@ function getStatusTagClass(status: OrderStatus): string {
   const map: Record<OrderStatus, string> = {
     UNPAID: 'unpaid',
     PAID: 'paid',
+    SHIPPED: 'shipped',
     CANCELLED: 'cancelled',
     TIMEOUT: 'timeout',
     COMPLETED: 'completed'
@@ -281,6 +321,7 @@ async function handleExport(): Promise<void> {
     const statusCount = {
       UNPAID: orders.filter((o) => o.status === 'UNPAID').length,
       PAID: orders.filter((o) => o.status === 'PAID').length,
+      SHIPPED: orders.filter((o) => o.status === 'SHIPPED').length,
       CANCELLED: orders.filter((o) => o.status === 'CANCELLED').length,
       TIMEOUT: orders.filter((o) => o.status === 'TIMEOUT').length,
       COMPLETED: orders.filter((o) => o.status === 'COMPLETED').length
@@ -291,6 +332,7 @@ async function handleExport(): Promise<void> {
       { 指标: '总金额(元)', 值: totalAmount.toFixed(2), 说明: '所有订单金额合计' },
       { 指标: '待支付', 值: statusCount.UNPAID, 说明: `${(statusCount.UNPAID / orderCount * 100).toFixed(1)}%` },
       { 指标: '已支付', 值: statusCount.PAID, 说明: `${(statusCount.PAID / orderCount * 100).toFixed(1)}%` },
+      { 指标: '已发货', 值: statusCount.SHIPPED, 说明: `${(statusCount.SHIPPED / orderCount * 100).toFixed(1)}%` },
       { 指标: '已取消', 值: statusCount.CANCELLED, 说明: `${(statusCount.CANCELLED / orderCount * 100).toFixed(1)}%` },
       { 指标: '已超时', 值: statusCount.TIMEOUT, 说明: `${(statusCount.TIMEOUT / orderCount * 100).toFixed(1)}%` },
       { 指标: '已完成', 值: statusCount.COMPLETED, 说明: `${(statusCount.COMPLETED / orderCount * 100).toFixed(1)}%` }
@@ -303,6 +345,7 @@ async function handleExport(): Promise<void> {
     const distributionData = [
       { 状态: '待支付', 订单数: statusCount.UNPAID, '占比(%)': (statusCount.UNPAID / orderCount * 100).toFixed(1) },
       { 状态: '已支付', 订单数: statusCount.PAID, '占比(%)': (statusCount.PAID / orderCount * 100).toFixed(1) },
+      { 状态: '已发货', 订单数: statusCount.SHIPPED, '占比(%)': (statusCount.SHIPPED / orderCount * 100).toFixed(1) },
       { 状态: '已取消', 订单数: statusCount.CANCELLED, '占比(%)': (statusCount.CANCELLED / orderCount * 100).toFixed(1) },
       { 状态: '已超时', 订单数: statusCount.TIMEOUT, '占比(%)': (statusCount.TIMEOUT / orderCount * 100).toFixed(1) },
       { 状态: '已完成', 订单数: statusCount.COMPLETED, '占比(%)': (statusCount.COMPLETED / orderCount * 100).toFixed(1) }
@@ -335,6 +378,64 @@ const detailRow = ref<AdminOrderVO | null>(null)
 function openDetail(row: AdminOrderVO): void {
   detailRow.value = row
   detailVisible.value = true
+}
+
+/* === 发货相关 === */
+const shippingCompanies = [
+  '顺丰速运', '中通快递', '圆通速递', '韵达快递',
+  '极兔速递', 'EMS', '申通快递', '京东物流', '百世快递', '天天快递'
+]
+
+const shipDialogVisible = ref(false)
+const shipLoading = ref(false)
+const currentOrder = ref<AdminOrderVO | null>(null)
+const shipFormRef = ref()
+const shipForm = reactive({
+  shippingCompany: '',
+  shippingNo: ''
+})
+const shipRules = {
+  shippingCompany: [{ required: true, message: '请选择物流公司', trigger: 'change' }],
+  shippingNo: [{ required: true, message: '请输入快递单号', trigger: 'blur' }]
+}
+
+/** 打开发货对话框 */
+function openShipDialog(order: AdminOrderVO): void {
+  currentOrder.value = order
+  shipForm.shippingCompany = ''
+  shipForm.shippingNo = ''
+  shipDialogVisible.value = true
+}
+
+/** 确认发货 */
+async function handleShip(): Promise<void> {
+  await shipFormRef.value?.validate()
+  shipLoading.value = true
+  try {
+    const isNormal = currentOrder.value?.orderType === 'NORMAL' || !currentOrder.value?.seckillId
+    if (isNormal) {
+      await shipNormalOrder(currentOrder.value!.id, shipForm)
+    } else {
+      await shipOrder(currentOrder.value!.id, shipForm)
+    }
+    ElMessage.success('发货成功')
+    shipDialogVisible.value = false
+    fetchOrderList()
+  } catch {
+    // 错误已由拦截器处理
+  } finally {
+    shipLoading.value = false
+  }
+}
+
+/** 复制快递单号 */
+async function copyShippingNo(shippingNo: string): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(shippingNo)
+    ElMessage.success('快递单号已复制')
+  } catch {
+    ElMessage.warning('复制失败，请手动复制')
+  }
 }
 
 onMounted(() => {
@@ -612,5 +713,68 @@ onMounted(() => {
 .detail-value {
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+/* === 发货对话框 === */
+.ship-order-info {
+  background: var(--color-bg-subtle);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.ship-order-info p {
+  margin: 0;
+}
+
+/* === 物流信息列 === */
+.shipping-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shipping-company {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.shipping-no {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--color-primary-blue);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.shipping-no:hover {
+  text-decoration: underline;
+}
+
+.shipping-no .el-icon {
+  font-size: 12px;
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+/* === 发货按钮 === */
+.table-action-btn.ship-btn {
+  color: #e6a23c;
+}
+
+.table-action-btn.ship-btn:hover {
+  color: #cf8b2e;
+}
+
+/* === SHIPPED 状态标签 === */
+.status-tag.shipped {
+  background: #e6f4ff;
+  color: #1677ff;
 }
 </style>

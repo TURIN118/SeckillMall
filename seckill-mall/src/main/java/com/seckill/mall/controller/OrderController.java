@@ -6,6 +6,7 @@ import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.BuyNowRequest;
 import com.seckill.mall.dto.CartCheckoutRequest;
 import com.seckill.mall.dto.NormalOrderPayRequest;
+import com.seckill.mall.dto.ShipRequest;
 import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.security.SecurityUtils;
@@ -155,9 +156,10 @@ public class OrderController {
     @OperationLog(module = "ORDER", action = "SHIP", targetIdSpEL = "#orderId", targetType = "ORDER")
     @PostMapping("/{orderId}/ship")
     @PreAuthorize("hasRole('ADMIN')")
-    public Result<Void> shipOrder(@PathVariable Long orderId) {
+    public Result<Void> shipOrder(@PathVariable Long orderId,
+                                  @RequestBody @Valid ShipRequest request) {
         Long userId = securityUtils.getCurrentUserId();
-        orderService.shipOrder(userId, orderId);
+        orderService.shipOrder(userId, orderId, request.getShippingCompany(), request.getShippingNo());
         return Result.success("发货成功", null);
     }
 
@@ -174,9 +176,10 @@ public class OrderController {
     @OperationLog(module = "ORDER", action = "SHIP", targetIdSpEL = "#orderId", targetType = "ORDER")
     @PostMapping("/{orderId}/normal-ship")
     @PreAuthorize("hasRole('ADMIN')")
-    public Result<Void> shipNormalOrder(@PathVariable Long orderId) {
+    public Result<Void> shipNormalOrder(@PathVariable Long orderId,
+                                        @RequestBody @Valid ShipRequest request) {
         Long userId = securityUtils.getCurrentUserId();
-        orderService.shipNormalOrder(userId, orderId);
+        orderService.shipNormalOrder(userId, orderId, request.getShippingCompany(), request.getShippingNo());
         return Result.success("发货成功", null);
     }
 

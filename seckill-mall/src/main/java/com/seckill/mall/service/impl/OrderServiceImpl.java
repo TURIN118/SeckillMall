@@ -629,7 +629,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void shipOrder(Long userId, Long orderId) {
+    public void shipOrder(Long userId, Long orderId, String shippingCompany, String shippingNo) {
         SeckillOrder order = seckillOrderMapper.selectById(orderId);
         if (order == null) {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
@@ -638,9 +638,12 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ErrorCode.ORDER_STATUS_ERROR, "仅已支付订单可发货");
         }
         order.setStatus(OrderStatus.SHIPPED);
+        order.setShippingCompany(shippingCompany);
+        order.setShippingNo(shippingNo);
         order.setShipTime(LocalDateTime.now());
         seckillOrderMapper.updateById(order);
-        log.info("秒杀订单发货成功，orderId={}, orderNo={}", orderId, order.getOrderNo());
+        log.info("秒杀订单发货成功，orderId={}, orderNo={}, shippingCompany={}, shippingNo={}",
+                orderId, order.getOrderNo(), shippingCompany, shippingNo);
     }
 
     @Override
@@ -658,7 +661,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void shipNormalOrder(Long userId, Long orderId) {
+    public void shipNormalOrder(Long userId, Long orderId, String shippingCompany, String shippingNo) {
         NormalOrder order = normalOrderMapper.selectById(orderId);
         if (order == null) {
             throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
@@ -667,9 +670,12 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ErrorCode.ORDER_STATUS_ERROR, "仅已支付订单可发货");
         }
         order.setStatus(OrderStatus.SHIPPED);
+        order.setShippingCompany(shippingCompany);
+        order.setShippingNo(shippingNo);
         order.setShipTime(LocalDateTime.now());
         normalOrderMapper.updateById(order);
-        log.info("普通订单发货成功，orderId={}, orderNo={}", orderId, order.getOrderNo());
+        log.info("普通订单发货成功，orderId={}, orderNo={}, shippingCompany={}, shippingNo={}",
+                orderId, order.getOrderNo(), shippingCompany, shippingNo);
     }
 
     @Override
@@ -960,6 +966,7 @@ public class OrderServiceImpl implements OrderService {
         vo.setPayMethod(order.getPayMethod());
         vo.setCreateTime(order.getCreateTime());
         vo.setPayTime(order.getPayTime());
+        vo.setShipTime(order.getShipTime());
 
         OrderListItemVO.OrderItemSnapshot snapshot = new OrderListItemVO.OrderItemSnapshot();
         snapshot.setProductId(order.getProductId());
@@ -986,6 +993,7 @@ public class OrderServiceImpl implements OrderService {
         vo.setPayMethod(order.getPayMethod());
         vo.setCreateTime(order.getCreateTime());
         vo.setPayTime(order.getPayTime());
+        vo.setShipTime(order.getShipTime());
 
         List<OrderListItemVO.OrderItemSnapshot> snapshots = new ArrayList<>(items.size());
         for (NormalOrderItem item : items) {

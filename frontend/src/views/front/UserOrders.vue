@@ -67,6 +67,12 @@
               <button class="btn-sm text" @click.stop="handleCancel(order)">取消订单</button>
               <button class="btn-sm primary" @click.stop="goPay(order)">去支付</button>
             </template>
+            <template v-else-if="order.status === 'SHIPPED'">
+              <button class="btn-sm primary" :disabled="confirmLoadingId === order.id" @click.stop="handleConfirm(order)">
+                {{ confirmLoadingId === order.id ? '确认中...' : '确认收货' }}
+              </button>
+              <button class="btn-sm" @click.stop="goDetail(order)">查看订单</button>
+            </template>
             <button v-else class="btn-sm" @click.stop="goDetail(order)">查看订单</button>
           </div>
         </div>
@@ -87,7 +93,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUnifiedOrderList, cancelOrder, cancelNormalOrder } from '@/api/order'
+import { getUnifiedOrderList, cancelOrder, cancelNormalOrder, confirmOrder, confirmNormalOrder } from '@/api/order'
 
 import PaginationWrapper from '@/components/PaginationWrapper.vue'
 import { formatImageUrl } from '@/utils/image'
@@ -102,6 +108,7 @@ const total = ref<number>(0)
 const activeTab = ref<string>('all')
 const pageNum = ref<number>(1)
 const pageSize = ref<number>(10)
+const confirmLoadingId = ref<number | string | null>(null)
 
 const tabs = [
   { label: '全部', name: 'all' },
@@ -201,6 +208,29 @@ async function handleCancel(order: OrderListItemVO): Promise<void> {
     fetchOrders()
   } catch {
     // 取消操作
+  }
+}
+
+/** 确认收货：根据 orderType 调用不同确认收货接口 */
+async function handleConfirm(order: OrderListItemVO): Promise<void> {
+  try {
+    await ElMessageBox.confirm('确认已收到商品吗？', '确认收货', {
+      type: 'info',
+      confirmButtonText: '确认收货',
+      cancelButtonText: '再想想'
+    })
+    confirmLoadingId.value = order.id
+    if (order.orderType === 'NORMAL') {
+      await confirmNormalOrder(order.id)
+    } else {
+      await confirmOrder(order.id)
+    }
+    ElMessage.success('已确认收货')
+    fetchOrders()
+  } catch {
+    // 取消操作或请求错误
+  } finally {
+    confirmLoadingId.value = null
   }
 }
 

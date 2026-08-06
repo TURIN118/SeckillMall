@@ -26,8 +26,12 @@ CREATE TABLE `t_normal_order` (
     `total_amount`    DECIMAL(10,2) NOT NULL            COMMENT '商品总金额（明细小计之和）',
     `freight_amount`  DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT '运费',
     `pay_amount`      DECIMAL(10,2) NOT NULL            COMMENT '实付金额 = total_amount + freight_amount',
-    `status`          ENUM('UNPAID','PAID','CANCELLED','TIMEOUT','COMPLETED')
-                                   NOT NULL DEFAULT 'UNPAID' COMMENT 'UNPAID-待支付/PAID-已支付/CANCELLED-已取消/TIMEOUT-超时/COMPLETED-已完成',
+    `status`          ENUM('UNPAID','PAID','SHIPPED','CANCELLED','TIMEOUT','COMPLETED')
+                                   NOT NULL DEFAULT 'UNPAID' COMMENT 'UNPAID-待支付/PAID-已支付/SHIPPED-已发货/CANCELLED-已取消/TIMEOUT-超时/COMPLETED-已完成',
+    `shipping_company` VARCHAR(50)  DEFAULT NULL        COMMENT '物流公司',
+    `shipping_no`     VARCHAR(64)   DEFAULT NULL        COMMENT '快递单号',
+    `ship_time`       DATETIME      DEFAULT NULL        COMMENT '发货时间',
+    `confirm_time`    DATETIME      DEFAULT NULL        COMMENT '确认收货时间',
     `pay_method`      VARCHAR(20)   DEFAULT NULL        COMMENT '支付方式（WALLET/ALIPAY/WECHAT等）',
     `transaction_id`  VARCHAR(64)   DEFAULT NULL        COMMENT '支付流水号',
     `pay_time`        DATETIME      DEFAULT NULL        COMMENT '支付时间',
@@ -41,7 +45,8 @@ CREATE TABLE `t_normal_order` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_order_no` (`order_no`),
     KEY `idx_user_status` (`user_id`, `status`),
-    KEY `idx_user_create` (`user_id`, `create_time`)
+    KEY `idx_user_create` (`user_id`, `create_time`),
+    KEY `idx_shipping_no` (`shipping_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='普通订单表（立即购买/购物车结算）';
 
 -- ------------------------------------------------------------

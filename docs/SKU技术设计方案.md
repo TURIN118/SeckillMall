@@ -438,46 +438,61 @@ CREATE TABLE `t_product_attribute_value` (
 CREATE TABLE `t_product_sku` (
     `id`          BIGINT        NOT NULL            COMMENT '主键ID（雪花算法）',
     `product_id`  BIGINT        NOT NULL            COMMENT '所属商品ID',
-    `sku_code`    VARCHAR(64)   DEFAULT NULL        COMMENT 'SKU编码（同商品内唯一，可空表示自动生成）',
+    `sku_code`    VARCHAR(64)   NOT NULL            COMMENT 'SKU编码（同商品内唯一，由generateSkuCode可靠生成或后台手填，禁止NULL）',
     `price`       DECIMAL(10,2) NOT NULL            COMMENT 'SKU价格（元）',
     `stock`       INT           NOT NULL DEFAULT 0  COMMENT 'SKU库存',
     `main_image`  VARCHAR(255)  DEFAULT NULL        COMMENT 'SKU主图URL（NULL表示沿用商品主图）',
     `attributes`  JSON          NOT NULL            COMMENT 'SKU属性键值对JSON，如{"颜色":"曜石黑","版本":"旗舰版","表带":"氟橡胶表带"}',
-    `status`      TINYINT       NOT NULL DEFAULT 1  COMMENT '状态：1-启用/0-禁用',
+    `status`      TINYINT       NOT NULL DEFAULT 1  COMMENT '是否在售：1-在售/0-停售（与库存无关，库存为0时status仍为1，前端因stock=0置灰）',
     `is_deleted`  TINYINT       NOT NULL DEFAULT 0  COMMENT '逻辑删除：0-正常/1-已删除',
     `create_time` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP                COMMENT '创建时间',
     `update_time` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_product_sku_code` (`product_id`, `sku_code`) COMMENT '同商品内SKU编码唯一',
     KEY `idx_product_id` (`product_id`),
-    KEY `idx_product_status` (`product_id`, `status`)
+    KEY `idx_product_status` (`product_id`, `status`),
+    KEY `idx_product_status_stock` (`product_id`, `status`, `stock`) COMMENT '快速查询某商品下库存大于0的启用SKU（前台展示可选规格）'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='商品SKU表（属性值组合）';
 ```
 
 字段说明：
-- `sku_code`：可空，由后台手填或自动生成（如 `颜色:曜石黑-版本:旗舰版-表带:氟橡胶`），同商品内唯一。
+- `sku_code`：**NOT NULL**（建议2 已明确），由 `generateSkuCode` 可靠生成或后台手填，同商品内唯一。生成策略见 5.5.4 节 `generateSkuCode` 方法说明（推荐 `{productId}-{attrValue1Id}-{attrValue2Id}-...` 或雪花算法 ID，避免 hashCode 碰撞）。
 - `price` / `stock`：覆盖 `t_product.original_price` / `t_product.stock`。
 - `main_image`：可空，空则前台展示时回退到 `t_product.main_image`。
 - `attributes`：JSON 字符串，记录该 SKU 的属性键值对，便于订单 / 评论快照与前端展示。MySQL 8.0 原生 JSON 类型支持 JSON_EXTRACT 等查询。
-- `status`：0 禁用表示该组合暂不售卖（如设计稿中「运动版」按钮置灰）。
+- `status`：**是否在售**语义（建议1 已明确）：
+  - `1` 表示在售（默认值），该 SKU 可被加购 / 下单。
+  - `0` 表示停售，该 SKU 暂不售卖（如设计稿中「运动版」按钮置灰），前端选择器对该属性值按钮置灰 + 删除线。
+  - **关键语义**：`status` 与库存**无关**。即使某 SKU `stock = 0`，其 `status` 仍保持 `1`（在售但暂时无货），前端通过 `stock = 0` 判断置灰「无货」按钮，而非将 `status` 置为 `0`。
+  - 前台展示规则：`status = 0` → 属性值按钮置灰禁用（不可选）；`status = 1 && stock = 0` → 属性值按钮可选但加购按钮置灰提示「无货」；`status = 1 && stock > 0` → 正常可选可加购。
+  - 该语义与 `t_product.status`（商品上下架）独立，商品下架时整商品不可售，SKU `status` 不变。
+
+**索引说明**（建议5 已新增）：
+- `idx_product_status_stock (product_id, status, stock)`：用于快速查询「某商品下库存大于 0 的启用 SKU」，SQL 形如 `WHERE product_id = ? AND status = 1 AND stock > 0`，前台展示可选规格时直接命中该联合索引，避免全表扫描。
 
 ### 4.2 现有表修改
 
 #### 4.2.1 `t_cart` 新增 `sku_id` 并修改唯一约束
 
+**建议8 已落实**：`sku_id` 设为 `NOT NULL DEFAULT 0`，用 `0` 代表「无规格商品」，而非 NULL。这样 `(user_id, product_id, sku_id)` 三列唯一约束可完美工作，应用层不需要为 NULL 做特殊处理（MySQL 中 NULL 不参与唯一性比较，会导致同一无规格商品产生多条 `sku_id = NULL` 的购物车项）。
+
 ```sql
--- 新增 sku_id 字段
-ALTER TABLE `t_cart` ADD COLUMN `sku_id` BIGINT DEFAULT NULL COMMENT 'SKU ID（NULL表示无规格商品）' AFTER `product_id`;
+-- 新增 sku_id 字段（NOT NULL DEFAULT 0，0 代表无规格商品）
+ALTER TABLE `t_cart` ADD COLUMN `sku_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'SKU ID（0表示无规格商品，非0为具体SKU）' AFTER `product_id`;
 
 -- 删除原唯一约束，改为 (user_id, product_id, sku_id) 三列唯一
 ALTER TABLE `t_cart` DROP INDEX `uk_user_product`;
-ALTER TABLE `t_cart` ADD UNIQUE KEY `uk_user_product_sku` (`user_id`, `product_id`, `sku_id`) COMMENT '用户+商品+SKU唯一约束';
+ALTER TABLE `t_cart` ADD UNIQUE KEY `uk_user_product_sku` (`user_id`, `product_id`, `sku_id`) COMMENT '用户+商品+SKU唯一约束（sku_id=0表示无规格，完美工作）';
 
 -- 新增索引加速按 SKU 查询
 ALTER TABLE `t_cart` ADD KEY `idx_sku_id` (`sku_id`);
 ```
 
-说明：`sku_id` 允许 NULL，用于无规格的旧商品（向后兼容）。唯一约束改为三列，使同一商品不同 SKU 视为不同购物车项。
+说明：
+- `sku_id` **NOT NULL DEFAULT 0**：无规格商品统一用 `0` 表示，加购时不传 `skuId` 则后端写入 `0`。
+- 唯一约束 `(user_id, product_id, sku_id)` 完美工作：同一用户同一无规格商品（`sku_id = 0`）只会有一条购物车项，重复加购时数量累加。
+- 应用层无需为 NULL 做特殊处理：`LambdaQueryWrapper.eq(Cart::getSkuId, skuId != null ? skuId : 0L)` 统一逻辑，无需 `isNull` 分支。
+- 旧数据迁移：执行 `UPDATE t_cart SET sku_id = 0 WHERE sku_id IS NULL;` 将历史 NULL 数据转为 0（本方案新字段无历史 NULL 数据，无需迁移）。
 
 #### 4.2.2 `t_normal_order_item` 新增 `sku_id` / `sku_attributes`
 
@@ -497,14 +512,38 @@ ALTER TABLE `t_product_review` ADD COLUMN `sku_attributes` VARCHAR(500) DEFAULT 
 ALTER TABLE `t_product_review` ADD KEY `idx_sku_id` (`sku_id`);
 ```
 
-#### 4.2.4 `t_product` 字段语义调整（不改结构）
+#### 4.2.4 `t_product` 新增冗余字段并调整 `original_price` / `stock` 语义
 
-`t_product.original_price` 与 `t_product.stock` **保持原字段不变**，但语义调整为：
+**新增三个冗余字段**（建议3 已落实）：
 
-- 当商品**无 SKU**（`t_product_sku` 中无该商品的启用记录）时：`original_price` / `stock` 仍为商品的价格 / 库存（向后兼容）。
-- 当商品**有 SKU** 时：`original_price` / `stock` 作为**兜底默认值**（用于 SKU 未全部覆盖时的回退），实际展示价格取 SKU 价格区间，实际库存取所有启用 SKU 库存之和。
+```sql
+-- t_product 新增 SKU 聚合冗余字段（有 SKU 时由 Service 层维护）
+ALTER TABLE `t_product` ADD COLUMN `min_price`    DECIMAL(10,2) DEFAULT NULL COMMENT 'SKU最低价（有SKU时由Service层维护）' AFTER `stock`;
+ALTER TABLE `t_product` ADD COLUMN `max_price`    DECIMAL(10,2) DEFAULT NULL COMMENT 'SKU最高价（有SKU时由Service层维护）' AFTER `min_price`;
+ALTER TABLE `t_product` ADD COLUMN `total_stock`  INT          DEFAULT NULL COMMENT 'SKU库存汇总（有SKU时由Service层维护）' AFTER `max_price`;
+```
 
-这样无需 ALTER 表结构，仅靠 Service 层逻辑即可兼容。新增商品时若定义了 SKU，`original_price` 可设为最低 SKU 价格、`stock` 设为 SKU 库存之和，保持列表页展示一致性。
+**字段语义**（建议3 已明确，**保留 `original_price` / `stock` 原语义**）：
+
+- `original_price`：**保留原语义**——无 SKU 时表示商品价格；有 SKU 时**不再**作为兜底默认值，仅作为「无 SKU 旧商品」的价格字段，列表页 / 详情页有 SKU 时**不读取**该字段。
+- `stock`：**保留原语义**——无 SKU 时表示商品库存；有 SKU 时**不再**作为兜底默认值，仅作为「无 SKU 旧商品」的库存字段。
+- `min_price`：有 SKU 时由 Service 层维护为「所有启用 SKU 最低价格」，无 SKU 时为 NULL。列表页 / 详情页有 SKU 时读取该字段展示价格区间下限。
+- `max_price`：有 SKU 时由 Service 层维护为「所有启用 SKU 最高价格」，无 SKU 时为 NULL。列表页 / 详情页有 SKU 时读取该字段展示价格区间上限。
+- `total_stock`：有 SKU 时由 Service 层维护为「所有启用 SKU 库存之和」，无 SKU 时为 NULL。列表页展示库存时读取该字段。
+
+**Service 层维护规则**：
+- `createProduct` / `updateProduct` 保存 SKU 后，同步更新 `t_product.min_price` / `max_price` / `total_stock`（聚合所有启用 SKU）。
+- `deductStock` / `restoreStock` 扣减 / 回补 SKU 库存后，同步更新 `t_product.total_stock`（增量更新，避免全量聚合）。
+- 删除所有 SKU 后，将三个字段置为 NULL。
+
+**理由**（建议3 设计动机）：
+1. **列表页查询频繁**：商品列表页需展示价格区间与库存，若每次查询都聚合 `t_product_sku` 表（`MIN(price)` / `MAX(price)` / `SUM(stock)`），在商品数量大时性能不可接受。冗余字段使列表页查询保持单表 `SELECT`，性能与无 SKU 时一致。
+2. **语义清晰**：`original_price` / `stock` 保留「无 SKU 商品」语义，`min_price` / `max_price` / `total_stock` 表达「有 SKU 商品的聚合」语义，避免一个字段在不同条件下语义漂移（原方案「兜底默认值」语义模糊）。
+3. **维护成本低**：聚合字段仅在 SKU 增删 / 库存变更时更新，频率远低于列表页查询频率，冗余收益显著。
+
+**向后兼容**：无 SKU 的旧商品 `min_price` / `max_price` / `total_stock` 为 NULL，列表页 / 详情页判断 `hasSku = false` 时回退到 `original_price` / `stock`，旧数据无需迁移。
+
+**对 v1.0 已执行迁移的兼容**：若 `migration_v7_sku.sql` 已在测试环境执行过（无这三个字段），通过追加 ALTER 语句补字段（见 4.4 节迁移脚本末尾）。
 
 ### 4.3 索引设计汇总
 
@@ -519,6 +558,7 @@ ALTER TABLE `t_product_review` ADD KEY `idx_sku_id` (`sku_id`);
 | `t_product_sku` | `uk_product_sku_code` | `(product_id, sku_code)` | 同商品内 SKU 编码唯一 |
 | `t_product_sku` | `idx_product_id` | `product_id` | 按商品查所有 SKU |
 | `t_product_sku` | `idx_product_status` | `(product_id, status)` | 按商品查启用 SKU |
+| `t_product_sku` | `idx_product_status_stock` | `(product_id, status, stock)` | 快速查询某商品下库存大于 0 的启用 SKU（前台展示可选规格，建议5 新增） |
 | `t_cart` | `uk_user_product_sku` | `(user_id, product_id, sku_id)` | 同用户同商品同 SKU 唯一 |
 | `t_cart` | `idx_sku_id` | `sku_id` | 按 SKU 查购物车项 |
 | `t_normal_order_item` | `idx_sku_id` | `sku_id` | 按 SKU 查订单明细 |
@@ -622,27 +662,28 @@ CREATE TABLE `t_product_attribute_value` (
 CREATE TABLE `t_product_sku` (
     `id`          BIGINT        NOT NULL            COMMENT '主键ID（雪花算法）',
     `product_id`  BIGINT        NOT NULL            COMMENT '所属商品ID',
-    `sku_code`    VARCHAR(64)   DEFAULT NULL        COMMENT 'SKU编码（同商品内唯一）',
+    `sku_code`    VARCHAR(64)   NOT NULL            COMMENT 'SKU编码（同商品内唯一，由generateSkuCode可靠生成或后台手填，禁止NULL）',
     `price`       DECIMAL(10,2) NOT NULL            COMMENT 'SKU价格（元）',
     `stock`       INT           NOT NULL DEFAULT 0  COMMENT 'SKU库存',
     `main_image`  VARCHAR(255)  DEFAULT NULL        COMMENT 'SKU主图URL（NULL沿用商品主图）',
     `attributes`  JSON          NOT NULL            COMMENT 'SKU属性键值对JSON',
-    `status`      TINYINT       NOT NULL DEFAULT 1  COMMENT '状态：1-启用/0-禁用',
+    `status`      TINYINT       NOT NULL DEFAULT 1  COMMENT '是否在售：1-在售/0-停售（与库存无关）',
     `is_deleted`  TINYINT       NOT NULL DEFAULT 0  COMMENT '逻辑删除',
     `create_time` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP                COMMENT '创建时间',
     `update_time` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_product_sku_code` (`product_id`, `sku_code`),
     KEY `idx_product_id` (`product_id`),
-    KEY `idx_product_status` (`product_id`, `status`)
+    KEY `idx_product_status` (`product_id`, `status`),
+    KEY `idx_product_status_stock` (`product_id`, `status`, `stock`) COMMENT '快速查询某商品下库存大于0的启用SKU'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='商品SKU表';
 
 -- ------------------------------------------------------------
--- 4. t_cart 新增 sku_id 并修改唯一约束
+-- 4. t_cart 新增 sku_id 并修改唯一约束（建议8：NOT NULL DEFAULT 0）
 -- ------------------------------------------------------------
-ALTER TABLE `t_cart` ADD COLUMN `sku_id` BIGINT DEFAULT NULL COMMENT 'SKU ID（NULL表示无规格商品）' AFTER `product_id`;
+ALTER TABLE `t_cart` ADD COLUMN `sku_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'SKU ID（0表示无规格商品，非0为具体SKU）' AFTER `product_id`;
 ALTER TABLE `t_cart` DROP INDEX `uk_user_product`;
-ALTER TABLE `t_cart` ADD UNIQUE KEY `uk_user_product_sku` (`user_id`, `product_id`, `sku_id`) COMMENT '用户+商品+SKU唯一约束';
+ALTER TABLE `t_cart` ADD UNIQUE KEY `uk_user_product_sku` (`user_id`, `product_id`, `sku_id`) COMMENT '用户+商品+SKU唯一约束（sku_id=0表示无规格）';
 ALTER TABLE `t_cart` ADD KEY `idx_sku_id` (`sku_id`);
 
 -- ------------------------------------------------------------
@@ -658,6 +699,15 @@ ALTER TABLE `t_normal_order_item` ADD KEY `idx_sku_id` (`sku_id`);
 ALTER TABLE `t_product_review` ADD COLUMN `sku_id`         BIGINT       DEFAULT NULL COMMENT 'SKU ID' AFTER `product_id`;
 ALTER TABLE `t_product_review` ADD COLUMN `sku_attributes` VARCHAR(500) DEFAULT NULL COMMENT 'SKU属性快照' AFTER `sku_id`;
 ALTER TABLE `t_product_review` ADD KEY `idx_sku_id` (`sku_id`);
+
+-- ------------------------------------------------------------
+-- 7. t_product 新增 SKU 聚合冗余字段（建议3）
+--    有 SKU 时由 Service 层维护 min_price / max_price / total_stock
+--    original_price / stock 保留原语义（无 SKU 商品的价格 / 库存）
+-- ------------------------------------------------------------
+ALTER TABLE `t_product` ADD COLUMN `min_price`    DECIMAL(10,2) DEFAULT NULL COMMENT 'SKU最低价（有SKU时由Service层维护）' AFTER `stock`;
+ALTER TABLE `t_product` ADD COLUMN `max_price`    DECIMAL(10,2) DEFAULT NULL COMMENT 'SKU最高价（有SKU时由Service层维护）' AFTER `min_price`;
+ALTER TABLE `t_product` ADD COLUMN `total_stock`  INT          DEFAULT NULL COMMENT 'SKU库存汇总（有SKU时由Service层维护）' AFTER `max_price`;
 ```
 
 执行说明：脚本不自动执行，由运维手动在测试 / 生产环境执行。执行前请备份 `t_cart` / `t_normal_order_item` / `t_product_review` 三张表。
@@ -1304,11 +1354,14 @@ public enum AttributeType {
 
 文件：`seckill-mall/src/main/java/com/seckill/mall/entity/Cart.java`
 
-在 `productId` 字段后新增：
+在 `productId` 字段后新增（建议8 已落实，`skuId` 默认 0L 表示无规格商品，非 NULL）：
 
 ```java
-/** SKU ID，null 表示无规格商品 */
-private Long skuId;
+/**
+ * SKU ID，0 表示无规格商品（NOT NULL DEFAULT 0），非 0 为具体 SKU。
+ * 应用层无需为 null 做特殊处理，统一用 eq(Cart::getSkuId, skuId != null ? skuId : 0L) 查询。
+ */
+private Long skuId = 0L;
 ```
 
 #### 5.2.2 `NormalOrderItem.java` 加 `skuId` / `skuAttributes`
@@ -1610,9 +1663,15 @@ public interface ProductSkuMapper extends BaseMapper<ProductSku> {
     List<ProductSku> selectEnabledByProductId(@Param("productId") Long productId);
 
     /**
-     * 按 attributes JSON 精确匹配 SKU（用于加购 / 购买时根据用户选择定位 SKU）
-     * 示例 attributesJson: '{"颜色":"曜石黑","版本":"旗舰版","表带":"氟橡胶表带"}'
+     * 【已废弃 / 不推荐】按 attributes JSON 精确匹配 SKU。
+     *
+     * 建议4 已落实：加购 / 立即购买时前端直接传 skuId（前端在用户选完属性后
+     * 从内存 skus 数组查找匹配的 skuId），后端无需通过 JSON 匹配查 SKU。
+     *
+     * 保留该方法仅供调试 / 兼容旧接口使用，新代码不应调用。
+     * 性能问题：JSON 字段精确匹配不走索引，数据量大时慢。
      */
+    @Deprecated
     ProductSku selectByAttributes(@Param("productId") Long productId,
                                   @Param("attributesJson") String attributesJson);
 }
@@ -1878,10 +1937,29 @@ public class ProductAttributeServiceImpl implements ProductAttributeService {
 
 关键方法实现要点：
 
-- `saveSkus`：事务内先 `deleteByProductId` 逻辑删除旧 SKU，再遍历插入新 SKU。`skuCode` 为空时自动生成（如 `颜色:曜石黑-版本:旗舰版`）。
-- `deductStock`：使用 MyBatis-Plus 乐观锁 `UPDATE t_product_sku SET stock = stock - #{quantity} WHERE id = #{skuId} AND stock >= #{quantity}`，返回受影响行数 > 0 表示成功。
-- `restoreStock`：`UPDATE t_product_sku SET stock = stock + #{quantity} WHERE id = #{skuId}`。
-- `calculateMinPrice` / `calculateMaxPrice` / `calculateTotalStock`：查询启用 SKU 列表后内存聚合。
+- `saveSkus`：事务内先 `deleteByProductId` 逻辑删除旧 SKU，再遍历插入新 SKU。`skuCode` 为空时调用 `generateSkuCode` 可靠生成（见下文建议12）。
+- `deductStock`（建议6 已落实，**参数绑定防 SQL 注入**）：使用 MyBatis-Plus 乐观锁，**禁止字符串拼接 SQL**。两种实现方式：
+  - **方式一（推荐，UpdateWrapper + setSql 参数绑定）**：
+    ```java
+    // ✅ 正确：使用 #{quantity} 参数绑定，防 SQL 注入
+    int rows = skuMapper.update(null, new LambdaUpdateWrapper<ProductSku>()
+            .eq(ProductSku::getId, skuId)
+            .ge(ProductSku::getStock, quantity)
+            .setSql("stock = stock - {0}", quantity));  // {0} 为参数占位符，MyBatis 会预编译参数化
+    return rows > 0;
+    ```
+  - **方式二（XML 中 #{quantity} 参数绑定）**：
+    ```xml
+    <update id="deductStock">
+        UPDATE t_product_sku
+        SET stock = stock - #{quantity}
+        WHERE id = #{skuId} AND stock >= #{quantity}
+    </update>
+    ```
+  - **❌ 错误示范（SQL 注入风险）**：`setDeductStock` 中若用 `"stock = stock - " + quantity` 字符串拼接，当 `quantity` 来自外部输入时可能被注入。本方案 `quantity` 虽为 `Integer` 类型（不易注入），但仍**坚持参数绑定**，养成安全编码习惯，避免后续重构时引入风险。
+  - 返回受影响行数 > 0 表示成功，失败抛异常由上层事务回滚。
+- `restoreStock`：同样使用参数绑定 `stock = stock + #{quantity}`，防注入。
+- `calculateMinPrice` / `calculateMaxPrice` / `calculateTotalStock`：查询启用 SKU 列表后内存聚合。**建议3 已落实**：聚合结果同步写入 `t_product.min_price` / `max_price` / `total_stock` 冗余字段，列表页直接读取，避免每次聚合。
 
 ```java
 package com.seckill.mall.service.impl;
@@ -1931,7 +2009,10 @@ public class ProductSkuServiceImpl implements ProductSkuService {
         for (ProductSkuDTO dto : skus) {
             ProductSku sku = new ProductSku();
             sku.setProductId(productId);
-            sku.setSkuCode(dto.getSkuCode() != null ? dto.getSkuCode() : generateSkuCode(dto.getAttributes()));
+            // 建议2+12 已落实：sku_code NOT NULL，可靠生成（避免 hashCode 碰撞）
+            sku.setSkuCode(dto.getSkuCode() != null && !dto.getSkuCode().isEmpty()
+                    ? dto.getSkuCode()
+                    : generateSkuCode(productId, dto.getAttributes()));
             sku.setPrice(dto.getPrice());
             sku.setStock(dto.getStock());
             sku.setMainImage(dto.getMainImage());
@@ -1959,18 +2040,21 @@ public class ProductSkuServiceImpl implements ProductSkuService {
 
     @Override
     public boolean deductStock(Long skuId, Integer quantity) {
+        // 建议6 已落实：使用参数绑定防 SQL 注入，禁止字符串拼接
+        // ✅ 正确：{0} 为 MyBatis 参数占位符，预编译参数化
         int rows = skuMapper.update(null, new LambdaUpdateWrapper<ProductSku>()
                 .eq(ProductSku::getId, skuId)
                 .ge(ProductSku::getStock, quantity)
-                .setSql("stock = stock - " + quantity));
+                .setSql("stock = stock - {0}", quantity));
         return rows > 0;
     }
 
     @Override
     public void restoreStock(Long skuId, Integer quantity) {
+        // 建议6 已落实：参数绑定防注入
         skuMapper.update(null, new LambdaUpdateWrapper<ProductSku>()
                 .eq(ProductSku::getId, skuId)
-                .setSql("stock = stock + " + quantity));
+                .setSql("stock = stock + {0}", quantity));
     }
 
     @Override
@@ -2005,12 +2089,43 @@ public class ProductSkuServiceImpl implements ProductSkuService {
         return vo;
     }
 
-    private String generateSkuCode(String attributesJson) {
-        // 简易生成：取 attributes JSON 的 hashCode
-        return "SKU-" + Integer.toHexString(attributesJson.hashCode());
+    /**
+     * 可靠生成 SKU 编码（建议12 已落实，与建议2 配合）。
+     *
+     * 方案：SKU-{productId}-{attrValue1Id}-{attrValue2Id}-... 或直接使用雪花算法 ID。
+     * 确保 sku_code NOT NULL 且唯一，避免 hashCode 碰撞风险。
+     *
+     * @param productId    商品 ID
+     * @param attributesJson SKU 属性 JSON，如 {"颜色":"曜石黑","版本":"旗舰版"}
+     * @return 可靠的 SKU 编码，非空且同商品内唯一
+     */
+    private String generateSkuCode(Long productId, String attributesJson) {
+        // 方案一（推荐）：基于 productId + 属性值 ID 拼接，可读性强且唯一
+        // 需要在调用前解析 attributesJson 提取属性值 ID 列表
+        // 示例：SKU-1001-2001-2002-2003（productId=1001, attrValueIds=[2001,2002,2003]）
+        // return "SKU-" + productId + "-" + attrValueIds.stream()
+        //         .map(String::valueOf).collect(Collectors.joining("-"));
+
+        // 方案二（兜底）：直接使用雪花算法 ID，绝对唯一但可读性差
+        // return "SKU-" + IdWorker.getId();
+
+        // 方案三（当前实现，过渡）：基于 productId + attributesJson 的 SHA-256 摘要
+        // 避免 hashCode 碰撞风险（hashCode 32 位，碰撞概率高）
+        // 适用于属性值 ID 未传入的场景
+        String digest = org.apache.commons.codec.digest.DigestUtils.sha256Hex(
+                productId + ":" + attributesJson).substring(0, 16);
+        return "SKU-" + productId + "-" + digest;
     }
 }
 ```
+
+> **注意**：原方案 `generateSkuCode` 使用 `Integer.toHexString(attributesJson.hashCode())`，hashCode 为 32 位整数，**碰撞概率高**（不同属性组合可能生成相同 hashCode），且不含 `productId`，跨商品可能冲突。建议12 已改为基于 `productId` + SHA-256 摘要（或属性值 ID 拼接 / 雪花算法 ID），确保 `sku_code` NOT NULL 且同商品内唯一。`saveSkus` 中调用处需传入 `productId`：
+>
+> ```java
+> sku.setSkuCode(dto.getSkuCode() != null && !dto.getSkuCode().isEmpty()
+>         ? dto.getSkuCode()
+>         : generateSkuCode(productId, dto.getAttributes()));
+> ```
 
 ### 5.6 修改 Controller
 
@@ -2181,10 +2296,10 @@ Result<Void> addToCart(Long userId, Long productId, Long skuId, Integer quantity
 
 **实现要点**：
 1. 校验商品状态为 `ON_SALE`。
-2. 若 `skuId != null`，调用 `productSkuService.getByIdEnabled(skuId)` 校验 SKU 存在且启用，且 SKU 的 `productId` 与传入 `productId` 一致；取 SKU 价格 / 库存用于后续展示。
-3. 若 `skuId == null`，按原逻辑使用 `t_product.original_price` / `stock`。
-4. 查询购物车项时使用 `(userId, productId, skuId)` 三列匹配（`LambdaQueryWrapper.eq(Cart::getUserId).eq(Cart::getProductId).eq(Cart::getSkuId)`，注意 `skuId` 为 null 时 MyBatis-Plus `eq` 会查 `sku_id = null`，需用 `Objects.isNull` 判断改用 `.isNull`）。
-5. 已存在则数量累加，否则新建购物车项并设置 `skuId`。
+2. 若 `skuId != null && skuId != 0`，调用 `productSkuService.getByIdEnabled(skuId)` 校验 SKU 存在且启用，且 SKU 的 `productId` 与传入 `productId` 一致；取 SKU 价格 / 库存用于后续展示。
+3. 若 `skuId == null || skuId == 0`，按原逻辑使用 `t_product.original_price` / `stock`，写入时 `skuId` 统一为 `0L`。
+4. 查询购物车项时使用 `(userId, productId, skuId)` 三列匹配（`LambdaQueryWrapper.eq(Cart::getUserId).eq(Cart::getProductId).eq(Cart::getSkuId, skuId != null ? skuId : 0L)`，建议8 已落实，`sku_id` NOT NULL DEFAULT 0，**无需 isNull 分支**）。
+5. 已存在则数量累加，否则新建购物车项并设置 `skuId`（无规格时设为 `0L`）。
 6. 同步递增 `t_product.cart_count`。
 
 **`getCartList` 方法修改**：组装 `CartItemVO` 时，若购物车项 `skuId != null`，查询 SKU 并填充 `skuId` / `skuAttributes`（将 SKU 的 `attributes` JSON 转为可读字符串「颜色: 曜石黑 / 版本: 旗舰版」）/ `skuMainImage`，价格取 SKU 价格，库存取 SKU 库存，主图优先取 SKU 主图（空则取商品主图）。
@@ -2208,7 +2323,64 @@ NormalOrderDetailVO createNormalOrder(Long userId, Long productId, Long skuId,
 
 **`createOrderFromCart` 方法修改**：遍历待结算购物车项时，读取每项的 `skuId`，按上述逻辑扣减对应 SKU 库存（或商品库存），写入订单明细的 `skuId` / `skuAttributes`。
 
-**`cancelNormalOrder` / `timeoutCancelNormalOrder` 方法修改**：回补库存时，若订单明细 `skuId != null`，调用 `productSkuService.restoreStock(skuId, quantity)` 回补 SKU 库存；否则按原逻辑回补 `t_product.stock`。
+**`cancelNormalOrder` / `timeoutCancelNormalOrder` 方法修改**（建议7 已落实，**状态机防重复回补**）：回补库存时，若订单明细 `skuId != null && skuId != 0`，调用 `productSkuService.restoreStock(skuId, quantity)` 回补 SKU 库存；否则按原逻辑回补 `t_product.stock`。
+
+**并发场景**：订单取消（用户主动）和超时取消（定时任务）可能并发执行，若不加防护，同一订单可能被两次回补库存，导致库存虚增。
+
+**状态机设计**（建议7）：
+- 在 `t_normal_order` 的 `status` 枚举中新增 `CANCELLING`（取消中）中间状态，取消流程变为三阶段：
+  1. **前置校验**：`cancelNormalOrder` / `timeoutCancelNormalOrder` 先检查订单状态，仅当 `status = PENDING`（待支付）时才可取消，否则直接返回（幂等）。
+  2. **置为「取消中」**：`UPDATE t_normal_order SET status = 'CANCELLING' WHERE id = ? AND status = 'PENDING'`，利用乐观锁（`WHERE status = 'PENDING'`）保证只有一个请求能将状态改为 `CANCELLING`，返回受影响行数 = 0 表示已被其他请求处理，直接返回。
+  3. **回补库存**：遍历订单明细，对每项 `skuId != 0` 调用 `restoreStock`，对 `skuId = 0` 回补 `t_product.stock`。
+  4. **置为「已取消」**：`UPDATE t_normal_order SET status = 'CANCELLED' WHERE id = ? AND status = 'CANCELLING'`，完成取消流程。
+
+```java
+@Transactional(rollbackFor = Exception.class)
+public void cancelNormalOrder(Long orderId, Long userId) {
+    // 1. 前置校验：仅 PENDING 状态可取消
+    NormalOrder order = orderMapper.selectById(orderId);
+    if (order == null || !order.getUserId().equals(userId)) {
+        throw new BusinessException("订单不存在或无权限");
+    }
+    if (!"PENDING".equals(order.getStatus())) {
+        // 幂等：已取消 / 已完成 / 取消中等状态直接返回
+        return;
+    }
+    // 2. 乐观锁：仅 PENDING → CANCELLING 只能成功一次
+    int rows = orderMapper.update(null, new LambdaUpdateWrapper<NormalOrder>()
+            .eq(NormalOrder::getId, orderId)
+            .eq(NormalOrder::getStatus, "PENDING")
+            .set(NormalOrder::getStatus, "CANCELLING"));
+    if (rows == 0) {
+        // 已被其他请求（如超时任务）抢占，直接返回
+        return;
+    }
+    // 3. 回补库存
+    List<NormalOrderItem> items = orderItemMapper.selectByOrderId(orderId);
+    for (NormalOrderItem item : items) {
+        if (item.getSkuId() != null && item.getSkuId() != 0L) {
+            productSkuService.restoreStock(item.getSkuId(), item.getQuantity());
+            // 建议3：同步更新 t_product.total_stock
+            productSkuService.refreshTotalStock(item.getProductId());
+        } else {
+            // 无规格商品回补 t_product.stock
+            productMapper.addStock(item.getProductId(), item.getQuantity());
+        }
+    }
+    // 4. 置为已取消
+    orderMapper.update(null, new LambdaUpdateWrapper<NormalOrder>()
+            .eq(NormalOrder::getId, orderId)
+            .eq(NormalOrder::getStatus, "CANCELLING")
+            .set(NormalOrder::getStatus, "CANCELLED"));
+}
+```
+
+**超时取消任务**（`timeoutCancelNormalOrder`）同理：先检查订单状态为 `PENDING`，再走 `PENDING → CANCELLING → 回补 → CANCELLED` 流程。定时任务扫描超时订单时，对每个订单调用 `cancelNormalOrder`，状态机保证幂等。
+
+**`t_normal_order.status` 枚举扩展**（建议7）：
+- 原状态：`PENDING`（待支付）/ `PAID`（已支付）/ `SHIPPED`（已发货）/ `COMPLETED`（已完成）/ `CANCELLED`（已取消）
+- 新增：`CANCELLING`（取消中，中间状态，用于并发防护）
+- 状态流转：`PENDING → CANCELLING → CANCELLED`（取消流程）；`PENDING → PAID → SHIPPED → COMPLETED`（正常流程）
 
 #### 5.7.4 修改 `ProductReviewService.java` / `ProductReviewServiceImpl.java`
 
@@ -2221,9 +2393,89 @@ ProductReviewVO create(Long userId, Long productId, Long skuId,
                        String content, Integer rating, String images);
 ```
 
-**实现要点**：
-1. 若 `skuId != null`，查询 SKU 并将 `attributes` JSON 转可读字符串作为 `skuAttributes` 快照。
-2. 创建 `ProductReview` 实体时设置 `skuId` 与 `skuAttributes`。
+**实现要点**（建议13 已落实，**新增购买校验**）：
+1. **校验用户是否购买了该 SKU**（建议13）：查询 `t_normal_order_item` 确认该用户存在 `product_id = ? AND sku_id = ? AND order_id` 对应的已完成订单，防止恶意用户为未购买的规格发表评论。
+2. **校验 skuId 是否属于该 productId**（建议13）：若 `skuId != null && skuId != 0`，查询 `t_product_sku` 确认 `sku.product_id = productId`，防止恶意用户为不存在的规格发表评论。
+3. 若 `skuId != null && skuId != 0`，查询 SKU 并将 `attributes` JSON 转可读字符串作为 `skuAttributes` 快照。
+4. 创建 `ProductReview` 实体时设置 `skuId` 与 `skuAttributes`。
+
+**校验代码示例**（建议13）：
+```java
+@Override
+@Transactional(rollbackFor = Exception.class)
+public ProductReviewVO create(Long userId, Long productId, Long skuId,
+                             String content, Integer rating, String images) {
+    // 1. 校验商品存在
+    Product product = productMapper.selectById(productId);
+    if (product == null) {
+        throw new BusinessException("商品不存在");
+    }
+
+    // 2. 建议13：校验 skuId 属于该 productId
+    String skuAttributes = null;
+    if (skuId != null && skuId != 0L) {
+        ProductSku sku = productSkuMapper.selectById(skuId);
+        if (sku == null) {
+            throw new BusinessException("SKU 不存在");
+        }
+        if (!sku.getProductId().equals(productId)) {
+            throw new BusinessException("SKU 不属于该商品，无法发表评论");
+        }
+        skuAttributes = convertAttributesToReadable(sku.getAttributes());
+    }
+
+    // 3. 建议13：校验用户是否购买了该 SKU（防止恶意评论）
+    boolean hasPurchased = checkUserPurchasedSku(userId, productId, skuId);
+    if (!hasPurchased) {
+        throw new BusinessException("您未购买该商品规格，无法发表评论");
+    }
+
+    // 4. 创建评论
+    ProductReview review = new ProductReview();
+    review.setProductId(productId);
+    review.setUserId(userId);
+    review.setSkuId(skuId != null ? skuId : 0L);  // 建议8：无规格用 0
+    review.setSkuAttributes(skuAttributes);
+    review.setContent(content);
+    review.setRating(rating);
+    review.setImages(images);
+    review.setStatus(1);  // 默认正常
+    productReviewMapper.insert(review);
+    return convertToVO(review);
+}
+
+/**
+ * 建议13：校验用户是否购买了该 SKU
+ * 查询 t_normal_order_item 确认存在已完成订单
+ */
+private boolean checkUserPurchasedSku(Long userId, Long productId, Long skuId) {
+    // 查询该用户对该商品（+ SKU）的已完成订单明细
+    // SQL: SELECT COUNT(*) FROM t_normal_order_item oi
+    //      INNER JOIN t_normal_order o ON oi.order_id = o.id
+    //      WHERE o.user_id = ? AND oi.product_id = ?
+    //        AND (oi.sku_id = ? OR ? = 0)  -- skuId=0 时不校验 SKU
+    //        AND o.status IN ('COMPLETED', 'SHIPPED')
+    Long effectiveSkuId = skuId != null ? skuId : 0L;
+    int count = orderItemMapper.countPurchasedByUserAndSku(userId, productId, effectiveSkuId);
+    return count > 0;
+}
+
+/**
+ * 将 SKU attributes JSON 转可读字符串
+ * 如 {"颜色":"曜石黑","版本":"旗舰版"} → "颜色: 曜石黑 / 版本: 旗舰版"
+ */
+private String convertAttributesToReadable(String attributesJson) {
+    if (attributesJson == null || attributesJson.isEmpty()) return null;
+    try {
+        Map<String, String> map = JSON.parseObject(attributesJson, Map.class);
+        return map.entrySet().stream()
+                .map(e -> e.getKey() + ": " + e.getValue())
+                .collect(Collectors.joining(" / "));
+    } catch (Exception e) {
+        return attributesJson;
+    }
+}
+```
 
 **`listByProductId` 方法修改**：组装 `ProductReviewVO` 时填充 `skuId` / `skuAttributes`（直接从实体读取，无需再查 SKU 表，因为已快照）。
 
@@ -2736,8 +2988,13 @@ function removeAttrValue(idx: number, vIdx: number): void {
   formData.attributes[idx].values.splice(vIdx, 1)
 }
 
-/* === 笛卡尔积生成 SKU 组合 === */
-function generateSkus(): void {
+/* === 建议10 已落实：SKU 笛卡尔积后端生成，前端仅传属性定义 === */
+/* SKU 数量可能爆炸（3 属性 × 10 值 = 1000 个 SKU），前端生成会导致：
+   1. 大量计算阻塞 UI
+   2. 一次性渲染过多 DOM 导致页面卡顿
+   3. 前端笛卡尔积逻辑与后端重复，维护成本高
+   改为：前端传属性定义，后端返回笛卡尔积 SKU 列表，前端表格分页展示 */
+async function generateSkus(): Promise<void> {
   if (formData.attributes.length === 0) {
     ElMessage.warning('请先添加属性')
     return
@@ -2748,28 +3005,28 @@ function generateSkus(): void {
       return
     }
   }
-  // 笛卡尔积
-  const valueLists = formData.attributes.map(a => a.values)
-  const combinations = cartesianProduct(valueLists)
-  formData.skus = combinations.map(combo => {
-    const attrMap: Record<string, string> = {}
-    formData.attributes.forEach((a, i) => {
-      attrMap[a.name] = combo[i].value
+  try {
+    // 调用后端接口生成笛卡尔积 SKU
+    const res = await generateSkuCombinations({
+      productId: productId.value,  // 编辑时传，新增时为 null
+      attributes: formData.attributes.map(a => ({
+        name: a.name,
+        type: a.type,
+        values: a.values.map(v => ({ value: v.value, imageUrl: v.imageUrl }))
+      })),
+      defaultPrice: formData.originalPrice  // 默认价格
     })
-    return {
-      skuCode: '',
-      price: formData.originalPrice,
-      stock: 0,
-      mainImage: '',
-      mainImageList: [],
-      attributes: JSON.stringify(attrMap),
-      status: 1
-    }
-  })
-  ElMessage.success(`已生成 ${combinations.length} 个 SKU 组合`)
+    formData.skus = res.data.map(sku => ({
+      ...sku,
+      mainImageList: sku.mainImage ? [sku.mainImage] : []
+    }))
+    ElMessage.success(`已生成 ${res.data.length} 个 SKU 组合`)
+  } catch (e) {
+    ElMessage.error('生成 SKU 失败')
+  }
 }
 
-/* === 笛卡尔积工具函数 === */
+/* === 笛卡尔积工具函数（保留供前端小规模预览用，大规模生成走后端） === */
 function cartesianProduct<T>(arrays: T[][]): T[][] {
   if (arrays.length === 0) return [[]]
   const [first, ...rest] = arrays
@@ -2872,13 +3129,100 @@ formData.skus = p.skus ? p.skus.map(s => ({
 /**
  * 商品 SKU API - 对接后端 /api/v1/products/{productId}/skus
  */
-import { get } from './request'
-import type { Result, ProductSkuVO } from '@/types'
+import { get, post } from './request'
+import type { Result, ProductSkuVO, ProductSkuDTO, ProductAttributeDTO } from '@/types'
 
 /** 查询商品所有启用 SKU（前台商品详情页用） */
 export function getProductSkus(productId: number | string): Promise<Result<ProductSkuVO[]>> {
   return get<ProductSkuVO[]>(`/api/v1/products/${productId}/skus`)
 }
+
+/* === 建议10 已落实：后端生成 SKU 笛卡尔积 === */
+/** 生成 SKU 笛卡尔积（后台商品编辑用，传入属性定义，后端返回笛卡尔积 SKU 列表） */
+export function generateSkuCombinations(data: {
+  productId?: number | string | null
+  attributes: Array<{
+    name: string
+    type: string
+    values: Array<{ value: string; imageUrl?: string }>
+  }>
+  defaultPrice: number
+}): Promise<Result<ProductSkuDTO[]>> {
+  return post<ProductSkuDTO[]>('/api/v1/admin/product/skus/generate', data)
+}
+```
+
+### 6.2.1 后端 SKU 生成接口（建议10 新增）
+
+**接口**：`POST /api/v1/admin/product/skus/generate`
+
+**请求**：
+```json
+{
+  "productId": null,
+  "attributes": [
+    {
+      "name": "颜色",
+      "type": "IMAGE",
+      "values": [{"value": "曜石黑"}, {"value": "银月白"}, {"value": "赤霞红"}]
+    },
+    {
+      "name": "版本",
+      "type": "TEXT",
+      "values": [{"value": "标准版"}, {"value": "旗舰版"}, {"value": "尊享版"}]
+    }
+  ],
+  "defaultPrice": 1299.00
+}
+```
+
+**响应**（笛卡尔积，3×3=9 个 SKU）：
+```json
+{
+  "code": 200,
+  "data": [
+    {"skuCode": "", "price": 1299.00, "stock": 0, "mainImage": null, "attributes": "{\"颜色\":\"曜石黑\",\"版本\":\"标准版\"}", "status": 1},
+    {"skuCode": "", "price": 1299.00, "stock": 0, "mainImage": null, "attributes": "{\"颜色\":\"曜石黑\",\"版本\":\"旗舰版\"}", "status": 1},
+    {"skuCode": "", "price": 1299.00, "stock": 0, "mainImage": null, "attributes": "{\"颜色\":\"曜石黑\",\"版本\":\"尊享版\"}", "status": 1},
+    {"skuCode": "", "price": 1299.00, "stock": 0, "mainImage": null, "attributes": "{\"颜色\":\"银月白\",\"版本\":\"标准版\"}", "status": 1},
+    {"skuCode": "", "price": 1299.00, "stock": 0, "mainImage": null, "attributes": "{\"颜色\":\"银月白\",\"版本\":\"旗舰版\"}", "status": 1},
+    {"skuCode": "", "price": 1299.00, "stock": 0, "mainImage": null, "attributes": "{\"颜色\":\"银月白\",\"版本\":\"尊享版\"}", "status": 1},
+    {"skuCode": "", "price": 1299.00, "stock": 0, "mainImage": null, "attributes": "{\"颜色\":\"赤霞红\",\"版本\":\"标准版\"}", "status": 1},
+    {"skuCode": "", "price": 1299.00, "stock": 0, "mainImage": null, "attributes": "{\"颜色\":\"赤霞红\",\"版本\":\"旗舰版\"}", "status": 1},
+    {"skuCode": "", "price": 1299.00, "stock": 0, "mainImage": null, "attributes": "{\"颜色\":\"赤霞红\",\"版本\":\"尊享版\"}", "status": 1}
+  ]
+}
+```
+
+**后端实现**（`ProductSkuController.generateCombinations`）：
+```java
+@PostMapping("/skus/generate")
+public Result<List<ProductSkuDTO>> generateCombinations(@RequestBody SkuGenerateRequest req) {
+    return Result.success(productSkuService.generateCombinations(req));
+}
+```
+
+`ProductSkuServiceImpl.generateCombinations`：在内存中执行笛卡尔积（属性值数量 ≤ 100，SKU 总数 ≤ 10000，后端内存计算无压力），为每个组合生成 `attributes` JSON、默认 `price` / `stock` / `status`，`skuCode` 留空由 `saveSkus` 时 `generateSkuCode` 填充。
+
+**SKU 表格分页**（建议10）：前端 `el-table` 配合 `el-pagination`，当 SKU 数量 > 20 时启用分页，避免一次性渲染过多 DOM：
+```vue
+<el-table :data="paginatedSkus" border style="width: 100%">
+  <!-- 列定义同上 -->
+</el-table>
+<el-pagination
+  v-if="formData.skus.length > 20"
+  v-model:current-page="skuCurrentPage"
+  :page-size="20"
+  :total="formData.skus.length"
+  layout="prev, pager, next, total"
+/>
+```
+```ts
+const skuCurrentPage = ref(1)
+const paginatedSkus = computed(() => {
+  const start = (skuCurrentPage.value - 1) * 20
+  return formData.skus.slice(start, start + 20)
+})
 ```
 
 ### 6.3 新增类型定义
@@ -3114,7 +3458,7 @@ export interface BuyNowRequest {
 
 **改造点**：
 
-1. **加载 SKU 数据**：`onMounted` 中调用 `getProductDetail(id)` 后，从返回的 `ProductVO.attributes` 与 `ProductVO.skus` 获取 SKU 数据，存入响应式变量：
+1. **加载 SKU 数据**：`onMounted` 中调用 `getProductDetail(id)` 后，从返回的 `ProductVO.attributes` 与 `ProductVO.skus` 获取 SKU 数据，存入响应式变量。**建议9 已落实**：在 `loadProductDetail` 完成后，**预处理可达性地图** `Map<attributeName, Set<availableValues>>`，用户选择属性值时 O(1) 查找，无需遍历所有 SKU 和解析 JSON。
 
 ```ts
 import { getProductSkus } from '@/api/sku'
@@ -3123,7 +3467,12 @@ const attributes = ref<ProductAttributeVO[]>([])
 const skus = ref<ProductSkuVO[]>([])
 const hasSku = ref<boolean>(false)
 const selectedAttributes = reactive<Record<string, string>>({})  // 用户选择的属性键值对
-const currentSku = ref<ProductSkuVO | null>(null)  // 当前匹配的 SKU
+// 建议11 已落实：currentSku 改为 computed 派生，无需手动调用 updateCurrentSku
+
+// 建议9 已落实：预处理可达性地图
+// availabilityMap[attrName] = Set<可用属性值>（基于当前其他属性的选择，动态计算）
+// staticAvailabilityMap[attrName] = Set<所有存在启用 SKU 的属性值>（静态，加载后计算一次）
+const staticAvailabilityMap = ref<Map<string, Set<string>>>(new Map())
 
 async function loadProductDetail(id: string | number) {
   const res = await getProductDetail(id)
@@ -3138,8 +3487,41 @@ async function loadProductDetail(id: string | number) {
       selectedAttributes[attr.name] = attr.values[0].value
     }
   })
-  updateCurrentSku()
+  // 建议9：预处理静态可达性地图（基于所有启用 SKU）
+  buildStaticAvailabilityMap()
 }
+
+/* === 建议9：构建静态可达性地图 === */
+function buildStaticAvailabilityMap(): void {
+  const map = new Map<string, Set<string>>()
+  // 遍历所有启用 SKU，收集每个属性名下出现过的属性值
+  for (const sku of skus.value) {
+    if (sku.status !== 1) continue
+    try {
+      const attrs = JSON.parse(sku.attributes)
+      for (const [k, v] of Object.entries(attrs)) {
+        if (!map.has(k)) map.set(k, new Set())
+        map.get(k)!.add(v as string)
+      }
+    } catch { /* ignore */ }
+  }
+  staticAvailabilityMap.value = map
+}
+```
+
+**预处理数据结构示例**（建议9）：
+```ts
+// 假设 skus = [
+//   {attributes: '{"颜色":"曜石黑","版本":"标准版"}', status: 1, stock: 20},
+//   {attributes: '{"颜色":"曜石黑","版本":"旗舰版"}', status: 1, stock: 15},
+//   {attributes: '{"颜色":"银月白","版本":"标准版"}', status: 1, stock: 10},
+//   {attributes: '{"颜色":"银月白","版本":"运动版"}', status: 0, stock: 5}  // 停售
+// ]
+// 则 staticAvailabilityMap = Map {
+//   '颜色' => Set {'曜石黑', '银月白'},
+//   '版本' => Set {'标准版', '旗舰版'}  // '运动版' 不在，因对应 SKU status=0
+// }
+// 用户选择「颜色」时，O(1) 判断「曜石黑」是否可用：staticAvailabilityMap.get('颜色').has('曜石黑')
 ```
 
 2. **渲染 SKU 选择器**：替换原静态 HTML，使用 `v-for` 渲染属性组：
@@ -3176,17 +3558,22 @@ async function loadProductDetail(id: string | number) {
 </div>
 ```
 
-3. **选择属性值**：
+3. **选择属性值**（建议9+11 已落实）：
 
 ```ts
 function selectAttributeValue(attrName: string, value: string): void {
   if (isAttributeValueDisabled(attrName, value)) return
   selectedAttributes[attrName] = value
-  updateCurrentSku()
+  // 建议11：无需手动调用 updateCurrentSku，currentSku 是 computed 自动派生
 }
 
-/* === 判断属性值是否禁用（无对应 SKU 或 SKU 库存为 0） === */
+/* === 建议9 已落实：判断属性值是否禁用（基于可达性地图，O(1) 查找） === */
 function isAttributeValueDisabled(attrName: string, value: string): boolean {
+  // 第一层：静态可达性检查（O(1)）
+  const staticSet = staticAvailabilityMap.value.get(attrName)
+  if (!staticSet || !staticSet.has(value)) return true  // 该属性值不存在于任何启用 SKU
+
+  // 第二层：动态可达性检查（基于当前其他属性的选择）
   // 临时选中该值，检查是否存在启用的 SKU 且库存 > 0
   const tempSelected = { ...selectedAttributes, [attrName]: value }
   const matched = skus.value.filter(sku => {
@@ -3201,14 +3588,12 @@ function isAttributeValueDisabled(attrName: string, value: string): boolean {
   return matched.length === 0 || matched.every(s => s.stock === 0)
 }
 
-/* === 更新当前匹配的 SKU === */
-function updateCurrentSku(): void {
+/* === 建议11 已落实：currentSku 改为 computed 派生 === */
+/* 当 selectedAttributes 或 skus 变化时自动更新，无需手动调用 updateCurrentSku */
+const currentSku = computed<ProductSkuVO | null>(() => {
   // 检查是否所有属性都已选择
   const allSelected = attributes.value.every(a => selectedAttributes[a.name])
-  if (!allSelected) {
-    currentSku.value = null
-    return
-  }
+  if (!allSelected) return null
   // 查找完全匹配的 SKU
   const matched = skus.value.find(sku => {
     if (sku.status !== 1) return false
@@ -3219,8 +3604,11 @@ function updateCurrentSku(): void {
       return false
     }
   })
-  currentSku.value = matched || null
-}
+  return matched || null
+})
+
+// 注意：原 updateCurrentSku 方法已废弃，由 currentSku computed 替代
+// 如有旧代码调用 updateCurrentSku()，删除即可
 ```
 
 4. **价格 / 库存 / 主图联动**：
@@ -3457,11 +3845,12 @@ async function submitReview(orderItem: NormalOrderItem): Promise<void> {
 
 #### 8.2.2 购物车唯一约束变更
 
-- **风险**：`t_cart` 唯一约束从 `(user_id, product_id)` 改为 `(user_id, product_id, sku_id)`，需保证 MyBatis-Plus 查询时正确处理 `sku_id = null` 的情况。
-- **应对**：
-  - MySQL 中 `null != null`，因此 `(user_id=1, product_id=1, sku_id=null)` 与 `(user_id=1, product_id=1, sku_id=null)` 不会被唯一约束拦截（NULL 不参与唯一性比较）。这意味着同一无规格商品可能产生多条 `sku_id=null` 的购物车项。
-  - 解决方案：`CartServiceImpl.addToCart` 中查询已有购物车项时，对 `skuId == null` 使用 `LambdaQueryWrapper.isNull(Cart::getSkuId)`，对 `skuId != null` 使用 `.eq(Cart::getSkuId, skuId)`，保证查到已有项后数量累加而非新建。
-  - 若数据库层希望严格唯一，可考虑用 `0` 替代 NULL 作为无规格商品的默认 `sku_id`，但需同步修改唯一约束与查询逻辑。本方案选择保留 NULL + 应用层守卫，更符合「无规格」语义。
+- **风险**：`t_cart` 唯一约束从 `(user_id, product_id)` 改为 `(user_id, product_id, sku_id)`，需保证 MyBatis-Plus 查询时正确处理 `sku_id` 的情况。
+- **应对**（建议8 已落实）：**`sku_id` 设为 `NOT NULL DEFAULT 0`**，用 `0` 代表「无规格商品」，而非 NULL。
+  - MySQL 中 `null != null`，若用 NULL 表示无规格，则 `(user_id=1, product_id=1, sku_id=null)` 与 `(user_id=1, product_id=1, sku_id=null)` 不会被唯一约束拦截，导致同一无规格商品产生多条购物车项。
+  - 改用 `0` 后，`(user_id, product_id, sku_id)` 三列唯一约束**完美工作**，同一无规格商品（`sku_id = 0`）只会有一条购物车项，重复加购时数量累加。
+  - **应用层不需要为 NULL 做特殊处理**：`CartServiceImpl.addToCart` 中查询已有购物车项时统一用 `LambdaQueryWrapper.eq(Cart::getSkuId, skuId != null ? skuId : 0L)`，无需 `isNull` 分支判断，代码更简洁。
+  - `Cart.java` 实体 `skuId` 字段默认值 `0L`，避免 NPE。
 
 #### 8.2.3 SKU 库存扣减一致性
 
@@ -3474,11 +3863,22 @@ async function submitReview(orderItem: NormalOrderItem): Promise<void> {
 #### 8.2.4 SKU 属性 JSON 查询性能
 
 - **风险**：`t_product_sku.attributes` 是 JSON 字段，按 `attributes` 精确匹配 SKU 的查询（`selectByAttributes`）可能不走索引。
-- **应对**：
-  - 当前方案用 `attributes = CAST(#{attributesJson} AS JSON)` 精确匹配，数据量不大时性能可接受。
-  - 若性能瓶颈，可考虑：
-    1. 新增 `t_product_sku_attribute` 关联表，将 JSON 拆为多行 `(sku_id, attribute_name, attribute_value)`，按 `(product_id, attribute_name, attribute_value)` 建索引，查询时 INTERSECT 多个条件。
-    2. 或在前端缓存商品所有 SKU 列表，前端完成属性组合到 SKU ID 的映射，加购 / 购买时直接传 `skuId`，后端无需按 `attributes` 查询。本方案推荐方案 2，前端已有完整 SKU 列表，无需后端再查。
+- **应对**（建议4 已落实，**采用方案 2**）：
+  - **前端传 skuId，消除后端 JSON 查询**：前端 `ProductDetail.vue` 在用户选完所有属性后，从内存 `skus` 数组中查找匹配的 SKU，获取其 `skuId`，加购 / 立即购买时直接传 `skuId` 给后端。后端通过 `productSkuService.getByIdEnabled(skuId)` 按 主键查 SKU，走主键索引，性能最优。
+  - `selectByAttributes` 方法已标注 `@Deprecated`，保留仅供调试 / 兼容旧接口使用，新代码不应调用。
+  - 前端匹配逻辑示例（`ProductDetail.vue`）：
+    ```ts
+    // 用户选完所有属性后，从 skus 数组查找匹配的 SKU
+    const matchedSku = skus.value.find(sku => {
+      if (sku.status !== 1) return false
+      try {
+        const attrs = JSON.parse(sku.attributes)
+        return Object.keys(selectedAttributes).every(k => attrs[k] === selectedAttributes[k])
+      } catch { return false }
+    })
+    // 加购时直接传 matchedSku.id 作为 skuId
+    ```
+  - 若未来需要后端按属性查询（如管理后台按属性筛选 SKU），可考虑新增 `t_product_sku_attribute` 关联表，将 JSON 拆为多行 `(sku_id, attribute_name, attribute_value)`，按 `(product_id, attribute_name, attribute_value)` 建索引，查询时 INTERSECT 多个条件。当前方案不引入该表，保持简单。
 
 #### 8.2.5 富文本与 XSS
 
@@ -3494,8 +3894,12 @@ async function submitReview(orderItem: NormalOrderItem): Promise<void> {
 
 #### 8.2.7 并发库存扣减
 
+> **✅ 已确认正确**（确认2）：`@Transactional` 事务一致性设计经审阅确认正确，本节描述的乐观锁 + 事务回滚方案保持不变。
+
 - **风险**：SKU 库存扣减需保证并发安全。
 - **应对**：`ProductSkuServiceImpl.deductStock` 使用乐观锁 `WHERE stock >= #{quantity}`，与现有 `t_product` 库存扣减策略一致。失败抛异常，由上层事务回滚。
+- **事务边界**：`createNormalOrder` / `createOrderFromCart` 方法标注 `@Transactional(rollbackFor = Exception.class)`，确保「扣减 SKU 库存 + 创建订单 + 创建订单明细 + 递增 sales_count」在同一事务内，任一步骤失败整体回滚，保证数据一致性。
+- **建议7 配合**：取消订单的库存回补同样在事务内执行，配合 `CANCELLING` 状态机保证并发取消不会重复回补。
 
 #### 8.2.8 迁移脚本执行顺序
 
@@ -3504,6 +3908,8 @@ async function submitReview(orderItem: NormalOrderItem): Promise<void> {
 
 #### 8.2.9 分类规格模板与商品属性的同步策略
 
+> **✅ 已确认正确**（确认1）：分类模板**快照式同步**设计经审阅确认正确，本节描述的设计方案保持不变。
+
 - **风险**：分类模板变更后（如管理员在「颜色」属性中新增「玫瑰金」预设值），已使用该模板创建的商品属性是否需要同步更新？
 - **应对**：本方案采用「**快照式**」策略——商品创建时将模板属性**复制**到 `t_product_attribute` / `t_product_attribute_value`，并记录 `category_attribute_id` 关联。模板后续变更**不自动同步**到已创建商品，避免影响已上架商品的 SKU 配置。若需同步，可在 `CategoryAttributeManage.vue` 提供「批量同步到该分类下商品」按钮，由管理员显式触发。`category_attribute_id` 字段仅用于前端区分「模板属性 / 自定义属性」展示标签，不参与运行时模板查询。
 
@@ -3511,6 +3917,19 @@ async function submitReview(orderItem: NormalOrderItem): Promise<void> {
 
 - **风险**：分类未配置模板时，商家添加商品不应受影响。
 - **应对**：`ProductEdit.vue` 的 `watch(categoryId)` 在 `getCategoryAttributes` 返回空列表时不填充任何属性，商家仍可像 v1.0 方案那样手动「+ 添加自定义属性」。`t_product_attribute.category_attribute_id` 允许 NULL，旧数据无需迁移。
+
+#### 8.2.11 「运动版」禁用逻辑确认
+
+> **✅ 已确认正确**（确认3）：`status = 0` 表示「停售」的设计经审阅确认正确，本节描述的禁用逻辑保持不变。
+
+- **设计稿场景**：智能手表 Pro X 的「版本」属性中「运动版」按钮置灰禁用（设计稿 925-968 行 `.sku-text.disabled`）。
+- **数据表达**：该 SKU 在 `t_product_sku` 表中 `status = 0`（停售），`stock` 可为任意值（如 0 或 100，因 `status` 与库存无关，见建议1）。
+- **前端展示**：`ProductDetail.vue` 的 `isAttributeValueDisabled` 函数检查 SKU 的 `status`，`status = 0` 时返回 `true`，按钮渲染 `disabled` 类名（置灰 + 删除线），不可点击。
+- **后台管理**：`ProductEdit.vue` 的 SKU 表格「状态」列用 `el-switch` 切换 `status`（1-在售 / 0-停售），商家可随时将「运动版」从停售改为在售。
+- **与库存为 0 的区别**：
+  - `status = 0`（停售）：按钮置灰禁用，**不可选**，提示「暂不售卖」。
+  - `status = 1 && stock = 0`（在售但无货）：按钮**可选**，但加购按钮置灰，提示「无货」。
+  - 该区别在建议1 的 `status` 语义说明中已明确，前端 `isAttributeValueDisabled` 与 `canAddToCart` 分别处理两种场景。
 
 ---
 
@@ -3912,6 +4331,64 @@ POST /api/v1/products
 - `.sku-text`：文字型按钮，padding 6×14px，hover 边框 + 文字变主色，`.active` 主色边框 + 浅主色背景，`.disabled` 灰色 + 删除线
 
 前端实现时直接复用上述样式类名与设计稿保持一致。
+
+---
+
+## 附录 D：设计审阅优化记录
+
+> 本附录记录用户审阅后提出的 16 项优化建议及落实情况，便于后续追溯与验收。
+> 审阅日期：2026-08-06
+> 文档版本：v1.1（整合审阅优化建议）
+
+### D.1 数据库设计层面（5 项）
+
+| 编号 | 建议摘要 | 落实位置 | 落实状态 |
+| --- | --- | --- | --- |
+| 建议1 | 明确 `t_product_sku.status` 语义：是否在售（1-在售/0-停售），与库存无关 | 4.1.3 章节 `t_product_sku` 表 `status` 字段注释 + 字段说明段落 | ✅ 已落实 |
+| 建议2 | `sku_code` 设为 `NOT NULL` + 可靠生成（避免 hashCode 碰撞） | 4.1.3 章节 `sku_code` 字段定义 + 4.4 迁移脚本 + 5.5.4 `generateSkuCode` 方法 | ✅ 已落实 |
+| 建议3 | `t_product` 新增 `min_price` / `max_price` / `total_stock` 冗余字段，保留 `original_price` / `stock` 原语义 | 4.2.4 章节 `t_product` 字段语义调整 + 4.4 迁移脚本末尾 ALTER | ✅ 已落实 |
+| 建议4 | 前端传 `skuId`，消除 `selectByAttributes` 查询 | 5.4.3 `ProductSkuMapper.selectByAttributes` 标注 `@Deprecated` + 8.2.4 性能应对说明 | ✅ 已落实 |
+| 建议5 | 新增联合索引 `idx_product_status_stock (product_id, status, stock)` | 4.1.3 索引定义 + 4.3 索引汇总表 + 4.4 迁移脚本 | ✅ 已落实 |
+
+### D.2 后端设计层面（3 项）
+
+| 编号 | 建议摘要 | 落实位置 | 落实状态 |
+| --- | --- | --- | --- |
+| 建议6 | `deductStock` 使用参数绑定防 SQL 注入 | 5.5.4 `ProductSkuServiceImpl.deductStock` / `restoreStock` 方法实现 + 实现要点说明 | ✅ 已落实 |
+| 建议7 | 库存回补状态机防重复（`CANCELLING` 中间状态 + 乐观锁） | 5.7.3 `cancelNormalOrder` / `timeoutCancelNormalOrder` 方法说明 + 状态机设计 + `t_normal_order.status` 枚举扩展 | ✅ 已落实 |
+| 建议8 | `Cart.sku_id` 设为 `NOT NULL DEFAULT 0`，消除 NULL 特殊处理 | 4.2.1 `t_cart` ALTER + 4.4 迁移脚本 + 5.2.1 `Cart.java` 实体 + 5.7.2 `CartServiceImpl` 实现要点 + 8.2.2 唯一约束说明 | ✅ 已落实 |
+
+### D.3 前端设计层面（3 项）
+
+| 编号 | 建议摘要 | 落实位置 | 落实状态 |
+| --- | --- | --- | --- |
+| 建议9 | SKU 选择器预处理可达性地图 `Map<attributeName, Set<availableValues>>`，O(1) 查找 | 7.1.1 `loadProductDetail` 后 `buildStaticAvailabilityMap` + `isAttributeValueDisabled` 两层检查 + 数据结构示例 | ✅ 已落实 |
+| 建议10 | SKU 组合后端生成 + 分页（避免前端笛卡尔积爆炸） | 6.1.2 `generateSkus` 改为调用后端接口 + 6.2.1 新增 `POST /api/v1/admin/product/skus/generate` 接口 + SKU 表格 `el-pagination` 分页 | ✅ 已落实 |
+| 建议11 | `currentSku` 用 `computed` 派生，减少手动 `updateCurrentSku` | 7.1.1 `currentSku` 改为 `computed` + `selectAttributeValue` 移除手动调用 | ✅ 已落实 |
+
+### D.4 业务逻辑层面（2 项）
+
+| 编号 | 建议摘要 | 落实位置 | 落实状态 |
+| --- | --- | --- | --- |
+| 建议12 | SKU 编码可靠生成（`SKU-{productId}-{attrValueIds}` 或雪花算法 ID） | 5.5.4 `generateSkuCode` 方法重写 + 三种方案说明 + `saveSkus` 调用处同步 | ✅ 已落实 |
+| 建议13 | `createReview` 增加购买校验（校验用户是否购买该 SKU + 校验 skuId 属于 productId） | 5.7.4 `ProductReviewServiceImpl.create` 实现要点 + 校验代码示例（`checkUserPurchasedSku` + `skuId` 归属校验） | ✅ 已落实 |
+
+### D.5 已确认正确的设计（3 项，无需修改，仅标注）
+
+| 编号 | 确认摘要 | 标注位置 | 确认状态 |
+| --- | --- | --- | --- |
+| 确认1 | 分类模板**快照式同步**设计正确 | 8.2.9 章节开头标注「✅ 已确认正确」 | ✅ 已确认 |
+| 确认2 | `@Transactional` 事务一致性设计正确 | 8.2.7 章节开头标注「✅ 已确认正确」+ 事务边界说明 | ✅ 已确认 |
+| 确认3 | 「运动版」禁用逻辑（`status = 0`）设计正确 | 8.2.11 章节新增，标注「✅ 已确认正确」+ 与库存为 0 的区别说明 | ✅ 已确认 |
+
+### D.6 修改统计
+
+- **修改章节**：4.1.3 / 4.2.1 / 4.2.4 / 4.3 / 4.4 / 5.2.1 / 5.4.3 / 5.5.4 / 5.7.2 / 5.7.3 / 5.7.4 / 6.1.2 / 6.2 / 7.1.1 / 8.2.2 / 8.2.4 / 8.2.7 / 8.2.9
+- **新增章节**：6.2.1（后端 SKU 生成接口）/ 8.2.11（运动版禁用逻辑确认）/ 附录 D（本附录）
+- **修改 SQL**：`t_product_sku.sku_code` NOT NULL / `t_product_sku` 新增 `idx_product_status_stock` 索引 / `t_cart.sku_id` NOT NULL DEFAULT 0 / `t_product` 新增 `min_price` / `max_price` / `total_stock`
+- **修改代码**：`ProductSkuServiceImpl.deductStock` / `restoreStock`（参数绑定）/ `generateSkuCode`（可靠生成）/ `CartServiceImpl.addToCart`（skuId=0 统一逻辑）/ `OrderServiceImpl.cancelNormalOrder`（状态机）/ `ProductReviewServiceImpl.create`（购买校验）
+- **修改前端**：`ProductDetail.vue`（可达性地图 + currentSku computed）/ `ProductEdit.vue`（后端生成 SKU + 分页）
+- **废弃方法**：`ProductSkuMapper.selectByAttributes`（标注 `@Deprecated`）/ `ProductDetail.vue.updateCurrentSku`（由 computed 替代）
 
 ---
 

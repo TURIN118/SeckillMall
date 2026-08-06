@@ -412,7 +412,7 @@ async function handleShip(): Promise<void> {
   await shipFormRef.value?.validate()
   shipLoading.value = true
   try {
-    const isNormal = currentOrder.value?.orderType === 'NORMAL' || !currentOrder.value?.seckillId
+    const isNormal = !currentOrder.value?.seckillId
     if (isNormal) {
       await shipNormalOrder(currentOrder.value!.id, shipForm)
     } else {

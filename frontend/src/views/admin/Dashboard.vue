@@ -524,6 +524,7 @@ function getStatusLabel(status: OrderStatus): string {
   const map: Record<OrderStatus, string> = {
     UNPAID: '待支付',
     PAID: '已支付',
+    SHIPPED: '已发货',
     CANCELLED: '已取消',
     TIMEOUT: '已超时',
     COMPLETED: '已完成'
@@ -534,6 +535,7 @@ function getStatusTagClass(status: OrderStatus): string {
   const map: Record<OrderStatus, string> = {
     UNPAID: 'unpaid',
     PAID: 'paid',
+    SHIPPED: 'shipped',
     CANCELLED: 'cancelled',
     TIMEOUT: 'timeout',
     COMPLETED: 'completed'
@@ -884,6 +886,11 @@ onUnmounted(() => {
 }
 
 .status-tag.paid {
+  background: var(--tag-paid-bg);
+  color: var(--tag-paid-fg);
+}
+
+.status-tag.shipped {
   background: var(--tag-paid-bg);
   color: var(--tag-paid-fg);
 }

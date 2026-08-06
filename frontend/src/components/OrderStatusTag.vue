@@ -24,6 +24,7 @@ const props = withDefaults(defineProps<Props>(), {
 const statusMap: Record<OrderStatus, { type: 'primary' | 'success' | 'warning' | 'info' | 'danger'; label: string }> = {
   UNPAID: { type: 'warning', label: '待支付' },
   PAID: { type: 'success', label: '已支付' },
+  SHIPPED: { type: 'primary', label: '已发货' },
   CANCELLED: { type: 'info', label: '已取消' },
   TIMEOUT: { type: 'danger', label: '已超时' },
   COMPLETED: { type: 'primary', label: '已完成' }

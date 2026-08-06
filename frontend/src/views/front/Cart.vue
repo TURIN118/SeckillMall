@@ -44,11 +44,11 @@
             @change="(val: boolean | string | number) => handleToggleSelect(item, Boolean(val))" />
         </div>
 
-        <!-- 商品信息: 图片 + 名称 -->
+        <!-- 商品信息: 图片 + 名称 + SKU属性 -->
         <div class="col-info">
           <div class="product-img" @click="goProductDetail(item.productId)">
-            <img v-if="item.mainImage" :src="formatImageUrl(item.mainImage)" :alt="item.productName"
-              class="product-img-tag" loading="lazy" />
+            <img v-if="item.skuMainImage || item.mainImage" :src="formatImageUrl(item.skuMainImage || item.mainImage)"
+              :alt="item.productName" class="product-img-tag" loading="lazy" />
             <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
               class="product-img-placeholder">
               <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -58,6 +58,12 @@
           </div>
           <div class="product-info">
             <div class="product-name" @click="goProductDetail(item.productId)">{{ item.productName }}</div>
+            <div v-if="item.skuAttributes" class="product-sku-attrs">
+              <svg class="product-sku-attrs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18M3 12h18M3 18h18" />
+              </svg>
+              {{ item.skuAttributes }}
+            </div>
             <div v-if="item.productStatus !== 'ON_SALE'" class="product-status-tag">已下架</div>
           </div>
         </div>
@@ -546,6 +552,31 @@ onDeactivated(() => {
   color: #9ca3af;
   background: #f3f4f6;
   border-radius: 3px;
+}
+
+/* 7.2 购物车展示 SKU 属性 */
+.product-sku-attrs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-subtle, #f5f5f5);
+  border-radius: 4px;
+  border: 1px solid var(--color-border-light, #eee);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-sku-attrs-icon {
+  width: 12px;
+  height: 12px;
+  color: var(--color-text-muted, #999);
+  flex-shrink: 0;
 }
 
 /* 单价列 */

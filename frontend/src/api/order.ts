@@ -56,11 +56,17 @@ export function cancelOrder(orderId: number | string): Promise<Result<SeckillOrd
 
 /**
  * 立即购买创建订单
- * POST /api/v1/orders  body: { productId, quantity }
+ * POST /api/v1/orders  body: { productId, skuId?, quantity, addressId, remark? }
  */
 export function createOrder(data: {
   productId: number | string
+  /** SKU ID（可选，null/不传 表示无规格商品立即购买） */
+  skuId?: number | string | null
   quantity: number
+  /** 收货地址 ID */
+  addressId?: number | string
+  /** 备注（可选） */
+  remark?: string
 }): Promise<Result<NormalOrder>> {
   return post<NormalOrder>('/api/v1/orders', data)
 }

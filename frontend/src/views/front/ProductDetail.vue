@@ -156,14 +156,14 @@
             <div class="price-block fade-in-item stagger-3">
               <div class="price-main-row">
                 <span class="price-currency">¥</span>
-                <span class="price-value">{{ formatPrice(product.originalPrice) }}</span>
+                <span class="price-value">{{ displayPrice }}</span>
                 <span v-if="product.status === 'ON_SALE'" class="status-tag on-sale">在售</span>
                 <span v-else class="status-tag off-shelf">已下架</span>
               </div>
               <div class="price-stats">
                 <span>累计销量 {{ product.salesCount }}</span>
                 <span>好评率 {{ reviewStats.goodRate }}%</span>
-                <span>库存 {{ product.stock }} 件</span>
+                <span>库存 {{ displayStock }} 件</span>
               </div>
             </div>
 
@@ -175,7 +175,7 @@
               </div>
               <div class="info-card">
                 <span class="info-card-label">库存</span>
-                <span class="info-card-value">{{ product.stock }} 件</span>
+                <span class="info-card-value">{{ displayStock }} 件</span>
               </div>
               <div class="info-card">
                 <span class="info-card-label">销量</span>
@@ -219,27 +219,73 @@
               </span>
             </div>
 
+            <!-- SKU 规格选择器（对接后端 attributes/skus） -->
+            <div v-if="hasSku" class="sku-section fade-in-item stagger-5">
+              <div class="sku__group" v-for="attr in attributes" :key="attr.id">
+                <div class="sku__label">
+                  <span class="sku__label-name">{{ attr.name }}</span>
+                  <span class="sku__label-selected">{{ selectedAttributes[attr.name] || '请选择' }}</span>
+                </div>
+                <div class="sku__values">
+                  <!-- 图片型：色块 -->
+                  <template v-if="attr.type === 'IMAGE'">
+                    <div
+                      v-for="val in attr.values"
+                      :key="val.id"
+                      class="sku-color"
+                      :class="{
+                        active: selectedAttributes[attr.name] === val.value,
+                        disabled: isAttributeValueDisabled(attr.name, val.value)
+                      }"
+                      :style="val.imageUrl ? { background: formatImageUrl(val.imageUrl) } : {}"
+                      :title="val.value"
+                      @click="selectAttributeValue(attr.name, val.value)"
+                    >
+                      <span v-if="!val.imageUrl" class="sku-color__text">{{ val.value }}</span>
+                    </div>
+                  </template>
+                  <!-- 文字型：按钮 -->
+                  <template v-else>
+                    <button
+                      v-for="val in attr.values"
+                      :key="val.id"
+                      type="button"
+                      class="sku-text"
+                      :class="{
+                        active: selectedAttributes[attr.name] === val.value,
+                        disabled: isAttributeValueDisabled(attr.name, val.value)
+                      }"
+                      :disabled="isAttributeValueDisabled(attr.name, val.value)"
+                      @click="selectAttributeValue(attr.name, val.value)"
+                    >
+                      {{ val.value }}
+                    </button>
+                  </template>
+                </div>
+              </div>
+            </div>
+
             <!-- 数量选择器 -->
             <div class="quantity-row">
               <span class="quantity-label">数量</span>
               <div class="quantity-control">
                 <button class="quantity-btn" :class="{ disabled: quantity <= 1 }" @click="decrementQuantity">−</button>
                 <input class="quantity-input" :value="quantity" readonly />
-                <button class="quantity-btn" :class="{ disabled: quantity >= product.stock }" @click="incrementQuantity">+</button>
+                <button class="quantity-btn" :class="{ disabled: quantity >= displayStock }" @click="incrementQuantity">+</button>
               </div>
-              <span class="quantity-tip">{{ product.stock > 10 ? '库存充足' : `仅剩 ${product.stock} 件` }}</span>
+              <span class="quantity-tip">{{ displayStock > 10 ? '库存充足' : `仅剩 ${displayStock} 件` }}</span>
             </div>
 
             <!-- 操作按钮：渐变+阴影 -->
             <div class="action-buttons">
               <button
                 class="action-btn buy"
-                :disabled="product.status === 'OFF_SHELF' || product.stock <= 0"
+                :disabled="!canAddToCart"
                 @click="handleBuyNow"
               >
-                {{ product.stock <= 0 ? '暂无库存' : '立即购买' }}
+                {{ !canAddToCart ? (hasSku ? '请选择规格' : '暂无库存') : '立即购买' }}
               </button>
-              <button class="action-btn cart" :disabled="addingToCart || product.stock <= 0 || product.status === 'OFF_SHELF'" @click="handleAddToCart">
+              <button class="action-btn cart" :disabled="addingToCart || !canAddToCart" @click="handleAddToCart">
                 {{ addingToCart ? '加入中...' : '加入购物车' }}
               </button>
             </div>
@@ -291,14 +337,34 @@
                 <td class="spec-key">分类</td>
                 <td class="spec-val">{{ product.categoryName }}</td>
               </tr>
+              <tr v-if="hasSku">
+                <td class="spec-key">价格区间</td>
+                <td class="spec-val">
+                  ¥{{ formatPrice(product.minPrice) }} ~ ¥{{ formatPrice(product.maxPrice) }}
+                </td>
+              </tr>
               <tr>
                 <td class="spec-key">库存</td>
-                <td class="spec-val">{{ product.stock }} 件</td>
+                <td class="spec-val">{{ hasSku ? (product.totalStock || 0) : product.stock }} 件</td>
               </tr>
               <tr>
                 <td class="spec-key">销量</td>
                 <td class="spec-val">{{ product.salesCount }} 件</td>
               </tr>
+              <template v-if="hasSku && currentSku">
+                <tr>
+                  <td class="spec-key">当前规格</td>
+                  <td class="spec-val">{{ formatSkuAttributes(currentSku.attributes) }}</td>
+                </tr>
+                <tr>
+                  <td class="spec-key">当前单价</td>
+                  <td class="spec-val">¥{{ formatPrice(currentSku.price) }}</td>
+                </tr>
+                <tr>
+                  <td class="spec-key">当前库存</td>
+                  <td class="spec-val">{{ currentSku.stock }} 件</td>
+                </tr>
+              </template>
             </table>
           </div>
 
@@ -385,6 +451,12 @@
                     <span class="review-stars">
                       <span v-for="star in 5" :key="star" class="star small" :class="{ filled: star <= review.rating }">★</span>
                     </span>
+                  </div>
+                  <div v-if="review.skuAttributes" class="review-item__sku">
+                    <svg class="review-item__sku-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 6h18M3 12h18M3 18h18" />
+                    </svg>
+                    {{ review.skuAttributes }}
                   </div>
                   <div class="review-text">{{ review.content }}</div>
                   <div v-if="review.images && review.images.length > 0" class="review-images">
@@ -482,15 +554,15 @@
     <!-- 移动端底部购买栏（仅768px以下显示） -->
     <div v-if="product" class="mobile-buy-bar">
       <div class="mobile-price">
-        <span class="mobile-price-value">¥{{ formatPrice(product.originalPrice) }}</span>
+        <span class="mobile-price-value">¥{{ displayPrice }}</span>
         <span class="mobile-price-label">秒杀价</span>
       </div>
-      <button class="action-btn cart" :disabled="addingToCart || product.stock <= 0 || product.status === 'OFF_SHELF'" @click="handleAddToCart">
+      <button class="action-btn cart" :disabled="addingToCart || !canAddToCart" @click="handleAddToCart">
         {{ addingToCart ? '加入中...' : '加入购物车' }}
       </button>
       <button
         class="action-btn buy"
-        :disabled="product.status === 'OFF_SHELF' || product.stock <= 0"
+        :disabled="!canAddToCart"
         @click="handleBuyNow"
       >立即购买</button>
     </div>
@@ -516,7 +588,7 @@ import { ElImageViewer } from 'element-plus'
 import dayjs from 'dayjs'
 import { formatImageUrl } from '@/utils/image'
 import DOMPurify from 'dompurify'
-import type { ProductVO, ProductReviewVO } from '@/types'
+import type { ProductVO, ProductReviewVO, ProductAttributeVO, ProductSkuVO } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -558,18 +630,102 @@ const addingToCart = ref<boolean>(false)
 /* === 评价标签筛选 === */
 const reviewFilter = ref<'all' | 'good' | 'neutral' | 'bad'>('all')
 
+/* === SKU 相关状态 === */
+/** 商品属性列表（来自后端 ProductVO.attributes） */
+const attributes = ref<ProductAttributeVO[]>([])
+/** 商品 SKU 列表（来自后端 ProductVO.skus） */
+const skus = ref<ProductSkuVO[]>([])
+/** 是否多规格商品 */
+const hasSku = ref<boolean>(false)
+/** 用户选择的属性键值对：{ 属性名: 属性值 } */
+const selectedAttributes = reactive<Record<string, string>>({})
+/**
+ * 静态可达性地图（建议9）：Map<属性名, Set<可用属性值>>
+ * 基于所有启用 SKU 预处理一次，用于 isAttributeValueDisabled 的 O(1) 静态可达性检查
+ */
+const staticAvailabilityMap = ref<Map<string, Set<string>>>(new Map())
+
 /* === 轮播图自动播放 === */
 let autoPlayTimer: ReturnType<typeof setInterval> | null = null
+
+/* === 建议11 已落实：currentSku 改为 computed 派生 === */
+/* 当 selectedAttributes 或 skus 变化时自动更新，无需手动调用 updateCurrentSku */
+const currentSku = computed<ProductSkuVO | null>(() => {
+  if (!hasSku.value) return null
+  // 检查是否所有属性都已选择
+  const allSelected = attributes.value.every(a => selectedAttributes[a.name])
+  if (!allSelected) return null
+  // 查找完全匹配的启用 SKU
+  const matched = skus.value.find(sku => {
+    if (sku.status !== 1) return false
+    try {
+      const attrs = JSON.parse(sku.attributes)
+      return Object.keys(selectedAttributes).every(k => attrs[k] === selectedAttributes[k])
+    } catch {
+      return false
+    }
+  })
+  return matched || null
+})
+
+/* === 当前展示价格（随 SKU 选择联动，始终返回格式化字符串） === */
+const displayPrice = computed<string>(() => {
+  if (!product.value) return '0.00'
+  // 无规格：取商品原价
+  if (!hasSku.value) return Number(product.value.originalPrice || 0).toFixed(2)
+  // SKU 完整选中：取当前 SKU 价格
+  if (currentSku.value) return Number(currentSku.value.price || 0).toFixed(2)
+  // 未完整选择：展示价格区间
+  const min = product.value.minPrice
+  const max = product.value.maxPrice
+  if (min != null && max != null) {
+    return min === max
+      ? Number(min).toFixed(2)
+      : `${Number(min).toFixed(2)} - ${Number(max).toFixed(2)}`
+  }
+  return Number(product.value.originalPrice || 0).toFixed(2)
+})
+
+/* === 当前展示库存（随 SKU 选择联动） === */
+const displayStock = computed<number>(() => {
+  if (!product.value) return 0
+  // 无规格：取商品库存
+  if (!hasSku.value) return product.value.stock || 0
+  // SKU 完整选中：取当前 SKU 库存
+  if (currentSku.value) return currentSku.value.stock
+  // 未完整选择：取总库存
+  return product.value.totalStock || 0
+})
+
+/* === 是否可加购 / 购买 === */
+const canAddToCart = computed<boolean>(() => {
+  if (!product.value) return false
+  if (product.value.status === 'OFF_SHELF') return false
+  // 多规格商品必须完整选择规格
+  if (hasSku.value && !currentSku.value) return false
+  // 当前 SKU 库存为 0
+  if (currentSku.value && currentSku.value.stock <= 0) return false
+  // 无规格商品库存为 0
+  if (!hasSku.value && product.value.stock <= 0) return false
+  return true
+})
 
 /** 评论总页数 */
 const reviewTotalPages = computed(() =>
   Math.max(1, Math.ceil(reviewTotal.value / reviewPageSize.value))
 )
 
-/** 显示的图片列表 */
+/** 显示的图片列表（SKU 选中且有主图时，SKU 主图优先置于首位） */
 const displayImages = computed<string[]>(() => {
   if (!product.value) return []
-  return product.value.images || []
+  const baseImages = product.value.images || []
+  // SKU 选中且有专属主图：将 SKU 主图置于首位（去重）
+  const skuImg = currentSku.value?.mainImage
+  if (skuImg) {
+    if (baseImages.includes(skuImg)) return baseImages
+    return [skuImg, ...baseImages]
+  }
+  return baseImages
 })
 
 /** 预览图片列表（用于 el-image 的 preview-src-list） */
@@ -659,10 +815,83 @@ async function fetchDetail(): Promise<void> {
     product.value = res.data
     currentImageIdx.value = 0
     quantity.value = 1
+    // === 7.1.1 SKU 选择器对接后端 ===
+    // 从商品详情接口获取 attributes / skus / hasSku
+    attributes.value = res.data?.attributes || []
+    skus.value = res.data?.skus || []
+    hasSku.value = !!res.data?.hasSku
+    // 清空旧选择
+    Object.keys(selectedAttributes).forEach(k => delete selectedAttributes[k])
+    // 初始化选择：默认选第一个属性值
+    attributes.value.forEach(attr => {
+      if (attr.values && attr.values.length > 0) {
+        selectedAttributes[attr.name] = attr.values[0].value
+      }
+    })
+    // 建议9：预处理静态可达性地图（基于所有启用 SKU）
+    buildStaticAvailabilityMap()
   } catch {
     error.value = true
   } finally {
     loading.value = false
+  }
+}
+
+/* === 建议9 已落实：构建静态可达性地图 === */
+/* 遍历所有启用 SKU，收集每个属性名下出现过的属性值，用于 O(1) 静态可达性检查 */
+function buildStaticAvailabilityMap(): void {
+  const map = new Map<string, Set<string>>()
+  for (const sku of skus.value) {
+    if (sku.status !== 1) continue
+    try {
+      const attrs = JSON.parse(sku.attributes)
+      for (const [k, v] of Object.entries(attrs)) {
+        if (!map.has(k)) map.set(k, new Set())
+        map.get(k)!.add(v as string)
+      }
+    } catch {
+      /* ignore JSON parse error */
+    }
+  }
+  staticAvailabilityMap.value = map
+}
+
+/* === 选择属性值（建议9+11 已落实） === */
+function selectAttributeValue(attrName: string, value: string): void {
+  if (isAttributeValueDisabled(attrName, value)) return
+  selectedAttributes[attrName] = value
+  // 建议11：无需手动调用 updateCurrentSku，currentSku 是 computed 自动派生
+}
+
+/* === 建议9 已落实：判断属性值是否禁用（基于可达性地图，O(1) 静态查找 + 动态匹配） === */
+function isAttributeValueDisabled(attrName: string, value: string): boolean {
+  // 第一层：静态可达性检查（O(1)）
+  const staticSet = staticAvailabilityMap.value.get(attrName)
+  if (!staticSet || !staticSet.has(value)) return true
+
+  // 第二层：动态可达性检查（基于当前其他属性的选择）
+  // 临时选中该值，检查是否存在启用的 SKU 且库存 > 0
+  const tempSelected = { ...selectedAttributes, [attrName]: value }
+  const matched = skus.value.filter(sku => {
+    if (sku.status !== 1) return false
+    try {
+      const attrs = JSON.parse(sku.attributes)
+      return Object.keys(tempSelected).every(k => attrs[k] === tempSelected[k])
+    } catch {
+      return false
+    }
+  })
+  return matched.length === 0 || matched.every(s => s.stock === 0)
+}
+
+/** 格式化 SKU 属性 JSON 字符串为可读文本（如 '{"颜色":"曜石黑","版本":"标准版"}' -> '曜石黑 / 标准版'） */
+function formatSkuAttributes(attrJson: string | null | undefined): string {
+  if (!attrJson) return ''
+  try {
+    const attrs = JSON.parse(attrJson)
+    return Object.values(attrs).join(' / ')
+  } catch {
+    return ''
   }
 }
 
@@ -718,6 +947,8 @@ async function submitReview(): Promise<void> {
   try {
     await createReview({
       productId,
+      // 7.4.2 发表评论携带 skuId（多规格商品选中 SKU 时带入，无规格商品传 null）
+      skuId: currentSku.value?.id || null,
       content: reviewForm.content.trim(),
       rating: reviewForm.rating
     })
@@ -734,7 +965,7 @@ async function submitReview(): Promise<void> {
 }
 
 /** 格式化价格 */
-function formatPrice(price: number): string {
+function formatPrice(price: number | undefined | null): string {
   return Number(price || 0).toFixed(2)
 }
 
@@ -747,7 +978,8 @@ function formatTime(time: string | null | undefined): string {
 /* === 数量选择器 === */
 function incrementQuantity(): void {
   if (!product.value) return
-  if (quantity.value < product.value.stock) {
+  // 7.1.3 数量选择器上限随 SKU 库存变化
+  if (quantity.value < displayStock.value) {
     quantity.value++
   }
 }
@@ -816,14 +1048,10 @@ async function handleBuyNow(): Promise<void> {
     return
   }
 
-  // 2. 商品状态/库存校验
+  // 2. 商品状态/库存校验（含 SKU 规格校验）
   if (!product.value) return
-  if (product.value.status === 'OFF_SHELF') {
-    ElMessage.warning('商品已下架')
-    return
-  }
-  if (product.value.stock <= 0) {
-    ElMessage.warning('商品库存不足')
+  if (!canAddToCart.value) {
+    ElMessage.warning(hasSku.value ? '请选择完整规格' : '商品不可购买')
     return
   }
 
@@ -834,7 +1062,11 @@ async function handleBuyNow(): Promise<void> {
   }
 
   const productName = product.value.productName
-  const unitPrice = Number(product.value.originalPrice || 0)
+  // 7.1.2 立即购买携带 skuId；单价随 SKU 选择联动
+  const skuId = currentSku.value?.id || null
+  const unitPrice = hasSku.value && currentSku.value
+    ? Number(currentSku.value.price || 0)
+    : Number(product.value.originalPrice || 0)
   const buyQuantity = quantity.value
   const totalAmount = unitPrice * buyQuantity
 
@@ -885,7 +1117,7 @@ async function handleBuyNow(): Promise<void> {
 
   // 6. 创建订单 → 钱包支付 → 跳转订单详情
   try {
-    const createRes = await createOrder({ productId, quantity: buyQuantity })
+    const createRes = await createOrder({ productId, skuId, quantity: buyQuantity })
     const orderId = createRes.data.id
     await payNormalOrder(orderId, 'WALLET')
     ElMessage.success('支付成功')
@@ -903,20 +1135,20 @@ async function handleAddToCart(): Promise<void> {
     return
   }
   if (!product.value) return
-  if (product.value.stock <= 0) {
-    ElMessage.warning('商品已售罄，无法加入购物车')
-    return
-  }
-  if (product.value.status === 'OFF_SHELF') {
-    ElMessage.warning('商品已下架')
+  // 7.1.2 加入购物车携带 skuId；含 SKU 规格校验
+  if (!canAddToCart.value) {
+    ElMessage.warning(hasSku.value ? '请选择完整规格' : '商品不可加购')
     return
   }
   const productId = getProductId()
   if (!productId) return
 
+  // 多规格商品携带 skuId，无规格商品传 null
+  const skuId = currentSku.value?.id || null
+
   addingToCart.value = true
   try {
-    await addCart({ productId, quantity: quantity.value })
+    await addCart({ productId, skuId, quantity: quantity.value })
     ElMessage.success('已加入购物车')
     await cartStore.fetchCount()
   } catch {
@@ -1015,6 +1247,16 @@ watch(
 watch(displayImages, (imgs) => {
   if (imgs.length > 1) {
     startAutoPlay()
+  }
+})
+
+// 7.1.1 SKU 选择联动：当 currentSku 变化时（用户切换规格），
+// 重置轮播图为第一张（SKU 主图优先展示），并校正数量不超过新库存
+watch(currentSku, () => {
+  currentImageIdx.value = 0
+  // 数量超过当前库存时，回退到库存上限
+  if (quantity.value > displayStock.value) {
+    quantity.value = Math.max(1, displayStock.value)
   }
 })
 
@@ -2529,5 +2771,157 @@ onUnmounted(() => {
   .product-detail-page {
     padding: 16px 16px 70px;
   }
+}
+
+/* ============================================================
+   SKU 规格选择器（7.1.1）
+   ============================================================ */
+.sku-section {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+}
+
+.sku__group {
+  margin-bottom: 16px;
+}
+
+.sku__group:last-child {
+  margin-bottom: 0;
+}
+
+.sku__label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.sku__label-name {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.sku__label-selected {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.sku__values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* 文字型属性按钮 */
+.sku-text {
+  padding: 6px 16px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1.4;
+}
+
+.sku-text:hover:not(.disabled):not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.sku-text.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.sku-text.disabled,
+.sku-text:disabled {
+  color: var(--color-text-muted);
+  background: var(--color-bg-subtle);
+  border-color: var(--color-border-light);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* 图片型属性色块 */
+.sku-color {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+
+.sku-color:hover:not(.disabled) {
+  border-color: var(--color-primary);
+  transform: scale(1.08);
+}
+
+.sku-color.active {
+  border-color: var(--color-primary);
+  border-width: 3px;
+  box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.15);
+}
+
+.sku-color.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  position: relative;
+}
+
+.sku-color.disabled::after {
+  content: '';
+  position: absolute;
+  width: 70%;
+  height: 2px;
+  background: var(--color-text-muted);
+  transform: rotate(-45deg);
+}
+
+.sku-color__text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.sku-color.active .sku-color__text {
+  color: #fff;
+}
+
+/* ============================================================
+   评论 SKU 属性展示（7.4.1）
+   ============================================================ */
+.review-item__sku {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 4px 0;
+  padding: 2px 8px;
+  background: var(--color-bg-subtle);
+  border-radius: 4px;
+  border: 1px solid var(--color-border-light);
+}
+
+.review-item__sku-icon {
+  width: 12px;
+  height: 12px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
 }
 </style>

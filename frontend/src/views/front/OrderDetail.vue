@@ -62,6 +62,12 @@
         </div>
         <div class="order-card-info">
           <div class="order-card-name large">{{ item.productName }}</div>
+          <div v-if="item.skuAttributes" class="order-item__sku">
+            <svg class="order-item__sku-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M3 12h18M3 18h18" />
+            </svg>
+            {{ item.skuAttributes }}
+          </div>
           <div class="order-card-time">单价 ¥{{ formatPrice(item.unitPrice) }} | 数量 {{ item.quantity }} 件</div>
           <div class="product-meta">
             <span>单价：<strong class="seckill-price">¥{{ formatPrice(item.unitPrice) }}</strong></span>
@@ -351,7 +357,10 @@ function buildNormalOrder(detail: { order: any; items: any[] }): UnifiedOrderDet
       productName: item.productName,
       productImage: item.productImage,
       unitPrice: item.unitPrice,
-      quantity: item.quantity
+      quantity: item.quantity,
+      // 7.3 订单展示 SKU 信息（NormalOrderItem 实体新增字段自动序列化）
+      skuId: item.skuId ?? null,
+      skuAttributes: item.skuAttributes ?? null
     }))
   }
 }
@@ -436,12 +445,12 @@ async function fetchOrderDetail(): Promise<void> {
 }
 
 /** 格式化时间 */
-function formatTime(time: string): string {
+function formatTime(time: string | undefined | null): string {
   if (!time) return '-'
   return dayjs(time).format('YYYY-MM-DD HH:mm:ss')
 }
 
-function formatTimeShort(time: string): string {
+function formatTimeShort(time: string | undefined | null): string {
   if (!time) return '-'
   return dayjs(time).format('HH:mm:ss')
 }
@@ -801,6 +810,27 @@ onMounted(() => {
   gap: 16px;
   font-size: 12px;
   color: var(--color-text-secondary);
+}
+
+/* 7.3 订单明细展示 SKU 属性 */
+.order-item__sku {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 4px 0;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-subtle);
+  border-radius: 4px;
+  border: 1px solid var(--color-border-light);
+}
+
+.order-item__sku-icon {
+  width: 12px;
+  height: 12px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
 }
 
 .seckill-price {

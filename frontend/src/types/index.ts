@@ -70,6 +70,39 @@ export interface CaptchaVO {
 /** 商品状态 */
 export type ProductStatus = 'ON_SALE' | 'OFF_SHELF'
 
+/** 商品属性值视图对象（匹配后端 ProductAttributeVO.AttributeValueVO） */
+export interface ProductAttributeValueVO {
+  id: number | string
+  value: string
+  imageUrl?: string
+  sortOrder?: number
+}
+
+/** 商品属性视图对象（匹配后端 ProductAttributeVO） */
+export interface ProductAttributeVO {
+  id: number | string
+  /** 关联分类属性模板 ID，null 表示商品自定义属性 */
+  categoryAttributeId?: number | string | null
+  name: string
+  /** IMAGE / TEXT */
+  type: string
+  sortOrder?: number
+  values: ProductAttributeValueVO[]
+}
+
+/** 商品 SKU 视图对象（匹配后端 ProductSkuVO） */
+export interface ProductSkuVO {
+  id: number | string
+  skuCode?: string
+  price: number
+  stock: number
+  mainImage?: string
+  /** SKU 属性键值对 JSON 字符串，如 '{"颜色":"曜石黑","版本":"标准版"}' */
+  attributes: string
+  /** 状态：1-启用 / 0-禁用 */
+  status: number
+}
+
 /** 商品视图对象 */
 export interface ProductVO {
   id: number | string
@@ -85,6 +118,20 @@ export interface ProductVO {
   salesCount: number
   status: ProductStatus
   createTime: string
+  /** 商品属性列表（无规格时为空列表） */
+  attributes?: ProductAttributeVO[]
+  /** 商品 SKU 列表（无规格时为空列表） */
+  skus?: ProductSkuVO[]
+  /** 是否有 SKU：true 表示多规格商品 */
+  hasSku?: boolean
+  /** 价格区间最小值（有 SKU 时取最低 SKU 价格，无 SKU 时取 originalPrice） */
+  minPrice?: number
+  /** 价格区间最大值（有 SKU 时取最高 SKU 价格，无 SKU 时取 originalPrice） */
+  maxPrice?: number
+  /** 总库存（有 SKU 时取所有启用 SKU 库存之和，无 SKU 时取 stock） */
+  totalStock?: number
+  /** 分类规格模板（供前端区分模板属性 / 自定义属性） */
+  categoryAttributes?: CategoryAttribute[]
 }
 
 /** 分类视图对象 */
@@ -107,6 +154,10 @@ export interface CategoryTreeNode extends CategoryVO {
 export interface ProductReviewVO {
   id: number | string
   productId: number | string
+  /** SKU ID，null 表示无规格评论 */
+  skuId?: number | string | null
+  /** SKU 属性快照（如：曜石黑 / 旗舰版 / 氟橡胶表带） */
+  skuAttributes?: string | null
   userId: number | string
   /** 评论用户名 */
   userName: string
@@ -128,11 +179,14 @@ export interface ProductReviewVO {
 /** 发表评论请求 */
 export interface ReviewCreateRequest {
   productId: number | string
+  /** SKU ID（可选，null 表示无规格评论） */
+  skuId?: number | string | null
   content: string
   rating: number
   /** 评论图片 URL 数组（JSON 字符串），可选 */
   images?: string
 }
+
 
 /* ==================== 轮播图类型 ==================== */
 
@@ -155,11 +209,17 @@ export interface BannerVO {
 export interface CartItemVO {
   id: number | string
   productId: number | string
+  /** SKU ID，null 表示无规格 */
+  skuId?: number | string | null
+  /** SKU 属性快照（如：曜石黑 / 旗舰版 / 氟橡胶表带） */
+  skuAttributes?: string | null
   quantity: number
   /** 是否选中: true-选中 / false-未选中 */
   selected: boolean
   productName: string
   mainImage: string
+  /** SKU 主图 URL（优先于 mainImage 展示） */
+  skuMainImage?: string | null
   originalPrice: number
   stock: number
   /** 商品状态: ON_SALE-上架 / OFF_SHELF-下架 */
@@ -171,8 +231,11 @@ export interface CartItemVO {
 /** 添加购物车请求 */
 export interface CartAddRequest {
   productId: number | string
+  /** SKU ID（可选，null 表示无规格商品） */
+  skuId?: number | string | null
   quantity: number
 }
+
 
 /* ==================== 收藏夹类型 ==================== */
 
@@ -339,6 +402,10 @@ export interface NormalOrderItem {
   id: number | string
   orderId: number | string
   productId: number | string
+  /** SKU ID（下单时快照，null 表示无规格） */
+  skuId?: number | string | null
+  /** SKU 属性快照（如：曜石黑 / 旗舰版 / 氟橡胶表带） */
+  skuAttributes?: string | null
   productName: string
   productImage: string
   unitPrice: number
@@ -384,6 +451,10 @@ export interface OrderItemSnapshot {
   productImage: string
   unitPrice: number
   quantity: number
+  /** SKU ID（下单时快照，null 表示无规格） */
+  skuId?: number | string | null
+  /** SKU 属性快照（如：曜石黑 / 旗舰版 / 氟橡胶表带） */
+  skuAttributes?: string | null
 }
 
 /** 统一订单列表项（秒杀+普通合并展示，匹配后端 OrderListItemVO） */
@@ -497,6 +568,9 @@ export interface ProductCreateRequest {
   detailHtml?: string
   images?: string[]
   status?: ProductStatus
+  // 新增 SKU 相关字段
+  attributes?: ProductAttributeDTO[]
+  skus?: ProductSkuDTO[]
 }
 
 /** 编辑商品请求 */
@@ -510,6 +584,9 @@ export interface ProductUpdateRequest {
   detailHtml?: string
   images?: string[]
   status?: ProductStatus
+  // 新增 SKU 相关字段
+  attributes?: ProductAttributeDTO[]
+  skus?: ProductSkuDTO[]
 }
 
 /** 创建秒杀活动请求 */
@@ -709,4 +786,73 @@ declare module 'vue-router' {
     requiresAuth?: boolean
     roles?: UserRole[]
   }
+}
+
+/* ==================== SKU 类型 ==================== */
+
+/** 属性类型 */
+export type AttributeType = 'IMAGE' | 'TEXT'
+
+/** 录入方式 */
+export type AttributeInputType = 'SELECT' | 'INPUT'
+
+
+/** 商品属性 DTO（创建 / 编辑商品时提交） */
+export interface ProductAttributeDTO {
+  id?: number | string
+  /** 关联分类属性模板 ID，null/undefined 表示商品自定义属性 */
+  categoryAttributeId?: number | string | null
+  name: string
+  type: AttributeType
+  sortOrder: number
+  values: ProductAttributeValueDTO[]
+  /** 前端临时字段：属性值输入框可见性 */
+  valueInputVisible?: boolean
+  /** 前端临时字段：属性值输入框内容 */
+  valueInput?: string
+}
+
+/** 商品属性值 DTO */
+export interface ProductAttributeValueDTO {
+  id?: number | string
+  value: string
+  imageUrl?: string
+  sortOrder: number
+}
+
+/** 商品 SKU DTO（创建 / 编辑商品时提交） */
+export interface ProductSkuDTO {
+  id?: number | string
+  skuCode: string
+  price: number
+  stock: number
+  mainImage: string | null
+  /** 前端临时字段：主图列表（ImageUploader 用） */
+  mainImageList?: string[]
+  /** SKU 属性键值对 JSON 字符串 */
+  attributes: string
+  status: number
+}
+
+/* ==================== 分类规格模板类型 ==================== */
+
+/** 分类属性模板视图对象 */
+export interface CategoryAttribute {
+  id?: number | string
+  categoryId: number | string
+  name: string
+  type: AttributeType
+  inputType: AttributeInputType
+  isRequired: number  // 0-否 / 1-是
+  sortOrder: number
+  values: CategoryAttributeValue[]
+}
+
+/** 分类属性预设值 */
+export interface CategoryAttributeValue {
+  id?: number | string
+  attributeId?: number | string
+  value: string
+  imageUrl?: string | null
+  sortOrder: number
 }

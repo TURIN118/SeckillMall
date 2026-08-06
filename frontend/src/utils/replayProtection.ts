@@ -23,7 +23,7 @@ const SIGN_SECRET: string = import.meta.env.VITE_SIGN_SECRET || ''
 let cachedKey: CryptoKey | null = null
 
 if (!SIGN_SECRET) {
-  console.warn('[replayProtection] VITE_SIGN_SECRET 未配置，防重放签名将不生效')
+    console.warn('[replayProtection] VITE_SIGN_SECRET 未配置，防重放签名将不生效')
 }
 
 /**
@@ -31,17 +31,17 @@ if (!SIGN_SECRET) {
  * Web Crypto API 的 importKey 是异步操作，缓存后只需执行一次
  */
 async function getSignKey(): Promise<CryptoKey> {
-  if (cachedKey) return cachedKey
+    if (cachedKey) return cachedKey
 
-  const keyBytes = new TextEncoder().encode(SIGN_SECRET)
-  cachedKey = await crypto.subtle.importKey(
-    'raw',                    // 密钥格式：原始字节
-    keyBytes,                 // 密钥数据
-    { name: 'HMAC', hash: 'SHA-256' },  // 算法：HMAC-SHA256
-    false,                    // extractable=false：密钥对象不可通过 exportKey() 导出
-    ['sign']                  // 密钥用途：仅用于签名
-  )
-  return cachedKey
+    const keyBytes = new TextEncoder().encode(SIGN_SECRET)
+    cachedKey = await crypto.subtle.importKey(
+        'raw',                    // 密钥格式：原始字节
+        keyBytes,                 // 密钥数据
+        { name: 'HMAC', hash: 'SHA-256' },  // 算法：HMAC-SHA256
+        false,                    // extractable=false：密钥对象不可通过 exportKey() 导出
+        ['sign']                  // 密钥用途：仅用于签名
+    )
+    return cachedKey
 }
 
 /**
@@ -49,9 +49,9 @@ async function getSignKey(): Promise<CryptoKey> {
  * 与后端 Java 的 HexFormat.of().formatHex() 输出格式一致
  */
 function bufferToHex(buffer: ArrayBuffer): string {
-  return Array.from(new Uint8Array(buffer))
-    .map(byte => byte.toString(16).padStart(2, '0'))
-    .join('')
+    return Array.from(new Uint8Array(buffer))
+        .map(byte => byte.toString(16).padStart(2, '0'))
+        .join('')
 }
 
 /**
@@ -65,24 +65,24 @@ function bufferToHex(buffer: ArrayBuffer): string {
  * await post(uri, undefined, { headers })
  */
 export async function generateReplayHeaders(uri: string): Promise<Record<string, string>> {
-  if (!SIGN_SECRET) {
-    // 密钥未配置时返回空对象，不添加签名头（开发调试用）
-    return {}
-  }
+    if (!SIGN_SECRET) {
+        // 密钥未配置时返回空对象，不添加签名头（开发调试用）
+        return {}
+    }
 
-  const timestamp = Date.now().toString()
-  const nonce = crypto.randomUUID()
-  const payload = timestamp + nonce + uri
-  const payloadBytes = new TextEncoder().encode(payload)
+    const timestamp = Date.now().toString()
+    const nonce = crypto.randomUUID()
+    const payload = timestamp + nonce + uri
+    const payloadBytes = new TextEncoder().encode(payload)
 
-  // 使用 Web Crypto API 计算 HMAC-SHA256 签名
-  const key = await getSignKey()
-  const signature = await crypto.subtle.sign('HMAC', key, payloadBytes)
-  const sign = bufferToHex(signature)
+    // 使用 Web Crypto API 计算 HMAC-SHA256 签名
+    const key = await getSignKey()
+    const signature = await crypto.subtle.sign('HMAC', key, payloadBytes)
+    const sign = bufferToHex(signature)
 
-  return {
-    'X-Sign': sign,
-    'X-Timestamp': timestamp,
-    'X-Nonce': nonce
-  }
+    return {
+        'X-Sign': sign,
+        'X-Timestamp': timestamp,
+        'X-Nonce': nonce
+    }
 }

@@ -32,6 +32,12 @@ public class Cart {
 
     private Long productId;
 
+    /**
+     * SKU ID，0 表示无规格商品（NOT NULL DEFAULT 0），非 0 为具体 SKU。
+     * 应用层无需为 null 做特殊处理，统一用 eq(Cart::getSkuId, skuId != null ? skuId : 0L) 查询。
+     */
+    private Long skuId = 0L;
+
     private Integer quantity;
 
     /** 是否选中：0-否 / 1-是 */

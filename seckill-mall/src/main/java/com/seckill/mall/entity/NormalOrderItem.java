@@ -35,6 +35,12 @@ public class NormalOrderItem {
     /** 商品ID */
     private Long productId;
 
+    /** SKU ID（下单时快照，null 表示无规格） */
+    private Long skuId;
+
+    /** SKU 属性快照（如：曜石黑 / 旗舰版 / 氟橡胶表带） */
+    private String skuAttributes;
+
     /** 商品名称（下单时快照） */
     private String productName;
 

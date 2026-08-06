@@ -11,46 +11,34 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
+ * 商品属性值实体
+ * <p>
+ * 对应表 {@code t_product_attribute_value}，如颜色属性下的「曜石黑」「银月白」。
+ *
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
- * 文件名称：ProductReview.java
+ * 文件名称：ProductAttributeValue.java
  * 邮箱：nj651217@163.com
  */
 @Data
-@TableName("t_product_review")
-public class ProductReview {
+@TableName("t_product_attribute_value")
+public class ProductAttributeValue {
 
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
+    private Long attributeId;
+
+    /** 冗余字段，加速按商品查所有属性值 */
     private Long productId;
 
-    /** SKU ID，null 表示无规格评论 */
-    private Long skuId;
+    /** 属性值，如「曜石黑」「旗舰版」 */
+    private String value;
 
-    /** SKU 属性快照（如：曜石黑 / 旗舰版 / 氟橡胶表带） */
-    private String skuAttributes;
+    /** 图片型属性值的色块 URL，文字型为 null */
+    private String imageUrl;
 
-    private Long userId;
-
-    private Long orderId;
-
-    private String content;
-
-    /** 评分：1-5 星 */
-    private Integer rating;
-
-    /** 评论图片 URL 数组（JSON 存为字符串） */
-    private String images;
-
-    /** 状态：1-显示 / 0-隐藏 */
-    private Integer status;
-
-    /** 商家回复内容 */
-    private String replyContent;
-
-    /** 回复时间 */
-    private LocalDateTime replyTime;
+    private Integer sortOrder;
 
     @TableLogic
     private Integer isDeleted;

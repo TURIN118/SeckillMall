@@ -6,51 +6,41 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.seckill.mall.entity.enums.AttributeType;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 /**
+ * 商品属性实体（SKU 维度定义）
+ * <p>
+ * 对应表 {@code t_product_attribute}，如「颜色」「版本」「表带」。
+ *
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
- * 文件名称：ProductReview.java
+ * 文件名称：ProductAttribute.java
  * 邮箱：nj651217@163.com
  */
 @Data
-@TableName("t_product_review")
-public class ProductReview {
+@TableName("t_product_attribute")
+public class ProductAttribute {
 
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
     private Long productId;
 
-    /** SKU ID，null 表示无规格评论 */
-    private Long skuId;
+    /** 关联分类属性模板 ID，null 表示商品自定义属性 */
+    private Long categoryAttributeId;
 
-    /** SKU 属性快照（如：曜石黑 / 旗舰版 / 氟橡胶表带） */
-    private String skuAttributes;
+    /** 属性名，如「颜色」「版本」「表带」 */
+    private String name;
 
-    private Long userId;
+    /** 属性类型：IMAGE-图片型 / TEXT-文字型 */
+    @TableField("type")
+    private AttributeType type;
 
-    private Long orderId;
-
-    private String content;
-
-    /** 评分：1-5 星 */
-    private Integer rating;
-
-    /** 评论图片 URL 数组（JSON 存为字符串） */
-    private String images;
-
-    /** 状态：1-显示 / 0-隐藏 */
-    private Integer status;
-
-    /** 商家回复内容 */
-    private String replyContent;
-
-    /** 回复时间 */
-    private LocalDateTime replyTime;
+    private Integer sortOrder;
 
     @TableLogic
     private Integer isDeleted;

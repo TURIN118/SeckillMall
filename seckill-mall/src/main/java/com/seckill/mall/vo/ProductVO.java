@@ -40,4 +40,25 @@ public class ProductVO {
     private ProductStatus status;
 
     private LocalDateTime createTime;
+
+    /** 商品属性列表（无规格时为空列表） */
+    private List<ProductAttributeVO> attributes;
+
+    /** 商品 SKU 列表（无规格时为空列表） */
+    private List<ProductSkuVO> skus;
+
+    /** 是否有 SKU：true 表示多规格商品 */
+    private Boolean hasSku;
+
+    /** 价格区间最小值（有 SKU 时取最低 SKU 价格，无 SKU 时取 originalPrice） */
+    private BigDecimal minPrice;
+
+    /** 价格区间最大值（有 SKU 时取最高 SKU 价格，无 SKU 时取 originalPrice） */
+    private BigDecimal maxPrice;
+
+    /** 总库存（有 SKU 时取所有启用 SKU 库存之和，无 SKU 时取 stock） */
+    private Integer totalStock;
+
+    /** 分类规格模板（供前端区分模板属性 / 自定义属性） */
+    private List<CategoryAttributeVO> categoryAttributes;
 }

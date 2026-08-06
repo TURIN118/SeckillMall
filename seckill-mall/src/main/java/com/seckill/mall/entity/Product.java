@@ -33,6 +33,15 @@ public class Product {
 
     private Integer stock;
 
+    /** 价格区间最小值冗余字段（有 SKU 时取最低 SKU 价格，无 SKU 时取 originalPrice） */
+    private BigDecimal minPrice;
+
+    /** 价格区间最大值冗余字段（有 SKU 时取最高 SKU 价格，无 SKU 时取 originalPrice） */
+    private BigDecimal maxPrice;
+
+    /** 总库存冗余字段（有 SKU 时取所有启用 SKU 库存之和，无 SKU 时取 stock） */
+    private Integer totalStock;
+
     private Integer salesCount;
 
     /** 加购数量（冗余计数，由购物车操作维护） */

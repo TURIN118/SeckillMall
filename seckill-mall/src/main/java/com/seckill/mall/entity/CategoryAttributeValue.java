@@ -11,46 +11,31 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
+ * 分类属性预设值实体
+ * <p>
+ * 对应表 {@code t_category_attribute_value}，存储分类属性模板的预设可选值。
+ *
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
- * 文件名称：ProductReview.java
+ * 文件名称：CategoryAttributeValue.java
  * 邮箱：nj651217@163.com
  */
 @Data
-@TableName("t_product_review")
-public class ProductReview {
+@TableName("t_category_attribute_value")
+public class CategoryAttributeValue {
 
     @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
-    private Long productId;
+    private Long attributeId;
 
-    /** SKU ID，null 表示无规格评论 */
-    private Long skuId;
+    /** 预设值，如「曜石黑」「标准版」 */
+    private String value;
 
-    /** SKU 属性快照（如：曜石黑 / 旗舰版 / 氟橡胶表带） */
-    private String skuAttributes;
+    /** 图片型属性值的色块 URL，文字型为 null */
+    private String imageUrl;
 
-    private Long userId;
-
-    private Long orderId;
-
-    private String content;
-
-    /** 评分：1-5 星 */
-    private Integer rating;
-
-    /** 评论图片 URL 数组（JSON 存为字符串） */
-    private String images;
-
-    /** 状态：1-显示 / 0-隐藏 */
-    private Integer status;
-
-    /** 商家回复内容 */
-    private String replyContent;
-
-    /** 回复时间 */
-    private LocalDateTime replyTime;
+    private Integer sortOrder;
 
     @TableLogic
     private Integer isDeleted;

@@ -24,6 +24,12 @@ public class CartItemVO {
     /** 商品 ID */
     private Long productId;
 
+    /** SKU ID，null 表示无规格 */
+    private Long skuId;
+
+    /** SKU 属性快照（如：曜石黑 / 旗舰版 / 氟橡胶表带） */
+    private String skuAttributes;
+
     /** 加购数量 */
     private Integer quantity;
 
@@ -35,6 +41,9 @@ public class CartItemVO {
 
     /** 商品主图 URL */
     private String mainImage;
+
+    /** SKU 主图 URL（优先于 mainImage 展示） */
+    private String skuMainImage;
 
     /** 商品单价（原价） */
     private BigDecimal originalPrice;

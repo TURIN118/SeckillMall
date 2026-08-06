@@ -18,6 +18,12 @@ public class ProductReviewVO {
 
     private Long productId;
 
+    /** SKU ID，null 表示无规格评论 */
+    private Long skuId;
+
+    /** SKU 属性快照（如：曜石黑 / 旗舰版 / 氟橡胶表带） */
+    private String skuAttributes;
+
     private Long userId;
 
     /** 评论用户名（JOIN 用户表获取） */

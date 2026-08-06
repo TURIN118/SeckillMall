@@ -1873,6 +1873,227 @@
             font-size: 12px;
             color: #9ca3af;
         }
+
+        /* ===== 评价预览区操作按钮 ===== */
+        .review-preview__actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .review-preview__write {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            background: #fff;
+            border: 1px solid #e53935;
+            border-radius: 4px;
+            color: #e53935;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .review-preview__write svg {
+            width: 14px;
+            height: 14px;
+        }
+        .review-preview__write:hover {
+            background: #e53935;
+            color: #fff;
+        }
+
+        /* ===== 发表评价弹窗 ===== */
+        .review-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+        }
+        .review-modal__mask {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .review-modal__dialog {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 560px;
+            max-width: 90vw;
+            max-height: 90vh;
+            background: #fff;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        .review-modal__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .review-modal__header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        .review-modal__close {
+            background: none;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+            color: #9ca3af;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .review-modal__close svg {
+            width: 20px;
+            height: 20px;
+        }
+        .review-modal__close:hover {
+            color: #1f2937;
+        }
+        .review-modal__body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .review-form__group {
+            margin-bottom: 20px;
+        }
+        .review-form__label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1f2937;
+        }
+        .review-form__rating {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .review-form__star {
+            width: 28px;
+            height: 28px;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+        .review-form__star.active {
+            color: #ff9500;
+        }
+        .review-form__star:hover {
+            color: #ff9500;
+        }
+        .review-form__rating-text {
+            margin-left: 8px;
+            font-size: 14px;
+            color: #ff9500;
+            font-weight: 500;
+        }
+        .review-form__textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #1f2937;
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        .review-form__textarea:focus {
+            outline: none;
+            border-color: #e53935;
+            box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.1);
+        }
+        .review-form__count {
+            text-align: right;
+            margin-top: 4px;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+        .review-form__images {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .review-form__upload-btn {
+            width: 80px;
+            height: 80px;
+            border: 1px dashed #d9d9d9;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .review-form__upload-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+        .review-form__upload-btn span {
+            font-size: 12px;
+        }
+        .review-form__upload-btn:hover {
+            border-color: #e53935;
+            color: #e53935;
+        }
+        .review-form__tip {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+        .review-modal__footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 16px 24px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .review-modal__btn {
+            padding: 8px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .review-modal__btn--cancel {
+            background: #fff;
+            border-color: #d9d9d9;
+            color: #6b7280;
+        }
+        .review-modal__btn--cancel:hover {
+            border-color: #9ca3af;
+            color: #1f2937;
+        }
+        .review-modal__btn--submit {
+            background: #e53935;
+            color: #fff;
+        }
+        .review-modal__btn--submit:hover {
+            background: #c62828;
+        }
     </style>
 </head>
 
@@ -2375,12 +2596,20 @@
                         用户评价
                         <span class="review-preview__count">2.3万</span>
                     </div>
-                    <a class="review-preview__more" href="#tab-review">
-                        查看全部
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 18l6-6-6-6" />
-                        </svg>
-                    </a>
+                    <div class="review-preview__actions">
+                        <button class="review-preview__write" id="btn-write-review">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                            </svg>
+                            写评价
+                        </button>
+                        <a class="review-preview__more" href="#tab-review">
+                            查看全部
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18l6-6-6-6" />
+                            </svg>
+                        </a>
+                    </div>
                 </div>
 
                 <div class="review-preview__body">
@@ -3059,6 +3288,137 @@
                 result.style.backgroundSize = (rect.width * scale) + 'px ' + (rect.height * scale) + 'px';
             });
         });
+    </script>
+
+    <!-- 发表评价弹窗 -->
+    <div class="review-modal" id="review-modal" style="display:none;">
+        <div class="review-modal__mask"></div>
+        <div class="review-modal__dialog">
+            <div class="review-modal__header">
+                <h3>发表评价</h3>
+                <button class="review-modal__close" id="btn-close-review">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="review-modal__body">
+                <!-- 评分 -->
+                <div class="review-form__group">
+                    <label class="review-form__label">评分</label>
+                    <div class="review-form__rating" id="rating-stars">
+                        <svg class="review-form__star active" data-value="1" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                        <svg class="review-form__star active" data-value="2" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                        <svg class="review-form__star active" data-value="3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                        <svg class="review-form__star active" data-value="4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                        <svg class="review-form__star active" data-value="5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                        <span class="review-form__rating-text">5分</span>
+                    </div>
+                </div>
+
+                <!-- 评价内容 -->
+                <div class="review-form__group">
+                    <label class="review-form__label">评价内容</label>
+                    <textarea class="review-form__textarea" id="review-content" rows="5" maxlength="500" placeholder="请分享您的使用体验，帮助其他买家做出选择（10-500字）"></textarea>
+                    <div class="review-form__count"><span id="review-count">0</span>/500</div>
+                </div>
+
+                <!-- 图片上传 -->
+                <div class="review-form__group">
+                    <label class="review-form__label">晒图（可选）</label>
+                    <div class="review-form__images">
+                        <div class="review-form__upload-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                            </svg>
+                            <span>添加图片</span>
+                        </div>
+                    </div>
+                    <div class="review-form__tip">最多可上传5张图片，每张不超过5MB</div>
+                </div>
+            </div>
+            <div class="review-modal__footer">
+                <button class="review-modal__btn review-modal__btn--cancel" id="btn-cancel-review">取消</button>
+                <button class="review-modal__btn review-modal__btn--submit" id="btn-submit-review">发表评价</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 发表评价弹窗交互
+        (function() {
+            var modal = document.getElementById('review-modal');
+            var btnWrite = document.getElementById('btn-write-review');
+            var btnClose = document.getElementById('btn-close-review');
+            var btnCancel = document.getElementById('btn-cancel-review');
+            var btnSubmit = document.getElementById('btn-submit-review');
+            var stars = document.querySelectorAll('.review-form__star');
+            var ratingText = document.querySelector('.review-form__rating-text');
+            var textarea = document.getElementById('review-content');
+            var countEl = document.getElementById('review-count');
+            var currentRating = 5;
+
+            // 打开弹窗
+            function openModal() { modal.style.display = 'block'; }
+            // 关闭弹窗
+            function closeModal() { modal.style.display = 'none'; }
+
+            if (btnWrite) btnWrite.addEventListener('click', openModal);
+            if (btnClose) btnClose.addEventListener('click', closeModal);
+            if (btnCancel) btnCancel.addEventListener('click', closeModal);
+
+            // 点击遮罩关闭
+            var mask = document.querySelector('.review-modal__mask');
+            if (mask) mask.addEventListener('click', closeModal);
+
+            // 星级选择
+            stars.forEach(function(star) {
+                star.addEventListener('click', function() {
+                    currentRating = parseInt(this.getAttribute('data-value'));
+                    updateStars(currentRating);
+                });
+                // 悬停预览
+                star.addEventListener('mouseenter', function() {
+                    var val = parseInt(this.getAttribute('data-value'));
+                    updateStars(val);
+                });
+            });
+            // 鼠标离开星级区域恢复实际选择
+            var ratingContainer = document.getElementById('rating-stars');
+            if (ratingContainer) {
+                ratingContainer.addEventListener('mouseleave', function() {
+                    updateStars(currentRating);
+                });
+            }
+            function updateStars(val) {
+                stars.forEach(function(s) {
+                    var v = parseInt(s.getAttribute('data-value'));
+                    if (v <= val) { s.classList.add('active'); }
+                    else { s.classList.remove('active'); }
+                });
+                if (ratingText) ratingText.textContent = val + '分';
+            }
+
+            // 字数统计
+            if (textarea) {
+                textarea.addEventListener('input', function() {
+                    if (countEl) countEl.textContent = this.value.length;
+                });
+            }
+
+            // 提交
+            if (btnSubmit) {
+                btnSubmit.addEventListener('click', function() {
+                    var content = textarea ? textarea.value.trim() : '';
+                    if (content.length < 10) {
+                        alert('评价内容至少10个字');
+                        return;
+                    }
+                    alert('评价提交成功！（设计稿演示，实际调用createReview API）');
+                    closeModal();
+                });
+            }
+        })();
     </script>
 </body>
 

@@ -16,27 +16,23 @@
 
     <!-- 商品详情内容 -->
     <template v-else-if="product">
-      <!-- 白色卡片包裹：面包屑 + 详情主体 -->
+      <!-- 面包屑（独立于卡片外） -->
+      <nav class="breadcrumb">
+        <span class="breadcrumb-home" @click="router.push('/')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+            <polyline points="9,22 9,12 15,12 15,22"/>
+          </svg>
+          首页
+        </span>
+        <span class="breadcrumb-sep">›</span>
+        <span>{{ product.categoryName }}</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-current">{{ product.productName }}</span>
+      </nav>
+
+      <!-- 白色卡片：仅包裹详情主体 -->
       <div class="product-hero-card">
-        <!-- 面包屑（卡片内部） -->
-        <nav class="breadcrumb">
-          <span class="breadcrumb-home" @click="router.push('/')">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-              <polyline points="9,22 9,12 15,12 15,22"/>
-            </svg>
-            首页
-          </span>
-          <span class="breadcrumb-sep">›</span>
-          <span>{{ product.categoryName }}</span>
-          <span class="breadcrumb-sep">›</span>
-          <span class="breadcrumb-current">{{ product.productName }}</span>
-        </nav>
-
-        <!-- 分隔线 -->
-        <div class="hero-divider"></div>
-
-        <!-- 详情主体 -->
         <div class="detail-grid">
           <!-- 左列: 图片轮播 -->
           <div class="detail-left">
@@ -48,8 +44,7 @@
                   :src="currentImage"
                   fit="cover"
                   class="carousel-image"
-                  :preview-src-list="previewImageList"
-                  :initial-index="currentImageIdx"
+
                 >
                   <template #error>
                     <div class="img-placeholder">
@@ -244,7 +239,9 @@
               >
                 {{ product.stock <= 0 ? '暂无库存' : '立即购买' }}
               </button>
-              <button class="action-btn cart" @click="handleAddToCart">加入购物车</button>
+              <button class="action-btn cart" :disabled="addingToCart || product.stock <= 0 || product.status === 'OFF_SHELF'" @click="handleAddToCart">
+                {{ addingToCart ? '加入中...' : '加入购物车' }}
+              </button>
             </div>
 
             <!-- 底部提示 -->
@@ -254,7 +251,8 @@
       </div>
 
       <!-- Tab 区域：胶囊式 -->
-      <div class="tab-section">
+      <div class="tab-card">
+        <div class="tab-section">
         <!-- Tab 头：胶囊式设计 -->
         <div class="tab-header">
           <div class="tab-item" :class="{ active: activeTab === 'detail' }" @click="activeTab = 'detail'">
@@ -470,7 +468,16 @@
           </div>
         </div>
       </div>
+      </div>
     </template>
+
+    <!-- 图片预览（放在页面最外层，不受overflow影响） -->
+    <el-image-viewer
+      v-if="showImageViewer"
+      :url-list="previewImageList"
+      :initial-index="currentImageIdx"
+      @close="showImageViewer = false"
+    />
 
     <!-- 移动端底部购买栏（仅768px以下显示） -->
     <div v-if="product" class="mobile-buy-bar">
@@ -478,7 +485,9 @@
         <span class="mobile-price-value">¥{{ formatPrice(product.originalPrice) }}</span>
         <span class="mobile-price-label">秒杀价</span>
       </div>
-      <button class="action-btn cart" @click="handleAddToCart">加入购物车</button>
+      <button class="action-btn cart" :disabled="addingToCart || product.stock <= 0 || product.status === 'OFF_SHELF'" @click="handleAddToCart">
+        {{ addingToCart ? '加入中...' : '加入购物车' }}
+      </button>
       <button
         class="action-btn buy"
         :disabled="product.status === 'OFF_SHELF' || product.stock <= 0"
@@ -499,8 +508,11 @@ import { getProductReviews, createReview } from '@/api/review'
 import { getWalletBalance } from '@/api/wallet'
 import { createOrder, payNormalOrder } from '@/api/order'
 import { checkFavorite, addFavorite, removeFavorite } from '@/api/favorite'
+import { addCart } from '@/api/cart'
 import { useUserStore } from '@/stores/user'
+import { useCartStore } from '@/stores/cart'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElImageViewer } from 'element-plus'
 import dayjs from 'dayjs'
 import { formatImageUrl } from '@/utils/image'
 import DOMPurify from 'dompurify'
@@ -509,11 +521,15 @@ import type { ProductVO, ProductReviewVO } from '@/types'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const cartStore = useCartStore()
 
 const loading = ref<boolean>(false)
 const error = ref<boolean>(false)
 const product = ref<ProductVO | null>(null)
 const currentImageIdx = ref<number>(0)
+
+/** 是否显示图片预览 */
+const showImageViewer = ref<boolean>(false)
 
 /** 是否已收藏当前商品 */
 const isFavorited = ref<boolean>(false)
@@ -535,6 +551,9 @@ const reviewForm = reactive({
 
 /* === 数量选择器 === */
 const quantity = ref<number>(1)
+
+/* === 加入购物车状态 === */
+const addingToCart = ref<boolean>(false)
 
 /* === 评价标签筛选 === */
 const reviewFilter = ref<'all' | 'good' | 'neutral' | 'bad'>('all')
@@ -773,14 +792,9 @@ function resumeAutoPlay(): void {
   startAutoPlay()
 }
 
-/** 放大镜预览：触发 el-image 的预览功能 */
+/** 放大镜预览：使用独立的 ElImageViewer 组件 */
 function handlePreviewImage(): void {
-  // 通过编程方式触发 el-image 的预览，利用 el-image 的 preview-src-list
-  // 点击放大镜按钮时，模拟点击 el-image 组件
-  const carouselImg = document.querySelector('.carousel-image .el-image__inner') as HTMLElement
-  if (carouselImg) {
-    carouselImg.click()
-  }
+  showImageViewer.value = true
 }
 
 /* === 评价标签筛选 === */
@@ -882,9 +896,34 @@ async function handleBuyNow(): Promise<void> {
 }
 
 /* ==================== 加入购物车 ==================== */
-function handleAddToCart(): void {
-  // 当前项目暂无购物车功能，提示用户
-  ElMessage.info('购物车功能开发中，请使用立即购买')
+async function handleAddToCart(): Promise<void> {
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录')
+    router.push(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
+    return
+  }
+  if (!product.value) return
+  if (product.value.stock <= 0) {
+    ElMessage.warning('商品已售罄，无法加入购物车')
+    return
+  }
+  if (product.value.status === 'OFF_SHELF') {
+    ElMessage.warning('商品已下架')
+    return
+  }
+  const productId = getProductId()
+  if (!productId) return
+
+  addingToCart.value = true
+  try {
+    await addCart({ productId, quantity: quantity.value })
+    ElMessage.success('已加入购物车')
+    await cartStore.fetchCount()
+  } catch {
+    // 错误已由请求拦截器统一提示
+  } finally {
+    addingToCart.value = false
+  }
 }
 
 /* ==================== 收藏 / 分享 ==================== */
@@ -994,7 +1033,7 @@ onUnmounted(() => {
    页面基础
    ============================================================ */
 .product-detail-page {
-  padding-bottom: 24px;
+  padding: 16px 24px 24px;
 }
 
 .loading-wrap {
@@ -1066,13 +1105,10 @@ onUnmounted(() => {
   padding: 24px;
   margin-bottom: 24px;
   border: 1px solid var(--color-border);
+  overflow: visible;
 }
 
-.hero-divider {
-  height: 1px;
-  background: var(--color-border);
-  margin: 16px 0 24px;
-}
+
 
 /* ============================================================
    面包屑
@@ -1083,6 +1119,8 @@ onUnmounted(() => {
   gap: 8px;
   font-size: 13px;
   color: var(--color-text-secondary);
+  padding: 12px 0;
+  margin-bottom: 16px;
 }
 
 .breadcrumb-sep {
@@ -1722,6 +1760,14 @@ onUnmounted(() => {
   transform: translateY(0);
 }
 
+.action-btn.cart:disabled {
+  background: var(--btn-disabled-bg);
+  color: var(--btn-disabled-fg);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
 .action-tip {
   font-size: 12px;
   color: var(--color-text-muted);
@@ -1731,6 +1777,15 @@ onUnmounted(() => {
 /* ============================================================
    Tab 区域：胶囊式
    ============================================================ */
+.tab-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
 .tab-section {
   animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
 }
@@ -1785,9 +1840,9 @@ onUnmounted(() => {
 }
 
 .tab-content-wrap {
-  background: var(--color-bg-card);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-lg);
+  border: none;
   overflow: hidden;
 }
 
@@ -2472,7 +2527,7 @@ onUnmounted(() => {
   }
 
   .product-detail-page {
-    padding-bottom: 70px;
+    padding: 16px 16px 70px;
   }
 }
 </style>

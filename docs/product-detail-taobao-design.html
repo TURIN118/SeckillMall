@@ -1737,66 +1737,6 @@
             }
         }
 
-        /* ===== 评价提示条（商品信息区底部） ===== */
-        .review-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            margin-top: 16px;
-            background: #fafafa;
-            border-radius: 6px;
-            border: 1px solid #f0f0f0;
-        }
-        .review-bar__left {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-        }
-        .review-bar__score {
-            font-size: 18px;
-            font-weight: 700;
-            color: #ff5000;
-        }
-        .review-bar__stars {
-            display: flex;
-            gap: 2px;
-            color: #ff9500;
-        }
-        .review-bar__stars svg {
-            width: 14px;
-            height: 14px;
-        }
-        .review-bar__count {
-            font-size: 13px;
-            color: #6b7280;
-        }
-        .review-bar__left:hover .review-bar__count {
-            color: #e53935;
-        }
-        .review-bar__write {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 16px;
-            background: #fff;
-            border: 1px solid #e53935;
-            border-radius: 4px;
-            color: #e53935;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .review-bar__write svg {
-            width: 14px;
-            height: 14px;
-        }
-        .review-bar__write:hover {
-            background: #e53935;
-            color: #fff;
-        }
 
         /* ===== Tab评价面板写评价按钮 ===== */
         .review-write-btn {
@@ -2504,26 +2444,6 @@
                         </button>
                     </div>
 
-                    <!-- 评价提示条（紧凑单行，点击跳转评价Tab） -->
-                    <div class="review-bar" id="review-bar">
-                        <div class="review-bar__left" onclick="document.querySelector('[data-tab=review]').click()">
-                            <span class="review-bar__score">4.9</span>
-                            <span class="review-bar__stars">
-                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                            </span>
-                            <span class="review-bar__count">2.3万评价</span>
-                        </div>
-                        <button class="review-bar__write" id="btn-write-review">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
-                            </svg>
-                            写评价
-                        </button>
-                    </div>
                 </div>
             </section>
 
@@ -3247,7 +3167,7 @@
         // 发表评价弹窗交互
         (function() {
             var modal = document.getElementById('review-modal');
-            var btnWrite = document.getElementById('btn-write-review');
+
             var btnWriteTab = document.getElementById('btn-write-review-tab');
             var btnClose = document.getElementById('btn-close-review');
             var btnCancel = document.getElementById('btn-cancel-review');
@@ -3263,7 +3183,7 @@
             // 关闭弹窗
             function closeModal() { modal.style.display = 'none'; }
 
-            if (btnWrite) btnWrite.addEventListener('click', openModal);
+
             if (btnWriteTab) btnWriteTab.addEventListener('click', openModal);
             if (btnClose) btnClose.addEventListener('click', closeModal);
             if (btnCancel) btnCancel.addEventListener('click', closeModal);

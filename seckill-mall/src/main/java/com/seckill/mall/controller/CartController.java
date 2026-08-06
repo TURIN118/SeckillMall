@@ -57,7 +57,7 @@ public class CartController {
     // 安全修复（M3）：添加 @Validated 触发请求体字段校验
     public Result<Void> add(@Validated @RequestBody AddToCartRequest req) {
         Long userId = securityUtils.getCurrentUserId();
-        return cartService.addToCart(userId, req.getProductId(), req.getQuantity());
+        return cartService.addToCart(userId, req.getProductId(), req.getSkuId(), req.getQuantity());
     }
 
     @Operation(summary = "修改购物车项数量")
@@ -110,6 +110,9 @@ public class CartController {
     public static class AddToCartRequest {
         @NotNull(message = "商品 ID 不能为空")
         private Long productId;
+
+        /** SKU ID（可选，null 表示无规格商品） */
+        private Long skuId;
 
         @NotNull(message = "数量不能为空")
         @Min(value = 1, message = "数量必须大于 0")

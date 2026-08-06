@@ -1,6 +1,7 @@
 package com.seckill.mall.dto;
 
 import com.seckill.mall.entity.enums.ProductStatus;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -59,4 +60,12 @@ public class ProductCreateRequest {
     private Integer stock;
 
     private ProductStatus status = ProductStatus.ON_SALE;
+
+    /** 商品属性列表（可选，无规格时为 null） */
+    @Valid
+    private List<ProductAttributeDTO> attributes;
+
+    /** 商品 SKU 列表（可选，无规格时为 null） */
+    @Valid
+    private List<ProductSkuDTO> skus;
 }

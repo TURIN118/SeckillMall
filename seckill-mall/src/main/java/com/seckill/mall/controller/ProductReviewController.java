@@ -55,7 +55,7 @@ public class ProductReviewController {
         // 安全修复（M5）：对评论内容做 HTML 转义，防止存储型 XSS
         String safeContent = HtmlUtils.htmlEscape(req.getContent());
         return Result.success(productReviewService.create(
-                userId, req.getProductId(), safeContent, req.getRating(), req.getImages()));
+                userId, req.getProductId(), req.getSkuId(), safeContent, req.getRating(), req.getImages()));
     }
 
     /**
@@ -65,6 +65,9 @@ public class ProductReviewController {
     public static class ReviewCreateRequest {
         @NotNull(message = "商品 ID 不能为空")
         private Long productId;
+
+        /** SKU ID（可选，null 表示无规格评论） */
+        private Long skuId;
 
         @NotBlank(message = "评论内容不能为空")
         @Size(max = 1000, message = "评论内容最大 1000 字符")

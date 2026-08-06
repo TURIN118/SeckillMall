@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seckill.mall.cache.RedisKeyConstants;
 import com.seckill.mall.cache.RedisService;
 import com.seckill.mall.common.BusinessException;
@@ -14,6 +16,7 @@ import com.seckill.mall.entity.Cart;
 import com.seckill.mall.entity.NormalOrder;
 import com.seckill.mall.entity.NormalOrderItem;
 import com.seckill.mall.entity.Product;
+import com.seckill.mall.entity.ProductSku;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.User;
@@ -31,6 +34,7 @@ import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.mq.message.OrderDelayMessage;
 import com.seckill.mall.service.EmailService;
 import com.seckill.mall.service.OrderService;
+import com.seckill.mall.service.ProductSkuService;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
 import lombok.RequiredArgsConstructor;
@@ -90,6 +94,8 @@ public class OrderServiceImpl implements OrderService {
     private final CartMapper cartMapper;
     private final UserAddressMapper userAddressMapper;
     private final RabbitTemplate rabbitTemplate;
+    private final ProductSkuService productSkuService;
+    private final ObjectMapper objectMapper;
 
     @Value("${seckill.pay-timeout-minutes:15}")
     private long payTimeoutMinutes;
@@ -269,7 +275,7 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * Bug1修复：普通订单超时取消（延迟消费者触发）。
-     * UNPAID → TIMEOUT，回补商品库存与销量，已支付等终态幂等忽略。
+     * 5.7.3 状态机：UNPAID → CANCELLING → 回补库存 → TIMEOUT，已支付等终态幂等忽略。
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -281,17 +287,29 @@ public class OrderServiceImpl implements OrderService {
         if (order.getStatus() != OrderStatus.UNPAID) {
             return false;
         }
+        // 5.7.3 状态机：乐观锁 UNPAID → CANCELLING，保证只有一个请求能进入回补流程
+        int rows = normalOrderMapper.update(null, new LambdaUpdateWrapper<NormalOrder>()
+                .eq(NormalOrder::getId, orderId)
+                .eq(NormalOrder::getStatus, OrderStatus.UNPAID)
+                .set(NormalOrder::getStatus, OrderStatus.CANCELLING));
+        if (rows == 0) {
+            // 已被其他请求（如用户主动取消）抢占，直接返回
+            log.info("普通订单超时取消被并发抢占，幂等返回，orderNo={}", order.getOrderNo());
+            return false;
+        }
         // 查询订单明细，用于回补库存
         List<NormalOrderItem> items = normalOrderItemMapper.selectList(
                 new LambdaQueryWrapper<NormalOrderItem>()
                         .eq(NormalOrderItem::getOrderId, orderId));
-        // 回补商品库存与销量
-        rollbackProductStock(items);
-        // 更新订单状态为 TIMEOUT
-        order.setStatus(OrderStatus.TIMEOUT);
-        order.setCancelTime(LocalDateTime.now());
-        order.setCancelReason(CANCEL_REASON_TIMEOUT);
-        normalOrderMapper.updateById(order);
+        // 5.7.3：回补库存（SKU 库存或商品库存）
+        rollbackStockByItems(items);
+        // 更新订单状态为 TIMEOUT：CANCELLING → TIMEOUT
+        normalOrderMapper.update(null, new LambdaUpdateWrapper<NormalOrder>()
+                .eq(NormalOrder::getId, orderId)
+                .eq(NormalOrder::getStatus, OrderStatus.CANCELLING)
+                .set(NormalOrder::getStatus, OrderStatus.TIMEOUT)
+                .set(NormalOrder::getCancelTime, LocalDateTime.now())
+                .set(NormalOrder::getCancelReason, CANCEL_REASON_TIMEOUT));
 
         log.info("普通订单超时取消成功，orderNo={}, orderId={}", order.getOrderNo(), orderId);
 
@@ -407,34 +425,62 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public NormalOrderDetailVO createNormalOrder(Long userId, Long productId, Integer quantity,
+    public NormalOrderDetailVO createNormalOrder(Long userId, Long productId, Long skuId, Integer quantity,
                                                  Long addressId, String remark) {
         if (quantity == null || quantity <= 0) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "购买数量必须大于0");
         }
-        // 1. 校验商品状态与库存
+        // 1. 校验商品状态
         Product product = loadOnSaleProduct(productId);
-        if (product.getStock() == null || product.getStock() < quantity) {
-            throw new BusinessException(ErrorCode.STOCK_EMPTY);
-        }
         // 2. 校验收货地址归属
         checkAddressOwnership(userId, addressId);
-        // 3. 扣库存（乐观锁：WHERE stock >= quantity AND status=ON_SALE）
-        int updated = deductProductStock(productId, quantity);
-        if (updated == 0) {
-            throw new BusinessException(ErrorCode.STOCK_EMPTY);
+
+        // 5.7.3：SKU 库存扣减 / 价格 / 属性快照
+        Long effectiveSkuId = (skuId == null || skuId == 0L) ? 0L : skuId;
+        BigDecimal unitPrice;
+        String skuAttributes;
+        if (effectiveSkuId != 0L) {
+            ProductSku sku = productSkuService.getByIdEnabled(effectiveSkuId);
+            if (sku == null) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "SKU 不存在或已禁用");
+            }
+            if (!sku.getProductId().equals(productId)) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "SKU 不属于该商品");
+            }
+            if (sku.getStock() == null || sku.getStock() < quantity) {
+                throw new BusinessException(ErrorCode.STOCK_EMPTY);
+            }
+            // 扣减 SKU 库存（乐观锁）
+            if (!productSkuService.deductStock(effectiveSkuId, quantity)) {
+                throw new BusinessException(ErrorCode.STOCK_EMPTY);
+            }
+            unitPrice = sku.getPrice();
+            skuAttributes = convertAttributesToReadable(sku.getAttributes());
+        } else {
+            // 无规格商品：扣减 t_product.stock
+            if (product.getStock() == null || product.getStock() < quantity) {
+                throw new BusinessException(ErrorCode.STOCK_EMPTY);
+            }
+            int updated = deductProductStock(productId, quantity);
+            if (updated == 0) {
+                throw new BusinessException(ErrorCode.STOCK_EMPTY);
+            }
+            unitPrice = product.getOriginalPrice();
+            skuAttributes = null;
         }
-        // 4. 建普通订单 + 明细
-        BigDecimal unitPrice = product.getOriginalPrice();
+
+        // 3. 建普通订单 + 明细
         BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
         NormalOrder order = buildNormalOrder(userId, addressId, remark, subtotal);
         normalOrderMapper.insert(order);
 
         NormalOrderItem item = buildOrderItem(order.getId(), product, unitPrice, quantity);
+        item.setSkuId(effectiveSkuId);
+        item.setSkuAttributes(skuAttributes);
         normalOrderItemMapper.insert(item);
 
-        log.info("立即购买创建普通订单成功，orderNo={}, userId={}, productId={}, quantity={}",
-                order.getOrderNo(), userId, productId, quantity);
+        log.info("立即购买创建普通订单成功，orderNo={}, userId={}, productId={}, skuId={}, quantity={}",
+                order.getOrderNo(), userId, productId, effectiveSkuId, quantity);
         // Bug1修复：创建普通订单后发送延迟消息，超时自动取消
         sendNormalOrderDelayMessage(order);
         return assembleDetail(order, List.of(item));
@@ -468,6 +514,13 @@ public class OrderServiceImpl implements OrderService {
                 new LambdaQueryWrapper<Product>().in(Product::getId, productIds));
         Map<Long, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
+        // 3.1 批量查询 SKU 信息（5.7.3）
+        List<Long> skuIds = carts.stream()
+                .map(Cart::getSkuId)
+                .filter(id -> id != null && id != 0L)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, ProductSku> skuMap = batchQuerySkus(skuIds);
         for (Cart c : carts) {
             Product p = productMap.get(c.getProductId());
             if (p == null) {
@@ -476,8 +529,20 @@ public class OrderServiceImpl implements OrderService {
             if (p.getStatus() != ProductStatus.ON_SALE) {
                 throw new BusinessException(ErrorCode.PARAM_ERROR, "商品[" + p.getName() + "]已下架");
             }
-            if (p.getStock() == null || p.getStock() < c.getQuantity()) {
-                throw new BusinessException(ErrorCode.STOCK_EMPTY);
+            // 5.7.3：校验 SKU 库存或商品库存
+            Long cSkuId = c.getSkuId();
+            if (cSkuId != null && cSkuId != 0L) {
+                ProductSku sku = skuMap.get(cSkuId);
+                if (sku == null) {
+                    throw new BusinessException(ErrorCode.PARAM_ERROR, "SKU 不存在或已禁用");
+                }
+                if (sku.getStock() == null || sku.getStock() < c.getQuantity()) {
+                    throw new BusinessException(ErrorCode.STOCK_EMPTY);
+                }
+            } else {
+                if (p.getStock() == null || p.getStock() < c.getQuantity()) {
+                    throw new BusinessException(ErrorCode.STOCK_EMPTY);
+                }
             }
         }
         // 4. 计算总额 & 构造明细
@@ -489,11 +554,23 @@ public class OrderServiceImpl implements OrderService {
 
         for (Cart c : carts) {
             Product p = productMap.get(c.getProductId());
-            BigDecimal unitPrice = p.getOriginalPrice();
+            Long cSkuId = c.getSkuId();
+            BigDecimal unitPrice;
+            String skuAttributes;
+            if (cSkuId != null && cSkuId != 0L) {
+                ProductSku sku = skuMap.get(cSkuId);
+                unitPrice = sku.getPrice();
+                skuAttributes = convertAttributesToReadable(sku.getAttributes());
+            } else {
+                unitPrice = p.getOriginalPrice();
+                skuAttributes = null;
+            }
             BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(c.getQuantity()));
             totalAmount = totalAmount.add(subtotal);
 
             NormalOrderItem item = buildOrderItem(order.getId(), p, unitPrice, c.getQuantity());
+            item.setSkuId(cSkuId != null ? cSkuId : 0L);
+            item.setSkuAttributes(skuAttributes);
             normalOrderItemMapper.insert(item);
             items.add(item);
         }
@@ -503,10 +580,26 @@ public class OrderServiceImpl implements OrderService {
         order.setPayAmount(totalAmount.add(DEFAULT_FREIGHT));
         normalOrderMapper.updateById(order);
 
-        // 6. 扣库存（按商品聚合后乐观锁扣减）
+        // 6. 扣库存（5.7.3：按 SKU 或商品聚合后乐观锁扣减）
+        // 6.1 扣减 SKU 库存
+        Map<Long, Integer> qtyBySku = new HashMap<>();
+        for (Cart c : carts) {
+            if (c.getSkuId() != null && c.getSkuId() != 0L) {
+                qtyBySku.merge(c.getSkuId(), c.getQuantity(), Integer::sum);
+            }
+        }
+        for (Map.Entry<Long, Integer> e : qtyBySku.entrySet()) {
+            if (!productSkuService.deductStock(e.getKey(), e.getValue())) {
+                // 并发库存不足，事务回滚
+                throw new BusinessException(ErrorCode.STOCK_EMPTY);
+            }
+        }
+        // 6.2 扣减无规格商品库存
         Map<Long, Integer> qtyByProduct = new HashMap<>();
         for (Cart c : carts) {
-            qtyByProduct.merge(c.getProductId(), c.getQuantity(), Integer::sum);
+            if (c.getSkuId() == null || c.getSkuId() == 0L) {
+                qtyByProduct.merge(c.getProductId(), c.getQuantity(), Integer::sum);
+            }
         }
         for (Map.Entry<Long, Integer> e : qtyByProduct.entrySet()) {
             int updated = deductProductStock(e.getKey(), e.getValue());
@@ -523,6 +616,40 @@ public class OrderServiceImpl implements OrderService {
         // Bug1修复：创建普通订单后发送延迟消息，超时自动取消
         sendNormalOrderDelayMessage(order);
         return assembleDetail(order, items);
+    }
+
+    /**
+     * 批量查询 SKU，返回 id → ProductSku 映射。
+     */
+    private Map<Long, ProductSku> batchQuerySkus(List<Long> skuIds) {
+        if (skuIds == null || skuIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        List<ProductSku> skus = skuIds.stream()
+                .map(productSkuService::getByIdEnabled)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toList());
+        return skus.stream().collect(Collectors.toMap(ProductSku::getId, s -> s));
+    }
+
+    /**
+     * 5.7.3：将 SKU attributes JSON 转可读字符串
+     * 如 {"颜色":"曜石黑","版本":"旗舰版"} → "颜色: 曜石黑 / 版本: 旗舰版"
+     */
+    private String convertAttributesToReadable(String attributesJson) {
+        if (attributesJson == null || attributesJson.isEmpty()) {
+            return null;
+        }
+        try {
+            Map<String, String> map = objectMapper.readValue(attributesJson,
+                    new TypeReference<Map<String, String>>() {});
+            return map.entrySet().stream()
+                    .map(e -> e.getKey() + ": " + e.getValue())
+                    .collect(Collectors.joining(" / "));
+        } catch (Exception e) {
+            log.warn("转换 SKU 属性 JSON 失败: {}", attributesJson, e);
+            return attributesJson;
+        }
     }
 
     @Override
@@ -593,27 +720,52 @@ public class OrderServiceImpl implements OrderService {
     public NormalOrderDetailVO cancelNormalOrder(Long userId, Long orderId) {
         // 1. 加载并校验订单归属
         NormalOrder order = loadAndCheckNormalOrderOwnership(userId, orderId);
-        // 2. 校验订单状态：仅 UNPAID 可取消
+        // 2. 5.7.3 状态机防并发重复回补：仅 UNPAID 状态可取消
         if (order.getStatus() != OrderStatus.UNPAID) {
-            throw new BusinessException(ErrorCode.ORDER_CANCEL_FAILED);
+            // 幂等：已取消 / 已完成 / 取消中等状态直接返回当前订单
+            log.info("普通订单非待支付状态，取消幂等返回，orderNo={}, status={}",
+                    order.getOrderNo(), order.getStatus());
+            List<NormalOrderItem> currentItems = normalOrderItemMapper.selectList(
+                    new LambdaQueryWrapper<NormalOrderItem>()
+                            .eq(NormalOrderItem::getOrderId, orderId)
+                            .orderByAsc(NormalOrderItem::getId));
+            return assembleDetail(order, currentItems);
         }
-        // 3. 查询订单明细，用于回补库存
+        // 3. 乐观锁：UNPAID → CANCELLING 只能成功一次（建议7 状态机）
+        int rows = normalOrderMapper.update(null, new LambdaUpdateWrapper<NormalOrder>()
+                .eq(NormalOrder::getId, orderId)
+                .eq(NormalOrder::getStatus, OrderStatus.UNPAID)
+                .set(NormalOrder::getStatus, OrderStatus.CANCELLING));
+        if (rows == 0) {
+            // 已被其他请求（如超时任务）抢占，直接返回
+            log.info("普通订单取消被并发抢占，幂等返回，orderNo={}", order.getOrderNo());
+            List<NormalOrderItem> currentItems = normalOrderItemMapper.selectList(
+                    new LambdaQueryWrapper<NormalOrderItem>()
+                            .eq(NormalOrderItem::getOrderId, orderId)
+                            .orderByAsc(NormalOrderItem::getId));
+            // 重新加载订单状态
+            NormalOrder refreshed = normalOrderMapper.selectById(orderId);
+            return assembleDetail(refreshed != null ? refreshed : order, currentItems);
+        }
+        // 4. 查询订单明细，用于回补库存
         List<NormalOrderItem> items = normalOrderItemMapper.selectList(
                 new LambdaQueryWrapper<NormalOrderItem>()
                         .eq(NormalOrderItem::getOrderId, orderId)
                         .orderByAsc(NormalOrderItem::getId));
-        // 4. 回补商品库存与销量（按商品聚合后乐观锁回补）
-        rollbackProductStock(items);
-        // 5. 更新订单状态为 CANCELLED
-        order.setStatus(OrderStatus.CANCELLED);
-        order.setCancelTime(LocalDateTime.now());
-        order.setCancelReason(CANCEL_REASON_USER);
-        normalOrderMapper.updateById(order);
+        // 5. 5.7.3：回补库存（SKU 库存或商品库存）
+        rollbackStockByItems(items);
+        // 6. 置为已取消：CANCELLING → CANCELLED
+        normalOrderMapper.update(null, new LambdaUpdateWrapper<NormalOrder>()
+                .eq(NormalOrder::getId, orderId)
+                .eq(NormalOrder::getStatus, OrderStatus.CANCELLING)
+                .set(NormalOrder::getStatus, OrderStatus.CANCELLED)
+                .set(NormalOrder::getCancelTime, LocalDateTime.now())
+                .set(NormalOrder::getCancelReason, CANCEL_REASON_USER));
 
         log.info("普通订单取消成功，orderNo={}, userId={}, itemIdCount={}",
                 order.getOrderNo(), userId, items.size());
 
-        // 6. 取消邮件通知（异步，失败不影响主流程）
+        // 7. 取消邮件通知（异步，失败不影响主流程）
         String email = getUserEmail(userId);
         if (email != null) {
             try {
@@ -622,7 +774,8 @@ public class OrderServiceImpl implements OrderService {
                 log.error("普通订单取消邮件发送失败，orderId={}", orderId, e);
             }
         }
-        return assembleDetail(order, items);
+        NormalOrder refreshed = normalOrderMapper.selectById(orderId);
+        return assembleDetail(refreshed != null ? refreshed : order, items);
     }
 
     // ==================== 发货与确认收货流程（Bug2修复） ====================
@@ -758,6 +911,64 @@ public class OrderServiceImpl implements OrderService {
             qtyByProduct.merge(item.getProductId(), item.getQuantity(), Integer::sum);
         }
         // 乐观锁回补：仅对在售商品生效
+        for (Map.Entry<Long, Integer> e : qtyByProduct.entrySet()) {
+            LambdaUpdateWrapper<Product> wrapper = new LambdaUpdateWrapper<Product>()
+                    .eq(Product::getId, e.getKey())
+                    .eq(Product::getStatus, ProductStatus.ON_SALE)
+                    .setSql("stock = stock + " + e.getValue())
+                    .setSql("sales_count = sales_count - " + e.getValue());
+            int rows = productMapper.update(null, wrapper);
+            if (rows == 0) {
+                log.warn("回补商品库存失败（商品不存在或已下架），productId={}, qty={}",
+                        e.getKey(), e.getValue());
+            }
+        }
+    }
+
+    /**
+     * 5.7.3：回补库存（SKU 库存或商品库存），用于订单取消 / 超时。
+     * <p>
+     * 遍历订单明细，对每项：
+     * <ul>
+     *   <li>skuId != null && skuId != 0：调用 {@code productSkuService.restoreStock} 回补 SKU 库存，
+     *       并刷新 t_product.total_stock 冗余字段（建议3）</li>
+     *   <li>skuId == null || skuId == 0：按原逻辑回补 t_product.stock 与 sales_count</li>
+     * </ul>
+     *
+     * @param items 订单明细列表
+     */
+    private void rollbackStockByItems(List<NormalOrderItem> items) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+        // 1. 回补 SKU 库存
+        Map<Long, Integer> qtyBySku = new HashMap<>();
+        Map<Long, Long> skuToProduct = new HashMap<>();
+        for (NormalOrderItem item : items) {
+            if (item.getSkuId() != null && item.getSkuId() != 0L
+                    && item.getQuantity() != null && item.getQuantity() > 0) {
+                qtyBySku.merge(item.getSkuId(), item.getQuantity(), Integer::sum);
+                skuToProduct.putIfAbsent(item.getSkuId(), item.getProductId());
+            }
+        }
+        for (Map.Entry<Long, Integer> e : qtyBySku.entrySet()) {
+            productSkuService.restoreStock(e.getKey(), e.getValue());
+            // 建议3：同步刷新 t_product.total_stock
+            Long productId = skuToProduct.get(e.getKey());
+            if (productId != null) {
+                productSkuService.refreshTotalStock(productId);
+            }
+        }
+        // 2. 回补无规格商品库存
+        Map<Long, Integer> qtyByProduct = new HashMap<>();
+        for (NormalOrderItem item : items) {
+            if (item.getSkuId() == null || item.getSkuId() == 0L) {
+                if (item.getProductId() == null || item.getQuantity() == null || item.getQuantity() <= 0) {
+                    continue;
+                }
+                qtyByProduct.merge(item.getProductId(), item.getQuantity(), Integer::sum);
+            }
+        }
         for (Map.Entry<Long, Integer> e : qtyByProduct.entrySet()) {
             LambdaUpdateWrapper<Product> wrapper = new LambdaUpdateWrapper<Product>()
                     .eq(Product::getId, e.getKey())

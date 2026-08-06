@@ -2,14 +2,18 @@ package com.seckill.mall.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seckill.mall.common.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.entity.Cart;
 import com.seckill.mall.entity.Product;
+import com.seckill.mall.entity.ProductSku;
 import com.seckill.mall.mapper.CartMapper;
 import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.service.CartService;
+import com.seckill.mall.service.ProductSkuService;
 import com.seckill.mall.vo.CartItemVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +60,8 @@ public class CartServiceImpl implements CartService {
 
     private final CartMapper cartMapper;
     private final ProductMapper productMapper;
+    private final ProductSkuService productSkuService;
+    private final ObjectMapper objectMapper;
 
     @Override
     public Result<List<CartItemVO>> getCartList(Long userId) {
@@ -76,16 +82,41 @@ public class CartServiceImpl implements CartService {
                 new LambdaQueryWrapper<Product>().in(Product::getId, productIds));
         Map<Long, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
-        // 3. 组装 VO（含商品展示信息与小计）
+        // 2.1 批量查询 SKU 信息（5.7.2：填充 skuId / skuAttributes / skuMainImage）
+        List<Long> skuIds = carts.stream()
+                .map(Cart::getSkuId)
+                .filter(id -> id != null && id != 0L)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, ProductSku> skuMap = batchQuerySkus(skuIds);
+        // 3. 组装 VO（含商品展示信息与小计，含 SKU 信息）
         List<CartItemVO> voList = carts.stream()
-                .map(cart -> toVO(cart, productMap.get(cart.getProductId())))
+                .map(cart -> toVO(cart, productMap.get(cart.getProductId()),
+                        skuMap.get(cart.getSkuId())))
                 .collect(Collectors.toList());
         return Result.success(voList);
     }
 
+    /**
+     * 批量查询 SKU，返回 id → ProductSku 映射。
+     * <p>
+     * 当前通过循环 getByIdEnabled 实现，性能优化可后续在 ProductSkuService
+     * 增加 listByIds 接口。购物车场景 SKU 数量有限，循环可接受。
+     */
+    private Map<Long, ProductSku> batchQuerySkus(List<Long> skuIds) {
+        if (skuIds == null || skuIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<ProductSku> skus = skuIds.stream()
+                .map(productSkuService::getByIdEnabled)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toList());
+        return skus.stream().collect(Collectors.toMap(ProductSku::getId, s -> s));
+    }
+
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Result<Void> addToCart(Long userId, Long productId, Integer quantity) {
+    public Result<Void> addToCart(Long userId, Long productId, Long skuId, Integer quantity) {
         if (quantity == null || quantity <= 0) {
             throw new BusinessException(ErrorCode.CART_QUANTITY_INVALID);
         }
@@ -94,11 +125,26 @@ public class CartServiceImpl implements CartService {
         if (product == null) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
-        // 查询是否已有未删除的购物车项
+        // 5.7.2：校验 SKU 归属与启用，确定库存与价格
+        // skuId 为 null 或 0 表示无规格商品，统一转为 0L
+        Long effectiveSkuId = (skuId == null || skuId == 0L) ? 0L : skuId;
+        Integer availableStock = product.getStock();
+        if (effectiveSkuId != 0L) {
+            ProductSku sku = productSkuService.getByIdEnabled(effectiveSkuId);
+            if (sku == null) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "SKU 不存在或已禁用");
+            }
+            if (!sku.getProductId().equals(productId)) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "SKU 不属于该商品");
+            }
+            availableStock = sku.getStock();
+        }
+        // 查询是否已有未删除的购物车项（按 userId + productId + skuId 三列匹配）
         Cart existCart = cartMapper.selectOne(
                 new LambdaQueryWrapper<Cart>()
                         .eq(Cart::getUserId, userId)
-                        .eq(Cart::getProductId, productId));
+                        .eq(Cart::getProductId, productId)
+                        .eq(Cart::getSkuId, effectiveSkuId));
         if (existCart != null) {
             // 已存在：数量累加，cart_count 不变
             // M15 修复：累加后校验数量上限，防止异常加购
@@ -108,36 +154,42 @@ public class CartServiceImpl implements CartService {
                         "加购数量超过上限 " + MAX_CART_QUANTITY);
             }
             // 若库存不足以上限为准，再校验库存
-            if (product.getStock() != null && newQuantity > product.getStock()) {
+            if (availableStock != null && newQuantity > availableStock) {
                 throw new BusinessException(ErrorCode.STOCK_EMPTY);
             }
             existCart.setQuantity(newQuantity);
             cartMapper.updateById(existCart);
-            log.info("购物车数量累加，cartId={}, userId={}, productId={}, quantity=+{}",
-                    existCart.getId(), userId, productId, quantity);
+            log.info("购物车数量累加，cartId={}, userId={}, productId={}, skuId={}, quantity=+{}",
+                    existCart.getId(), userId, productId, effectiveSkuId, quantity);
             return Result.<Void>success("添加到购物车成功", null);
         }
         // 检查是否存在逻辑删除的记录（唯一约束冲突处理）
         Cart deletedCart = cartMapper.selectByUserAndProductIncludeDeleted(userId, productId);
         if (deletedCart != null) {
-            // 恢复并设置数量
+            // 恢复并设置数量与 skuId
             cartMapper.restoreAndSetQuantity(deletedCart.getId(), quantity);
+            // 更新 skuId（restoreAndSetQuantity 不含 skuId 字段）
+            Cart updateSku = new Cart();
+            updateSku.setId(deletedCart.getId());
+            updateSku.setSkuId(effectiveSkuId);
+            cartMapper.updateById(updateSku);
             // cart_count + 1
             updateProductCartCount(productId, 1);
-            log.info("恢复逻辑删除的购物车项，cartId={}, userId={}, productId={}",
-                    deletedCart.getId(), userId, productId);
+            log.info("恢复逻辑删除的购物车项，cartId={}, userId={}, productId={}, skuId={}",
+                    deletedCart.getId(), userId, productId, effectiveSkuId);
         } else {
             // 新建购物车项
             Cart cart = new Cart();
             cart.setUserId(userId);
             cart.setProductId(productId);
+            cart.setSkuId(effectiveSkuId);
             cart.setQuantity(quantity);
             cart.setSelected(SELECTED_FLAG);
             cartMapper.insert(cart);
             // cart_count + 1
             updateProductCartCount(productId, 1);
-            log.info("新建购物车项，cartId={}, userId={}, productId={}, quantity={}",
-                    cart.getId(), userId, productId, quantity);
+            log.info("新建购物车项，cartId={}, userId={}, productId={}, skuId={}, quantity={}",
+                    cart.getId(), userId, productId, effectiveSkuId, quantity);
         }
         return Result.<Void>success("添加到购物车成功", null);
     }
@@ -255,30 +307,71 @@ public class CartServiceImpl implements CartService {
     }
 
     /**
-     * 实体 + 商品 → 视图对象
+     * 实体 + 商品 + SKU → 视图对象
+     * <p>
+     * 5.7.2：若购物车项 skuId != null && skuId != 0，填充 skuId / skuAttributes /
+     * skuMainImage，价格取 SKU 价格，库存取 SKU 库存，主图优先取 SKU 主图（空则取商品主图）。
      *
      * @param cart    购物车项
      * @param product 商品（可能为 null，如商品被删除时）
+     * @param sku     SKU（可能为 null，如无规格或 SKU 被删除时）
      * @return 购物车项视图
      */
-    private CartItemVO toVO(Cart cart, Product product) {
+    private CartItemVO toVO(Cart cart, Product product, ProductSku sku) {
         CartItemVO vo = new CartItemVO();
         vo.setId(cart.getId());
         vo.setProductId(cart.getProductId());
         vo.setQuantity(cart.getQuantity());
         vo.setSelected(cart.getSelected() != null && cart.getSelected() == SELECTED_FLAG);
+        // 5.7.2：填充 SKU 信息
+        if (cart.getSkuId() != null && cart.getSkuId() != 0L) {
+            vo.setSkuId(cart.getSkuId());
+            if (sku != null) {
+                vo.setSkuAttributes(convertAttributesToReadable(sku.getAttributes()));
+                vo.setSkuMainImage(sku.getMainImage());
+            }
+        }
         if (product != null) {
             vo.setProductName(product.getName());
             vo.setMainImage(product.getMainImage());
-            vo.setOriginalPrice(product.getOriginalPrice());
-            vo.setStock(product.getStock());
             vo.setProductStatus(product.getStatus() != null ? product.getStatus().getCode() : null);
+            // 5.7.2：有 SKU 时价格取 SKU 价格、库存取 SKU 库存；否则取商品价格/库存
+            BigDecimal unitPrice;
+            Integer stock;
+            if (sku != null && cart.getSkuId() != null && cart.getSkuId() != 0L) {
+                unitPrice = sku.getPrice();
+                stock = sku.getStock();
+            } else {
+                unitPrice = product.getOriginalPrice();
+                stock = product.getStock();
+            }
+            vo.setOriginalPrice(unitPrice);
+            vo.setStock(stock);
             // 小计 = 单价 × 数量
-            if (product.getOriginalPrice() != null) {
-                vo.setSubtotal(product.getOriginalPrice()
-                        .multiply(BigDecimal.valueOf(cart.getQuantity())));
+            if (unitPrice != null) {
+                vo.setSubtotal(unitPrice.multiply(BigDecimal.valueOf(cart.getQuantity())));
             }
         }
         return vo;
+    }
+
+    /**
+     * 将 SKU attributes JSON 转可读字符串
+     * 如 {"颜色":"曜石黑","版本":"旗舰版"} → "颜色: 曜石黑 / 版本: 旗舰版"
+     */
+    private String convertAttributesToReadable(String attributesJson) {
+        if (attributesJson == null || attributesJson.isEmpty()) {
+            return null;
+        }
+        try {
+            Map<String, String> map = objectMapper.readValue(attributesJson,
+                    new TypeReference<Map<String, String>>() {});
+            return map.entrySet().stream()
+                    .map(e -> e.getKey() + ": " + e.getValue())
+                    .collect(Collectors.joining(" / "));
+        } catch (Exception e) {
+            log.warn("转换 SKU 属性 JSON 失败: {}", attributesJson, e);
+            return attributesJson;
+        }
     }
 }

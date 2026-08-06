@@ -30,14 +30,15 @@ public interface CartService {
     /**
      * 添加商品到购物车。
      * <p>
-     * 若已存在相同商品则数量累加，否则新建购物车项；
+     * 若已存在相同商品（同 productId + skuId）则数量累加，否则新建购物车项；
      * 同步递增 {@code t_product.cart_count}。
      *
      * @param userId    用户 ID
      * @param productId 商品 ID
+     * @param skuId     SKU ID（可选，null 或 0 表示无规格商品）
      * @param quantity  加购数量（必须大于0）
      */
-    Result<Void> addToCart(Long userId, Long productId, Integer quantity);
+    Result<Void> addToCart(Long userId, Long productId, Long skuId, Integer quantity);
 
     /**
      * 修改购物车项数量（校验归属当前用户）。

@@ -1,5 +1,6 @@
 package com.seckill.mall.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -9,10 +10,17 @@ import com.seckill.mall.common.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.XssCleanUtil;
+import com.seckill.mall.entity.NormalOrder;
+import com.seckill.mall.entity.NormalOrderItem;
 import com.seckill.mall.entity.ProductReview;
+import com.seckill.mall.entity.ProductSku;
 import com.seckill.mall.entity.User;
+import com.seckill.mall.entity.enums.OrderStatus;
+import com.seckill.mall.mapper.NormalOrderItemMapper;
+import com.seckill.mall.mapper.NormalOrderMapper;
 import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.ProductReviewMapper;
+import com.seckill.mall.mapper.ProductSkuMapper;
 import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.service.ProductReviewService;
 import com.seckill.mall.vo.ProductReviewVO;
@@ -42,6 +50,9 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     private final UserMapper userMapper;
     private final ProductMapper productMapper;
     private final ObjectMapper objectMapper;
+    private final ProductSkuMapper productSkuMapper;
+    private final NormalOrderItemMapper normalOrderItemMapper;
+    private final NormalOrderMapper normalOrderMapper;
 
     @Override
     public PageResult<ProductReviewVO> listByProductId(Long productId, int pageNum, int pageSize) {
@@ -71,9 +82,8 @@ public class ProductReviewServiceImpl implements ProductReviewService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ProductReviewVO create(Long userId, Long productId, String content, Integer rating, String images) {
-        // L14: 业务允许未购买用户评论（不校验订单），便于积累商品评价数据；
-        // 若后续需限制仅购买用户可评论，可在此增加订单存在性校验
+    public ProductReviewVO create(Long userId, Long productId, Long skuId,
+                                 String content, Integer rating, String images) {
         if (userId == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
@@ -86,14 +96,37 @@ public class ProductReviewServiceImpl implements ProductReviewService {
         if (rating == null || rating < 1 || rating > 5) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "评分必须为 1-5 星");
         }
-        // 校验商品存在
+        // 1. 校验商品存在
         if (productMapper.selectById(productId) == null) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
 
+        // 2. 5.7.4 建议13：校验 skuId 属于该 productId
+        Long effectiveSkuId = (skuId == null || skuId == 0L) ? 0L : skuId;
+        String skuAttributes = null;
+        if (effectiveSkuId != 0L) {
+            ProductSku sku = productSkuMapper.selectById(effectiveSkuId);
+            if (sku == null) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "SKU 不存在");
+            }
+            if (!sku.getProductId().equals(productId)) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "SKU 不属于该商品，无法发表评论");
+            }
+            skuAttributes = convertAttributesToReadable(sku.getAttributes());
+        }
+
+        // 3. 5.7.4 建议13：校验用户是否购买了该 SKU（防止恶意评论）
+        boolean hasPurchased = checkUserPurchasedSku(userId, productId, effectiveSkuId);
+        if (!hasPurchased) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "您未购买该商品规格，无法发表评论");
+        }
+
+        // 4. 创建评论
         ProductReview review = new ProductReview();
         review.setProductId(productId);
         review.setUserId(userId);
+        review.setSkuId(effectiveSkuId);
+        review.setSkuAttributes(skuAttributes);
         review.setContent(XssCleanUtil.cleanStrict(content));
         review.setRating(rating);
         review.setImages(images);
@@ -107,6 +140,59 @@ public class ProductReviewServiceImpl implements ProductReviewService {
                     ? user.getNickname() : user.getUsername());
         }
         return vo;
+    }
+
+    /**
+     * 5.7.4 建议13：校验用户是否购买了该 SKU
+     * <p>
+     * 查询 t_normal_order_item 关联 t_normal_order，确认存在已完成 / 已发货订单。
+     * skuId = 0 时不校验 SKU 维度，仅校验商品维度。
+     *
+     * @param userId     用户 ID
+     * @param productId  商品 ID
+     * @param skuId      SKU ID（0 表示无规格）
+     * @return true=已购买
+     */
+    private boolean checkUserPurchasedSku(Long userId, Long productId, Long skuId) {
+        // 查询该用户对该商品的订单明细，关联订单表确认状态
+        List<NormalOrderItem> items = normalOrderItemMapper.selectList(
+                new LambdaQueryWrapper<NormalOrderItem>()
+                        .eq(NormalOrderItem::getProductId, productId)
+                        .eq(skuId != 0L, NormalOrderItem::getSkuId, skuId));
+        if (items.isEmpty()) {
+            return false;
+        }
+        // 收集订单 ID，查询订单状态是否为 COMPLETED / SHIPPED
+        List<Long> orderIds = items.stream()
+                .map(NormalOrderItem::getOrderId)
+                .distinct()
+                .collect(Collectors.toList());
+        List<NormalOrder> orders = normalOrderMapper.selectList(
+                new LambdaQueryWrapper<NormalOrder>()
+                        .eq(NormalOrder::getUserId, userId)
+                        .in(NormalOrder::getId, orderIds)
+                        .in(NormalOrder::getStatus, OrderStatus.COMPLETED, OrderStatus.SHIPPED));
+        return !orders.isEmpty();
+    }
+
+    /**
+     * 5.7.4：将 SKU attributes JSON 转可读字符串
+     * 如 {"颜色":"曜石黑","版本":"旗舰版"} → "颜色: 曜石黑 / 版本: 旗舰版"
+     */
+    private String convertAttributesToReadable(String attributesJson) {
+        if (attributesJson == null || attributesJson.isEmpty()) {
+            return null;
+        }
+        try {
+            Map<String, String> map = objectMapper.readValue(attributesJson,
+                    new TypeReference<Map<String, String>>() {});
+            return map.entrySet().stream()
+                    .map(e -> e.getKey() + ": " + e.getValue())
+                    .collect(Collectors.joining(" / "));
+        } catch (Exception e) {
+            log.warn("转换 SKU 属性 JSON 失败: {}", attributesJson, e);
+            return attributesJson;
+        }
     }
 
     @Override
@@ -200,6 +286,9 @@ public class ProductReviewServiceImpl implements ProductReviewService {
         vo.setUserId(review.getUserId());
         vo.setUserName(userNameMap.getOrDefault(review.getUserId(), null));
         vo.setOrderId(review.getOrderId());
+        // 5.7.4：填充 skuId / skuAttributes（直接从实体读取，已快照）
+        vo.setSkuId(review.getSkuId());
+        vo.setSkuAttributes(review.getSkuAttributes());
         vo.setContent(review.getContent());
         vo.setRating(review.getRating());
         vo.setImages(deserializeImages(review.getImages()));

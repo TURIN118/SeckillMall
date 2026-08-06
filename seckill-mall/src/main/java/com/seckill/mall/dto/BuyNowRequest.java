@@ -22,6 +22,9 @@ public class BuyNowRequest {
     @NotNull(message = "商品ID不能为空")
     private Long productId;
 
+    /** SKU ID（可选，null 表示无规格商品立即购买） */
+    private Long skuId;
+
     /** 购买数量 */
     @NotNull(message = "购买数量不能为空")
     @Min(value = 1, message = "购买数量必须大于0")

@@ -17,7 +17,13 @@ public enum OrderStatus implements IEnum<String> {
     SHIPPED("SHIPPED", "已发货"),
     CANCELLED("CANCELLED", "已取消"),
     TIMEOUT("TIMEOUT", "已超时"),
-    COMPLETED("COMPLETED", "已完成");
+    COMPLETED("COMPLETED", "已完成"),
+    /**
+     * 取消中（中间状态，用于并发防护，建议7 状态机）
+     * <p>
+     * 状态流转：UNPAID → CANCELLING → CANCELLED/TIMEOUT
+     */
+    CANCELLING("CANCELLING", "取消中");
 
     private final String code;
     private final String description;

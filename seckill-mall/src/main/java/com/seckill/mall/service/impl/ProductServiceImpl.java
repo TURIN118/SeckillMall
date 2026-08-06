@@ -17,7 +17,11 @@ import com.seckill.mall.entity.enums.ProductStatus;
 import com.seckill.mall.mapper.CategoryMapper;
 import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.service.CategoryService;
+import com.seckill.mall.service.ProductAttributeService;
 import com.seckill.mall.service.ProductService;
+import com.seckill.mall.service.ProductSkuService;
+import com.seckill.mall.vo.ProductAttributeVO;
+import com.seckill.mall.vo.ProductSkuVO;
 import com.seckill.mall.vo.ProductVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +89,8 @@ public class ProductServiceImpl implements ProductService {
     private final StringRedisTemplate stringRedisTemplate;
     private final RedissonClient redissonClient;
     private final ObjectMapper objectMapper;
+    private final ProductAttributeService productAttributeService;
+    private final ProductSkuService productSkuService;
 
     @Override
     public PageResult<ProductVO> listProducts(ProductQueryRequest req) {
@@ -206,6 +213,8 @@ public class ProductServiceImpl implements ProductService {
                 }
 
                 ProductVO vo = toProductVO(product, buildCategoryNameMap(List.of(product)));
+                // 加载属性与 SKU（5.7.1）
+                enrichWithSkuInfo(vo, product);
                 // 5. 写入缓存：TTL = 30min + 随机偏移(1~5min)，防雪崩
                 long ttl = BASE_TTL_SECONDS + ThreadLocalRandom.current().nextInt(RANDOM_TTL_BOUND_SECONDS) + 1;
                 stringRedisTemplate.opsForValue().set(key, serialize(vo), ttl, TimeUnit.SECONDS);
@@ -242,9 +251,16 @@ public class ProductServiceImpl implements ProductService {
         product.setStatus(req.getStatus() == null ? ProductStatus.ON_SALE : req.getStatus());
 
         productMapper.insert(product);
+
+        // 5.7.1：保存属性与 SKU（创建商品时调用）
+        saveAttributesAndSkus(product, req.getAttributes(), req.getSkus());
+
         // 商品新增后分类树 productCount 需更新，失效分类树缓存
         categoryService.evictCategoryCache();
-        return toProductVO(product, Map.of(req.getCategoryId(), getCategoryName(req.getCategoryId())));
+        ProductVO vo = toProductVO(product, Map.of(req.getCategoryId(), getCategoryName(req.getCategoryId())));
+        // 回填属性与 SKU 信息
+        enrichWithSkuInfo(vo, product);
+        return vo;
     }
 
     @Override
@@ -283,11 +299,18 @@ public class ProductServiceImpl implements ProductService {
         }
 
         productMapper.updateById(product);
+
+        // 5.7.1：保存属性与 SKU（更新商品时调用，内部先逻辑删除旧数据再插入新数据）
+        saveAttributesAndSkus(product, req.getAttributes(), req.getSkus());
+
         // 更新后删除缓存，保证后续读取一致
         evictCache(id);
         // 商品分类可能变更，失效分类树缓存以更新 productCount
         categoryService.evictCategoryCache();
-        return toProductVO(product, Map.of(product.getCategoryId(), getCategoryName(product.getCategoryId())));
+        ProductVO vo = toProductVO(product, Map.of(product.getCategoryId(), getCategoryName(product.getCategoryId())));
+        // 回填属性与 SKU 信息
+        enrichWithSkuInfo(vo, product);
+        return vo;
     }
 
     @Override
@@ -299,6 +322,9 @@ public class ProductServiceImpl implements ProductService {
         }
         // MyBatis-Plus @TableLogic 自动转为逻辑删除
         productMapper.deleteById(id);
+        // 5.7.1：删除商品时同步逻辑删除属性与 SKU
+        productAttributeService.deleteByProductId(id);
+        productSkuService.deleteByProductId(id);
         evictCache(id);
         // 商品删除后分类树 productCount 需更新，失效分类树缓存
         categoryService.evictCategoryCache();
@@ -396,6 +422,71 @@ public class ProductServiceImpl implements ProductService {
         vo.setStatus(product.getStatus());
         vo.setCreateTime(product.getCreateTime());
         return vo;
+    }
+
+    /**
+     * 5.7.1：保存商品属性与 SKU，并同步刷新 t_product 的冗余字段。
+     * <p>
+     * 若 skus 非空，将 t_product.original_price 设为最低 SKU 价格、
+     * t_product.stock 设为 SKU 库存之和，保持列表页展示一致性。
+     *
+     * @param product    商品实体（已含 id）
+     * @param attributes 属性 DTO 列表（可空）
+     * @param skus       SKU DTO 列表（可空）
+     */
+    private void saveAttributesAndSkus(Product product,
+                                       List<com.seckill.mall.dto.ProductAttributeDTO> attributes,
+                                       List<com.seckill.mall.dto.ProductSkuDTO> skus) {
+        Long productId = product.getId();
+        // 保存属性
+        if (attributes != null && !attributes.isEmpty()) {
+            productAttributeService.saveAttributes(productId, attributes);
+        }
+        // 保存 SKU
+        if (skus != null && !skus.isEmpty()) {
+            productSkuService.saveSkus(productId, skus);
+            // 有 SKU 时：t_product.original_price 设为最低 SKU 价格、stock 设为 SKU 库存之和
+            BigDecimal minPrice = productSkuService.calculateMinPrice(productId);
+            Integer totalStock = productSkuService.calculateTotalStock(productId);
+            BigDecimal maxPrice = productSkuService.calculateMaxPrice(productId);
+            product.setOriginalPrice(minPrice);
+            product.setStock(totalStock);
+            product.setMinPrice(minPrice);
+            product.setMaxPrice(maxPrice);
+            product.setTotalStock(totalStock);
+            productMapper.updateById(product);
+        } else {
+            // 无 SKU 时：冗余字段与 originalPrice / stock 保持一致
+            product.setMinPrice(product.getOriginalPrice());
+            product.setMaxPrice(product.getOriginalPrice());
+            product.setTotalStock(product.getStock());
+            productMapper.updateById(product);
+        }
+    }
+
+    /**
+     * 5.7.1：为 ProductVO 填充属性、SKU、hasSku、minPrice、maxPrice、totalStock 字段。
+     *
+     * @param vo      商品视图
+     * @param product 商品实体
+     */
+    private void enrichWithSkuInfo(ProductVO vo, Product product) {
+        List<ProductAttributeVO> attributes = productAttributeService.listByProductId(product.getId());
+        List<ProductSkuVO> skus = productSkuService.listEnabledByProductId(product.getId());
+        vo.setAttributes(attributes);
+        vo.setSkus(skus);
+        vo.setHasSku(!skus.isEmpty());
+        if (!skus.isEmpty()) {
+            vo.setMinPrice(skus.stream().map(ProductSkuVO::getPrice).min(BigDecimal::compareTo)
+                    .orElse(product.getOriginalPrice()));
+            vo.setMaxPrice(skus.stream().map(ProductSkuVO::getPrice).max(BigDecimal::compareTo)
+                    .orElse(product.getOriginalPrice()));
+            vo.setTotalStock(skus.stream().mapToInt(ProductSkuVO::getStock).sum());
+        } else {
+            vo.setMinPrice(product.getOriginalPrice());
+            vo.setMaxPrice(product.getOriginalPrice());
+            vo.setTotalStock(product.getStock());
+        }
     }
 
     private String serializeImages(List<String> images) {

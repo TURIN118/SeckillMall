@@ -53,15 +53,21 @@ public interface OrderService {
      * 立即购买创建普通订单（需求5）。
      * <p>
      * 校验商品状态/库存 → 扣库存（乐观锁）→ 建普通订单与明细 → 返回订单。
+     * <p>
+     * 5.7.3：若 skuId 非空，校验 SKU 启用且库存 ≥ quantity，调用
+     * {@code productSkuService.deductStock(skuId, quantity)} 扣减 SKU 库存（乐观锁）；
+     * 价格取 SKU 价格；SKU 属性快照由 SKU 的 attributes JSON 转可读字符串。
+     * 若 skuId 为空，按原逻辑扣减 t_product.stock，价格取 t_product.original_price。
      *
      * @param userId    用户 ID
      * @param productId 商品 ID
+     * @param skuId     SKU ID（可选，null 表示无规格商品）
      * @param quantity  购买数量
      * @param addressId 收货地址 ID
      * @param remark    备注（可空）
      * @return 普通订单（含明细）
      */
-    NormalOrderDetailVO createNormalOrder(Long userId, Long productId, Integer quantity,
+    NormalOrderDetailVO createNormalOrder(Long userId, Long productId, Long skuId, Integer quantity,
                                           Long addressId, String remark);
 
     /**

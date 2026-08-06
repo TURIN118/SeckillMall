@@ -1305,8 +1305,8 @@
 
         /* 用户评价 */
         .review-summary {
-            display: grid;
-            grid-template-columns: 200px 1fr;
+            display: flex;
+            align-items: flex-start;
             gap: 24px;
             padding: 20px;
             background: var(--color-bg-subtle);
@@ -1316,6 +1316,8 @@
 
         .review-score {
             text-align: center;
+            width: 200px;
+            flex-shrink: 0;
         }
 
         .review-score__num {
@@ -1327,10 +1329,16 @@
         }
 
         .review-score__stars {
-            color: #ffb400;
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+            color: #ff9500;
             margin: 6px 0;
-            font-size: 14px;
-            letter-spacing: 2px;
+        }
+
+        .review-score__stars svg {
+            width: 14px;
+            height: 14px;
         }
 
         .review-score__count {
@@ -1343,6 +1351,7 @@
             flex-wrap: wrap;
             gap: 8px;
             align-content: center;
+            flex: 1;
         }
 
         .review-tag {
@@ -1409,10 +1418,15 @@
         }
 
         .review-item__stars {
-            color: #ffb400;
-            font-size: 12px;
+            display: flex;
+            gap: 2px;
+            color: #ff9500;
             margin-left: auto;
-            letter-spacing: 1px;
+        }
+
+        .review-item__stars svg {
+            width: 12px;
+            height: 12px;
         }
 
         .review-item__content {
@@ -1715,172 +1729,53 @@
             }
 
             .review-summary {
-                grid-template-columns: 1fr;
+                flex-direction: column;
+            }
+
+            .review-score {
+                width: auto;
             }
         }
 
-        /* ===== 评价预览摘要 ===== */
-        .review-preview {
-            background: #fff;
-            border-radius: 8px;
-            padding: 20px 24px;
-            margin-top: 16px;
-        }
-        .review-preview__head {
+        /* ===== 评价提示条（商品信息区底部） ===== */
+        .review-bar {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 12px 16px;
+            margin-top: 16px;
+            background: #fafafa;
+            border-radius: 6px;
+            border: 1px solid #f0f0f0;
         }
-        .review-preview__title {
+        .review-bar__left {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            color: #1f2937;
-        }
-        .review-preview__title svg {
-            width: 18px;
-            height: 18px;
-            color: #e53935;
-        }
-        .review-preview__count {
-            font-size: 14px;
-            font-weight: 400;
-            color: #ff5000;
-        }
-        .review-preview__more {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 13px;
-            color: #6b7280;
-            text-decoration: none;
             cursor: pointer;
         }
-        .review-preview__more svg {
-            width: 14px;
-            height: 14px;
-        }
-        .review-preview__more:hover {
-            color: #e53935;
-        }
-        .review-preview__body {
-            display: grid;
-            grid-template-columns: 200px 1fr;
-            gap: 24px;
-            padding-top: 16px;
-        }
-        .review-preview__summary {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 16px;
-            background: #fafafa;
-            border-radius: 8px;
-        }
-        .review-preview__score {
-            font-size: 36px;
+        .review-bar__score {
+            font-size: 18px;
             font-weight: 700;
             color: #ff5000;
-            line-height: 1;
         }
-        .review-preview__stars {
+        .review-bar__stars {
             display: flex;
             gap: 2px;
             color: #ff9500;
         }
-        .review-preview__stars svg {
-            width: 16px;
-            height: 16px;
+        .review-bar__stars svg {
+            width: 14px;
+            height: 14px;
         }
-        .review-preview__stars--sm svg {
-            width: 12px;
-            height: 12px;
-        }
-        .review-preview__tags {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            font-size: 12px;
+        .review-bar__count {
+            font-size: 13px;
             color: #6b7280;
         }
-        .review-preview__tag {
-            white-space: nowrap;
+        .review-bar__left:hover .review-bar__count {
+            color: #e53935;
         }
-        .review-preview__latest {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .review-preview__user {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .review-preview__avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #e53935;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        .review-preview__meta {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .review-preview__name {
-            font-size: 13px;
-            font-weight: 500;
-            color: #1f2937;
-        }
-        .review-preview__date {
-            margin-left: auto;
-            font-size: 12px;
-            color: #9ca3af;
-        }
-        .review-preview__content {
-            font-size: 14px;
-            line-height: 1.6;
-            color: #374151;
-        }
-        .review-preview__images {
-            display: flex;
-            gap: 8px;
-        }
-        .review-preview__images img {
-            width: 80px;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 6px;
-            border: 1px solid #f0f0f0;
-            cursor: pointer;
-        }
-        .review-preview__images img:hover {
-            border-color: #e53935;
-        }
-        .review-preview__sku {
-            font-size: 12px;
-            color: #9ca3af;
-        }
-
-        /* ===== 评价预览区操作按钮 ===== */
-        .review-preview__actions {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .review-preview__write {
+        .review-bar__write {
             display: flex;
             align-items: center;
             gap: 6px;
@@ -1894,13 +1789,38 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .review-preview__write svg {
+        .review-bar__write svg {
             width: 14px;
             height: 14px;
         }
-        .review-preview__write:hover {
+        .review-bar__write:hover {
             background: #e53935;
             color: #fff;
+        }
+
+        /* ===== Tab评价面板写评价按钮 ===== */
+        .review-write-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 20px;
+            background: #e53935;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: auto;
+            align-self: flex-start;
+        }
+        .review-write-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        .review-write-btn:hover {
+            background: #c62828;
         }
 
         /* ===== 发表评价弹窗 ===== */
@@ -2583,81 +2503,30 @@
                             立即购买
                         </button>
                     </div>
-                </div>
-            </section>
 
-            <!-- 评价预览摘要（无需点击Tab即可看到） -->
-            <section class="review-preview">
-                <div class="review-preview__head">
-                    <div class="review-preview__title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        </svg>
-                        用户评价
-                        <span class="review-preview__count">2.3万</span>
-                    </div>
-                    <div class="review-preview__actions">
-                        <button class="review-preview__write" id="btn-write-review">
+                    <!-- 评价提示条（紧凑单行，点击跳转评价Tab） -->
+                    <div class="review-bar" id="review-bar">
+                        <div class="review-bar__left" onclick="document.querySelector('[data-tab=review]').click()">
+                            <span class="review-bar__score">4.9</span>
+                            <span class="review-bar__stars">
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                            </span>
+                            <span class="review-bar__count">2.3万评价</span>
+                        </div>
+                        <button class="review-bar__write" id="btn-write-review">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
                             </svg>
                             写评价
                         </button>
-                        <a class="review-preview__more" href="#tab-review">
-                            查看全部
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M9 18l6-6-6-6" />
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="review-preview__body">
-                    <!-- 左：评分概览 -->
-                    <div class="review-preview__summary">
-                        <div class="review-preview__score">4.9</div>
-                        <div class="review-preview__stars">
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                        </div>
-                        <div class="review-preview__tags">
-                            <span class="review-preview__tag">好评 98%</span>
-                            <span class="review-preview__tag">中评 1.5%</span>
-                            <span class="review-preview__tag">差评 0.5%</span>
-                        </div>
-                    </div>
-
-                    <!-- 右：最新一条评价 -->
-                    <div class="review-preview__latest">
-                        <div class="review-preview__user">
-                            <div class="review-preview__avatar">王</div>
-                            <div class="review-preview__meta">
-                                <div class="review-preview__name">王**</div>
-                                <div class="review-preview__stars review-preview__stars--sm">
-                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                                </div>
-                            </div>
-                            <div class="review-preview__date">2026-08-05</div>
-                        </div>
-                        <div class="review-preview__content">
-                            手表收到了，包装很精美，佩戴手感很舒适，屏幕显示效果非常清晰，蓝牙通话功能很实用，运动数据记录准确，续航也很给力，用了三天才充一次电，性价比很高，推荐购买！
-                        </div>
-                        <div class="review-preview__images">
-                            <img src="https://via.placeholder.com/80x80/f3f4f6/9ca3af?text=晒图1" alt="评价图1">
-                            <img src="https://via.placeholder.com/80x80/e5e7eb/6b7280?text=晒图2" alt="评价图2">
-                            <img src="https://via.placeholder.com/80x80/f5f5f5/9ca3af?text=晒图3" alt="评价图3">
-                        </div>
-                        <div class="review-preview__sku">规格：曜石黑 / 旗舰版 / 氟橡胶表带</div>
                     </div>
                 </div>
             </section>
+
 
             <!-- Tab 区域 -->
             <section class="tab-section">
@@ -2823,8 +2692,14 @@
                     <div class="tab-pane" id="tab-review">
                         <div class="review-summary">
                             <div class="review-score">
-                                <div class="review-score__num">4.8</div>
-                                <div class="review-score__stars">★★★★★</div>
+                                <div class="review-score__num">4.9</div>
+                                <div class="review-score__stars">
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                </div>
                                 <div class="review-score__count">共 23,568 条评价</div>
                             </div>
                             <div class="review-tags">
@@ -2840,6 +2715,12 @@
                                 <span class="review-tag">佩戴舒适 5832</span>
                                 <span class="review-tag">性价比高 4521</span>
                             </div>
+                            <button class="review-write-btn" id="btn-write-review-tab">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                                </svg>
+                                写评价
+                            </button>
                         </div>
 
                         <div class="review-list">
@@ -2850,7 +2731,13 @@
                                         <div class="review-item__user">李***明</div>
                                         <div class="review-item__sku">深空灰 / 旗舰版 / 氟橡胶表带</div>
                                     </div>
-                                    <div class="review-item__stars">★★★★★</div>
+                                    <div class="review-item__stars">
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                    </div>
                                 </div>
                                 <div class="review-item__content">
                                     外观非常漂亮，屏幕显示效果惊艳，AMOLED 屏幕色彩鲜艳，强光下也能看清。心率监测很准，和医院测的差不多。续航确实能撑 14 天，重度使用也有 7
@@ -2878,7 +2765,13 @@
                                         <div class="review-item__user">王***芳</div>
                                         <div class="review-item__sku">银月白 / 尊享版 / 真皮表带</div>
                                     </div>
-                                    <div class="review-item__stars">★★★★★</div>
+                                    <div class="review-item__stars">
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                    </div>
                                 </div>
                                 <div class="review-item__content">
                                     送给老公的生日礼物，包装很精美，银月白配色很高级。蓝牙通话功能很实用，跑步时不用带手机也能接电话。100+ 运动模式覆盖了日常所有场景，GPS
@@ -2904,7 +2797,13 @@
                                         <div class="review-item__user">张***伟</div>
                                         <div class="review-item__sku">曜石黑 / 旗舰版 / 米兰尼斯表带</div>
                                     </div>
-                                    <div class="review-item__stars">★★★★☆</div>
+                                    <div class="review-item__stars">
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
+                                    </div>
                                 </div>
                                 <div class="review-item__content">
                                     整体不错，功能齐全，NFC 刷地铁很方便。唯一小问题是米兰尼斯表带夏天戴有点闷，建议夏天换氟橡胶。续航比宣传的稍短，重度使用大概 5-6 天，但充电很快，可以接受。
@@ -3349,6 +3248,7 @@
         (function() {
             var modal = document.getElementById('review-modal');
             var btnWrite = document.getElementById('btn-write-review');
+            var btnWriteTab = document.getElementById('btn-write-review-tab');
             var btnClose = document.getElementById('btn-close-review');
             var btnCancel = document.getElementById('btn-cancel-review');
             var btnSubmit = document.getElementById('btn-submit-review');
@@ -3364,6 +3264,7 @@
             function closeModal() { modal.style.display = 'none'; }
 
             if (btnWrite) btnWrite.addEventListener('click', openModal);
+            if (btnWriteTab) btnWriteTab.addEventListener('click', openModal);
             if (btnClose) btnClose.addEventListener('click', closeModal);
             if (btnCancel) btnCancel.addEventListener('click', closeModal);
 

@@ -86,7 +86,8 @@ public class VerificationCodeController {
     @RateLimit(key = "send-email", capacity = 3, rate = 3, seconds = 60)
     public Result<Void> sendEmail(@RequestBody Map<String, String> body) {
         // 安全修复（H7）：服务端强校验邮箱格式，避免空值/非法字符触发下游异常或被滥用
-        String email = body == null ? null : body.get("email");
+        // Bug7修复：前端统一使用 target 字段传参，后端需用 target 取值（原 email 字段已废弃）
+        String email = body == null ? null : body.get("target");
         if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
             return Result.error(ErrorCode.PARAM_ERROR);
         }
@@ -107,7 +108,8 @@ public class VerificationCodeController {
     @RateLimit(key = "send-sms", capacity = 3, rate = 3, seconds = 60)
     public Result<Void> sendSms(@RequestBody Map<String, String> body) {
         // 安全修复（H7）：服务端强校验手机号格式
-        String phone = body == null ? null : body.get("phone");
+        // Bug7修复：前端统一使用 target 字段传参，后端需用 target 取值（原 phone 字段已废弃）
+        String phone = body == null ? null : body.get("target");
         if (phone == null || !PHONE_PATTERN.matcher(phone).matches()) {
             return Result.error(ErrorCode.PARAM_ERROR);
         }

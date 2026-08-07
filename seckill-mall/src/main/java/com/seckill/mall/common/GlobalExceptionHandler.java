@@ -95,8 +95,8 @@ public class GlobalExceptionHandler {
     /**
      * M-S6 修复：将业务 ErrorCode 映射为对应 HTTP 状态码。
      * - 429 → RATE_LIMIT_EXCEEDED
-     * - 401 → UNAUTHORIZED
-     * - 403 → FORBIDDEN / USERNAME_OR_PASSWORD_ERROR / REPLAY_DETECTED / SECKILL_TOKEN_INVALID
+     * - 401 → UNAUTHORIZED / USERNAME_OR_PASSWORD_ERROR / ACCOUNT_DISABLED / LOGIN_LOCKED
+     * - 403 → FORBIDDEN / REPLAY_DETECTED / SECKILL_TOKEN_INVALID
      * - 404 → *_NOT_FOUND 系列
      * - 400 → PARAM_ERROR / CAPTCHA_ERROR / VERIFICATION_CODE_* 系列
      * - 500 → SYSTEM_ERROR
@@ -111,11 +111,14 @@ public class GlobalExceptionHandler {
         if (errorCode == ErrorCode.UNAUTHORIZED) {
             return HttpStatus.UNAUTHORIZED;
         }
-        // 禁止访问 / 登录失败 / 防重放 / token 失效 → 403
-        if (errorCode == ErrorCode.FORBIDDEN
-                || errorCode == ErrorCode.USERNAME_OR_PASSWORD_ERROR
+        // 登录失败 / 账号禁用 / 登录锁定 → 401 (凭证错误，非权限错误)
+        if (errorCode == ErrorCode.USERNAME_OR_PASSWORD_ERROR
                 || errorCode == ErrorCode.ACCOUNT_DISABLED
-                || errorCode == ErrorCode.LOGIN_LOCKED
+                || errorCode == ErrorCode.LOGIN_LOCKED) {
+            return HttpStatus.UNAUTHORIZED;
+        }
+        // 禁止访问 / 防重放 / token 失效 → 403
+        if (errorCode == ErrorCode.FORBIDDEN
                 || errorCode == ErrorCode.REPLAY_DETECTED
                 || errorCode == ErrorCode.SECKILL_TOKEN_INVALID) {
             return HttpStatus.FORBIDDEN;

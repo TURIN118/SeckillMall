@@ -13,6 +13,7 @@ import com.seckill.mall.entity.enums.SeckillStatus;
 import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.SeckillActivityMapper;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
+import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.service.SeckillActivityService;
 import com.seckill.mall.service.SeckillGoodsService;
 import com.seckill.mall.vo.SeckillActivityVO;
@@ -48,6 +49,7 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
     private final SeckillGoodsService seckillGoodsService;
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final SecurityUtils securityUtils;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -102,6 +104,7 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
             g.setPerLimit(activity.getPerLimit());
             g.setImages(serializeImages(item.getImages()));
             g.setDescription(item.getDescription());
+            g.setCreatorId(securityUtils.getCurrentUserId());
             return g;
         }).collect(Collectors.toList());
 

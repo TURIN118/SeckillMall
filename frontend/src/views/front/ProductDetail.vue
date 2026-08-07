@@ -616,14 +616,14 @@ import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getProductDetail } from '@/api/product'
 import { getProductReviews, createReview } from '@/api/review'
-import { getWalletBalance } from '@/api/wallet'
-import { createOrder, payNormalOrder } from '@/api/order'
+
+
 import { checkFavorite, addFavorite, removeFavorite } from '@/api/favorite'
 import { addCart } from '@/api/cart'
 import { getCategoryTree } from '@/api/category'
 import { useUserStore } from '@/stores/user'
 import { useCartStore } from '@/stores/cart'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { ElImageViewer } from 'element-plus'
 import dayjs from 'dayjs'
 import { formatImageUrl } from '@/utils/image'
@@ -1146,10 +1146,11 @@ function switchReviewFilter(filter: 'all' | 'good' | 'neutral' | 'bad'): void {
   reviewFilter.value = filter
 }
 
-/* ==================== 立即购买 (钱包支付) ==================== */
+/* ==================== 立即购买 (跳转结算页选择地址) ==================== */
 
 /**
- * 立即购买：弹窗确认 → 钱包余额支付 → 跳转订单详情
+ * 立即购买：校验 → 写入 sessionStorage → 跳转 /checkout?mode=buynow 结算确认页
+ * 由 Checkout.vue 统一处理收货地址选择 + 支付方式选择 + 创建订单
  * 使用 quantity ref 的值
  */
 async function handleBuyNow(): Promise<void> {
@@ -1173,70 +1174,46 @@ async function handleBuyNow(): Promise<void> {
     return
   }
 
-  const productName = product.value.productName
   // 7.1.2 立即购买携带 skuId；单价随 SKU 选择联动
   const skuId = currentSku.value?.id || null
   const unitPrice = hasSku.value && currentSku.value
     ? Number(currentSku.value.price || 0)
     : Number(product.value.originalPrice || 0)
   const buyQuantity = quantity.value
-  const totalAmount = unitPrice * buyQuantity
 
-  // 3. 拉取钱包余额
-  let balance = 0
+  // 3. 主图：SKU 主图优先，否则取商品首图
+  const mainImage = currentSku.value?.mainImage
+    || product.value.images?.[0]
+    || ''
+
+  // 4. 写入 sessionStorage (结构与 Cart.vue handleCheckout 写入一致, 供 Checkout.vue 读取)
+  //    立即购买模式无 cartId, 使用 `buynow_${productId}` 占位; Checkout.vue 在 buynow 模式下不会使用 cartId
+  const checkoutItem = {
+    cartId: `buynow_${productId}`,
+    productId,
+    productName: product.value.productName,
+    mainImage,
+    price: unitPrice,
+    quantity: buyQuantity,
+    subtotal: unitPrice * buyQuantity
+  }
   try {
-    const balRes = await getWalletBalance()
-    balance = Number(balRes.data || 0)
+    sessionStorage.setItem('checkout_items', JSON.stringify([checkoutItem]))
   } catch {
-    // 错误已由全局拦截器提示
+    ElMessage.error('结算数据保存失败，请重试')
     return
   }
 
-  // 4. 余额不足：提示去充值
-  if (balance < totalAmount) {
-    try {
-      await ElMessageBox.confirm(
-        `商品「${productName}」应付 ¥${totalAmount.toFixed(2)}，钱包余额 ¥${balance.toFixed(2)}，余额不足。`,
-        '余额不足',
-        {
-          confirmButtonText: '去充值',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }
-      )
-      router.push('/user/wallet')
-    } catch {
-      // 用户取消，无需处理
+  // 5. 跳转结算确认页, 通过 query 传递立即购买模式 + 商品参数
+  router.push({
+    path: '/checkout',
+    query: {
+      mode: 'buynow',
+      productId: String(productId),
+      skuId: skuId ? String(skuId) : '',
+      quantity: String(buyQuantity)
     }
-    return
-  }
-
-  // 5. 余额充足：弹窗确认结算
-  try {
-    await ElMessageBox.confirm(
-      `商品：${productName}\n单价：¥${unitPrice.toFixed(2)}\n数量：${buyQuantity}\n合计：¥${totalAmount.toFixed(2)}\n钱包余额：¥${balance.toFixed(2)}`,
-      '确认支付',
-      {
-        confirmButtonText: '确认支付',
-        cancelButtonText: '取消',
-        type: 'info'
-      }
-    )
-  } catch {
-    // 用户取消支付
-    return
-  }
-
-  // 6. 创建订单 → 钱包支付 → 跳转订单详情
-  try {
-    const createRes = await createOrder({ productId, skuId, quantity: buyQuantity })
-    const orderId = createRes.data.id
-    await payNormalOrder(orderId, 'WALLET')
-    ElMessage.success('支付成功')
-    router.push(`/user/orders/${orderId}?type=NORMAL`)
-  } catch {
-    // 错误已由全局拦截器提示
-  }
+  })
 }
 
 /* ==================== 加入购物车 ==================== */

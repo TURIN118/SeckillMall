@@ -174,16 +174,17 @@
  */
 defineOptions({ name: 'Checkout' })
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
 import { getAddressList } from '@/api/address'
-import { createOrderFromCart, payNormalOrder } from '@/api/order'
+import { createOrder, createOrderFromCart, payNormalOrder } from '@/api/order'
 import { getWalletBalance } from '@/api/wallet'
 import { formatImageUrl } from '@/utils/image'
 import type { UserAddressVO } from '@/types'
 
 const router = useRouter()
+const route = useRoute()
 
 /** 结算商品项 (从 sessionStorage 读取, 结构与 Cart.vue 写入一致) */
 interface CheckoutItem {
@@ -228,6 +229,16 @@ const walletLoading = ref<boolean>(false)
 
 /** 地址选择弹窗显示 */
 const showAddressPicker = ref<boolean>(false)
+
+/** 结算模式: 'buynow' 立即购买 / 'cart' 购物车结算 (默认) */
+const checkoutMode = ref<'buynow' | 'cart'>('cart')
+
+/** 立即购买模式下的商品参数 (从 route.query 读取) */
+const buyNowParams = ref<{
+  productId: number | string
+  skuId: number | string | null
+  quantity: number
+} | null>(null)
 
 /* === 计算属性 === */
 
@@ -330,14 +341,28 @@ async function handleSubmit(): Promise<void> {
     }
     submitting.value = true
     try {
-        // 1. 创建订单
-        const cartIds = checkoutItems.value.map(item => item.cartId)
-        const createRes = await createOrderFromCart({
-            addressId: selectedAddressId.value,
-            cartIds,
-            remark: remark.value.trim() || undefined
-        })
-        const order = createRes.data
+        // 1. 创建订单 (根据结算模式调用不同 API)
+        let order: { id: number | string } | undefined
+        if (checkoutMode.value === 'buynow' && buyNowParams.value) {
+            // 立即购买模式: 使用 createOrder
+            const createRes = await createOrder({
+                productId: buyNowParams.value.productId,
+                skuId: buyNowParams.value.skuId,
+                quantity: buyNowParams.value.quantity,
+                addressId: selectedAddressId.value,
+                remark: remark.value.trim() || undefined
+            })
+            order = createRes.data
+        } else {
+            // 购物车结算模式: 使用 createOrderFromCart
+            const cartIds = checkoutItems.value.map(item => item.cartId)
+            const createRes = await createOrderFromCart({
+                addressId: selectedAddressId.value,
+                cartIds,
+                remark: remark.value.trim() || undefined
+            })
+            order = createRes.data
+        }
         if (!order || !order.id) {
             ElMessage.error('创建订单失败，请重试')
             submitting.value = false
@@ -366,6 +391,21 @@ async function handleSubmit(): Promise<void> {
 
 // 页面挂载时加载结算商品 + 地址列表 + 钱包余额
 onMounted(() => {
+    // 解析结算模式: route.query.mode === 'buynow' 为立即购买模式
+    const mode = route.query.mode
+    if (mode === 'buynow') {
+        checkoutMode.value = 'buynow'
+        const productId = route.query.productId
+        const skuId = route.query.skuId
+        const quantity = route.query.quantity
+        if (productId && quantity) {
+            buyNowParams.value = {
+                productId: String(productId),
+                skuId: skuId ? String(skuId) : null,
+                quantity: Number(quantity) || 1
+            }
+        }
+    }
     loadCheckoutItems()
     loadAddressList()
     loadWalletBalance()
@@ -707,7 +747,9 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    padding: 12px 24px;
+    /* padding-bottom 增大到 36px, 使底部栏总高度(约 68px) ≥ FrontLayout 页脚高度(约 67px),
+       完全覆盖页脚避免深色页脚露出形成"黑色区域" */
+    padding: 12px 24px 36px;
     background: #ffffff;
     border-top: 1px solid var(--color-border);
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);

@@ -88,8 +88,8 @@
 
                 <!-- 卡片主体 -->
                 <div class="card-body">
-                  <div class="card-name" :title="item.seckillName">{{ item.seckillName }}</div>
-                  <div class="card-sub" :title="item.productName">{{ item.productName }}</div>
+                  <!-- Bug 11 修复: 移除重复的 seckillName (活动名称已在场次标题显示), 只显示商品名称 -->
+                  <div class="card-name" :title="item.productName">{{ item.productName }}</div>
 
                   <!-- 价格行 -->
                   <div class="card-prices">
@@ -159,8 +159,8 @@
                 <span class="status-tag" :class="goodsStatusClass(item)">{{ goodsStatusText(item) }}</span>
               </div>
               <div class="card-body">
-                <div class="card-name" :title="item.seckillName">{{ item.seckillName }}</div>
-                <div class="card-sub" :title="item.productName">{{ item.productName }}</div>
+                <!-- Bug 11 修复: 移除重复的 seckillName, 只显示商品名称 -->
+                <div class="card-name" :title="item.productName">{{ item.productName }}</div>
                 <div class="card-prices">
                   <span class="price-seckill">{{ formatPrice(item.seckillPrice) }}</span>
                   <span v-if="getOriginalPrice(item) && getOriginalPrice(item)! > item.seckillPrice"
@@ -214,18 +214,20 @@
  */
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Picture } from '@element-plus/icons-vue'
-import { listSeckillActivities, getSeckillList } from '@/api/seckill'
+import { listSeckillActivities, getSeckillList, executeSeckill } from '@/api/seckill'
 import { getProductDetail } from '@/api/product'
 import { getCategoryTree } from '@/api/category'
 import { formatImageUrl } from '@/utils/image'
 import { getTimeOffset } from '@/api/request'
-// M-F4 修复: 使用可见性感知轮询, 后台标签页暂停轮询
 import { useVisibilityPolling } from '@/composables/useVisibilityPolling'
+import { useUserStore } from '@/stores/user'
 import dayjs from 'dayjs'
 import type { SeckillActivityVO, SeckillGoodsVO, CategoryVO } from '@/types'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 /* === 列表数据 === */
 const activityList = ref<SeckillActivityVO[]>([])
@@ -359,9 +361,58 @@ function filteredGoods(activity: SeckillActivityVO): SeckillGoodsVO[] {
   return goods.filter((g) => g.productName?.includes(selectedCategoryName.value!))
 }
 
-/* === 跳转商品详情 === */
-function goDetail(item: SeckillGoodsVO): void {
-  router.push(`/products/${item.productId}`)
+/* === Bug 10 修复: 点击商品直接执行秒杀, 不跳转商品详情 === */
+async function goDetail(item: SeckillGoodsVO): Promise<void> {
+  // 1. 登录校验
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录后再参与秒杀')
+    router.push(`/login?redirect=${encodeURIComponent(router.currentRoute.value.fullPath)}`)
+    return
+  }
+
+  // 2. 活动状态校验
+  if (item.status !== 'ACTIVE') {
+    ElMessage.info('活动未开始或已结束')
+    return
+  }
+
+  // 3. 弹窗确认抢购
+  try {
+    await ElMessageBox.confirm(
+      `确认以 ¥${formatNumber(item.seckillPrice)} 抢购「${item.productName}」？`,
+      '秒杀确认',
+      {
+        confirmButtonText: '立即抢购',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+  } catch {
+    // 用户取消
+    return
+  }
+
+  // 4. 调用秒杀下单 API
+  try {
+    const res = await executeSeckill(item.id)
+    const result = res.data
+    // status: 1=成功, 0=排队中, -1=库存不足, -2=重复购买
+    if (result.status === 1) {
+      ElMessage.success(`抢购成功！订单号：${result.orderNo}`)
+    } else if (result.status === 0) {
+      ElMessage.info('抢购请求已提交，正在排队中，请稍后查看订单')
+    } else if (result.status === -1) {
+      ElMessage.error('手慢了，商品已抢完')
+    } else if (result.status === -2) {
+      ElMessage.warning('您已抢购过该商品，不能重复购买')
+    } else {
+      ElMessage.error('抢购失败，请重试')
+    }
+    // 刷新秒杀列表, 让前端展示的 availableCount / 已抢 / 剩余 与后端保持同步
+    await fetchActivities(true)
+  } catch {
+    // 错误已由全局拦截器统一提示
+  }
 }
 
 /* === 场次状态相关 === */

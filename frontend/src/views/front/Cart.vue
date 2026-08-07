@@ -625,7 +625,9 @@ onDeactivated(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
+  /* padding-bottom 增大到 36px, 使底部栏总高度(约 68px) ≥ FrontLayout 页脚高度(约 67px),
+     完全覆盖页脚避免深色页脚露出形成"黑色区域" */
+  padding: 12px 24px 36px;
   background: #ffffff;
   border-top: 1px solid var(--color-border);
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);

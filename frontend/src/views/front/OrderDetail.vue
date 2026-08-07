@@ -92,7 +92,7 @@
         </div>
         <div class="pay-summary-row">
           <span>支付方式</span>
-          <span>{{ order.payMethod || '—' }}</span>
+          <span>{{ formatPayMethod(order.payMethod) }}</span>
         </div>
         <div class="pay-summary-row">
           <span>支付时间</span>
@@ -109,6 +109,10 @@
         <div v-if="order.cancelReason" class="pay-summary-row">
           <span>取消原因</span>
           <span>{{ order.cancelReason }}</span>
+        </div>
+        <div v-if="order.remark" class="pay-summary-row">
+          <span>备注</span>
+          <span class="remark-value">{{ order.remark }}</span>
         </div>
         <div class="pay-summary-row total-row">
           <span class="total-label">应付金额</span>
@@ -155,6 +159,25 @@
         </template>
         <button class="btn-sm large" @click="router.push('/user/orders')">返回订单列表</button>
       </div>
+
+      <!-- 支付方式选择弹窗 (Bug 7 修复: 去支付时选择支付方式, 不直接扣费) -->
+      <el-dialog v-model="showPayDialog" title="选择支付方式" width="420px" append-to-body>
+        <div class="pay-method-list">
+          <div v-for="method in payMethodOptions" :key="method.value"
+            class="pay-method-item" :class="{ active: selectedPayMethod === method.value }"
+            @click="selectedPayMethod = method.value">
+            <span class="pay-method-icon">{{ method.icon }}</span>
+            <span class="pay-method-label">{{ method.label }}</span>
+            <span class="pay-method-desc">{{ method.desc }}</span>
+          </div>
+        </div>
+        <template #footer>
+          <button class="btn-sm text large" @click="showPayDialog = false">取消</button>
+          <button class="btn-sm primary large" :disabled="payLoading" @click="confirmPay">
+            {{ payLoading ? '支付中...' : '确认支付' }}
+          </button>
+        </template>
+      </el-dialog>
     </template>
   </div>
 </template>
@@ -171,7 +194,7 @@ import { getOrderDetail, getNormalOrderDetail, payOrder, payNormalOrder, cancelO
 import { getProductDetail } from '@/api/product'
 import { formatImageUrl } from '@/utils/image'
 import dayjs from 'dayjs'
-import type { OrderItemSnapshot, NormalOrderDetailVO, SeckillOrder } from '@/types'
+import type { OrderItemSnapshot, NormalOrder, NormalOrderDetailVO, SeckillOrder } from '@/types'
 
 /** 统一订单详情（适配秒杀+普通两种接口返回） */
 interface UnifiedOrderDetail {
@@ -190,7 +213,23 @@ interface UnifiedOrderDetail {
   shippingNo?: string
   cancelTime?: string
   cancelReason?: string
+  /** 订单备注（后端 NormalOrder 实体 remark 字段，秒杀订单无此字段） */
+  remark?: string
   items: OrderItemSnapshot[]
+}
+
+/** 支付方式中文映射 */
+const PAY_METHOD_MAP: Record<string, string> = {
+  ALIPAY: '支付宝',
+  WECHAT: '微信支付',
+  WALLET: '钱包支付',
+  BANK_CARD: '银行卡'
+}
+
+/** 格式化支付方式为中文 */
+function formatPayMethod(payMethod: string): string {
+  if (!payMethod) return '—'
+  return PAY_METHOD_MAP[payMethod] || payMethod
 }
 
 const route = useRoute()
@@ -202,6 +241,19 @@ const order = ref<UnifiedOrderDetail | null>(null)
 const payLoading = ref<boolean>(false)
 const cancelLoading = ref<boolean>(false)
 const confirmLoading = ref<boolean>(false)
+
+/** 支付方式选择弹窗显示 */
+const showPayDialog = ref<boolean>(false)
+
+/** 选中的支付方式 */
+const selectedPayMethod = ref<string>('ALIPAY')
+
+/** 支付方式选项列表 */
+const payMethodOptions = [
+  { value: 'ALIPAY', label: '支付宝', icon: '💰', desc: '模拟支付' },
+  { value: 'WECHAT', label: '微信支付', icon: '💬', desc: '模拟支付' },
+  { value: 'WALLET', label: '钱包支付', icon: '👛', desc: '余额扣款' }
+]
 
 /** 步骤 2 状态（支付完成） */
 const step2DotClass = computed<string>(() => {
@@ -355,6 +407,8 @@ function buildNormalOrder(detail: NormalOrderDetailVO): UnifiedOrderDetail {
     shippingNo: detail.order.shippingNo,
     cancelTime: detail.order.cancelTime,
     cancelReason: detail.order.cancelReason,
+    // NormalOrder 类型未声明 remark, 但后端实体可能返回, 用类型断言安全读取
+    remark: (detail.order as NormalOrder & { remark?: string }).remark,
     items: (detail.items || []).map(item => ({
       productId: item.productId,
       productName: item.productName,
@@ -487,17 +541,26 @@ async function copyShippingNo(): Promise<void> {
   }
 }
 
-/** 立即支付 (根据订单类型调用不同支付接口) */
+/** 去支付: 打开支付方式选择弹窗 (Bug 7 修复: 不直接扣费, 让用户选择支付方式) */
 async function handlePay(): Promise<void> {
+  if (!order.value) return
+  // 重置选中支付方式为默认值, 打开弹窗
+  selectedPayMethod.value = 'ALIPAY'
+  showPayDialog.value = true
+}
+
+/** 确认支付: 根据选中的支付方式调用对应支付接口 */
+async function confirmPay(): Promise<void> {
   if (!order.value) return
   payLoading.value = true
   try {
     if (order.value.orderType === 'NORMAL') {
-      await payNormalOrder(order.value.id, 'ALIPAY')
+      await payNormalOrder(order.value.id, selectedPayMethod.value)
     } else {
-      await payOrder(order.value.id, 'ALIPAY')
+      await payOrder(order.value.id, selectedPayMethod.value)
     }
     ElMessage.success('支付成功')
+    showPayDialog.value = false
     await fetchOrderDetail()
   } catch {
     // 错误已由拦截器处理
@@ -1025,5 +1088,59 @@ onMounted(() => {
 .btn-sm.text:disabled {
   color: var(--color-text-muted);
   cursor: not-allowed;
+}
+
+/* === 备注样式 (Bug 9 修复) === */
+.remark-value {
+  color: var(--color-text-primary);
+  word-break: break-all;
+  text-align: right;
+  max-width: 70%;
+}
+
+/* === 支付方式选择弹窗 (Bug 7 修复) === */
+.pay-method-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pay-method-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.pay-method-item:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.pay-method-item.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.pay-method-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.pay-method-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+.pay-method-desc {
+  font-size: 12px;
+  color: var(--color-text-muted);
 }
 </style>

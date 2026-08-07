@@ -38,8 +38,7 @@
             <td>
               <div class="table-actions">
                 <button class="table-action-btn" @click="openDetailDialog(row)">详情</button>
-                <button v-if="row.status !== 2" class="table-action-btn danger"
-                  @click="handleDelete(row)">删除</button>
+                <button v-if="row.status !== 2" class="table-action-btn danger" @click="handleDelete(row)">删除</button>
               </div>
             </td>
           </tr>
@@ -51,8 +50,7 @@
     </div>
 
     <!-- 创建场次弹窗 -->
-    <el-dialog v-model="dialogVisible" title="创建秒杀场次" width="800px" :close-on-click-modal="false"
-      @closed="resetForm">
+    <el-dialog v-model="dialogVisible" title="创建秒杀场次" width="800px" :close-on-click-modal="false" @closed="resetForm">
       <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
         <el-form-item label="场次名称" prop="name">
           <el-input v-model="formData.name" placeholder="请输入场次名称" maxlength="50" show-word-limit />
@@ -90,8 +88,8 @@
 
           <el-form-item :label="`秒杀价${idx + 1}`" :prop="`goodsItems.${idx}.seckillPrice`"
             :rules="[{ required: true, message: '请输入秒杀价格', trigger: 'blur' }]">
-            <el-input-number v-model="item.seckillPrice" :min="0.01" :precision="2" :step="1"
-              controls-position="right" style="width: 160px" />
+            <el-input-number v-model="item.seckillPrice" :min="0.01" :precision="2" :step="1" controls-position="right"
+              style="width: 160px" />
             <span class="form-unit">元</span>
           </el-form-item>
           <el-form-item :label="`库存${idx + 1}`" :prop="`goodsItems.${idx}.stockCount`"

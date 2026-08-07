@@ -16,7 +16,8 @@
       <nav class="mock-nav-links">
         <a href="javascript:void(0)" :class="{ active: route.path === '/seckill' }"
           @click="router.push('/seckill')">秒杀专区</a>
-        <a href="javascript:void(0)" :class="{ active: route.path.startsWith('/user/orders') }" @click="goOrders">我的订单</a>
+        <a href="javascript:void(0)" :class="{ active: route.path.startsWith('/user/orders') }"
+          @click="goOrders">我的订单</a>
         <!-- 购物车链接 + 数量徽标 -->
         <a href="javascript:void(0)" class="nav-cart-link" :class="{ active: route.path === '/cart' }" @click="goCart">
           购物车

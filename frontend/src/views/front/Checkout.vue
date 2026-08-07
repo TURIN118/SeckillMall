@@ -235,9 +235,9 @@ const checkoutMode = ref<'buynow' | 'cart'>('cart')
 
 /** 立即购买模式下的商品参数 (从 route.query 读取) */
 const buyNowParams = ref<{
-  productId: number | string
-  skuId: number | string | null
-  quantity: number
+    productId: number | string
+    skuId: number | string | null
+    quantity: number
 } | null>(null)
 
 /* === 计算属性 === */

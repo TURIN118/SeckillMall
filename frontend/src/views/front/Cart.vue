@@ -59,7 +59,8 @@
           <div class="product-info">
             <div class="product-name" @click="goProductDetail(item.productId)">{{ item.productName }}</div>
             <div v-if="item.skuAttributes" class="product-sku-attrs">
-              <svg class="product-sku-attrs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg class="product-sku-attrs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
                 <path d="M3 6h18M3 12h18M3 18h18" />
               </svg>
               {{ item.skuAttributes }}

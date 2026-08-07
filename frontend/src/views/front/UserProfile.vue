@@ -206,8 +206,8 @@
               <div class="form-group">
                 <label class="form-label">验证码</label>
                 <div class="verify-row">
-                  <input v-model.trim="pwdForm.code" class="form-input verify-input"
-                    :class="{ error: pwdErrors.code }" type="text" placeholder="请输入邮箱验证码" maxlength="6" />
+                  <input v-model.trim="pwdForm.code" class="form-input verify-input" :class="{ error: pwdErrors.code }"
+                    type="text" placeholder="请输入邮箱验证码" maxlength="6" />
                   <button class="btn-sm primary verify-btn" type="button"
                     :disabled="pwdCodeCountdown > 0 || sendingPwdCode" @click="handleSendPwdCode">
                     {{ pwdCodeCountdown > 0 ? `${pwdCodeCountdown}s` : (sendingPwdCode ? '发送中' : '发送验证码') }}

@@ -45,7 +45,8 @@
               <div class="activity-title-wrap">
                 <h2 class="activity-name">{{ activity.name }}</h2>
                 <span class="activity-status" :class="statusClass(activity)">{{ statusText(activity) }}</span>
-                <span class="activity-time">{{ formatTime(activity.startTime) }} - {{ formatTime(activity.endTime) }}</span>
+                <span class="activity-time">{{ formatTime(activity.startTime) }} - {{ formatTime(activity.endTime)
+                  }}</span>
               </div>
               <div v-if="activity.status !== 2" class="activity-countdown">
                 <span class="cd-label">{{ activity.status === 1 ? '距结束' : '距开始' }}</span>
@@ -95,14 +96,15 @@
                   <div class="card-prices">
                     <span class="price-seckill">{{ formatPrice(item.seckillPrice) }}</span>
                     <span v-if="getOriginalPrice(item) && getOriginalPrice(item)! > item.seckillPrice"
-                      class="price-original">¥{{ formatNumber(getOriginalPrice(item)!) }}</span>
+                      class="price-original">¥{{
+                        formatNumber(getOriginalPrice(item)!) }}</span>
                   </div>
 
                   <!-- 库存信息 -->
                   <template v-if="item.status === 'ACTIVE'">
                     <div class="stock-bar">
-                      <div class="stock-bar-fill" :class="stockLevel(item)"
-                        :style="{ width: soldPercent(item) + '%' }"></div>
+                      <div class="stock-bar-fill" :class="stockLevel(item)" :style="{ width: soldPercent(item) + '%' }">
+                      </div>
                     </div>
                     <div class="stock-text" :class="{ danger: isLowStock(item) }">
                       <template v-if="isLowStock(item)">仅剩 {{ item.availableCount }} 件！手慢无</template>
@@ -118,7 +120,8 @@
 
                   <!-- 操作按钮 -->
                   <div class="card-action">
-                    <button v-if="item.status === 'ACTIVE'" class="btn-seckill" @click.stop="goDetail(item)">立即抢购</button>
+                    <button v-if="item.status === 'ACTIVE'" class="btn-seckill"
+                      @click.stop="goDetail(item)">立即抢购</button>
                     <button v-else-if="item.status === 'PENDING'" class="btn-seckill btn-pending"
                       @click.stop="goDetail(item)">即将开始</button>
                     <button v-else class="btn-seckill btn-ended" disabled>已结束</button>
@@ -149,12 +152,16 @@
                 <el-image v-if="cardImage(item)" :src="cardImage(item)" fit="cover" class="card-img-tag" lazy>
                   <template #error>
                     <div class="img-placeholder">
-                      <el-icon :size="40"><Picture /></el-icon>
+                      <el-icon :size="40">
+                        <Picture />
+                      </el-icon>
                     </div>
                   </template>
                 </el-image>
                 <div v-else class="img-placeholder">
-                  <el-icon :size="40"><Picture /></el-icon>
+                  <el-icon :size="40">
+                    <Picture />
+                  </el-icon>
                 </div>
                 <span class="status-tag" :class="goodsStatusClass(item)">{{ goodsStatusText(item) }}</span>
               </div>
@@ -164,12 +171,13 @@
                 <div class="card-prices">
                   <span class="price-seckill">{{ formatPrice(item.seckillPrice) }}</span>
                   <span v-if="getOriginalPrice(item) && getOriginalPrice(item)! > item.seckillPrice"
-                    class="price-original">¥{{ formatNumber(getOriginalPrice(item)!) }}</span>
+                    class="price-original">¥{{
+                      formatNumber(getOriginalPrice(item)!) }}</span>
                 </div>
                 <template v-if="item.status === 'ACTIVE'">
                   <div class="stock-bar">
-                    <div class="stock-bar-fill" :class="stockLevel(item)"
-                      :style="{ width: soldPercent(item) + '%' }"></div>
+                    <div class="stock-bar-fill" :class="stockLevel(item)" :style="{ width: soldPercent(item) + '%' }">
+                    </div>
                   </div>
                   <div class="stock-text" :class="{ danger: isLowStock(item) }">
                     <template v-if="isLowStock(item)">仅剩 {{ item.availableCount }} 件！手慢无</template>

@@ -52,9 +52,8 @@
       <!-- 商品信息卡片（对照 .order-card，支持多商品遍历） -->
       <div class="order-card product-card" v-for="item in order.items" :key="item.productId">
         <div class="order-card-img large">
-          <img v-if="item.productImage" :src="formatImageUrl(item.productImage)" :alt="item.productName"
-            loading="lazy" sizes="80px"
-            class="order-card-img-tag" />
+          <img v-if="item.productImage" :src="formatImageUrl(item.productImage)" :alt="item.productName" loading="lazy"
+            sizes="80px" class="order-card-img-tag" />
           <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="3" y="3" width="18" height="18" rx="2" />
             <circle cx="8.5" cy="8.5" r="1.5" />
@@ -163,9 +162,8 @@
       <!-- 支付方式选择弹窗 (Bug 7 修复: 去支付时选择支付方式, 不直接扣费) -->
       <el-dialog v-model="showPayDialog" title="选择支付方式" width="420px" append-to-body>
         <div class="pay-method-list">
-          <div v-for="method in payMethodOptions" :key="method.value"
-            class="pay-method-item" :class="{ active: selectedPayMethod === method.value }"
-            @click="selectedPayMethod = method.value">
+          <div v-for="method in payMethodOptions" :key="method.value" class="pay-method-item"
+            :class="{ active: selectedPayMethod === method.value }" @click="selectedPayMethod = method.value">
             <span class="pay-method-icon">{{ method.icon }}</span>
             <span class="pay-method-label">{{ method.label }}</span>
             <span class="pay-method-desc">{{ method.desc }}</span>
@@ -710,18 +708,22 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
 }
+
 .breadcrumb-link {
   color: var(--color-text-secondary);
   text-decoration: none;
   cursor: pointer;
   transition: color 0.2s;
 }
+
 .breadcrumb-link:hover {
   color: var(--color-primary);
 }
+
 .breadcrumb-sep {
   color: var(--color-text-muted);
 }
+
 .breadcrumb-current {
   color: var(--color-text-primary);
   font-weight: 600;

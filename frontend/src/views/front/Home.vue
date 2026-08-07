@@ -537,8 +537,18 @@ async function fetchList(): Promise<void> {
   }
 }
 
+/* === 静默刷新秒杀列表：不触发 loading 状态，避免定时轮询导致界面闪烁 === */
+async function silentRefreshSeckill(): Promise<void> {
+  try {
+    await seckillStore.fetchSeckillList({ pageNum: 1, pageSize: 20 })
+  } catch {
+    // 错误已由拦截器处理
+  }
+}
+
 // M6 修复: 秒杀列表定时轮询定时器，每 8 秒刷新一次，
 // 让前端展示的 availableCount / 已抢 / 剩余 与后端保持同步
+// 使用静默刷新避免 loading 遮罩反复闪烁
 let seckillRefreshTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
@@ -548,9 +558,9 @@ onMounted(() => {
   fetchRecommendProducts()
   updateCountdown()
   cdTimer = setInterval(updateCountdown, 1000)
-  // 启动秒杀列表定时轮询
+  // 启动秒杀列表定时轮询（静默刷新，不闪烁）
   seckillRefreshTimer = setInterval(() => {
-    fetchList()
+    silentRefreshSeckill()
   }, 8000)
 })
 

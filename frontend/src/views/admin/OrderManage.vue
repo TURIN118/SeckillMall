@@ -145,11 +145,12 @@
  */
 import { ref, computed, reactive, onMounted } from 'vue'
 import dayjs from 'dayjs'
-import * as XLSX from 'xlsx'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CopyDocument } from '@element-plus/icons-vue'
 import { getAdminOrderList, shipOrder, shipNormalOrder } from '@/api/order'
 import type { AdminOrderVO, OrderStatus } from '@/types'
+// 注意: xlsx 库 (约 600KB+) 已改为动态导入, 见 handleExport 中的 `await import('xlsx')`.
+// 避免静态导入导致 OrderManage chunk 过大, 用户仅查看订单时不需下载 xlsx.
 
 /* === 列表数据 === */
 const loading = ref(false)
@@ -273,6 +274,9 @@ async function handleExport(): Promise<void> {
 
   exportLoading.value = true
   try {
+    // 动态导入 xlsx 库 (约 600KB+), 仅在用户点击导出时才加载, 避免污染 OrderManage chunk
+    const XLSX = await import('xlsx')
+
     // 1. 查询当前筛选条件下所有订单（传大 pageSize 获取全量）
     //    后端搜索：orderNo / date / status 由后端 SQL 过滤，避免前端仅过滤当前页的 BUG-005
     const res = await getAdminOrderList({

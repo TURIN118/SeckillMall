@@ -318,6 +318,21 @@ router.beforeEach(async (to, _from, next) => {
     }
   }
 
+  // 后台管理路由预取: 当用户角色为 ADMIN/SELLER 时, 空闲时预加载后台关键 chunk
+  // 在路由守卫中触发 (而非全局预取), 因为只有管理员才需要后台 chunk
+  if (userStore.userInfo) {
+    const userRole = normalizeRole(userStore.userInfo.role)
+    if (userRole === 'ADMIN' || userRole === 'SELLER') {
+      if ('requestIdleCallback' in window) {
+        ; (window as unknown as { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(
+          prefetchAdminRoutes
+        )
+      } else {
+        setTimeout(prefetchAdminRoutes, 500)
+      }
+    }
+  }
+
   next()
 })
 
@@ -381,6 +396,30 @@ if (typeof window !== 'undefined') {
       prefetchBatch2()
     }
   }, 3000)
+}
+
+/* === 后台管理路由预取 (仅管理员/卖家触发, 首次进入后台时减少卡顿) ===
+ * 当路由守卫确认用户角色为 ADMIN/SELLER 后, 在浏览器空闲时预取后台关键页面 chunk:
+ *   - AdminLayout + Dashboard (必经路径, 优先预取)
+ *   - ProductManage + OrderManage (高频后台页面)
+ * 使用 adminPrefetched 标志确保只触发一次, 避免重复预取.
+ */
+let adminPrefetched = false
+function prefetchAdminRoutes(): void {
+  if (adminPrefetched) return
+  adminPrefetched = true
+  /** 后台关键路由路径列表 */
+  const adminPaths = ['/admin', '/admin/products', '/admin/orders']
+  /** 预取指定路径列表对应的路由组件 chunk (错误静默) */
+  adminPaths.forEach((path) => {
+    const resolved = router.resolve(path)
+    resolved.matched.forEach((record) => {
+      const comp = record.components?.default
+      if (typeof comp === 'function') {
+        ; (comp as () => Promise<unknown>)().catch(() => { })
+      }
+    })
+  })
 }
 
 export default router

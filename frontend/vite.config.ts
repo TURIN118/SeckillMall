@@ -104,12 +104,15 @@ export default defineConfig(({ mode }) => {
             // Vue 核心 (vue + vue-router + pinia)
             'vue-vendor': ['vue', 'vue-router', 'pinia'],
             // wangEditor 富文本编辑器 (仅商品编辑使用, 按需加载)
-            'wangeditor': ['@wangeditor/editor', '@wangeditor/editor-for-vue']
+            'wangeditor': ['@wangeditor/editor', '@wangeditor/editor-for-vue'],
+            // ECharts 图表库 (仅后台 Dashboard 使用, 按需引入后分离为独立 chunk)
+            // - 减小 Dashboard chunk 体积, 首次进入后台时 Dashboard 加载更快
+            // - echarts chunk 独立缓存, 其他页面若使用图表可直接命中缓存
+            'echarts': ['echarts']
           }
-          // 注意: element-plus 和 echarts 不再配置 manualChunks,
+          // 注意: element-plus 不再配置 manualChunks,
           // 因为已改为按需引入, 强制合并会抵消按需引入的体积优化效果.
           // - element-plus: 各组件由 ElementPlusResolver 自动按需引入, rollup 自动分割
-          // - echarts: 仅 Dashboard 使用, 按需引入后随 Dashboard chunk 加载
         }
       }
     }

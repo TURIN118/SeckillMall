@@ -355,10 +355,15 @@ function resetForm(): void {
 
 /* === 提交表单 === */
 async function handleSubmit(): Promise<void> {
-  if (!formRef.value) return
+  if (!formRef.value) {
+    ElMessage.warning('表单未就绪，请稍后重试')
+    return
+  }
   try {
     await formRef.value.validate()
   } catch {
+    // 校验失败：提示用户完善必填项，避免点击"确定"后无任何反馈
+    ElMessage.warning('请完善表单必填项后再提交')
     return
   }
   if (formData.goodsItems.length === 0) {

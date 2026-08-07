@@ -209,8 +209,8 @@ async function handleDelete(row: ProductVO): Promise<void> {
 }
 
 onMounted(() => {
-  fetchCategories()
-  fetchProductList()
+  // 分类树和商品列表并行请求, 互不依赖, 用 Promise.all 明确并行
+  Promise.all([fetchCategories(), fetchProductList()])
 })
 </script>
 

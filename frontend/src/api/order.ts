@@ -2,6 +2,7 @@
  * 订单 API - 严格匹配 default.md
  */
 import { get, post } from './request'
+import type { AxiosRequestConfig } from 'axios'
 import type {
   Result,
   PageResult,
@@ -27,11 +28,13 @@ export function getOrderList(params: {
  * 后台订单列表（高级筛选+分页+排序）
  * GET /api/v1/admin/orders
  * 支持订单号模糊查询、按天筛选日期、状态筛选
+ * M-F3 修复: 新增可选 config 参数, 允许调用方单独放宽 timeout (如导出 10000 条时设 60s)
  */
 export function getAdminOrderList(
-  params: AdminOrderQueryRequest
+  params: AdminOrderQueryRequest,
+  config?: AxiosRequestConfig
 ): Promise<Result<PageResult<AdminOrderVO>>> {
-  return get<PageResult<AdminOrderVO>>('/api/v1/admin/orders', params)
+  return get<PageResult<AdminOrderVO>>('/api/v1/admin/orders', params, config)
 }
 
 /** 订单详情 */

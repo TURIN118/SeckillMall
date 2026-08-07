@@ -10,6 +10,7 @@ import com.seckill.mall.vo.SeckillRankingVO;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -95,4 +96,14 @@ public interface SeckillOrderMapper extends BaseMapper<SeckillOrder> {
     @Delete("DELETE FROM t_seckill_order WHERE user_id = #{userId} AND seckill_id = #{seckillId} " +
             "AND status IN ('TIMEOUT', 'CANCELLED')")
     int deleteTerminalOrders(@Param("userId") Long userId, @Param("seckillId") Long seckillId);
+
+    /**
+     * H-C2 修复：物理删除指定订单（绕过 MyBatis-Plus 逻辑删除）。
+     * 用于消费者 DB 扣减失败时撤销刚创建的幽灵单。
+     *
+     * @param orderId 订单 ID
+     * @return 受影响行数
+     */
+    @Delete("DELETE FROM t_seckill_order WHERE id = #{orderId}")
+    int deletePhysical(@Param("orderId") Long orderId);
 }

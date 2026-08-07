@@ -53,7 +53,8 @@
       <div class="order-card product-card" v-for="item in order.items" :key="item.productId">
         <div class="order-card-img large">
           <img v-if="item.productImage" :src="formatImageUrl(item.productImage)" :alt="item.productName"
-            class="order-card-img-tag" loading="lazy" />
+            loading="lazy" sizes="80px"
+            class="order-card-img-tag" />
           <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="3" y="3" width="18" height="18" rx="2" />
             <circle cx="8.5" cy="8.5" r="1.5" />
@@ -170,7 +171,7 @@ import { getOrderDetail, getNormalOrderDetail, payOrder, payNormalOrder, cancelO
 import { getProductDetail } from '@/api/product'
 import { formatImageUrl } from '@/utils/image'
 import dayjs from 'dayjs'
-import type { OrderItemSnapshot } from '@/types'
+import type { OrderItemSnapshot, NormalOrderDetailVO, SeckillOrder } from '@/types'
 
 /** 统一订单详情（适配秒杀+普通两种接口返回） */
 interface UnifiedOrderDetail {
@@ -335,8 +336,10 @@ function getOrderType(): 'SECKILL' | 'NORMAL' | null {
   return null
 }
 
-/** 构建普通订单的统一详情对象 */
-function buildNormalOrder(detail: { order: any; items: any[] }): UnifiedOrderDetail {
+/** 构建普通订单的统一详情对象
+ *  M-F2 修复: 用已有强类型 NormalOrderDetailVO 替代 any, 保证类型安全
+ */
+function buildNormalOrder(detail: NormalOrderDetailVO): UnifiedOrderDetail {
   return {
     id: detail.order.id,
     orderNo: detail.order.orderNo,
@@ -365,8 +368,10 @@ function buildNormalOrder(detail: { order: any; items: any[] }): UnifiedOrderDet
   }
 }
 
-/** 构建秒杀订单的统一详情对象（额外查询商品信息） */
-async function buildSeckillOrder(seckill: any): Promise<UnifiedOrderDetail> {
+/** 构建秒杀订单的统一详情对象（额外查询商品信息）
+ *  M-F2 修复: 用已有强类型 SeckillOrder 替代 any, 保证类型安全
+ */
+async function buildSeckillOrder(seckill: SeckillOrder): Promise<UnifiedOrderDetail> {
   // 查询商品详情获取真实的商品名称和图片
   let productName = `秒杀商品 #${seckill.productId}`
   let productImage = ''

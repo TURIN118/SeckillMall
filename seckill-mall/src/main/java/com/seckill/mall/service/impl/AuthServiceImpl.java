@@ -29,6 +29,7 @@ import com.seckill.mall.vo.LoginVO;
 import com.seckill.mall.vo.TokenVO;
 import com.seckill.mall.vo.UploadResultVO;
 import com.seckill.mall.vo.UserVO;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -55,6 +56,11 @@ public class AuthServiceImpl implements AuthService {
     private static final long FAIL_COUNT_TTL_MINUTES = 30L;
     private static final int LOCK_THRESHOLD = 5;
     private static final int CAPTCHA_REQUIRED_THRESHOLD = 3;
+
+    /** M-S4 修复：按 IP 维度的登录失败计数 key 前缀（防密码喷洒） */
+    private static final String FAIL_COUNT_IP_KEY_PREFIX = "login:fail:ip:";
+    private static final int IP_FAIL_LOCK_THRESHOLD = 20;
+    private static final long IP_FAIL_TTL_MINUTES = 15L;
 
     /** 找回密码验证码 Redis key 前缀：forgot-password:{type}:{account} */
     private static final String FORGOT_PASSWORD_CODE_KEY_PREFIX = "forgot-password:";
@@ -107,34 +113,51 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public LoginVO login(LoginRequest req, String ip) {
+    public LoginVO login(LoginRequest req, String ip, HttpServletRequest request) {
         String username = req.getUsername();
         String failKey = FAIL_COUNT_KEY_PREFIX + username;
+        // M-S4 修复：叠加按 IP 维度的失败计数，防密码喷洒（同 IP 不同用户名爆破）
+        String ipFailKey = FAIL_COUNT_IP_KEY_PREFIX + ip;
 
         int failCount = getFailCount(failKey);
         if (failCount >= LOCK_THRESHOLD) {
             throw new BusinessException(ErrorCode.LOGIN_LOCKED);
         }
+        // M-S4 修复：IP 维度失败次数超限则临时封禁
+        int ipFailCount = getFailCount(ipFailKey);
+        if (ipFailCount >= IP_FAIL_LOCK_THRESHOLD) {
+            throw new BusinessException(ErrorCode.LOGIN_LOCKED);
+        }
         // 失败次数 >=3 时强制校验验证码
-        if (failCount >= CAPTCHA_REQUIRED_THRESHOLD) {
+        if (failCount >= CAPTCHA_REQUIRED_THRESHOLD || ipFailCount >= CAPTCHA_REQUIRED_THRESHOLD) {
             if (!captchaService.verifyCaptcha(req.getCaptchaKey(), req.getCaptchaCode())) {
                 throw new BusinessException(ErrorCode.CAPTCHA_ERROR);
             }
         }
 
+        // L-O2 修复：提取 User-Agent 用于登录日志补全
+        String userAgent = request != null ? request.getHeader("User-Agent") : null;
+
+        // M-S5 修复：统一返回相同的"用户名或密码错误"文案与耗时，防用户名枚举
+        long loginStartMs = System.currentTimeMillis();
         User user = userMapper.findByUsername(username);
         if (user == null || !passwordEncoder.matches(req.getPassword(), user.getPassword())) {
-            recordLoginFailure(failKey, user, username, ip, ErrorCode.USERNAME_OR_PASSWORD_ERROR.getMessage());
+            // M-S5 修复：不存在用户时 user_id 传 null，writeLoginLog 内部跳过 user_id NOT NULL 字段
+            recordLoginFailure(failKey, ipFailKey, user, username, ip, userAgent,
+                    ErrorCode.USERNAME_OR_PASSWORD_ERROR.getMessage());
             throw new BusinessException(ErrorCode.USERNAME_OR_PASSWORD_ERROR);
         }
         if (user.getStatus() == UserStatus.DISABLED) {
-            recordLoginFailure(failKey, user, username, ip, ErrorCode.ACCOUNT_DISABLED.getMessage());
+            recordLoginFailure(failKey, ipFailKey, user, username, ip, userAgent,
+                    ErrorCode.ACCOUNT_DISABLED.getMessage());
             throw new BusinessException(ErrorCode.ACCOUNT_DISABLED);
         }
 
-        // 登录成功：清除失败计数
+        // 登录成功：清除失败计数（用户名维度 + IP 维度）
         stringRedisTemplate.delete(failKey);
-        writeLoginLog(user.getId(), ip, LoginResult.SUCCESS, null);
+        // IP 维度失败计数不清除（允许累积，但成功登录后重置该 IP 计数）
+        stringRedisTemplate.delete(ipFailKey);
+        writeLoginLog(user.getId(), ip, userAgent, LoginResult.SUCCESS, null);
 
         // 登录成功后签发 Token（携带 tokenVersion）
         long tokenVersion = tokenVersionService.getCurrentVersion(user.getId());
@@ -298,22 +321,49 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    private void recordLoginFailure(String failKey, User user, String username, String ip, String reason) {
+    private void recordLoginFailure(String failKey, String ipFailKey, User user, String username,
+                                     String ip, String userAgent, String reason) {
         Long count = stringRedisTemplate.opsForValue().increment(failKey);
         if (count != null && count == 1L) {
             stringRedisTemplate.expire(failKey, FAIL_COUNT_TTL_MINUTES, TimeUnit.MINUTES);
         }
-        log.warn("登录失败: username={}, failCount={}, reason={}", username, count, reason);
-        writeLoginLog(user == null ? null : user.getId(), ip, LoginResult.FAILED, reason);
+        // M-S4 修复：IP 维度失败计数
+        Long ipCount = stringRedisTemplate.opsForValue().increment(ipFailKey);
+        if (ipCount != null && ipCount == 1L) {
+            stringRedisTemplate.expire(ipFailKey, IP_FAIL_TTL_MINUTES, TimeUnit.MINUTES);
+        }
+        log.warn("登录失败: username={}, failCount={}, ipFailCount={}, ip={}, reason={}",
+                username, count, ipCount, ip, reason);
+        // M-S5 修复：user 为 null 时不写 user_id（避免 NOT NULL 约束异常）
+        writeLoginLog(user == null ? null : user.getId(), ip, userAgent, LoginResult.FAILED, reason);
     }
 
-    private void writeLoginLog(Long userId, String ip, LoginResult result, String failReason) {
+    /**
+     * L-O2 修复：补全 username/userAgent/loginLocation 字段。
+     * M-S5 修复：userId 为 null 时不写 user_id 字段（避免 NOT NULL 约束异常导致 500）。
+     */
+    private void writeLoginLog(Long userId, String ip, String userAgent, LoginResult result, String failReason) {
         LoginLog loginLog = new LoginLog();
+        // M-S5 修复：userId 为 null 时跳过设置（LoginLog.userId 字段保持 null，
+        // 由 MyBatis-Plus updateById 忽略 null 字段；但 insert 会包含 null，
+        // 故需确保 t_login_log.user_id 允许为 NULL —— 见 sql/01_schema.sql 修复）
         loginLog.setUserId(userId);
         loginLog.setLoginIp(ip == null ? "unknown" : ip);
+        // L-O2 修复：记录 User-Agent
+        if (userAgent != null && userAgent.length() > 500) {
+            userAgent = userAgent.substring(0, 500);
+        }
+        loginLog.setUserAgent(userAgent);
+        // L-O2 修复：loginLocation 暂记 IP（可后续接入 IP 地理库解析城市）
+        loginLog.setLoginLocation(ip == null ? "unknown" : ip);
         loginLog.setLoginResult(result);
         loginLog.setFailReason(failReason);
-        loginLogMapper.insert(loginLog);
+        try {
+            loginLogMapper.insert(loginLog);
+        } catch (Exception e) {
+            // M-S5 修复：登录日志写入失败不应影响登录主流程（避免用户名枚举）
+            log.warn("登录日志写入失败（不影响登录主流程）: {}", e.getMessage());
+        }
     }
 
     private UserVO toUserVO(User user) {

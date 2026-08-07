@@ -32,6 +32,16 @@ export default defineConfig(({ mode }) => {
         threshold: 10240,
         algorithm: 'gzip',
         ext: '.gz'
+      }),
+      // Brotli 压缩 (H-F4 修复): 对 > 10KB 的资源生成 .br 文件,
+      // 通常比 gzip 再小 15-20%, 大块单块可再省 30-50KB.
+      // 部署侧 nginx 需启用 `brotli_static on;` 才能命中预压缩文件.
+      viteCompression({
+        verbose: true,
+        disable: false,
+        threshold: 10240,
+        algorithm: 'brotliCompress',
+        ext: '.br'
       })
     ],
     resolve: {
@@ -80,22 +90,23 @@ export default defineConfig(({ mode }) => {
       }
     },
     build: {
-      target: 'es2015',
+      // M-F5 修复: target 从 'es2015' 改为 'modules' (基于浏览器原生 ES Modules 支持),
+      // 现代浏览器运行时解析/执行更快, 减少向下兼容的 polyfill 体积.
+      target: 'modules',
       outDir: 'dist',
       assetsDir: 'assets',
       sourcemap: false,
       chunkSizeWarningLimit: 1500,
       // CSS 代码分割: 每个异步 chunk 的 CSS 单独提取, 减少首屏 CSS 体积
       cssCodeSplit: true,
-      // terser 压缩: 移除 console 和 debugger, 减小生产包体积
-      minify: 'terser',
-      terserOptions: {
-        compress: {
-          drop_console: true,
-          drop_debugger: true
-        }
+      // C1/M-F6 修复: 改用 Vite 内置 esbuild minify, 零额外依赖、构建更快.
+      // 不再需要 devDependencies 中声明 terser.
+      // drop console/debugger 通过 esbuild drop 选项实现 (生产环境生效)
+      minify: 'esbuild',
+      esbuild: {
+        drop: ['console', 'debugger']
       },
-      // 不计算 gzip 压缩大小报告, 加快构建速度 (由 vite-plugin-compression 生成实际 .gz 文件)
+      // 不计算 gzip 压缩大小报告, 加快构建速度 (由 vite-plugin-compression 生成实际 .gz/.br 文件)
       reportCompressedSize: false,
       rollupOptions: {
         output: {

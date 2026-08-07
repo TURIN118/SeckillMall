@@ -3,6 +3,9 @@ server:
   tomcat:
     max-threads: 200
     accept-count: 100
+  # C2 修复：不全局启用 ForwardedHeaderFilter（forward-headers-strategy: native 会无条件信任 X-Forwarded-* 头）。
+  # X-Forwarded-For 的可信代理白名单处理由 RateLimitAspect 自行负责，避免其他组件受伪造头影响。
+  # forward-headers-strategy: native
 
 spring:
   config:
@@ -41,6 +44,9 @@ mybatis-plus:
       logic-not-delete-value: 0
   configuration:
     map-underscore-to-camel-case: true
+    # L-O3 修复：慢查询日志，执行超过阈值的 SQL 以 WARN 级别记录
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    default-statement-timeout: 30
 
 jwt:
   rsa:
@@ -60,26 +66,29 @@ knife4j:
   setting:
     language: zh_cn
 
+# ============================================================
+# Actuator 配置（L-S1/L-S7 修复）
+# L-S1：health 详情 show-details 默认 when-authorized，生产在 application-prod.yml 覆盖为 never
+# L-S7：info.env.enabled 默认 false，避免泄露环境变量
+# ============================================================
 management:
   endpoints:
     web:
       exposure:
         include: health,info,metrics,prometheus
-        exclude: env,beans
+        exclude: env,beans,configprops,loggers,threaddump,heapdump
   endpoint:
     health:
       show-details: when-authorized
-      show-components: always
+      show-components: when-authorized
   info:
     env:
-      enabled: true
+      enabled: false
 
+# L-S7 修复：收敛 info.app.*，仅暴露最小信息
 info:
   app:
-    name: 秒杀电商平台
-    description: 高并发秒杀电商平台 Spring Boot 后端
-    version: 1.0.0
-    author: WNJ
+    name: seckill-mall
 
 upload:
   base-dir: ${user.dir}/images
@@ -97,3 +106,30 @@ storage:
 #   access-key: minioadmin
 #   secret-key: minioadmin
 #   bucket: seckill-mall
+
+# ============================================================
+# 秒杀安全配置（C2/M-K2 修复：CORS 与可信代理白名单统一在此声明默认值，
+# 生产环境由 application-prod.yml 强制外部注入覆盖）
+# ============================================================
+seckill:
+  security:
+    # C2 修复：可信反向代理 IP 白名单（逗号分隔），默认空集=不信任任何 X-Forwarded-For
+    trusted-proxy-ips: ${TRUSTED_PROXY_IPS:}
+    # M-K2 修复：CORS 允许的来源，默认仅本地开发，生产必须显式注入
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173}
+    # C2 修复：单个目标（手机号/邮箱）每日验证码发送上限
+    verify-daily-limit-per-target: ${VERIFY_DAILY_LIMIT_PER_TARGET:10}
+    # L-S4 TODO：当前图形验证码为简单字符+干扰线，易被 OCR 识别。
+    # 高风险场景（登录失败>=3次、找回密码）建议升级为行为验证码（滑块/点选）。
+    # 前端可接入腾讯防水墙/极验等行为验证码 SDK，后端通过 ticket 校验接口替换 captchaService.verifyCaptcha。
+
+# ============================================================
+# L-O3 修复：链路追踪（Sleuth/Zipkin）—— 取消注释并添加依赖即可启用
+# ============================================================
+# spring.sleuth:
+#   sampler:
+#     probability: 1.0  # 采样率（生产建议 0.1）
+# spring.zipkin:
+#   base-url: ${ZIPKIN_BASE_URL:http://localhost:9411}
+#   enabled: ${ZIPKIN_ENABLED:false}

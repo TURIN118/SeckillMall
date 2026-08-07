@@ -1,6 +1,7 @@
 package com.seckill.mall.service;
 
 import com.seckill.mall.common.PageResult;
+import com.seckill.mall.vo.RechargeCardGenerateVO;
 import com.seckill.mall.vo.RechargeCardVO;
 
 import java.math.BigDecimal;
@@ -25,7 +26,7 @@ public interface RechargeCardService {
      * @param count     数量
      * @return 生成的充值卡列表（含卡号卡密明文，仅此一次返回）
      */
-    List<RechargeCardVO> generate(BigDecimal faceValue, Integer count);
+    List<RechargeCardGenerateVO> generate(BigDecimal faceValue, Integer count);
 
     /**
      * 充值：校验卡号卡密 → 更新用户余额与卡状态

@@ -58,6 +58,16 @@
           AND available_count > 0
     </update>
 
+    <!-- H-C1 修复：乐观锁回补库存，available_count < stock_count 防超溢 -->
+    <update id="restoreStockOptimistic">
+        UPDATE t_seckill_goods
+        SET available_count = available_count + 1,
+            update_time = NOW()
+        WHERE id = #{id}
+          AND is_deleted = 0
+          AND available_count &lt; stock_count
+    </update>
+
     <!-- Bug6修复：将已到开始时间的PENDING秒杀活动更新为ACTIVE -->
     <update id="updatePendingToActive">
         UPDATE t_seckill_goods

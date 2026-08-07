@@ -1,11 +1,15 @@
 package com.seckill.mall.service;
 
+import com.seckill.mall.dto.BannerCreateRequest;
+import com.seckill.mall.dto.BannerUpdateRequest;
 import com.seckill.mall.vo.BannerVO;
 
 import java.util.List;
 
 /**
  * 轮播图服务接口
+ *
+ * M-D1 修复：create/update 入参从 BannerVO 改为专用请求 DTO。
  *
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
@@ -31,19 +35,19 @@ public interface BannerService {
     /**
      * 新增轮播图
      *
-     * @param vo 轮播图视图对象
+     * @param req 新增请求 DTO（title 非空、URL 协议白名单已校验）
      * @return 新增后的轮播图视图对象
      */
-    BannerVO create(BannerVO vo);
+    BannerVO create(BannerCreateRequest req);
 
     /**
      * 编辑轮播图
      *
-     * @param id 轮播图 ID
-     * @param vo 轮播图视图对象
+     * @param id  轮播图 ID
+     * @param req 编辑请求 DTO（字段可选，null 表示不更新）
      * @return 更新后的轮播图视图对象
      */
-    BannerVO update(Long id, BannerVO vo);
+    BannerVO update(Long id, BannerUpdateRequest req);
 
     /**
      * 删除轮播图（逻辑删除）

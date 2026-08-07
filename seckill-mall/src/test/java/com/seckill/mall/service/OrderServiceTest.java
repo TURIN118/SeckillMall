@@ -1,9 +1,11 @@
 package com.seckill.mall.service;
 
-import com.seckill.mall.cache.RedisKeyConstants;
+
 import com.seckill.mall.cache.RedisService;
+import com.seckill.mall.cache.SeckillLuaService;
 import com.seckill.mall.common.BusinessException;
 import com.seckill.mall.common.ErrorCode;
+import com.seckill.mall.converter.SeckillOrderConverter;
 import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.SeckillOrder;
@@ -14,6 +16,8 @@ import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.service.impl.OrderServiceImpl;
+import com.seckill.mall.vo.SeckillOrderVO;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -57,6 +61,8 @@ class OrderServiceTest {
     @Mock
     private RedisService redisService;
     @Mock
+    private SeckillLuaService seckillLuaService;
+    @Mock
     private UserMapper userMapper;
     @Mock
     private EmailService emailService;
@@ -64,10 +70,25 @@ class OrderServiceTest {
     @InjectMocks
     private OrderServiceImpl orderService;
 
+    /**
+     * 初始化 MyBatis-Plus LambdaWrapper 字段缓存。
+     * 纯 Mockito 测试无 Spring/MyBatis 上下文，LambdaUpdateWrapper 解析 SFunction 时
+     * 需要 TableInfo 缓存，此处手动初始化避免 "can not find lambda cache" 异常。
+     */
+    @BeforeAll
+    static void initLambdaCache() {
+        org.apache.ibatis.session.Configuration configuration = new org.apache.ibatis.session.Configuration();
+        org.apache.ibatis.builder.MapperBuilderAssistant assistant =
+                new org.apache.ibatis.builder.MapperBuilderAssistant(configuration, "");
+        com.baomidou.mybatisplus.core.metadata.TableInfoHelper.initTableInfo(assistant, SeckillOrder.class);
+    }
+
     @BeforeEach
     void setUp() {
         // @Value 字段不会被 @InjectMocks 注入，手动注入支付超时分钟数
         ReflectionTestUtils.setField(orderService, "payTimeoutMinutes", 15L);
+        // 问题4修复：注入真实的 MapStruct Converter 实例（@InjectMocks 无法注入接口）
+        ReflectionTestUtils.setField(orderService, "seckillOrderConverter", SeckillOrderConverter.INSTANCE);
     }
 
     private SeckillGoods buildGoods() {
@@ -156,21 +177,29 @@ class OrderServiceTest {
     void payOrder_shouldMarkPaidAndSendEmail() {
         // given
         SeckillOrder order = buildOrder(OrderStatus.UNPAID);
-        given(seckillOrderMapper.selectById(ORDER_ID)).willReturn(order);
+        // 实现中 payOrder 会两次 selectById：首次返回 UNPAID，再次返回 PAID（含 payTime/payMethod/transactionId）
+        SeckillOrder paidOrder = buildOrder(OrderStatus.PAID);
+        LocalDateTime payTime = LocalDateTime.now();
+        paidOrder.setPayTime(payTime);
+        paidOrder.setPayMethod("ALIPAY");
+        paidOrder.setTransactionId("PAY20260731120000");
+        given(seckillOrderMapper.selectById(ORDER_ID)).willReturn(order, paidOrder);
+        // 乐观锁更新成功
+        given(seckillOrderMapper.update(any(), any())).willReturn(1);
         User user = new User();
         user.setId(USER_ID);
         user.setEmail("buyer@seckill.com");
         given(userMapper.selectById(USER_ID)).willReturn(user);
 
         // when
-        SeckillOrder paid = orderService.payOrder(USER_ID, ORDER_ID, "ALIPAY");
+        SeckillOrderVO paid = orderService.payOrder(USER_ID, ORDER_ID, "ALIPAY");
 
         // then
-        assertThat(paid.getStatus()).isEqualTo(OrderStatus.PAID);
+        assertThat(paid.getStatus()).isEqualTo("PAID");
         assertThat(paid.getPayTime()).isNotNull();
         assertThat(paid.getPayMethod()).isEqualTo("ALIPAY");
         assertThat(paid.getTransactionId()).startsWith("PAY");
-        then(seckillOrderMapper).should().updateById(any(SeckillOrder.class));
+        then(seckillOrderMapper).should().update(any(), any());
         then(emailService).should().sendPaySuccess(eq("buyer@seckill.com"), eq(order.getOrderNo()), any(BigDecimal.class), any());
     }
 
@@ -223,18 +252,25 @@ class OrderServiceTest {
     void cancelOrder_shouldCancelAndRollbackStock() {
         // given
         SeckillOrder order = buildOrder(OrderStatus.UNPAID);
-        given(seckillOrderMapper.selectById(ORDER_ID)).willReturn(order);
+        SeckillOrder cancelledOrder = buildOrder(OrderStatus.CANCELLED);
+        cancelledOrder.setCancelTime(LocalDateTime.now());
+        cancelledOrder.setCancelReason("用户主动取消");
+        // 实现中 cancelOrder 会两次 selectById：首次返回 UNPAID，再次返回 CANCELLED
+        given(seckillOrderMapper.selectById(ORDER_ID)).willReturn(order, cancelledOrder);
+        given(seckillOrderMapper.update(any(), any())).willReturn(1);
         given(userMapper.selectById(USER_ID)).willReturn(null);
 
         // when
-        SeckillOrder cancelled = orderService.cancelOrder(USER_ID, ORDER_ID);
+        SeckillOrderVO cancelled = orderService.cancelOrder(USER_ID, ORDER_ID);
 
         // then
-        assertThat(cancelled.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(cancelled.getStatus()).isEqualTo("CANCELLED");
         assertThat(cancelled.getCancelTime()).isNotNull();
         assertThat(cancelled.getCancelReason()).isEqualTo("用户主动取消");
-        then(redisService).should().incr(RedisKeyConstants.seckillStock(SECKILL_ID));
-        then(redisService).should().sRem(RedisKeyConstants.seckillBought(SECKILL_ID), String.valueOf(USER_ID));
+        // rollbackStock 已改为调用 seckillLuaService.rollbackDeduct + seckillGoodsMapper.restoreStockOptimistic
+        then(seckillGoodsMapper).should().restoreStockOptimistic(SECKILL_ID);
+        then(seckillLuaService).should().rollbackDeduct(SECKILL_ID, USER_ID);
+        then(redisService).should(never()).incr(any());
     }
 
     @Test
@@ -248,7 +284,7 @@ class OrderServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ORDER_CANCEL_FAILED);
-        then(redisService).should(never()).incr(any());
+        then(seckillLuaService).should(never()).rollbackDeduct(any(), any());
     }
 
     @Test
@@ -257,6 +293,7 @@ class OrderServiceTest {
         // given
         SeckillOrder order = buildOrder(OrderStatus.UNPAID);
         given(seckillOrderMapper.selectById(ORDER_ID)).willReturn(order);
+        given(seckillOrderMapper.update(any(), any())).willReturn(1);
         given(userMapper.selectById(USER_ID)).willReturn(null);
 
         // when
@@ -264,8 +301,10 @@ class OrderServiceTest {
 
         // then
         assertThat(result).isTrue();
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.TIMEOUT);
-        then(redisService).should().incr(RedisKeyConstants.seckillStock(SECKILL_ID));
+        // rollbackStock 已改为调用 seckillLuaService.rollbackDeduct + seckillGoodsMapper.restoreStockOptimistic
+        then(seckillGoodsMapper).should().restoreStockOptimistic(SECKILL_ID);
+        then(seckillLuaService).should().rollbackDeduct(SECKILL_ID, USER_ID);
+        then(redisService).should(never()).incr(any());
     }
 
     @Test
@@ -279,6 +318,6 @@ class OrderServiceTest {
 
         // then
         assertThat(result).isFalse();
-        then(redisService).should(never()).incr(any());
+        then(seckillLuaService).should(never()).rollbackDeduct(any(), any());
     }
 }

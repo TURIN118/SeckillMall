@@ -1,88 +1,69 @@
 /**
- * 防重放签名工具（Web Crypto API 实现）
- * 对应后端 ReplayProtectionFilter 的签名校验逻辑
- * 签名算法：HMAC-SHA256(secret, timestamp + nonce + uri)
+ * 防重放保护工具（B2 重构 + H-F1 修复）
  *
- * 为什么用 Web Crypto API 而非 crypto-js：
- * 1. 零依赖：浏览器原生 API，无需安装 npm 包，减少打包体积 ~70KB
- * 2. 性能更优：调用 OS 级加密实现（OpenSSL/BoringSSL），单次 HMAC 约 0.05ms（crypto-js 约 0.5ms）
- * 3. 异步非阻塞：不阻塞主线程，对秒杀按钮点击的 UI 响应更友好
- * 4. 密钥对象不可导出：CryptoKey 默认 extractable=false，即使 XSS 获取 key 对象也无法 exportKey()
- *    （注意：原始密钥字符串仍存在于 JS 内存中，此保护主要防止通过 CryptoKey 接口导出）
- * 5. 标准化：W3C 标准 API，所有现代浏览器均支持
+ * === 架构变更说明 (B2) ===
+ * 旧方案: 前端持有 HMAC-SHA256 共享密钥 (VITE_SIGN_SECRET), 对每个秒杀请求生成签名头
+ *         (X-Sign/X-Timestamp/X-Nonce). 该方案在 SPA 中不可成立: VITE_ 变量在构建期内联进
+ *         JS bundle, 浏览器无法"保管"共享密钥, 攻击者可轻易从 bundle 中提取密钥伪造签名.
+ * 新方案: 废弃前端签名, 改用服务端下发的一次性短时效 token (项目已有 getSeckillToken() 接口).
+ *         前端仅在秒杀请求中携带后端签发的 X-Seckill-Token 头, 由后端 ReplayProtectionFilter
+ *         校验 token 的合法性、时效性与一次性使用.
+ *         前端不再需要任何共享密钥, 也不再有 VITE_SIGN_SECRET 配置项.
+ *
+ * === H-F1 修复 ===
+ * 旧方案在生产构建下 VITE_SIGN_SECRET 为空, if (!SIGN_SECRET) return {} 被 tree-shake 消除,
+ * 导致 ReplayProtectionFilter 强制要求的三件套缺失, 秒杀 100% 401.
+ * 新方案下前端不再生成签名头, 而是携带后端 token, 不存在 tree-shake 问题.
+ *
+ * === 兼容性 ===
+ * 保留 generateReplayHeaders 导出 (返回空对象), 避免调用方 (api/seckill.ts) 立即破坏.
+ * 调用方应逐步迁移到直接使用 X-Seckill-Token 头.
  */
 
 /**
- * 签名密钥
- * 开发环境从 VITE_SIGN_SECRET 读取，生产环境从构建时环境变量注入
- * 必须与后端 seckill.security.sign-secret 配置一致
- */
-const SIGN_SECRET: string = import.meta.env.VITE_SIGN_SECRET || ''
-
-/** 缓存的 CryptoKey 对象（避免每次请求重复 importKey） */
-let cachedKey: CryptoKey | null = null
-
-if (!SIGN_SECRET) {
-    console.warn('[replayProtection] VITE_SIGN_SECRET 未配置，防重放签名将不生效')
-}
-
-/**
- * 获取或创建 HMAC-SHA256 的 CryptoKey 对象（带缓存）
- * Web Crypto API 的 importKey 是异步操作，缓存后只需执行一次
- */
-async function getSignKey(): Promise<CryptoKey> {
-    if (cachedKey) return cachedKey
-
-    const keyBytes = new TextEncoder().encode(SIGN_SECRET)
-    cachedKey = await crypto.subtle.importKey(
-        'raw',                    // 密钥格式：原始字节
-        keyBytes,                 // 密钥数据
-        { name: 'HMAC', hash: 'SHA-256' },  // 算法：HMAC-SHA256
-        false,                    // extractable=false：密钥对象不可通过 exportKey() 导出
-        ['sign']                  // 密钥用途：仅用于签名
-    )
-    return cachedKey
-}
-
-/**
- * 将 ArrayBuffer 转为十六进制小写字符串
- * 与后端 Java 的 HexFormat.of().formatHex() 输出格式一致
- */
-function bufferToHex(buffer: ArrayBuffer): string {
-    return Array.from(new Uint8Array(buffer))
-        .map(byte => byte.toString(16).padStart(2, '0'))
-        .join('')
-}
-
-/**
- * 生成防重放请求头（异步）
- * @param uri 请求 URI 路径（如 /api/v1/seckill/123/execute），不含 baseURL 和 query string
- * @returns 包含 X-Sign、X-Timestamp、X-Nonce 的请求头对象
+ * 生成防重放请求头（已废弃，B2 重构后改为服务端 token 方案）
+ *
+ * 旧实现: 使用 VITE_SIGN_SECRET 生成 HMAC-SHA256 签名头
+ * 新实现: 返回空对象, 防重放改由后端签发的 X-Seckill-Token 头承担
+ *
+ * @param _uri 请求 URI 路径（保留参数兼容旧调用方，实际不再使用）
+ * @returns 空对象（不再添加签名头）
  *
  * @example
- * // 调用方式（必须 await）
+ * // 旧调用方式（仍兼容，但不再生成签名头）
  * const headers = await generateReplayHeaders('/api/v1/seckill/123/execute')
  * await post(uri, undefined, { headers })
+ *
+ * // 新调用方式（推荐，由调用方直接传 X-Seckill-Token）
+ * await post(uri, undefined, { headers: { 'X-Seckill-Token': seckillToken } })
  */
-export async function generateReplayHeaders(uri: string): Promise<Record<string, string>> {
-    if (!SIGN_SECRET) {
-        // 密钥未配置时返回空对象，不添加签名头（开发调试用）
-        return {}
+export async function generateReplayHeaders(_uri: string): Promise<Record<string, string>> {
+    // B2 重构: 前端不再生成 HMAC 签名, 防重放由后端签发的 token 承担.
+    // 返回空对象, 保持向后兼容 (调用方解构后不会添加任何头).
+    return {}
+}
+
+/**
+ * 构建秒杀请求头（B2 重构后的推荐方式）
+ *
+ * 携带后端 getSeckillToken() 接口签发的一次性 token,
+ * 由后端 ReplayProtectionFilter 校验 token 的合法性、时效性与一次性使用.
+ *
+ * @param seckillToken 后端签发的秒杀一次性 token
+ * @returns 包含 X-Seckill-Token 的请求头对象
+ *
+ * @example
+ * const tokenRes = await getSeckillToken(seckillId)
+ * const headers = buildSeckillHeaders(tokenRes.data)
+ * await post(uri, undefined, { headers })
+ */
+export function buildSeckillHeaders(seckillToken: string): Record<string, string> {
+    if (!seckillToken) {
+        // H-F1 修复: fail-fast, 不再静默降级返回空对象
+        // 抛错让调用方立即感知 token 缺失, 避免请求发出后被后端 401 拒绝
+        throw new Error('[replayProtection] 秒杀 token 缺失, 请先调用 getSeckillToken() 获取服务端签发的 token')
     }
-
-    const timestamp = Date.now().toString()
-    const nonce = crypto.randomUUID()
-    const payload = timestamp + nonce + uri
-    const payloadBytes = new TextEncoder().encode(payload)
-
-    // 使用 Web Crypto API 计算 HMAC-SHA256 签名
-    const key = await getSignKey()
-    const signature = await crypto.subtle.sign('HMAC', key, payloadBytes)
-    const sign = bufferToHex(signature)
-
     return {
-        'X-Sign': sign,
-        'X-Timestamp': timestamp,
-        'X-Nonce': nonce
+        'X-Seckill-Token': seckillToken
     }
 }

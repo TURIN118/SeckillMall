@@ -7,6 +7,28 @@
 --       包含最新架构（SHIPPED枚举、物流字段等）
 -- ============================================================
 
+-- ============================================================
+-- M-K5 修复：环境护栏
+-- 本脚本含 DROP TABLE IF EXISTS 破坏性语句，仅允许在显式确认后执行。
+-- 执行前必须设置会话变量 @SCHEMA_DESTRUCTIVE_ALLOWED = 'true'，
+-- 否则脚本通过 SIGNAL SQLSTATE 立即报错终止，防止误连生产库执行破坏性 DDL。
+-- 用法：
+--   SET @SCHEMA_DESTRUCTIVE_ALLOWED = 'true';
+--   SOURCE 01_schema.sql;
+-- ============================================================
+-- 环境护栏：必须设置 @SCHEMA_DESTRUCTIVE_ALLOWED = 'true' 才允许执行
+DROP PROCEDURE IF EXISTS check_schema_destructive;
+DELIMITER $$
+CREATE PROCEDURE check_schema_destructive()
+BEGIN
+    IF IFNULL(@SCHEMA_DESTRUCTIVE_ALLOWED, 'false') != 'true' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '破坏性脚本未授权执行，请设置 @SCHEMA_DESTRUCTIVE_ALLOWED = true';
+    END IF;
+END$$
+DELIMITER ;
+CALL check_schema_destructive();
+DROP PROCEDURE check_schema_destructive;
+
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -111,7 +133,8 @@ CREATE TABLE `t_coupon` (
 DROP TABLE IF EXISTS `t_login_log`;
 CREATE TABLE `t_login_log` (
     `id`             BIGINT       NOT NULL                COMMENT '主键ID',
-    `user_id`        BIGINT       NOT NULL                COMMENT '用户ID',
+    -- M-S5 修复：user_id 允许为 NULL，不存在用户登录失败时也能记录日志
+    `user_id`        BIGINT       NULL     DEFAULT NULL   COMMENT '用户ID（NULL=用户不存在）',
     `login_ip`       VARCHAR(50)  NOT NULL                COMMENT '登录IP地址',
     `login_location` VARCHAR(100) NULL     DEFAULT NULL   COMMENT '登录地点（IP解析城市）',
     `user_agent`     VARCHAR(500) NULL     DEFAULT NULL   COMMENT '浏览器User-Agent',
@@ -119,7 +142,8 @@ CREATE TABLE `t_login_log` (
     `fail_reason`    VARCHAR(255) NULL     DEFAULT NULL   COMMENT '失败原因',
     `create_time`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
     PRIMARY KEY (`id`),
-    INDEX `idx_user_time` (`user_id`, `create_time`)
+    INDEX `idx_user_time` (`user_id`, `create_time`),
+    INDEX `idx_ip_time` (`login_ip`, `create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='登录日志表';
 
 -- ------------------------------------------------------------
@@ -251,7 +275,9 @@ CREATE TABLE `t_product_review` (
     PRIMARY KEY (`id`),
     INDEX `idx_product_id` (`product_id`),
     INDEX `idx_user_id` (`user_id`),
-    INDEX `idx_status` (`status`)
+    INDEX `idx_status` (`status`),
+    -- M-K6 修复：补 (product_id, status, create_time) 复合索引，加速商品评论分页查询
+    INDEX `idx_product_status_create` (`product_id`, `status`, `create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='商品评论表';
 
 -- ------------------------------------------------------------
@@ -411,7 +437,11 @@ CREATE TABLE `t_user_coupon` (
     `update_time`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     INDEX `idx_user_id` (`user_id`),
-    INDEX `idx_coupon_id` (`coupon_id`)
+    INDEX `idx_coupon_id` (`coupon_id`),
+    -- M-K6 修复：补 (user_id, status, create_time) 复合索引，加速"我的优惠券"分页查询
+    INDEX `idx_user_status_create` (`user_id`, `status`, `create_time`),
+    -- M-K6 修复：补 order_id 索引，加速订单关联优惠券查询
+    INDEX `idx_order_id` (`order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户优惠券表';
 
 -- ------------------------------------------------------------

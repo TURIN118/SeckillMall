@@ -7,6 +7,7 @@ import com.seckill.mall.service.AdminOrderService;
 import com.seckill.mall.vo.AdminOrderVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,7 +31,7 @@ public class AdminOrderController {
 
     @Operation(summary = "后台订单列表（高级筛选+分页+排序）")
     @GetMapping
-    public Result<PageResult<AdminOrderVO>> list(AdminOrderQueryRequest req) {
+    public Result<PageResult<AdminOrderVO>> list(@Valid AdminOrderQueryRequest req) {
         return Result.success(adminOrderService.getAdminOrderList(req));
     }
 }

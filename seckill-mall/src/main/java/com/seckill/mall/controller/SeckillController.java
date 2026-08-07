@@ -87,11 +87,9 @@ public class SeckillController {
             @RequestParam(value = "seckillToken", required = false) String paramToken) {
         // 安全修复（L1）：显式获取当前用户 ID 并通过上下文传递给 Service，
         // 避免 Service 层从 Token 中解析 userId 造成越权。Service 层 doSeckill 内部
-        // 应使用 securityUtils.getCurrentUserId() 获取调用方身份。
+        // 使用 securityUtils.getCurrentUserId() 获取调用方身份，确保调用方身份可信。
         Long userId = securityUtils.getCurrentUserId();
         String token = headerToken != null ? headerToken : paramToken;
-        // TODO(service-layer): SeckillService.doSeckill 建议新增 userId 参数重载，
-        // 当前保留原签名，由 Service 内部通过 SecurityUtils 获取，确保调用方身份可信。
         return Result.success(seckillService.doSeckill(seckillId, token));
     }
 
@@ -112,10 +110,9 @@ public class SeckillController {
             @RequestParam String requestId) {
         // 安全修复（H5）：显式传入当前用户 ID，由 Service 层校验该 requestId 属于当前用户，
         // 防止用户通过遍历 requestId 越权查询他人秒杀结果。
+        // Service 层 getSeckillResult 内部通过 securityUtils.getCurrentUserId() 获取调用方身份，
+        // 并校验 result.userId == userId，不匹配则抛 FORBIDDEN。
         Long userId = securityUtils.getCurrentUserId();
-        // TODO(service-layer): SeckillService.getSeckillResult 需新增 userId 参数重载，
-        // 在 Service 实现中校验 result.userId == userId，不匹配则抛 FORBIDDEN。
-        // 当前保留原签名，由 Service 层配合改造，此处先在 Controller 层获取 userId 以备后续接入。
         return Result.success(seckillService.getSeckillResult(seckillId, requestId));
     }
 

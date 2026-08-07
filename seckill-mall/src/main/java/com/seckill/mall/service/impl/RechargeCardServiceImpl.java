@@ -13,6 +13,7 @@ import com.seckill.mall.entity.enums.RechargeCardStatus;
 import com.seckill.mall.mapper.RechargeCardMapper;
 import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.service.RechargeCardService;
+import com.seckill.mall.vo.RechargeCardGenerateVO;
 import com.seckill.mall.vo.RechargeCardVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +61,7 @@ public class RechargeCardServiceImpl implements RechargeCardService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public List<RechargeCardVO> generate(BigDecimal faceValue, Integer count) {
+    public List<RechargeCardGenerateVO> generate(BigDecimal faceValue, Integer count) {
         if (faceValue == null || faceValue.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "面额必须大于0");
         }
@@ -68,7 +69,7 @@ public class RechargeCardServiceImpl implements RechargeCardService {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "数量必须大于0");
         }
         String batchNo = "B" + LocalDateTime.now().format(BATCH_FMT);
-        List<RechargeCardVO> result = new ArrayList<>(count);
+        List<RechargeCardGenerateVO> result = new ArrayList<>(count);
         // L18: 当前逐条 insert，可优化为批量插入（rechargeCardMapper.insertBatchSomeColumn 或 MyBatis-Plus saveBatch）
         // 批量生成场景 count 可能较大，逐条 insert 性能较差；当前实现优先保证正确性，后续可优化
         for (int i = 0; i < count; i++) {
@@ -83,7 +84,7 @@ public class RechargeCardServiceImpl implements RechargeCardService {
             rechargeCardMapper.insert(card);
 
             // 返回 VO（含明文卡密，仅此一次返回）
-            RechargeCardVO vo = new RechargeCardVO();
+            RechargeCardGenerateVO vo = new RechargeCardGenerateVO();
             vo.setId(card.getId());
             vo.setCardNo(cardNo);
             vo.setCardPassword(plainPwd);

@@ -34,8 +34,17 @@ function getAccessToken(): string | null {
 
 /** 刷新锁：防止并发请求时重复刷新 */
 let isRefreshing = false
-/** 等待刷新完成的请求队列 */
-let pendingRequests: Array<(token: string) => void> = []
+/**
+ * 等待刷新完成的请求队列
+ * H-F2 修复: 队列元素存 {resolve, reject} 对, 刷新失败时显式 reject,
+ * 避免对应 Promise 永久 pending 导致调用方 (含 loading=false) 永久挂起.
+ */
+interface PendingRequest {
+  resolve: (value: unknown) => void
+  reject: (reason?: unknown) => void
+  config: InternalAxiosRequestConfig
+}
+let pendingRequests: PendingRequest[] = []
 
 /** 清空 Token 并跳转登录页 */
 function clearTokensAndRedirect(currentPath: string) {
@@ -112,10 +121,12 @@ request.interceptors.response.use(
           }
           if (isRefreshing) {
             // 正在刷新中，将请求加入等待队列
-            return new Promise((resolve) => {
-              pendingRequests.push((newToken: string) => {
-                error.config.headers.Authorization = `Bearer ${newToken}`
-                resolve(request(error.config))
+            // H-F2 修复: 队列存 {resolve, reject} 对, 刷新失败时显式 reject
+            return new Promise((resolve, reject) => {
+              pendingRequests.push({
+                resolve,
+                reject,
+                config: error.config
               })
             })
           }
@@ -132,19 +143,30 @@ request.interceptors.response.use(
               const newRefreshToken = refreshRes.data.data.refreshToken
               localStorage.setItem(ACCESS_TOKEN_KEY, newAccessToken)
               localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken)
-              // 处理等待队列中的请求
-              pendingRequests.forEach(cb => cb(newAccessToken))
+              // 处理等待队列中的请求: 刷新成功, 用新 token 重试
+              const queue = pendingRequests
               pendingRequests = []
+              queue.forEach((item) => {
+                item.config.headers.Authorization = `Bearer ${newAccessToken}`
+                item.resolve(request(item.config))
+              })
               // 重试原请求
               error.config.headers.Authorization = `Bearer ${newAccessToken}`
               return request(error.config)
             } else {
+              // H-F2 修复: 刷新失败, 显式 reject 队列中所有 Promise, 避免永久 pending
+              const queue = pendingRequests
               pendingRequests = []
+              const refreshError = new Error('Token 刷新失败: 服务端返回非 200 业务码')
+              queue.forEach((item) => item.reject(refreshError))
               clearTokensAndRedirect(currentPath)
               break
             }
-          } catch {
+          } catch (refreshErr) {
+            // H-F2 修复: 刷新异常, 显式 reject 队列中所有 Promise, 避免永久 pending
+            const queue = pendingRequests
             pendingRequests = []
+            queue.forEach((item) => item.reject(refreshErr))
             clearTokensAndRedirect(currentPath)
             break
           } finally {

@@ -99,7 +99,8 @@
               <span>非堆内存使用率</span>
               <span class="resource-value">{{ jvmNonHeapUsageText }}</span>
             </div>
-            <div class="stock-bar">
+            <!-- L-F2 修复: 非堆内存为 null 时不显示进度条, 避免显示 0% 误导 -->
+            <div v-if="jvmNonHeapUsageText !== '暂未提供'" class="stock-bar">
               <div class="stock-bar-fill" :class="getBarClass(jvmNonHeapUsage)"
                 :style="{ width: jvmNonHeapUsage + '%' }">
               </div>
@@ -237,18 +238,21 @@ const hitRateText = computed<string>(() =>
     : '—'
 )
 
-/* === JVM 内存监控 === */
+/* === JVM 内存监控 ===
+ * L-F2 修复: 非堆内存指标可能为 null (后端 metrics 未提供), 需兜底显示"暂未提供"
+ * 旧代码在 jvmNonHeapUsage === null 时显示 "null%", 现改为 "暂未提供"
+ */
 const jvmHeapUsage = computed<number>(() => health.value?.jvmHeapUsage ?? 0)
 const jvmNonHeapUsage = computed<number>(() => health.value?.jvmNonHeapUsage ?? 0)
 const jvmHeapUsageText = computed<string>(() =>
-  health.value && health.value.jvmHeapUsage !== undefined
+  health.value && health.value.jvmHeapUsage !== undefined && health.value.jvmHeapUsage !== null
     ? `${health.value.jvmHeapUsage}%`
-    : '—'
+    : '暂未提供'
 )
 const jvmNonHeapUsageText = computed<string>(() =>
-  health.value && health.value.jvmNonHeapUsage !== undefined
+  health.value && health.value.jvmNonHeapUsage !== undefined && health.value.jvmNonHeapUsage !== null
     ? `${health.value.jvmNonHeapUsage}%`
-    : '—'
+    : '暂未提供'
 )
 
 /* === 数据库连接池详情 === */

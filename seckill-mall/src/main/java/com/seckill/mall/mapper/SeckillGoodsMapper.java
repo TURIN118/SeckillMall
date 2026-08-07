@@ -32,6 +32,15 @@ public interface SeckillGoodsMapper extends BaseMapper<SeckillGoods> {
     int deductStockOptimistic(@Param("id") Long id);
 
     /**
+     * H-C1 修复：乐观锁回补库存：available_count + 1，条件 available_count < stock_count 防超溢。
+     * 用于秒杀订单取消/超时后回补 DB available_count。
+     *
+     * @param id 秒杀商品 ID
+     * @return 受影响行数（1=成功，0=活动不存在或库存已满）
+     */
+    int restoreStockOptimistic(@Param("id") Long id);
+
+    /**
      * Bug6修复：将已到开始时间但仍为PENDING状态的秒杀活动更新为ACTIVE。
      * 条件：status=PENDING AND start_time <= NOW() AND end_time > NOW() AND is_deleted=0
      *

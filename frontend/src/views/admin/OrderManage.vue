@@ -279,13 +279,14 @@ async function handleExport(): Promise<void> {
 
     // 1. 查询当前筛选条件下所有订单（传大 pageSize 获取全量）
     //    后端搜索：orderNo / date / status 由后端 SQL 过滤，避免前端仅过滤当前页的 BUG-005
+    //    M-F3 修复: 一次性拉 10000 条会撞 10s 全局超时, 该请求单独放宽 timeout 至 60s
     const res = await getAdminOrderList({
       status: statusFilter.value || undefined,
       orderNo: orderNo.value || undefined,
       date: dateSingle.value || undefined,
       pageNum: 1,
       pageSize: 10000
-    })
+    }, { timeout: 60000 })
     const orders: AdminOrderVO[] = res.data.list || []
 
     if (orders.length === 0) {

@@ -41,7 +41,7 @@ public class AdminUserController {
 
     @Operation(summary = "用户列表（分页+角色/状态筛选）")
     @GetMapping
-    public Result<PageResult<UserVO>> list(UserListRequest req) {
+    public Result<PageResult<UserVO>> list(@Valid UserListRequest req) {
         return Result.success(adminUserService.getUserList(req));
     }
 

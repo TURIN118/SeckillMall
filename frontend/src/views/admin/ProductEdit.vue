@@ -243,11 +243,14 @@ const router = useRouter()
 
 /* === 路由判断：编辑 or 新增 === */
 const isEdit = computed(() => route.name === 'ProductEdit')
-const editingId = computed<number | null>(() => {
+// C5 修复: 雪花 ID 全程使用 string 类型, 避免 Number 精度丢失
+// (雪花 ID 如 2085560004061081601 超过 JS Number.MAX_SAFE_INTEGER = 2^53-1)
+const editingId = computed<string | null>(() => {
   const id = route.params.id
   if (!id) return null
-  const n = Number(id)
-  return Number.isFinite(n) && n > 0 ? n : null
+  const idStr = String(id)
+  // 仅校验非空字符串, 不做 Number 转换 (避免精度丢失)
+  return idStr.length > 0 ? idStr : null
 })
 
 /* === 加载状态 === */
@@ -545,8 +548,10 @@ onBeforeUnmount(() => {
   editor.destroy()
 })
 
-/* === 拉取商品详情（编辑模式） === */
-async function fetchProductDetail(id: number): Promise<void> {
+/* === 拉取商品详情（编辑模式） ===
+ * C5 修复: id 参数改为 string 类型, 避免雪花 ID 精度丢失
+ */
+async function fetchProductDetail(id: number | string): Promise<void> {
   loading.value = true
   try {
     const res = await getProductDetail(id)

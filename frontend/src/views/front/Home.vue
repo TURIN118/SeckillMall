@@ -292,7 +292,8 @@ function handleBannerClick(banner: BannerVO): void {
   if (banner.linkUrl) {
     // 外链直接打开，内链走 router
     if (banner.linkUrl.startsWith('http://') || banner.linkUrl.startsWith('https://')) {
-      window.open(banner.linkUrl, '_blank')
+      // L-S5 修复: 加 noopener,noreferrer 防止新打开的页面通过 window.opener 访问原页面
+      window.open(banner.linkUrl, '_blank', 'noopener,noreferrer')
     } else {
       router.push(banner.linkUrl)
     }

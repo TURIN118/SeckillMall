@@ -40,7 +40,8 @@
           <tr v-for="row in productList" :key="row.id">
             <td>
               <div class="table-avatar img">
-                <img v-if="row.images && row.images.length > 0" :src="formatImageUrl(row.images[0])" alt="" />
+                <img v-if="row.images && row.images.length > 0" :src="formatImageUrl(row.images[0])" alt=""
+                  loading="lazy" sizes="60px" />
                 <span v-else>无图</span>
               </div>
             </td>

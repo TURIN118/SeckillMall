@@ -1,15 +1,25 @@
+# ============================================================
+# docker-compose.yml
+# 安全修复 H-K2/H-K3/H-K4：
+#   1. 所有中间件口令使用 ${VAR:?required} 必填，缺失即报错
+#   2. 中间件端口不发布到 0.0.0.0，仅绑回环或仅在内部网络通信
+#   3. 删除失效的 JWT_SECRET 环境变量（JWT 改用 RSA 私钥挂载）
+#   4. app 服务通过 volume 挂载 RSA 私钥（B1 修复）
+# ============================================================
 version: '3.8'
 services:
+  # ---------- MySQL（H-K3：弱口令必填 + 端口绑回环）----------
   mysql:
     image: mysql:8.0
     container_name: seckill-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-seckill_mall}
-      MYSQL_USER: ${MYSQL_USER:-seckill}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-seckill123}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?required}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?required}
+      MYSQL_USER: ${MYSQL_USER:?required}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?required}
+    # H-K3 修复：端口绑回环，不发布到 0.0.0.0；生产环境应删除 ports 仅靠内部网络通信
     ports:
-      - "${DB_PORT:-3306}:3306"
+      - "127.0.0.1:${DB_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./seckill-mall/src/main/resources/sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
@@ -23,12 +33,18 @@ services:
     networks:
       - seckill-net
 
+  # ---------- Redis（H-K2：口令必填 + 端口绑回环 + protected-mode）----------
   redis:
     image: redis:7-alpine
     container_name: seckill-redis
-    command: redis-server --requirepass ${REDIS_PASSWORD:-} --appendonly yes
+    # H-K2 修复：口令必填 + protected-mode yes
+    command: redis-server --requirepass ${REDIS_PASSWORD:?required} --protected-mode yes --appendonly yes
+    # 健康检查认证通过 REDISCLI_AUTH 环境变量传递，避免密码出现在进程列表（ps/proc）中
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?required}
+    # 端口绑回环，不发布到 0.0.0.0
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -39,15 +55,17 @@ services:
     networks:
       - seckill-net
 
+  # ---------- RabbitMQ（H-K4：口令必填 + 管理端口绑回环）----------
   rabbitmq:
     image: rabbitmq:3.13-management
     container_name: seckill-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:?required}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?required}
+    # H-K4 修复：AMQP 端口绑回环；管理端口 15672 绑回环（生产可删除）
     ports:
-      - "${RABBITMQ_PORT:-5672}:5672"
-      - "15672:15672"
+      - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
+      - "127.0.0.1:${RABBITMQ_MGMT_PORT:-15672}:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
@@ -58,6 +76,7 @@ services:
     networks:
       - seckill-net
 
+  # ---------- 应用 ----------
   app:
     build:
       context: ./seckill-mall
@@ -73,18 +92,26 @@ services:
     environment:
       DB_HOST: mysql
       DB_PORT: 3306
-      MYSQL_USER: ${MYSQL_USER:-seckill}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-seckill123}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-seckill_mall}
+      DB_USERNAME: ${MYSQL_USER:?required}
+      DB_PASSWORD: ${MYSQL_PASSWORD:?required}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?required}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?required}
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
-      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
-      JWT_SECRET: ${JWT_SECRET:-wnj-seckill-jwt-secret-key-2024}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:?required}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?required}
+      # B2 修复：秒杀签名密钥必填（服务端防重放 token 用）
+      SECKILL_SIGN_SECRET: ${SECKILL_SIGN_SECRET:?required}
+      # M-K2 修复：CORS 生产允许来源必填
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?required}
+      # C2 修复：可信代理 IP 白名单
+      TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-}
       SPRING_PROFILES_ACTIVE: prod
+    # B1 修复：RSA 私钥运行时挂载（只读），不烘焙进镜像
+    volumes:
+      - ${JWT_KEYS_DIR:-./keys}:/app/keys:ro
     ports:
       - "8080:8080"
     networks:

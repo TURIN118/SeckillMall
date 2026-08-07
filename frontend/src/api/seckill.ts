@@ -1,8 +1,11 @@
 /**
  * 秒杀 API - 严格匹配 default.md
+ *
+ * B2 重构: 防重放改用服务端签发的一次性 token, 不再使用前端 HMAC 签名.
+ * H-F1 修复: 移除对 VITE_SIGN_SECRET 的依赖, 避免生产构建 tree-shake 导致 401.
  */
 import { get, post, put, del } from './request'
-import { generateReplayHeaders } from '@/utils/replayProtection'
+import { buildSeckillHeaders } from '@/utils/replayProtection'
 import type {
   Result,
   PageResult,
@@ -39,29 +42,25 @@ export function getSeckillToken(seckillId: number | string): Promise<Result<stri
   return get<string>(`/api/v1/seckill/${seckillId}/token`)
 }
 
-/** 执行秒杀（带防重放签名） */
+/** 执行秒杀（B2 重构: 携带后端签发的一次性 token, 不再使用前端 HMAC 签名） */
 export async function doSeckill(
   seckillId: number | string,
   seckillToken: string
 ): Promise<Result<SeckillResultVO>> {
   const uri = `/api/v1/seckill/${seckillId}`
-  const replayHeaders = await generateReplayHeaders(uri)
+  // B2 重构: 使用后端签发的 token, 由 buildSeckillHeaders 构建请求头
+  const replayHeaders = buildSeckillHeaders(seckillToken)
   return post<SeckillResultVO>(uri, undefined, {
     params: { seckillToken },
-    headers: {
-      'X-Seckill-Token': seckillToken,
-      ...replayHeaders
-    }
+    headers: replayHeaders
   })
 }
 
-/** 一键执行秒杀下单（无需预取 token，后端在 /execute 端点内部处理资格校验，带防重放签名） */
+/** 一键执行秒杀下单（无需预取 token，后端在 /execute 端点内部处理资格校验）
+ *  B2 重构: 该端点由后端内部校验资格, 前端无需携带防重放头 */
 export async function executeSeckill(seckillId: number | string): Promise<Result<SeckillResultVO>> {
   const uri = `/api/v1/seckill/${seckillId}/execute`
-  const replayHeaders = await generateReplayHeaders(uri)
-  return post<SeckillResultVO>(uri, undefined, {
-    headers: replayHeaders
-  })
+  return post<SeckillResultVO>(uri)
 }
 
 /** 查询秒杀结果 */

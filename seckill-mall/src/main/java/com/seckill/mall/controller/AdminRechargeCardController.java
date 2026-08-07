@@ -4,6 +4,7 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.RechargeCardGenerateRequest;
 import com.seckill.mall.service.RechargeCardService;
+import com.seckill.mall.vo.RechargeCardGenerateVO;
 import com.seckill.mall.vo.RechargeCardVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,7 +52,7 @@ public class AdminRechargeCardController {
 
     @Operation(summary = "批量生成充值卡（返回明文卡密，仅此一次）")
     @PostMapping("/generate")
-    public Result<List<RechargeCardVO>> generate(@Valid @RequestBody RechargeCardGenerateRequest req) {
+    public Result<List<RechargeCardGenerateVO>> generate(@Valid @RequestBody RechargeCardGenerateRequest req) {
         return Result.success("生成成功", rechargeCardService.generate(req.getFaceValue(), req.getCount()));
     }
 

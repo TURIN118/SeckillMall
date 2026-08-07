@@ -1,6 +1,7 @@
 package com.seckill.mall.controller;
 
 import com.seckill.mall.annotation.OperationLog;
+import com.seckill.mall.annotation.RateLimit;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.ChangePasswordRequest;
 import com.seckill.mall.dto.ForgotPasswordResetRequest;
@@ -50,9 +51,12 @@ public class AuthController {
 
     @Operation(summary = "用户登录")
     @OperationLog(module = "AUTH", action = "LOGIN", targetType = "USER")
+    // M-S1 修复：登录接口按 IP 维度限流，防"不同用户名+同弱口令"横向爆破。
+    // 60 秒内同一 IP 仅允许 10 次登录尝试（capacity=10, seconds=60）。
+    @RateLimit(key = "login", capacity = 10, rate = 10, seconds = 60)
     @PostMapping("/login")
     public Result<LoginVO> login(@Valid @RequestBody LoginRequest req, HttpServletRequest request) {
-        return Result.success(authService.login(req, getClientIp(request)));
+        return Result.success(authService.login(req, getClientIp(request), request));
     }
 
     @Operation(summary = "退出登录")

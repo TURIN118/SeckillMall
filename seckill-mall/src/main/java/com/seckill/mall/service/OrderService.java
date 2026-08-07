@@ -6,6 +6,7 @@ import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
+import com.seckill.mall.vo.SeckillOrderVO;
 
 import java.util.List;
 
@@ -22,15 +23,39 @@ public interface OrderService {
      */
     SeckillOrder createSeckillOrder(Long seckillId, Long userId, String requestId);
 
-    PageResult<SeckillOrder> getOrderList(Long userId, Integer status, Integer pageNum, Integer pageSize);
+    /**
+     * H-C2 修复：物理删除秒杀订单（用于消费者 DB 扣减失败时撤销幽灵单）。
+     * <p>
+     * 仅在订单刚创建且未支付时允许删除，避免误删已有业务关联的订单。
+     *
+     * @param orderId 秒杀订单 ID
+     */
+    void deleteSeckillOrderPhysically(Long orderId);
 
-    SeckillOrder getOrderDetail(Long userId, Long orderId);
+    /**
+     * B4 修复：返回 SeckillOrderVO 而非 Entity，避免契约泄漏。
+     */
+    PageResult<SeckillOrderVO> getOrderList(Long userId, Integer status, Integer pageNum, Integer pageSize);
 
-    SeckillOrder payOrder(Long userId, Long orderId, String payMethod);
+    /**
+     * B4 修复：返回 SeckillOrderVO 而非 Entity，避免契约泄漏。
+     */
+    SeckillOrderVO getOrderDetail(Long userId, Long orderId);
 
-    SeckillOrder cancelOrder(Long userId, Long orderId);
+    /**
+     * B4 修复：返回 SeckillOrderVO 而非 Entity，避免契约泄漏。
+     */
+    SeckillOrderVO payOrder(Long userId, Long orderId, String payMethod);
 
-    OrderStatus getOrderStatus(Long userId, Long orderId);
+    /**
+     * B4 修复：返回 SeckillOrderVO 而非 Entity，避免契约泄漏。
+     */
+    SeckillOrderVO cancelOrder(Long userId, Long orderId);
+
+    /**
+     * B4 修复：返回状态字符串而非枚举，避免序列化枚举内部结构。
+     */
+    String getOrderStatus(Long userId, Long orderId);
 
     /**
      * 超时取消（延迟消费者触发）：UNPAID → TIMEOUT 并回补库存，已支付等终态幂等忽略。

@@ -3,8 +3,17 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.seckill.mall.mapper.ProductSkuMapper">
 
+    <!--
+        M-D6 修复：显式列替代 SELECT *，避免表结构变更时结果集列数/顺序漂移，
+        同时避免查询出不必要的列（如未来新增的 LOB 字段）。
+    -->
+    <sql id="Base_Column_List">
+        id, product_id, sku_code, price, stock, main_image, attributes,
+        status, is_deleted, create_time, update_time
+    </sql>
+
     <select id="selectEnabledByProductId" resultType="com.seckill.mall.entity.ProductSku">
-        SELECT * FROM t_product_sku
+        SELECT <include refid="Base_Column_List"/> FROM t_product_sku
         WHERE product_id = #{productId}
           AND status = 1
           AND is_deleted = 0
@@ -12,7 +21,7 @@
     </select>
 
     <select id="selectByAttributes" resultType="com.seckill.mall.entity.ProductSku">
-        SELECT * FROM t_product_sku
+        SELECT <include refid="Base_Column_List"/> FROM t_product_sku
         WHERE product_id = #{productId}
           AND attributes = CAST(#{attributesJson} AS JSON)
           AND is_deleted = 0

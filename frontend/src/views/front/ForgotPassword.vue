@@ -25,14 +25,14 @@
               <div
                 class="type-tab"
                 :class="{ active: form.type === 'PHONE' }"
-                @click="form.type = 'PHONE'"
+                @click="switchType('PHONE')"
               >
                 手机短信
               </div>
               <div
                 class="type-tab"
                 :class="{ active: form.type === 'EMAIL' }"
-                @click="form.type = 'EMAIL'"
+                @click="switchType('EMAIL')"
               >
                 邮箱验证码
               </div>
@@ -180,6 +180,20 @@ const errors = reactive({
   newPassword: '',
   confirmPassword: ''
 })
+
+/**
+ * M-F8 修复: 切换验证方式时清空残留错误, 避免旧错误误导用户
+ * 同时清空 account 输入, 因为手机号和邮箱格式完全不同
+ */
+function switchType(type: 'PHONE' | 'EMAIL'): void {
+  if (form.type === type) return
+  form.type = type
+  form.account = ''
+  errors.account = ''
+  errors.code = ''
+  errors.newPassword = ''
+  errors.confirmPassword = ''
+}
 
 /* === 密码强度（参考 UserProfile.vue 实现） === */
 const passwordStrength = computed<number>(() => {

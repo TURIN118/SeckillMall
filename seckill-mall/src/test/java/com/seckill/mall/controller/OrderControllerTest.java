@@ -1,12 +1,11 @@
 package com.seckill.mall.controller;
 
 import com.seckill.mall.cache.RedisService;
-import com.seckill.mall.entity.SeckillOrder;
-import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.security.JwtUtils;
 import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.security.TokenBlacklistService;
 import com.seckill.mall.service.OrderService;
+import com.seckill.mall.vo.SeckillOrderVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,14 +52,14 @@ class OrderControllerTest {
     @MockBean
     private RedisService redisService;
 
-    private SeckillOrder buildPaidOrder() {
-        SeckillOrder order = new SeckillOrder();
+    private SeckillOrderVO buildPaidOrder() {
+        SeckillOrderVO order = new SeckillOrderVO();
         order.setId(ORDER_ID);
         order.setOrderNo("SK20260731120000");
         order.setUserId(USER_ID);
         order.setSeckillId(5001L);
         order.setTotalAmount(new BigDecimal("5999.00"));
-        order.setStatus(OrderStatus.PAID);
+        order.setStatus("PAID");
         order.setPayTime(LocalDateTime.now());
         order.setPayMethod("ALIPAY");
         return order;
@@ -105,7 +104,7 @@ class OrderControllerTest {
         // given
         given(securityUtils.getCurrentUserId()).willReturn(USER_ID);
         given(orderService.getOrderStatus(eq(USER_ID), eq(ORDER_ID)))
-                .willReturn(OrderStatus.PAID);
+                .willReturn("PAID");
 
         // when / then
         mockMvc.perform(get("/api/v1/orders/{orderId}/status", ORDER_ID))

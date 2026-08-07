@@ -14,6 +14,8 @@ import com.seckill.mall.entity.enums.ProductStatus;
 import com.seckill.mall.mapper.CategoryMapper;
 import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.service.CategoryService;
+import com.seckill.mall.service.ProductAttributeService;
+import com.seckill.mall.service.ProductSkuService;
 import com.seckill.mall.service.impl.ProductServiceImpl;
 import com.seckill.mall.vo.ProductVO;
 import org.junit.jupiter.api.DisplayName;
@@ -69,6 +71,12 @@ class ProductServiceTest {
     private RLock rLock;
     @Mock
     private ObjectMapper objectMapper;
+    // 问题3修复：ProductServiceImpl 依赖 ProductAttributeService 和 ProductSkuService，
+    // 缺失 mock 会导致 @InjectMocks 注入 null，调用时 NPE。
+    @Mock
+    private ProductAttributeService productAttributeService;
+    @Mock
+    private ProductSkuService productSkuService;
 
     @InjectMocks
     private ProductServiceImpl productService;
@@ -116,7 +124,7 @@ class ProductServiceTest {
 
         // then
         assertThat(result.getList()).hasSize(1);
-        assertThat(result.getTotal()).isEqualTo(1L);
+        assertThat(result.getTotal()).isEqualTo(1);
         assertThat(result.getList().get(0).getProductName()).isEqualTo("iPhone");
         assertThat(result.getList().get(0).getCategoryName()).isEqualTo("智能手机");
     }
@@ -165,7 +173,7 @@ class ProductServiceTest {
 
         // then
         assertThat(result.getList()).hasSize(1);
-        assertThat(result.getTotal()).isEqualTo(1L);
+        assertThat(result.getTotal()).isEqualTo(1);
     }
 
     @Test
@@ -237,6 +245,8 @@ class ProductServiceTest {
         given(valueOperations.get(CACHE_KEY)).willReturn(null);
         given(redissonClient.getLock("lock:goods:1")).willReturn(rLock);
         given(rLock.tryLock(0L, 10L, TimeUnit.SECONDS)).willReturn(true);
+        // M14 修复后 unlock 前校验 isHeldByCurrentThread，需 stub 返回 true
+        given(rLock.isHeldByCurrentThread()).willReturn(true);
         given(productMapper.selectById(1L)).willReturn(product);
         given(categoryMapper.selectBatchIds(List.of(101L))).willReturn(List.of(buildCategory()));
         given(objectMapper.writeValueAsString(any(ProductVO.class))).willReturn("{}");
@@ -259,6 +269,8 @@ class ProductServiceTest {
         given(valueOperations.get(CACHE_KEY)).willReturn(null);
         given(redissonClient.getLock("lock:goods:1")).willReturn(rLock);
         given(rLock.tryLock(0L, 10L, TimeUnit.SECONDS)).willReturn(true);
+        // M14 修复后 unlock 前校验 isHeldByCurrentThread，需 stub 返回 true
+        given(rLock.isHeldByCurrentThread()).willReturn(true);
         given(productMapper.selectById(1L)).willReturn(null);
 
         // when / then

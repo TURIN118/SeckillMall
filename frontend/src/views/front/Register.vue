@@ -51,7 +51,7 @@
               class="form-input"
               :class="{ error: errors.password }"
               type="password"
-              placeholder="8位以上，含大小写字母和数字"
+              placeholder="6-20位，需含大小写字母和数字"
               autocomplete="new-password"
             />
             <!-- 密码强度指示器 -->
@@ -197,6 +197,10 @@ function validate(): boolean {
     valid = false
   } else if (form.password.length < 6 || form.password.length > 20) {
     errors.password = '密码长度为 6-20 位'
+    valid = false
+  } else if (!/[a-z]/.test(form.password) || !/[A-Z]/.test(form.password) || !/\d/.test(form.password)) {
+    // M-F7 修复: 统一密码规则为 6-20 位 + 必须包含大小写字母和数字
+    errors.password = '密码必须包含大小写字母和数字'
     valid = false
   }
   if (!form.confirmPassword) {

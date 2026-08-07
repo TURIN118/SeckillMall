@@ -155,7 +155,7 @@ class AuthServiceTest {
         given(jwtUtils.generateRefreshToken(user.getId(), user.getUsername(), user.getRole(), 1L)).willReturn("refresh-token");
 
         // when
-        LoginVO vo = authService.login(req, "127.0.0.1");
+        LoginVO vo = authService.login(req, "127.0.0.1", null);
 
         // then
         assertThat(vo.getAccessToken()).isEqualTo("access-token");
@@ -182,7 +182,7 @@ class AuthServiceTest {
         given(valueOperations.increment("login:fail:" + user.getUsername())).willReturn(1L);
 
         // when / then
-        assertThatThrownBy(() -> authService.login(req, "127.0.0.1"))
+        assertThatThrownBy(() -> authService.login(req, "127.0.0.1", null))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.USERNAME_OR_PASSWORD_ERROR);
@@ -202,7 +202,7 @@ class AuthServiceTest {
         given(valueOperations.get("login:fail:locked-user")).willReturn("5");
 
         // when / then
-        assertThatThrownBy(() -> authService.login(req, "1.1.1.1"))
+        assertThatThrownBy(() -> authService.login(req, "1.1.1.1", null))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.LOGIN_LOCKED);
@@ -226,7 +226,7 @@ class AuthServiceTest {
         given(valueOperations.increment("login:fail:" + user.getUsername())).willReturn(1L);
 
         // when / then
-        assertThatThrownBy(() -> authService.login(req, "127.0.0.1"))
+        assertThatThrownBy(() -> authService.login(req, "127.0.0.1", null))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ACCOUNT_DISABLED);

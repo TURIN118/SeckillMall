@@ -10,6 +10,7 @@ import com.seckill.mall.dto.RegisterRequest;
 import com.seckill.mall.vo.LoginVO;
 import com.seckill.mall.vo.TokenVO;
 import com.seckill.mall.vo.UserVO;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
@@ -24,7 +25,14 @@ public interface AuthService {
 
     UserVO register(RegisterRequest req);
 
-    LoginVO login(LoginRequest req, String ip);
+    /**
+     * 用户登录。
+     *
+     * @param req     登录请求（用户名/密码/验证码）
+     * @param ip      客户端 IP
+     * @param request HTTP 请求对象（M-S4/L-O2：用于获取 User-Agent 等维度做密码喷洒防护与日志补全）
+     */
+    LoginVO login(LoginRequest req, String ip, HttpServletRequest request);
 
     void logout(String accessToken);
 

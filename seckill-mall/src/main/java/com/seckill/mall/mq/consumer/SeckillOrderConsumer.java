@@ -63,10 +63,14 @@ public class SeckillOrderConsumer {
         String dedupId = (messageId != null && !messageId.isBlank())
                 ? messageId
                 : message.getSeckillId() + ":" + message.getUserId() + ":" + message.getRequestId();
+        String dedupKey = RedisKeyConstants.mqConsumed(dedupId);
 
-        Boolean first = redisService.setIfAbsent(
-                RedisKeyConstants.mqConsumed(dedupId), "1", CONSUMED_TTL_HOURS, TimeUnit.HOURS);
-        if (Boolean.FALSE.equals(first)) {
+        // M-C1 修复：幂等键在"处理成功并提交后"再设置，处理前仅检查是否已存在。
+        // 若存在则表示之前已成功处理，直接 ACK 跳过。
+        // 这样可避免"处理前设置幂等键 → 处理中异常 nack → 幂等键残留 → 消息重投被跳过"的丢消息问题。
+        // 并发重投风险由业务幂等性（uk_user_seckill 唯一索引）兜底。
+        String existing = redisService.get(dedupKey);
+        if (existing != null) {
             log.info("秒杀下单消息重复消费，直接丢弃 dedupId={}", dedupId);
             channel.basicAck(deliveryTag, false);
             return;
@@ -75,30 +79,44 @@ public class SeckillOrderConsumer {
         try {
             SeckillOrder order = orderService.createSeckillOrder(
                     message.getSeckillId(), message.getUserId(), message.getRequestId());
-            // Bug4修复：MQ Consumer创建订单后同步扣减DB的available_count，确保首页进度百分比正确
+
+            // H-C2 修复：DB 扣减失败（rows==0）必须撤销订单并写失败结果，不写 writeSuccessResult。
+            // 订单创建与 DB 扣减虽不在同一事务，但扣减失败后立即物理删除订单，
+            // 配合 uk_user_seckill 唯一索引保证不会产生幽灵单。
+            int rows;
             try {
-                int rows = seckillGoodsMapper.deductStockOptimistic(message.getSeckillId());
-                if (rows == 0) {
-                    log.warn("MQ Consumer扣减DB库存失败（库存可能已为0），seckillId={}", message.getSeckillId());
-                } else {
-                    // M6 修复: DB 扣减成功后同步更新 Redis 缓存，避免前端轮询拿到过期库存
-                    // 1) Redis 库存计数 -1
-                    redisService.decr(RedisKeyConstants.seckillStock(message.getSeckillId()));
-                    // 2) 同步 info hash 中的 stock 字段为 DB 最新值
-                    SeckillGoods sg = seckillGoodsMapper.selectById(message.getSeckillId());
-                    if (sg != null && sg.getAvailableCount() != null) {
-                        redisService.hSet(RedisKeyConstants.seckillInfo(message.getSeckillId()),
-                                "stock", String.valueOf(sg.getAvailableCount()));
-                    }
-                }
+                rows = seckillGoodsMapper.deductStockOptimistic(message.getSeckillId());
             } catch (Exception e) {
-                log.error("MQ Consumer扣减DB库存异常，seckillId={}", message.getSeckillId(), e);
+                log.error("MQ Consumer 扣减 DB 库存异常，撤销订单 seckillId={} orderNo={}",
+                        message.getSeckillId(), order.getOrderNo(), e);
+                orderService.deleteSeckillOrderPhysically(order.getId());
+                writeFailureResult(message);
+                channel.basicAck(deliveryTag, false);
+                return;
             }
+            if (rows == 0) {
+                log.warn("MQ Consumer 扣减 DB 库存失败（库存已为 0），撤销订单 seckillId={} orderNo={}",
+                        message.getSeckillId(), order.getOrderNo());
+                orderService.deleteSeckillOrderPhysically(order.getId());
+                writeFailureResult(message);
+                channel.basicAck(deliveryTag, false);
+                return;
+            }
+
+            // B3 修复：Redis 库存同步使用 SET 校正到 DB 真相值，而非 DECR 二次扣减。
+            // 明确"Lua 预减是唯一扣减点"，DB available_count 是唯一真相来源。
+            // 消费者只负责将 Redis 校正到 DB 值，不再独立扣减。
+            syncRedisStockFromDb(message.getSeckillId());
+
             writeSuccessResult(message, order);
             sendDelayMessage(order);
             sendResultBroadcast(order, message.getSeckillId());
             // 秒杀成功邮件：异步发送，失败由 @Recover 兜底，不影响下单主流程
             sendSeckillSuccessEmail(order);
+
+            // M-C1 修复：处理成功并提交后，设置幂等键（长 TTL）
+            redisService.set(dedupKey, "1", CONSUMED_TTL_HOURS, TimeUnit.HOURS);
+
             channel.basicAck(deliveryTag, false);
         } catch (BusinessException e) {
             // 业务异常（如重复下单）：写失败结果后 ACK，避免无限重试
@@ -106,11 +124,37 @@ public class SeckillOrderConsumer {
                     message.getSeckillId(), message.getUserId(),
                     e.getErrorCode().getCode(), e.getMessage());
             writeFailureResult(message);
+            // 业务异常也设置幂等键，避免重投重复报错
+            redisService.set(dedupKey, "1", CONSUMED_TTL_HOURS, TimeUnit.HOURS);
             channel.basicAck(deliveryTag, false);
         } catch (Exception e) {
-            // 非业务异常：Nack 不重回，避免毒消息阻塞队列
-            log.error("秒杀下单消费异常，将丢弃 dedupId={}", dedupId, e);
+            // H-C6 修复：非业务异常 Nack 不重回，进入 DLQ（队列已配 DLX）。
+            // M-C1：nack 时不设置幂等键（未成功处理），允许 DLQ 中消息被重新处理。
+            log.error("秒杀下单消费异常，进入 DLQ dedupId={}", dedupId, e);
             channel.basicNack(deliveryTag, false, false);
+        }
+    }
+
+    /**
+     * B3 修复：将 Redis 库存校正到 DB available_count 真相值。
+     * <p>
+     * Lua 预减是唯一扣减点，消费者不再 DECR 二次扣减。
+     * DB 扣减成功后，将 Redis 的 stockKey 和 info.hash.stock 同步为 DB 最新值，
+     * 确保前端轮询拿到准确库存。
+     */
+    private void syncRedisStockFromDb(Long seckillId) {
+        try {
+            SeckillGoods sg = seckillGoodsMapper.selectById(seckillId);
+            if (sg == null || sg.getAvailableCount() == null) {
+                return;
+            }
+            String stockValue = String.valueOf(sg.getAvailableCount());
+            // 1) Redis 库存计数 SET 为 DB 值（校正，而非 DECR）
+            redisService.set(RedisKeyConstants.seckillStock(seckillId), stockValue);
+            // 2) info hash 中的 stock 字段同步为 DB 值
+            redisService.hSet(RedisKeyConstants.seckillInfo(seckillId), "stock", stockValue);
+        } catch (Exception e) {
+            log.warn("同步 Redis 库存到 DB 值失败 seckillId={}，由补偿任务兜底", seckillId, e);
         }
     }
 

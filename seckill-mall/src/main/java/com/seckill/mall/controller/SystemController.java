@@ -13,6 +13,7 @@ import com.seckill.mall.vo.SystemHealthVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
@@ -58,7 +59,7 @@ public class SystemController {
 
     @Operation(summary = "操作日志列表（分页+模块筛选）")
     @GetMapping("/operation-logs")
-    public Result<PageResult<OperationLogVO>> operationLogs(OperationLogQueryRequest req) {
+    public Result<PageResult<OperationLogVO>> operationLogs(@Valid OperationLogQueryRequest req) {
         return Result.success(systemService.getOperationLogs(req));
     }
 

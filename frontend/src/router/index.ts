@@ -4,7 +4,14 @@
  */
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { ElMessage } from 'element-plus'
+
+// L-F4 修复: 路由守卫里的 ElMessage 改为动态 import, 避免 element-plus 主入口被引入
+// 到路由模块的初始 chunk, 减少约 150KB 共享块体积.
+// ElMessage 仅在登录失效/过期等少数场景使用, 动态 import 不影响用户体验.
+async function showElMessage(type: 'warning' | 'error' | 'success', message: string): Promise<void> {
+  const { ElMessage } = await import('element-plus')
+  ElMessage[type](message)
+}
 
 const FrontLayout = () => import('@/layouts/FrontLayout.vue')
 const AdminLayout = () => import('@/layouts/AdminLayout.vue')
@@ -293,7 +300,7 @@ router.beforeEach(async (to, _from, next) => {
       // H24 修复: 拉取用户信息失败 (token 无效/被踢出等)，跳转登录页而非继续放行
       // 继续放行会让用户以"半登录"状态访问页面，导致后续 API 401 雪崩式报错
       await userStore.logout()
-      ElMessage.warning('登录信息已失效，请重新登录')
+      await showElMessage('warning', '登录信息已失效，请重新登录')
       next(`/login?redirect=${encodeURIComponent(to.fullPath)}`)
       return
     }
@@ -303,14 +310,21 @@ router.beforeEach(async (to, _from, next) => {
   if (userStore.isLoggedIn && userStore.isTokenExpired()) {
     const refreshed = await userStore.refreshTokenAction()
     if (!refreshed) {
-      ElMessage.warning('登录已过期，请重新登录')
+      await showElMessage('warning', '登录已过期，请重新登录')
       next(`/login?redirect=${encodeURIComponent(to.fullPath)}`)
       return
     }
   }
 
   // 角色权限校验 (使用 normalizeRole 兼容 "ROLE_ADMIN" / "ADMIN" 两种格式)
-  if (to.meta.roles && to.meta.roles.length > 0 && userStore.userInfo) {
+  // M-F1 修复: 改为 fail-closed (无 userInfo 即拒绝访问), 避免未登录或用户信息缺失时放行敏感路由
+  if (to.meta.roles && to.meta.roles.length > 0) {
+    if (!userStore.userInfo) {
+      // fail-closed: 无用户信息时不放行, 跳转 403
+      // 此场景理论上已被上方 requiresAuth 校验拦截, 但防御性处理避免漏网
+      next('/403')
+      return
+    }
     const userRole = normalizeRole(userStore.userInfo.role)
     if (!to.meta.roles.some((r) => r === userRole)) {
       next('/403')

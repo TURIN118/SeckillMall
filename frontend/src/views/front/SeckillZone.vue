@@ -134,8 +134,67 @@
           </div>
         </div>
 
+        <!-- H-F3 修复: 旧版秒杀数据展示区 (双轨制合并) -->
+        <!-- 当新版场次化 API 无数据, 但旧版 /seckill/list 有数据时, 展示旧版数据 -->
+        <div v-if="sortedActivities.length === 0 && legacySeckillList.length > 0" class="legacy-section">
+          <div class="activity-header">
+            <div class="activity-title-wrap">
+              <h2 class="activity-name">秒杀商品</h2>
+              <span class="activity-status status-active">进行中</span>
+            </div>
+          </div>
+          <div class="seckill-grid">
+            <div v-for="item in filteredLegacyGoods" :key="item.id" class="seckill-card" @click="goDetail(item)">
+              <div class="card-img">
+                <el-image v-if="cardImage(item)" :src="cardImage(item)" fit="cover" class="card-img-tag" lazy>
+                  <template #error>
+                    <div class="img-placeholder">
+                      <el-icon :size="40"><Picture /></el-icon>
+                    </div>
+                  </template>
+                </el-image>
+                <div v-else class="img-placeholder">
+                  <el-icon :size="40"><Picture /></el-icon>
+                </div>
+                <span class="status-tag" :class="goodsStatusClass(item)">{{ goodsStatusText(item) }}</span>
+              </div>
+              <div class="card-body">
+                <div class="card-name" :title="item.seckillName">{{ item.seckillName }}</div>
+                <div class="card-sub" :title="item.productName">{{ item.productName }}</div>
+                <div class="card-prices">
+                  <span class="price-seckill">{{ formatPrice(item.seckillPrice) }}</span>
+                  <span v-if="getOriginalPrice(item) && getOriginalPrice(item)! > item.seckillPrice"
+                    class="price-original">¥{{ formatNumber(getOriginalPrice(item)!) }}</span>
+                </div>
+                <template v-if="item.status === 'ACTIVE'">
+                  <div class="stock-bar">
+                    <div class="stock-bar-fill" :class="stockLevel(item)"
+                      :style="{ width: soldPercent(item) + '%' }"></div>
+                  </div>
+                  <div class="stock-text" :class="{ danger: isLowStock(item) }">
+                    <template v-if="isLowStock(item)">仅剩 {{ item.availableCount }} 件！手慢无</template>
+                    <template v-else>已抢 {{ soldPercent(item) }}% · 剩余 {{ item.availableCount }} 件</template>
+                  </div>
+                </template>
+                <template v-else-if="item.status === 'PENDING'">
+                  <div class="stock-text pending-stock">限量 {{ item.stockCount }} 件 · 每人限购 {{ item.perLimit }} 件</div>
+                </template>
+                <template v-else>
+                  <div class="stock-text ended-stock">已结束</div>
+                </template>
+                <div class="card-action">
+                  <button v-if="item.status === 'ACTIVE'" class="btn-seckill" @click.stop="goDetail(item)">立即抢购</button>
+                  <button v-else-if="item.status === 'PENDING'" class="btn-seckill btn-pending"
+                    @click.stop="goDetail(item)">即将开始</button>
+                  <button v-else class="btn-seckill btn-ended" disabled>已结束</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 空状态 -->
-        <div v-else class="empty-state">
+        <div v-if="sortedActivities.length === 0 && legacySeckillList.length === 0" class="empty-state">
           <el-empty :image-size="120" description="暂无秒杀活动" />
         </div>
       </template>
@@ -156,11 +215,13 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Picture } from '@element-plus/icons-vue'
-import { listSeckillActivities } from '@/api/seckill'
+import { listSeckillActivities, getSeckillList } from '@/api/seckill'
 import { getProductDetail } from '@/api/product'
 import { getCategoryTree } from '@/api/category'
 import { formatImageUrl } from '@/utils/image'
 import { getTimeOffset } from '@/api/request'
+// M-F4 修复: 使用可见性感知轮询, 后台标签页暂停轮询
+import { useVisibilityPolling } from '@/composables/useVisibilityPolling'
 import dayjs from 'dayjs'
 import type { SeckillActivityVO, SeckillGoodsVO, CategoryVO } from '@/types'
 
@@ -168,6 +229,9 @@ const router = useRouter()
 
 /* === 列表数据 === */
 const activityList = ref<SeckillActivityVO[]>([])
+// H-F3 修复: 旧版秒杀数据 (双轨制合并展示)
+// 当新版场次化 API 无数据时, 回退展示旧版 /seckill/list 数据, 避免孤儿数据
+const legacySeckillList = ref<SeckillGoodsVO[]>([])
 const loading = ref<boolean>(false)
 
 /* === 原价缓存（通过商品详情 API 获取，key 为 productId） === */
@@ -198,17 +262,39 @@ const refreshing = ref<boolean>(false)
 let lastAutoRefreshTime = 0
 const AUTO_REFRESH_COOLDOWN = 30_000 // 30秒冷却期
 
-/* === 拉取场次列表 === */
+/* === 拉取场次列表 ===
+ * H-F3 修复: 同时拉取新版 (activities) 与旧版 (list) 数据, 合并展示
+ * - 新版有数据: 优先展示场次化数据
+ * - 新版无数据但旧版有: 回退展示旧版秒杀商品列表
+ * - 两套都无: 显示空状态
+ */
 async function fetchActivities(silent = false): Promise<void> {
   if (!silent) loading.value = true
   try {
-    const res = await listSeckillActivities()
-    activityList.value = res.data || []
-    // 收集所有商品，异步填充原价，不阻塞渲染
+    // 并发拉取两套数据, 互不阻塞
+    const [activitiesRes, legacyRes] = await Promise.allSettled([
+      listSeckillActivities(),
+      getSeckillList({ pageNum: 1, pageSize: 50 })
+    ])
+    // 新版场次化数据
+    if (activitiesRes.status === 'fulfilled') {
+      activityList.value = activitiesRes.value.data || []
+    } else {
+      activityList.value = []
+    }
+    // 旧版秒杀商品列表 (双轨制合并)
+    if (legacyRes.status === 'fulfilled') {
+      legacySeckillList.value = legacyRes.value.data?.list || []
+    } else {
+      legacySeckillList.value = []
+    }
+    // 收集所有商品, 异步填充原价, 不阻塞渲染
     const allGoods: SeckillGoodsVO[] = []
     activityList.value.forEach((a) => {
       allGoods.push(...(a.goodsList || []))
     })
+    // 旧版数据也加入原价获取队列
+    allGoods.push(...legacySeckillList.value)
     void fetchOriginalPrices(allGoods)
   } catch {
     // 错误已由请求拦截器处理
@@ -216,6 +302,12 @@ async function fetchActivities(silent = false): Promise<void> {
     if (!silent) loading.value = false
   }
 }
+
+/* === H-F3 修复: 旧版秒杀商品前端过滤 (按分类名称匹配) === */
+const filteredLegacyGoods = computed<SeckillGoodsVO[]>(() => {
+  if (!selectedCategoryName.value) return legacySeckillList.value
+  return legacySeckillList.value.filter((g) => g.productName?.includes(selectedCategoryName.value!))
+})
 
 /* === 异步获取原价（并发，失败忽略） === */
 async function fetchOriginalPrices(list: SeckillGoodsVO[]): Promise<void> {
@@ -391,9 +483,13 @@ function checkActivityExpired(): void {
 }
 
 /* === 生命周期 === */
-// 数据刷新定时器，每 8 秒静默刷新秒杀场次列表，
-// 让前端展示的 availableCount / 已抢 / 剩余 与后端保持同步（与倒计时 tickTimer 分开）
-let dataRefreshTimer: ReturnType<typeof setInterval> | null = null
+// 数据刷新定时器, 每 8 秒静默刷新秒杀场次列表,
+// 让前端展示的 availableCount / 已抢 / 剩余 与后端保持同步 (与倒计时 tickTimer 分开)
+// M-F4 修复: 使用 useVisibilityPolling 替代裸 setInterval, 后台标签页暂停轮询
+const { start: startDataPolling, stop: stopDataPolling } = useVisibilityPolling(
+  () => fetchActivities(true),
+  8000
+)
 
 onMounted(() => {
   fetchCategories()
@@ -403,17 +499,12 @@ onMounted(() => {
     checkActivityExpired()
   }, 1000)
   // 启动数据定时轮询（静默刷新，不触发 loading 闪烁）
-  dataRefreshTimer = setInterval(() => {
-    fetchActivities(true)
-  }, 8000)
+  startDataPolling()
 })
 
 onUnmounted(() => {
   if (tickTimer) clearInterval(tickTimer)
-  if (dataRefreshTimer) {
-    clearInterval(dataRefreshTimer)
-    dataRefreshTimer = null
-  }
+  stopDataPolling()
 })
 </script>
 
@@ -588,6 +679,16 @@ onUnmounted(() => {
 
 /* === 场次区块 === */
 .activity-section {
+  margin-bottom: 20px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  box-sizing: border-box;
+}
+
+/* H-F3 修复: 旧版秒杀数据区块样式 (复用场次区块样式) */
+.legacy-section {
   margin-bottom: 20px;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);

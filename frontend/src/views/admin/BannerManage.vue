@@ -26,7 +26,8 @@
           <tr v-for="row in bannerList" :key="row.id">
             <td>
               <div class="table-avatar img">
-                <img v-if="row.imageUrl" :src="formatImageUrl(row.imageUrl)" alt="" />
+                <img v-if="row.imageUrl" :src="formatImageUrl(row.imageUrl)" alt=""
+                  loading="lazy" sizes="60px" />
                 <span v-else>无图</span>
               </div>
             </td>

@@ -1,123 +1,864 @@
-2026-08-05T20:06:20.541+08:00 DEBUG 30256 --- [nio-8080-exec-2] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:20.541+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:20.541+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:20.541+08:00 DEBUG 30256 --- [io-8080-exec-10] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:20.541+08:00 DEBUG 30256 --- [nio-8080-exec-8] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:20.541+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:20.541+08:00 DEBUG 30256 --- [nio-8080-exec-2] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:20.541+08:00 DEBUG 30256 --- [io-8080-exec-10] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:20.541+08:00 DEBUG 30256 --- [nio-8080-exec-8] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:20.541+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:20.543+08:00 DEBUG 30256 --- [io-8080-exec-10] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:20.543+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:20.543+08:00 DEBUG 30256 --- [nio-8080-exec-8] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:20.543+08:00 DEBUG 30256 --- [nio-8080-exec-2] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:20.546+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:20.546+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.CartMapper.selectCount   : ==>  Preparing: SELECT COUNT( * ) AS total FROM t_cart WHERE is_deleted=0 AND (user_id = ?)
-2026-08-05T20:06:20.546+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.CartMapper.selectCount   : ==> Parameters: 1(Long)
-2026-08-05T20:06:20.549+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.BannerMapper.selectList  : ==>  Preparing: SELECT id,title,image_url,link_url,sort_order,status,is_deleted,create_time,update_time FROM t_banner WHERE is_deleted=0 AND (status = ?) ORDER BY sort_order ASC,id ASC
-2026-08-05T20:06:20.550+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.BannerMapper.selectList  : ==> Parameters: 1(Integer)
-2026-08-05T20:06:20.550+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.CartMapper.selectCount   : <==      Total: 1
-2026-08-05T20:06:20.553+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.BannerMapper.selectList  : <==      Total: 2
-2026-08-05T20:06:20.561+08:00 DEBUG 30256 --- [nio-8080-exec-8] c.s.m.m.S.selectSeckillPage_mpCount      : ==>  Preparing: SELECT COUNT(*) AS total FROM t_seckill_goods WHERE is_deleted = 0
-2026-08-05T20:06:20.561+08:00 DEBUG 30256 --- [nio-8080-exec-8] c.s.m.m.S.selectSeckillPage_mpCount      : ==> Parameters: 
-2026-08-05T20:06:20.563+08:00 DEBUG 30256 --- [io-8080-exec-10] c.s.m.m.P.selectProductPage_mpCount      : ==>  Preparing: SELECT COUNT(*) AS total FROM t_product WHERE is_deleted = 0 AND status = ?
-2026-08-05T20:06:20.563+08:00 DEBUG 30256 --- [nio-8080-exec-8] c.s.m.m.S.selectSeckillPage_mpCount      : <==      Total: 1
-2026-08-05T20:06:20.563+08:00 DEBUG 30256 --- [io-8080-exec-10] c.s.m.m.P.selectProductPage_mpCount      : ==> Parameters: ON_SALE(String)
-2026-08-05T20:06:20.563+08:00 DEBUG 30256 --- [nio-8080-exec-8] c.s.m.m.S.selectSeckillPage              : ==>  Preparing: SELECT id, product_id, seckill_price, stock_count, available_count, start_time, end_time, status, creator_id, seckill_name, per_limit, images, description, is_deleted, create_time, update_time FROM t_seckill_goods WHERE is_deleted = 0 ORDER BY start_time DESC LIMIT ?
-2026-08-05T20:06:20.563+08:00 DEBUG 30256 --- [nio-8080-exec-8] c.s.m.m.S.selectSeckillPage              : ==> Parameters: 20(Long)
-2026-08-05T20:06:20.564+08:00 DEBUG 30256 --- [io-8080-exec-10] c.s.m.m.P.selectProductPage_mpCount      : <==      Total: 1
-2026-08-05T20:06:20.564+08:00 DEBUG 30256 --- [nio-8080-exec-8] c.s.m.m.S.selectSeckillPage              : <==      Total: 1
-2026-08-05T20:06:20.564+08:00 DEBUG 30256 --- [io-8080-exec-10] c.s.m.m.ProductMapper.selectProductPage  : ==>  Preparing: SELECT id, name, description, original_price, stock, sales_count, category_id, images, main_image, detail_html, status, is_deleted, create_time, update_time FROM t_product WHERE is_deleted = 0 AND status = ? ORDER BY sales_count DESC LIMIT ?
-2026-08-05T20:06:20.565+08:00 DEBUG 30256 --- [io-8080-exec-10] c.s.m.m.ProductMapper.selectProductPage  : ==> Parameters: ON_SALE(String), 12(Long)
-2026-08-05T20:06:20.565+08:00 DEBUG 30256 --- [nio-8080-exec-8] c.s.m.m.ProductMapper.selectBatchIds     : ==>  Preparing: SELECT id,name,description,original_price,stock,sales_count,cart_count,favorite_count,category_id,images,main_image,detail_html,status,is_deleted,create_time,update_time FROM t_product WHERE id IN ( ? ) AND is_deleted=0
-2026-08-05T20:06:20.565+08:00 DEBUG 30256 --- [nio-8080-exec-8] c.s.m.m.ProductMapper.selectBatchIds     : ==> Parameters: 1(Long)
-2026-08-05T20:06:20.567+08:00 DEBUG 30256 --- [nio-8080-exec-8] c.s.m.m.ProductMapper.selectBatchIds     : <==      Total: 1
-2026-08-05T20:06:20.570+08:00 DEBUG 30256 --- [io-8080-exec-10] c.s.m.m.ProductMapper.selectProductPage  : <==      Total: 12
-2026-08-05T20:06:20.571+08:00 DEBUG 30256 --- [io-8080-exec-10] c.s.m.m.CategoryMapper.selectBatchIds    : ==>  Preparing: SELECT id,name,parent_id,sort_order,icon_url,status,is_deleted,create_time,update_time FROM t_category WHERE id IN ( ? , ? , ? , ? , ? , ? , ? , ? ) AND is_deleted=0
-2026-08-05T20:06:20.571+08:00 DEBUG 30256 --- [io-8080-exec-10] c.s.m.m.CategoryMapper.selectBatchIds    : ==> Parameters: 704(Long), 703(Long), 705(Long), 701(Long), 702(Long), 801(Long), 706(Long), 802(Long)
-2026-08-05T20:06:20.573+08:00 DEBUG 30256 --- [io-8080-exec-10] c.s.m.m.CategoryMapper.selectBatchIds    : <==      Total: 8
-2026-08-05T20:06:22.916+08:00  WARN 30256 --- [nio-8080-exec-2] c.s.m.security.ReplayProtectionFilter    : 签名不匹配 uri=/api/v1/seckill/2084297480440176641/execute
-2026-08-05T20:06:23.159+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:23.159+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:23.160+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:23.237+08:00  WARN 30256 --- [nio-8080-exec-8] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:23.500+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:23.500+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:23.501+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:23.544+08:00  WARN 30256 --- [io-8080-exec-10] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:23.837+08:00 DEBUG 30256 --- [nio-8080-exec-7] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:23.837+08:00 DEBUG 30256 --- [nio-8080-exec-7] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:23.838+08:00 DEBUG 30256 --- [nio-8080-exec-7] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:23.862+08:00  WARN 30256 --- [nio-8080-exec-6] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:24.174+08:00 DEBUG 30256 --- [nio-8080-exec-1] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:24.174+08:00 DEBUG 30256 --- [nio-8080-exec-1] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:24.175+08:00 DEBUG 30256 --- [nio-8080-exec-1] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:24.437+08:00  WARN 30256 --- [nio-8080-exec-5] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:24.516+08:00 DEBUG 30256 --- [nio-8080-exec-3] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:24.516+08:00 DEBUG 30256 --- [nio-8080-exec-3] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:24.528+08:00 DEBUG 30256 --- [nio-8080-exec-3] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:24.759+08:00  WARN 30256 --- [nio-8080-exec-2] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:24.867+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:24.867+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:24.868+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:25.078+08:00  WARN 30256 --- [nio-8080-exec-8] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:25.204+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:25.204+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:25.206+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:25.387+08:00  WARN 30256 --- [io-8080-exec-10] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:25.542+08:00 DEBUG 30256 --- [nio-8080-exec-7] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:25.542+08:00 DEBUG 30256 --- [nio-8080-exec-7] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:25.544+08:00 DEBUG 30256 --- [nio-8080-exec-7] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:25.696+08:00  WARN 30256 --- [nio-8080-exec-6] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:25.874+08:00 DEBUG 30256 --- [nio-8080-exec-1] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:25.875+08:00 DEBUG 30256 --- [nio-8080-exec-1] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:25.876+08:00 DEBUG 30256 --- [nio-8080-exec-1] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:26.018+08:00  WARN 30256 --- [nio-8080-exec-5] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:26.219+08:00 DEBUG 30256 --- [nio-8080-exec-3] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:26.219+08:00 DEBUG 30256 --- [nio-8080-exec-3] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:26.220+08:00 DEBUG 30256 --- [nio-8080-exec-3] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:26.327+08:00  WARN 30256 --- [nio-8080-exec-2] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:26.561+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:26.561+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:26.562+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:26.635+08:00  WARN 30256 --- [nio-8080-exec-8] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:26.901+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:26.901+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:26.902+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:26.945+08:00  WARN 30256 --- [io-8080-exec-10] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:27.240+08:00 DEBUG 30256 --- [nio-8080-exec-7] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:27.240+08:00 DEBUG 30256 --- [nio-8080-exec-7] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:27.242+08:00 DEBUG 30256 --- [nio-8080-exec-7] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:27.266+08:00  WARN 30256 --- [nio-8080-exec-6] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:27.578+08:00 DEBUG 30256 --- [nio-8080-exec-1] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:27.579+08:00 DEBUG 30256 --- [nio-8080-exec-1] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:27.580+08:00 DEBUG 30256 --- [nio-8080-exec-1] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:27.833+08:00  WARN 30256 --- [nio-8080-exec-5] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:27.918+08:00 DEBUG 30256 --- [nio-8080-exec-3] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:27.918+08:00 DEBUG 30256 --- [nio-8080-exec-3] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:27.920+08:00 DEBUG 30256 --- [nio-8080-exec-3] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:28.145+08:00  WARN 30256 --- [nio-8080-exec-2] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:28.255+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:28.255+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:28.256+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:28.452+08:00  WARN 30256 --- [nio-8080-exec-8] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:28.581+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:28.581+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:28.582+08:00 DEBUG 30256 --- [nio-8080-exec-4] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:28.759+08:00  WARN 30256 --- [io-8080-exec-10] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:28.916+08:00 DEBUG 30256 --- [nio-8080-exec-7] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:28.916+08:00 DEBUG 30256 --- [nio-8080-exec-7] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:28.917+08:00 DEBUG 30256 --- [nio-8080-exec-7] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:29.072+08:00  WARN 30256 --- [nio-8080-exec-6] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:29.244+08:00 DEBUG 30256 --- [nio-8080-exec-1] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:29.244+08:00 DEBUG 30256 --- [nio-8080-exec-1] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:29.245+08:00 DEBUG 30256 --- [nio-8080-exec-1] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:29.393+08:00  WARN 30256 --- [nio-8080-exec-5] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:29.578+08:00 DEBUG 30256 --- [nio-8080-exec-3] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:29.578+08:00 DEBUG 30256 --- [nio-8080-exec-3] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:29.579+08:00 DEBUG 30256 --- [nio-8080-exec-3] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
-2026-08-05T20:06:29.713+08:00  WARN 30256 --- [nio-8080-exec-2] c.s.m.security.ReplayProtectionFilter    : Nonce 重复，疑似重放 uri=/api/v1/seckill/2084297480440176641/execute nonce=46ba8ca3-9dc6-4633-82a5-f2e384f800a3
-2026-08-05T20:06:29.914+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : ==>  Preparing: SELECT id,username,password,phone,email,nickname,avatar_url,balance,role,status,is_deleted,create_time,update_time FROM t_user WHERE id=? AND is_deleted=0
-2026-08-05T20:06:29.914+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : ==> Parameters: 1(Long)
-2026-08-05T20:06:29.915+08:00 DEBUG 30256 --- [nio-8080-exec-9] c.s.mall.mapper.UserMapper.selectById    : <==      Total: 1
+D:\SOFTWARE\Java\JDK17\bin\java.exe -agentlib:jdwp=transport=dt_socket,address=127.0.0.1:57916,suspend=y,server=n -javaagent:C:\Users\WNJ\AppData\Local\JetBrains\IntelliJIdea2025.3\captureAgent\debugger-agent.jar=file:///C:/Users/WNJ/AppData/Local/Temp/capture14020604782740899856.props -agentpath:C:\Users\WNJ\AppData\Local\Temp\idea_libasyncProfiler_dll_temp_folder11\libasyncProfiler.dll=version,jfr,event=wall,interval=10ms,cstack=no,file=C:\Users\WNJ\IdeaSnapshots\SeckillMallApplication_2026_08_07_154638.jfr,dbghelppath=C:\Users\WNJ\AppData\Local\Temp\idea_dbghelp_dll_temp_folder\dbghelp.dll,log=C:\Users\WNJ\AppData\Local\Temp\SeckillMallApplication_2026_08_07_154638.jfr.log.txt,logLevel=DEBUG -XX:TieredStopAtLevel=1 -Dspring.output.ansi.enabled=always -Dcom.sun.management.jmxremote -Dspring.jmx.enabled=true -Dspring.liveBeansView.mbeanDomain -Dspring.application.admin.enabled=true "-Dmanagement.endpoints.jmx.exposure.include=*" -Dkotlinx.coroutines.debug.enable.creation.stack.trace=false -Ddebugger.agent.enable.coroutines=true -Dkotlinx.coroutines.debug.enable.flows.stack.trace=true -Dkotlinx.coroutines.debug.enable.mutable.state.flows.stack.trace=true -Ddebugger.async.stack.trace.for.all.threads=true -Dfile.encoding=UTF-8 -classpath "D:\DESk\SpringBoot\seckill-mall\target\classes;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-starter-web\3.2.5\spring-boot-starter-web-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-starter\3.2.5\spring-boot-starter-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot\3.2.5\spring-boot-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-starter-logging\3.2.5\spring-boot-starter-logging-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\ch\qos\logback\logback-classic\1.4.14\logback-classic-1.4.14.jar;D:\SOFTWARE\Maven\maven-repository\ch\qos\logback\logback-core\1.4.14\logback-core-1.4.14.jar;D:\SOFTWARE\Maven\maven-repository\org\apache\logging\log4j\log4j-to-slf4j\2.21.1\log4j-to-slf4j-2.21.1.jar;D:\SOFTWARE\Maven\maven-repository\org\slf4j\jul-to-slf4j\2.0.13\jul-to-slf4j-2.0.13.jar;D:\SOFTWARE\Maven\maven-repository\jakarta\annotation\jakarta.annotation-api\2.1.1\jakarta.annotation-api-2.1.1.jar;D:\SOFTWARE\Maven\maven-repository\org\yaml\snakeyaml\2.2\snakeyaml-2.2.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-starter-json\3.2.5\spring-boot-starter-json-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\com\fasterxml\jackson\datatype\jackson-datatype-jdk8\2.15.4\jackson-datatype-jdk8-2.15.4.jar;D:\SOFTWARE\Maven\maven-repository\com\fasterxml\jackson\datatype\jackson-datatype-jsr310\2.15.4\jackson-datatype-jsr310-2.15.4.jar;D:\SOFTWARE\Maven\maven-repository\com\fasterxml\jackson\module\jackson-module-parameter-names\2.15.4\jackson-module-parameter-names-2.15.4.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-starter-tomcat\3.2.5\spring-boot-starter-tomcat-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\org\apache\tomcat\embed\tomcat-embed-core\10.1.20\tomcat-embed-core-10.1.20.jar;D:\SOFTWARE\Maven\maven-repository\org\apache\tomcat\embed\tomcat-embed-websocket\10.1.20\tomcat-embed-websocket-10.1.20.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\spring-web\6.1.6\spring-web-6.1.6.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\spring-beans\6.1.6\spring-beans-6.1.6.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\spring-webmvc\6.1.6\spring-webmvc-6.1.6.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\spring-context\6.1.6\spring-context-6.1.6.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\spring-expression\6.1.6\spring-expression-6.1.6.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-starter-security\3.2.5\spring-boot-starter-security-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\spring-aop\6.1.6\spring-aop-6.1.6.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\security\spring-security-config\6.2.4\spring-security-config-6.2.4.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\security\spring-security-web\6.2.4\spring-security-web-6.2.4.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-starter-data-redis\3.2.5\spring-boot-starter-data-redis-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\io\lettuce\lettuce-core\6.3.2.RELEASE\lettuce-core-6.3.2.RELEASE.jar;D:\SOFTWARE\Maven\maven-repository\io\netty\netty-common\4.1.109.Final\netty-common-4.1.109.Final.jar;D:\SOFTWARE\Maven\maven-repository\io\netty\netty-handler\4.1.109.Final\netty-handler-4.1.109.Final.jar;D:\SOFTWARE\Maven\maven-repository\io\netty\netty-transport-native-unix-common\4.1.109.Final\netty-transport-native-unix-common-4.1.109.Final.jar;D:\SOFTWARE\Maven\maven-repository\io\netty\netty-transport\4.1.109.Final\netty-transport-4.1.109.Final.jar;D:\SOFTWARE\Maven\maven-repository\io\projectreactor\reactor-core\3.6.5\reactor-core-3.6.5.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\data\spring-data-redis\3.2.5\spring-data-redis-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\data\spring-data-keyvalue\3.2.5\spring-data-keyvalue-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\data\spring-data-commons\3.2.5\spring-data-commons-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\spring-tx\6.1.6\spring-tx-6.1.6.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\spring-oxm\6.1.6\spring-oxm-6.1.6.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-starter-validation\3.2.5\spring-boot-starter-validation-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\org\apache\tomcat\embed\tomcat-embed-el\10.1.20\tomcat-embed-el-10.1.20.jar;D:\SOFTWARE\Maven\maven-repository\org\hibernate\validator\hibernate-validator\8.0.1.Final\hibernate-validator-8.0.1.Final.jar;D:\SOFTWARE\Maven\maven-repository\jakarta\validation\jakarta.validation-api\3.0.2\jakarta.validation-api-3.0.2.jar;D:\SOFTWARE\Maven\maven-repository\org\jboss\logging\jboss-logging\3.5.3.Final\jboss-logging-3.5.3.Final.jar;D:\SOFTWARE\Maven\maven-repository\com\fasterxml\classmate\1.6.0\classmate-1.6.0.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-starter-amqp\3.2.5\spring-boot-starter-amqp-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\spring-messaging\6.1.6\spring-messaging-6.1.6.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\amqp\spring-rabbit\3.1.4\spring-rabbit-3.1.4.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\amqp\spring-amqp\3.1.4\spring-amqp-3.1.4.jar;D:\SOFTWARE\Maven\maven-repository\com\rabbitmq\amqp-client\5.19.0\amqp-client-5.19.0.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-starter-mail\3.2.5\spring-boot-starter-mail-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\spring-context-support\6.1.6\spring-context-support-6.1.6.jar;D:\SOFTWARE\Maven\maven-repository\org\eclipse\angus\jakarta.mail\2.0.3\jakarta.mail-2.0.3.jar;D:\SOFTWARE\Maven\maven-repository\jakarta\activation\jakarta.activation-api\2.1.3\jakarta.activation-api-2.1.3.jar;D:\SOFTWARE\Maven\maven-repository\org\eclipse\angus\angus-activation\2.0.2\angus-activation-2.0.2.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-starter-thymeleaf\3.2.5\spring-boot-starter-thymeleaf-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\org\thymeleaf\thymeleaf-spring6\3.1.2.RELEASE\thymeleaf-spring6-3.1.2.RELEASE.jar;D:\SOFTWARE\Maven\maven-repository\org\thymeleaf\thymeleaf\3.1.2.RELEASE\thymeleaf-3.1.2.RELEASE.jar;D:\SOFTWARE\Maven\maven-repository\org\attoparser\attoparser\2.0.7.RELEASE\attoparser-2.0.7.RELEASE.jar;D:\SOFTWARE\Maven\maven-repository\org\unbescape\unbescape\1.1.6.RELEASE\unbescape-1.1.6.RELEASE.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-starter-actuator\3.2.5\spring-boot-starter-actuator-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-actuator-autoconfigure\3.2.5\spring-boot-actuator-autoconfigure-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-actuator\3.2.5\spring-boot-actuator-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\io\micrometer\micrometer-observation\1.12.5\micrometer-observation-1.12.5.jar;D:\SOFTWARE\Maven\maven-repository\io\micrometer\micrometer-commons\1.12.5\micrometer-commons-1.12.5.jar;D:\SOFTWARE\Maven\maven-repository\io\micrometer\micrometer-jakarta9\1.12.5\micrometer-jakarta9-1.12.5.jar;D:\SOFTWARE\Maven\maven-repository\io\micrometer\micrometer-registry-prometheus\1.12.5\micrometer-registry-prometheus-1.12.5.jar;D:\SOFTWARE\Maven\maven-repository\io\micrometer\micrometer-core\1.12.5\micrometer-core-1.12.5.jar;D:\SOFTWARE\Maven\maven-repository\org\hdrhistogram\HdrHistogram\2.1.12\HdrHistogram-2.1.12.jar;D:\SOFTWARE\Maven\maven-repository\org\latencyutils\LatencyUtils\2.0.3\LatencyUtils-2.0.3.jar;D:\SOFTWARE\Maven\maven-repository\io\prometheus\simpleclient_common\0.16.0\simpleclient_common-0.16.0.jar;D:\SOFTWARE\Maven\maven-repository\io\prometheus\simpleclient\0.16.0\simpleclient-0.16.0.jar;D:\SOFTWARE\Maven\maven-repository\io\prometheus\simpleclient_tracer_otel\0.16.0\simpleclient_tracer_otel-0.16.0.jar;D:\SOFTWARE\Maven\maven-repository\io\prometheus\simpleclient_tracer_common\0.16.0\simpleclient_tracer_common-0.16.0.jar;D:\SOFTWARE\Maven\maven-repository\io\prometheus\simpleclient_tracer_otel_agent\0.16.0\simpleclient_tracer_otel_agent-0.16.0.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\retry\spring-retry\2.0.5\spring-retry-2.0.5.jar;D:\SOFTWARE\Maven\maven-repository\org\aspectj\aspectjweaver\1.9.22\aspectjweaver-1.9.22.jar;D:\SOFTWARE\Maven\maven-repository\com\baomidou\mybatis-plus-spring-boot3-starter\3.5.5\mybatis-plus-spring-boot3-starter-3.5.5.jar;D:\SOFTWARE\Maven\maven-repository\com\baomidou\mybatis-plus\3.5.5\mybatis-plus-3.5.5.jar;D:\SOFTWARE\Maven\maven-repository\com\baomidou\mybatis-plus-core\3.5.5\mybatis-plus-core-3.5.5.jar;D:\SOFTWARE\Maven\maven-repository\com\baomidou\mybatis-plus-annotation\3.5.5\mybatis-plus-annotation-3.5.5.jar;D:\SOFTWARE\Maven\maven-repository\com\baomidou\mybatis-plus-extension\3.5.5\mybatis-plus-extension-3.5.5.jar;D:\SOFTWARE\Maven\maven-repository\org\mybatis\mybatis\3.5.15\mybatis-3.5.15.jar;D:\SOFTWARE\Maven\maven-repository\com\github\jsqlparser\jsqlparser\4.6\jsqlparser-4.6.jar;D:\SOFTWARE\Maven\maven-repository\org\mybatis\mybatis-spring\3.0.3\mybatis-spring-3.0.3.jar;D:\SOFTWARE\Maven\maven-repository\com\baomidou\mybatis-plus-spring-boot-autoconfigure\3.5.5\mybatis-plus-spring-boot-autoconfigure-3.5.5.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-autoconfigure\3.2.5\spring-boot-autoconfigure-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\boot\spring-boot-starter-jdbc\3.2.5\spring-boot-starter-jdbc-3.2.5.jar;D:\SOFTWARE\Maven\maven-repository\com\zaxxer\HikariCP\5.0.1\HikariCP-5.0.1.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\spring-jdbc\6.1.6\spring-jdbc-6.1.6.jar;D:\SOFTWARE\Maven\maven-repository\org\redisson\redisson-spring-boot-starter\3.27.2\redisson-spring-boot-starter-3.27.2.jar;D:\SOFTWARE\Maven\maven-repository\org\redisson\redisson\3.27.2\redisson-3.27.2.jar;D:\SOFTWARE\Maven\maven-repository\io\netty\netty-codec\4.1.109.Final\netty-codec-4.1.109.Final.jar;D:\SOFTWARE\Maven\maven-repository\io\netty\netty-buffer\4.1.109.Final\netty-buffer-4.1.109.Final.jar;D:\SOFTWARE\Maven\maven-repository\io\netty\netty-resolver\4.1.109.Final\netty-resolver-4.1.109.Final.jar;D:\SOFTWARE\Maven\maven-repository\io\netty\netty-resolver-dns\4.1.109.Final\netty-resolver-dns-4.1.109.Final.jar;D:\SOFTWARE\Maven\maven-repository\io\netty\netty-codec-dns\4.1.109.Final\netty-codec-dns-4.1.109.Final.jar;D:\SOFTWARE\Maven\maven-repository\javax\cache\cache-api\1.1.1\cache-api-1.1.1.jar;D:\SOFTWARE\Maven\maven-repository\org\reactivestreams\reactive-streams\1.0.4\reactive-streams-1.0.4.jar;D:\SOFTWARE\Maven\maven-repository\io\reactivex\rxjava3\rxjava\3.1.8\rxjava-3.1.8.jar;D:\SOFTWARE\Maven\maven-repository\org\jboss\marshalling\jboss-marshalling\2.0.11.Final\jboss-marshalling-2.0.11.Final.jar;D:\SOFTWARE\Maven\maven-repository\org\jboss\marshalling\jboss-marshalling-river\2.0.11.Final\jboss-marshalling-river-2.0.11.Final.jar;D:\SOFTWARE\Maven\maven-repository\com\esotericsoftware\kryo\5.6.0\kryo-5.6.0.jar;D:\SOFTWARE\Maven\maven-repository\com\esotericsoftware\reflectasm\1.11.9\reflectasm-1.11.9.jar;D:\SOFTWARE\Maven\maven-repository\com\esotericsoftware\minlog\1.3.1\minlog-1.3.1.jar;D:\SOFTWARE\Maven\maven-repository\com\fasterxml\jackson\dataformat\jackson-dataformat-yaml\2.15.4\jackson-dataformat-yaml-2.15.4.jar;D:\SOFTWARE\Maven\maven-repository\net\bytebuddy\byte-buddy\1.14.13\byte-buddy-1.14.13.jar;D:\SOFTWARE\Maven\maven-repository\org\jodd\jodd-bean\5.1.6\jodd-bean-5.1.6.jar;D:\SOFTWARE\Maven\maven-repository\org\jodd\jodd-core\5.1.6\jodd-core-5.1.6.jar;D:\SOFTWARE\Maven\maven-repository\org\redisson\redisson-spring-data-32\3.27.2\redisson-spring-data-32-3.27.2.jar;D:\SOFTWARE\Maven\maven-repository\com\github\xiaoymin\knife4j-openapi3-jakarta-spring-boot-starter\4.5.0\knife4j-openapi3-jakarta-spring-boot-starter-4.5.0.jar;D:\SOFTWARE\Maven\maven-repository\com\github\xiaoymin\knife4j-core\4.5.0\knife4j-core-4.5.0.jar;D:\SOFTWARE\Maven\maven-repository\com\github\xiaoymin\knife4j-openapi3-ui\4.5.0\knife4j-openapi3-ui-4.5.0.jar;D:\SOFTWARE\Maven\maven-repository\org\springdoc\springdoc-openapi-starter-webmvc-ui\2.3.0\springdoc-openapi-starter-webmvc-ui-2.3.0.jar;D:\SOFTWARE\Maven\maven-repository\org\springdoc\springdoc-openapi-starter-webmvc-api\2.3.0\springdoc-openapi-starter-webmvc-api-2.3.0.jar;D:\SOFTWARE\Maven\maven-repository\org\springdoc\springdoc-openapi-starter-common\2.3.0\springdoc-openapi-starter-common-2.3.0.jar;D:\SOFTWARE\Maven\maven-repository\io\swagger\core\v3\swagger-core-jakarta\2.2.19\swagger-core-jakarta-2.2.19.jar;D:\SOFTWARE\Maven\maven-repository\org\apache\commons\commons-lang3\3.13.0\commons-lang3-3.13.0.jar;D:\SOFTWARE\Maven\maven-repository\io\swagger\core\v3\swagger-annotations-jakarta\2.2.19\swagger-annotations-jakarta-2.2.19.jar;D:\SOFTWARE\Maven\maven-repository\io\swagger\core\v3\swagger-models-jakarta\2.2.19\swagger-models-jakarta-2.2.19.jar;D:\SOFTWARE\Maven\maven-repository\org\webjars\swagger-ui\5.10.3\swagger-ui-5.10.3.jar;D:\SOFTWARE\Maven\maven-repository\com\mysql\mysql-connector-j\8.3.0\mysql-connector-j-8.3.0.jar;D:\SOFTWARE\Maven\maven-repository\org\projectlombok\lombok\1.18.30\lombok-1.18.30.jar;D:\SOFTWARE\Maven\maven-repository\org\mapstruct\mapstruct\1.5.5.Final\mapstruct-1.5.5.Final.jar;D:\SOFTWARE\Maven\maven-repository\org\jsoup\jsoup\1.17.2\jsoup-1.17.2.jar;D:\SOFTWARE\Maven\maven-repository\io\minio\minio\8.5.7\minio-8.5.7.jar;D:\SOFTWARE\Maven\maven-repository\com\carrotsearch\thirdparty\simple-xml-safe\2.7.1\simple-xml-safe-2.7.1.jar;D:\SOFTWARE\Maven\maven-repository\com\google\guava\guava\32.1.3-jre\guava-32.1.3-jre.jar;D:\SOFTWARE\Maven\maven-repository\com\google\guava\failureaccess\1.0.1\failureaccess-1.0.1.jar;D:\SOFTWARE\Maven\maven-repository\com\google\guava\listenablefuture\9999.0-empty-to-avoid-conflict-with-guava\listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar;D:\SOFTWARE\Maven\maven-repository\com\google\code\findbugs\jsr305\3.0.2\jsr305-3.0.2.jar;D:\SOFTWARE\Maven\maven-repository\org\checkerframework\checker-qual\3.37.0\checker-qual-3.37.0.jar;D:\SOFTWARE\Maven\maven-repository\com\google\errorprone\error_prone_annotations\2.21.1\error_prone_annotations-2.21.1.jar;D:\SOFTWARE\Maven\maven-repository\com\google\j2objc\j2objc-annotations\2.8\j2objc-annotations-2.8.jar;D:\SOFTWARE\Maven\maven-repository\com\squareup\okhttp3\okhttp\4.12.0\okhttp-4.12.0.jar;D:\SOFTWARE\Maven\maven-repository\com\squareup\okio\okio\3.6.0\okio-3.6.0.jar;D:\SOFTWARE\Maven\maven-repository\com\squareup\okio\okio-jvm\3.6.0\okio-jvm-3.6.0.jar;D:\SOFTWARE\Maven\maven-repository\org\jetbrains\kotlin\kotlin-stdlib-common\1.9.23\kotlin-stdlib-common-1.9.23.jar;D:\SOFTWARE\Maven\maven-repository\org\jetbrains\kotlin\kotlin-stdlib-jdk8\1.9.23\kotlin-stdlib-jdk8-1.9.23.jar;D:\SOFTWARE\Maven\maven-repository\org\jetbrains\kotlin\kotlin-stdlib\1.9.23\kotlin-stdlib-1.9.23.jar;D:\SOFTWARE\Maven\maven-repository\org\jetbrains\kotlin\kotlin-stdlib-jdk7\1.9.23\kotlin-stdlib-jdk7-1.9.23.jar;D:\SOFTWARE\Maven\maven-repository\com\fasterxml\jackson\core\jackson-annotations\2.15.4\jackson-annotations-2.15.4.jar;D:\SOFTWARE\Maven\maven-repository\com\fasterxml\jackson\core\jackson-core\2.15.4\jackson-core-2.15.4.jar;D:\SOFTWARE\Maven\maven-repository\com\fasterxml\jackson\core\jackson-databind\2.15.4\jackson-databind-2.15.4.jar;D:\SOFTWARE\Maven\maven-repository\org\bouncycastle\bcprov-jdk18on\1.76\bcprov-jdk18on-1.76.jar;D:\SOFTWARE\Maven\maven-repository\org\apache\commons\commons-compress\1.24.0\commons-compress-1.24.0.jar;D:\SOFTWARE\Maven\maven-repository\org\xerial\snappy\snappy-java\1.1.10.5\snappy-java-1.1.10.5.jar;D:\SOFTWARE\Maven\maven-repository\org\apache\poi\poi-ooxml\5.2.3\poi-ooxml-5.2.3.jar;D:\SOFTWARE\Maven\maven-repository\org\apache\poi\poi\5.2.3\poi-5.2.3.jar;D:\SOFTWARE\Maven\maven-repository\commons-codec\commons-codec\1.16.1\commons-codec-1.16.1.jar;D:\SOFTWARE\Maven\maven-repository\org\apache\commons\commons-math3\3.6.1\commons-math3-3.6.1.jar;D:\SOFTWARE\Maven\maven-repository\com\zaxxer\SparseBitSet\1.2\SparseBitSet-1.2.jar;D:\SOFTWARE\Maven\maven-repository\org\apache\poi\poi-ooxml-lite\5.2.3\poi-ooxml-lite-5.2.3.jar;D:\SOFTWARE\Maven\maven-repository\org\apache\xmlbeans\xmlbeans\5.1.1\xmlbeans-5.1.1.jar;D:\SOFTWARE\Maven\maven-repository\commons-io\commons-io\2.11.0\commons-io-2.11.0.jar;D:\SOFTWARE\Maven\maven-repository\com\github\virtuald\curvesapi\1.07\curvesapi-1.07.jar;D:\SOFTWARE\Maven\maven-repository\org\apache\logging\log4j\log4j-api\2.21.1\log4j-api-2.21.1.jar;D:\SOFTWARE\Maven\maven-repository\org\apache\commons\commons-collections4\4.4\commons-collections4-4.4.jar;D:\SOFTWARE\Maven\maven-repository\io\jsonwebtoken\jjwt-api\0.12.3\jjwt-api-0.12.3.jar;D:\SOFTWARE\Maven\maven-repository\io\jsonwebtoken\jjwt-impl\0.12.3\jjwt-impl-0.12.3.jar;D:\SOFTWARE\Maven\maven-repository\io\jsonwebtoken\jjwt-jackson\0.12.3\jjwt-jackson-0.12.3.jar;D:\SOFTWARE\Maven\maven-repository\jakarta\xml\bind\jakarta.xml.bind-api\4.0.2\jakarta.xml.bind-api-4.0.2.jar;D:\SOFTWARE\Maven\maven-repository\org\objenesis\objenesis\3.3\objenesis-3.3.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\spring-core\6.1.6\spring-core-6.1.6.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\spring-jcl\6.1.6\spring-jcl-6.1.6.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\security\spring-security-core\6.2.4\spring-security-core-6.2.4.jar;D:\SOFTWARE\Maven\maven-repository\org\springframework\security\spring-security-crypto\6.2.4\spring-security-crypto-6.2.4.jar;D:\SOFTWARE\Maven\maven-repository\org\slf4j\slf4j-api\2.0.13\slf4j-api-2.0.13.jar;D:\SOFTWARE\Maven\maven-repository\org\jetbrains\annotations\17.0.0\annotations-17.0.0.jar;D:\SOFTWARE\JetBrains\IntelliJ IDEA 2025.3.4\lib\idea_rt.jar" com.seckill.mall.SeckillMallApplication
+已连接到地址为 ''127.0.0.1:57916'，传输: '套接字'' 的目标虚拟机
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.5)
+
+2026-08-07T15:46:39.352+08:00  INFO 40792 --- [           main] c.seckill.mall.SeckillMallApplication    : Starting SeckillMallApplication using Java 17.0.8 with PID 40792 (D:\DESk\SpringBoot\seckill-mall\target\classes started by WNJ in D:\DESk\SpringBoot\seckill-mall)
+2026-08-07T15:46:39.355+08:00 DEBUG 40792 --- [           main] c.seckill.mall.SeckillMallApplication    : Running with Spring Boot v3.2.5, Spring v6.1.6
+2026-08-07T15:46:39.355+08:00  INFO 40792 --- [           main] c.seckill.mall.SeckillMallApplication    : The following 1 profile is active: "dev"
+2026-08-07T15:46:40.309+08:00  INFO 40792 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-08-07T15:46:40.311+08:00  INFO 40792 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-08-07T15:46:40.337+08:00  INFO 40792 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 16 ms. Found 0 Redis repository interfaces.
+2026-08-07T15:46:41.113+08:00  INFO 40792 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-08-07T15:46:41.121+08:00  INFO 40792 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-08-07T15:46:41.121+08:00  INFO 40792 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-08-07T15:46:41.192+08:00  INFO 40792 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-08-07T15:46:41.192+08:00  INFO 40792 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1807 ms
+2026-08-07T15:46:41.316+08:00  INFO 40792 --- [           main] com.seckill.mall.security.JwtUtils       : RSA 密钥对加载成功，JWT 签名算法: RS256
+2026-08-07T15:46:41.398+08:00  INFO 40792 --- [           main] org.redisson.Version                     : Redisson 3.27.2
+2026-08-07T15:46:41.691+08:00  INFO 40792 --- [isson-netty-1-5] o.redisson.connection.ConnectionsHolder  : 1 connections initialized for localhost/127.0.0.1:6379
+2026-08-07T15:46:41.754+08:00  INFO 40792 --- [sson-netty-1-20] o.redisson.connection.ConnectionsHolder  : 24 connections initialized for localhost/127.0.0.1:6379
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.5 
+2026-08-07T15:46:42.386+08:00 DEBUG 40792 --- [           main] c.s.m.security.JwtAuthenticationFilter   : Filter 'jwtAuthenticationFilter' configured for use
+2026-08-07T15:46:42.387+08:00 DEBUG 40792 --- [           main] c.s.m.security.ReplayProtectionFilter    : Filter 'replayProtectionFilter' configured for use
+2026-08-07T15:46:42.422+08:00  INFO 40792 --- [           main] c.seckill.mall.aspect.RateLimitAspect    : RateLimitAspect 可信代理白名单: [::1, 127.0.0.1]
+2026-08-07T15:46:43.620+08:00  INFO 40792 --- [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 4 endpoint(s) beneath base path '/actuator'
+2026-08-07T15:46:43.646+08:00  INFO 40792 --- [           main] com.seckill.mall.config.SecurityConfig   : CORS allowed origins: [http://localhost:5173] (profile=dev)
+2026-08-07T15:46:43.685+08:00  INFO 40792 --- [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@2a1fce44, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@48d6248d, org.springframework.security.web.context.SecurityContextHolderFilter@23bf19c9, org.springframework.security.web.header.HeaderWriterFilter@46aa5294, org.springframework.web.filter.CorsFilter@6b5fdbd0, org.springframework.security.web.authentication.logout.LogoutFilter@7b237c2c, com.seckill.mall.security.JwtAuthenticationFilter@3a36da5e, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@4f7a2262, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@50c442a5, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@c32908c, org.springframework.security.web.session.SessionManagementFilter@7cc966a9, org.springframework.security.web.access.ExceptionTranslationFilter@2a10a99b, org.springframework.security.web.access.intercept.AuthorizationFilter@17524c36]
+2026-08-07T15:46:44.308+08:00  INFO 40792 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path ''
+2026-08-07T15:46:44.310+08:00  INFO 40792 --- [           main] o.s.a.r.c.CachingConnectionFactory       : Attempting to connect to: [localhost:5672]
+2026-08-07T15:46:44.344+08:00  INFO 40792 --- [           main] o.s.a.r.c.CachingConnectionFactory       : Created new connection: rabbitConnectionFactory#7fd3c38b:0/SimpleConnection@53e7cc08 [delegate=amqp://guest@127.0.0.1:5672/, localPort=57957]
+2026-08-07T15:46:44.442+08:00  INFO 40792 --- [           main] c.seckill.mall.SeckillMallApplication    : Started SeckillMallApplication in 5.41 seconds (process running for 5.946)
+2026-08-07T15:46:44.467+08:00  INFO 40792 --- [   scheduling-1] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-08-07T15:46:45.542+08:00 ERROR 40792 --- [   scheduling-1] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Exception during pool initialization.
+
+com.mysql.cj.jdbc.exceptions.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at com.mysql.cj.jdbc.exceptions.SQLError.createCommunicationsException(SQLError.java:174) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:64) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:815) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.<init>(ConnectionImpl.java:438) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.getInstance(ConnectionImpl.java:241) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.NonRegisteringDriver.connect(NonRegisteringDriver.java:189) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:138) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:359) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:201) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:470) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:561) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:100) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:112) ~[HikariCP-5.0.1.jar:na]
+	at org.springframework.jdbc.datasource.DataSourceUtils.fetchConnection(DataSourceUtils.java:160) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.doGetConnection(DataSourceUtils.java:118) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.getConnection(DataSourceUtils.java:81) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.mybatis.spring.transaction.SpringManagedTransaction.openConnection(SpringManagedTransaction.java:80) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at org.mybatis.spring.transaction.SpringManagedTransaction.getConnection(SpringManagedTransaction.java:67) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at org.apache.ibatis.executor.BaseExecutor.getConnection(BaseExecutor.java:348) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.SimpleExecutor.prepareStatement(SimpleExecutor.java:89) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.SimpleExecutor.doUpdate(SimpleExecutor.java:49) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.BaseExecutor.update(BaseExecutor.java:117) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.CachingExecutor.update(CachingExecutor.java:76) ~[mybatis-3.5.15.jar:3.5.15]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.apache.ibatis.plugin.Invocation.proceed(Invocation.java:49) ~[mybatis-3.5.15.jar:3.5.15]
+	at com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor.intercept(MybatisPlusInterceptor.java:106) ~[mybatis-plus-extension-3.5.5.jar:3.5.5]
+	at org.apache.ibatis.plugin.Plugin.invoke(Plugin.java:59) ~[mybatis-3.5.15.jar:3.5.15]
+	at jdk.proxy2/jdk.proxy2.$Proxy197.update(Unknown Source) ~[na:na]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.update(DefaultSqlSession.java:197) ~[mybatis-3.5.15.jar:3.5.15]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:425) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at jdk.proxy2/jdk.proxy2.$Proxy132.update(Unknown Source) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate.update(SqlSessionTemplate.java:288) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:64) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:152) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at jdk.proxy2/jdk.proxy2.$Proxy140.updatePendingToActive(Unknown Source) ~[na:na]
+	at com.seckill.mall.scheduler.SeckillStatusScheduler.updateSeckillStatus(SeckillStatusScheduler.java:47) ~[classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:130) ~[spring-context-6.1.6.jar:6.1.6]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$2(ScheduledMethodRunnable.java:124) ~[spring-context-6.1.6.jar:6.1.6]
+	at io.micrometer.observation.Observation.observe(Observation.java:499) ~[micrometer-observation-1.12.5.jar:1.12.5]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:124) ~[spring-context-6.1.6.jar:6.1.6]
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54) ~[spring-context-6.1.6.jar:6.1.6]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.runAndReset$$$capture(FutureTask.java:305) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.runAndReset(FutureTask.java) ~[na:na]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:305) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:833) ~[na:na]
+Caused by: com.mysql.cj.exceptions.CJCommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:480) ~[na:na]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:61) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:104) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:149) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createCommunicationsException(ExceptionFactory.java:165) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:88) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.NativeSession.connect(NativeSession.java:120) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.connectOneTryOnly(ConnectionImpl.java:935) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:805) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 57 common frames omitted
+Caused by: java.net.ConnectException: Connection refused: no further information
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method) ~[na:na]
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:597) ~[na:na]
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327) ~[na:na]
+	at java.base/java.net.Socket.connect(Socket.java:633) ~[na:na]
+	at com.mysql.cj.protocol.StandardSocketFactory.connect(StandardSocketFactory.java:153) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:62) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 60 common frames omitted
+
+2026-08-07T15:46:45.546+08:00  INFO 40792 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-08-07T15:46:45.548+08:00 ERROR 40792 --- [   scheduling-1] c.s.m.scheduler.SeckillStatusScheduler   : 秒杀状态定时调度异常
+
+org.mybatis.spring.MyBatisSystemException: null
+	at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:97) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:439) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at jdk.proxy2/jdk.proxy2.$Proxy132.update(Unknown Source) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate.update(SqlSessionTemplate.java:288) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:64) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:152) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at jdk.proxy2/jdk.proxy2.$Proxy140.updatePendingToActive(Unknown Source) ~[na:na]
+	at com.seckill.mall.scheduler.SeckillStatusScheduler.updateSeckillStatus(SeckillStatusScheduler.java:47) ~[classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:130) ~[spring-context-6.1.6.jar:6.1.6]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$2(ScheduledMethodRunnable.java:124) ~[spring-context-6.1.6.jar:6.1.6]
+	at io.micrometer.observation.Observation.observe(Observation.java:499) ~[micrometer-observation-1.12.5.jar:1.12.5]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:124) ~[spring-context-6.1.6.jar:6.1.6]
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54) ~[spring-context-6.1.6.jar:6.1.6]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.runAndReset$$$capture(FutureTask.java:305) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.runAndReset(FutureTask.java) ~[na:na]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:305) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:833) ~[na:na]
+Caused by: org.apache.ibatis.exceptions.PersistenceException: 
+### Error updating database.  Cause: org.springframework.jdbc.CannotGetJdbcConnectionException: Failed to obtain JDBC Connection
+### The error may exist in file [D:\DESk\SpringBoot\seckill-mall\target\classes\mapper\SeckillGoodsMapper.xml]
+### The error may involve com.seckill.mall.mapper.SeckillGoodsMapper.updatePendingToActive
+### The error occurred while executing an update
+### Cause: org.springframework.jdbc.CannotGetJdbcConnectionException: Failed to obtain JDBC Connection
+	at org.apache.ibatis.exceptions.ExceptionFactory.wrapException(ExceptionFactory.java:30) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.update(DefaultSqlSession.java:199) ~[mybatis-3.5.15.jar:3.5.15]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:425) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	... 23 common frames omitted
+Caused by: org.springframework.jdbc.CannotGetJdbcConnectionException: Failed to obtain JDBC Connection
+	at org.springframework.jdbc.datasource.DataSourceUtils.getConnection(DataSourceUtils.java:84) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.mybatis.spring.transaction.SpringManagedTransaction.openConnection(SpringManagedTransaction.java:80) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at org.mybatis.spring.transaction.SpringManagedTransaction.getConnection(SpringManagedTransaction.java:67) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at org.apache.ibatis.executor.BaseExecutor.getConnection(BaseExecutor.java:348) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.SimpleExecutor.prepareStatement(SimpleExecutor.java:89) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.SimpleExecutor.doUpdate(SimpleExecutor.java:49) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.BaseExecutor.update(BaseExecutor.java:117) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.CachingExecutor.update(CachingExecutor.java:76) ~[mybatis-3.5.15.jar:3.5.15]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.apache.ibatis.plugin.Invocation.proceed(Invocation.java:49) ~[mybatis-3.5.15.jar:3.5.15]
+	at com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor.intercept(MybatisPlusInterceptor.java:106) ~[mybatis-plus-extension-3.5.5.jar:3.5.5]
+	at org.apache.ibatis.plugin.Plugin.invoke(Plugin.java:59) ~[mybatis-3.5.15.jar:3.5.15]
+	at jdk.proxy2/jdk.proxy2.$Proxy197.update(Unknown Source) ~[na:na]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.update(DefaultSqlSession.java:197) ~[mybatis-3.5.15.jar:3.5.15]
+	... 28 common frames omitted
+Caused by: com.mysql.cj.jdbc.exceptions.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at com.mysql.cj.jdbc.exceptions.SQLError.createCommunicationsException(SQLError.java:174) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:64) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:815) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.<init>(ConnectionImpl.java:438) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.getInstance(ConnectionImpl.java:241) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.NonRegisteringDriver.connect(NonRegisteringDriver.java:189) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:138) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:359) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:201) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:470) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:561) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:100) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:112) ~[HikariCP-5.0.1.jar:na]
+	at org.springframework.jdbc.datasource.DataSourceUtils.fetchConnection(DataSourceUtils.java:160) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.doGetConnection(DataSourceUtils.java:118) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.getConnection(DataSourceUtils.java:81) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	... 44 common frames omitted
+Caused by: com.mysql.cj.exceptions.CJCommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:480) ~[na:na]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:61) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:104) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:149) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createCommunicationsException(ExceptionFactory.java:165) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:88) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.NativeSession.connect(NativeSession.java:120) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.connectOneTryOnly(ConnectionImpl.java:935) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:805) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 57 common frames omitted
+Caused by: java.net.ConnectException: Connection refused: no further information
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method) ~[na:na]
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:597) ~[na:na]
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327) ~[na:na]
+	at java.base/java.net.Socket.connect(Socket.java:633) ~[na:na]
+	at com.mysql.cj.protocol.StandardSocketFactory.connect(StandardSocketFactory.java:153) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:62) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 60 common frames omitted
+
+2026-08-07T15:46:46.584+08:00 ERROR 40792 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Exception during pool initialization.
+
+com.mysql.cj.jdbc.exceptions.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at com.mysql.cj.jdbc.exceptions.SQLError.createCommunicationsException(SQLError.java:174) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:64) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:815) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.<init>(ConnectionImpl.java:438) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.getInstance(ConnectionImpl.java:241) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.NonRegisteringDriver.connect(NonRegisteringDriver.java:189) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:138) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:359) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:201) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:470) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:561) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:100) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:112) ~[HikariCP-5.0.1.jar:na]
+	at org.springframework.jdbc.datasource.DataSourceUtils.fetchConnection(DataSourceUtils.java:160) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.doGetConnection(DataSourceUtils.java:118) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.getConnection(DataSourceUtils.java:81) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.mybatis.spring.transaction.SpringManagedTransaction.openConnection(SpringManagedTransaction.java:80) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at org.mybatis.spring.transaction.SpringManagedTransaction.getConnection(SpringManagedTransaction.java:67) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at org.apache.ibatis.executor.BaseExecutor.getConnection(BaseExecutor.java:348) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.SimpleExecutor.prepareStatement(SimpleExecutor.java:89) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.SimpleExecutor.doQuery(SimpleExecutor.java:64) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.BaseExecutor.queryFromDatabase(BaseExecutor.java:336) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.BaseExecutor.query(BaseExecutor.java:158) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.CachingExecutor.query(CachingExecutor.java:110) ~[mybatis-3.5.15.jar:3.5.15]
+	at com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor.willDoQuery(PaginationInnerInterceptor.java:135) ~[mybatis-plus-extension-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor.intercept(MybatisPlusInterceptor.java:75) ~[mybatis-plus-extension-3.5.5.jar:3.5.5]
+	at org.apache.ibatis.plugin.Plugin.invoke(Plugin.java:59) ~[mybatis-3.5.15.jar:3.5.15]
+	at jdk.proxy2/jdk.proxy2.$Proxy197.query(Unknown Source) ~[na:na]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:154) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:147) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:142) ~[mybatis-3.5.15.jar:3.5.15]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:425) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at jdk.proxy2/jdk.proxy2.$Proxy132.selectList(Unknown Source) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate.selectList(SqlSessionTemplate.java:224) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.executeForMany(MybatisMapperMethod.java:164) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:77) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:152) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at jdk.proxy2/jdk.proxy2.$Proxy140.selectList(Unknown Source) ~[na:na]
+	at com.baomidou.mybatisplus.core.mapper.BaseMapper.selectPage(BaseMapper.java:348) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at java.base/java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:732) ~[na:na]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$DefaultMethodInvoker.invoke(MybatisMapperProxy.java:166) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at jdk.proxy2/jdk.proxy2.$Proxy140.selectPage(Unknown Source) ~[na:na]
+	at com.seckill.mall.cache.SeckillBloomInitializer.run(SeckillBloomInitializer.java:49) ~[classes/:na]
+	at org.springframework.boot.SpringApplication.lambda$callRunner$4(SpringApplication.java:786) ~[spring-boot-3.2.5.jar:3.2.5]
+	at org.springframework.util.function.ThrowingConsumer$1.acceptWithException(ThrowingConsumer.java:83) ~[spring-core-6.1.6.jar:6.1.6]
+	at org.springframework.util.function.ThrowingConsumer.accept(ThrowingConsumer.java:60) ~[spring-core-6.1.6.jar:6.1.6]
+	at org.springframework.util.function.ThrowingConsumer$1.accept(ThrowingConsumer.java:88) ~[spring-core-6.1.6.jar:6.1.6]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:798) ~[spring-boot-3.2.5.jar:3.2.5]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:786) ~[spring-boot-3.2.5.jar:3.2.5]
+	at org.springframework.boot.SpringApplication.lambda$callRunners$3(SpringApplication.java:774) ~[spring-boot-3.2.5.jar:3.2.5]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183) ~[na:na]
+	at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:357) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) ~[na:na]
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596) ~[na:na]
+	at org.springframework.boot.SpringApplication.callRunners(SpringApplication.java:774) ~[spring-boot-3.2.5.jar:3.2.5]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:341) ~[spring-boot-3.2.5.jar:3.2.5]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354) ~[spring-boot-3.2.5.jar:3.2.5]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1343) ~[spring-boot-3.2.5.jar:3.2.5]
+	at com.seckill.mall.SeckillMallApplication.main(SeckillMallApplication.java:18) ~[classes/:na]
+Caused by: com.mysql.cj.exceptions.CJCommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:480) ~[na:na]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:61) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:104) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:149) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createCommunicationsException(ExceptionFactory.java:165) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:88) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.NativeSession.connect(NativeSession.java:120) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.connectOneTryOnly(ConnectionImpl.java:935) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:805) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 66 common frames omitted
+Caused by: java.net.ConnectException: Connection refused: no further information
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method) ~[na:na]
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:597) ~[na:na]
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327) ~[na:na]
+	at java.base/java.net.Socket.connect(Socket.java:633) ~[na:na]
+	at com.mysql.cj.protocol.StandardSocketFactory.connect(StandardSocketFactory.java:153) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:62) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 69 common frames omitted
+
+2026-08-07T15:46:46.585+08:00  INFO 40792 --- [   scheduling-1] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-08-07T15:46:46.586+08:00 ERROR 40792 --- [           main] c.s.mall.cache.SeckillBloomInitializer   : 布隆过滤器初始化异常(已加载 0 个 ID)，继续启动以避免阻塞应用
+
+org.mybatis.spring.MyBatisSystemException: null
+	at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:97) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:439) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at jdk.proxy2/jdk.proxy2.$Proxy132.selectList(Unknown Source) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate.selectList(SqlSessionTemplate.java:224) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.executeForMany(MybatisMapperMethod.java:164) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:77) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:152) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at jdk.proxy2/jdk.proxy2.$Proxy140.selectList(Unknown Source) ~[na:na]
+	at com.baomidou.mybatisplus.core.mapper.BaseMapper.selectPage(BaseMapper.java:348) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at java.base/java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:732) ~[na:na]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$DefaultMethodInvoker.invoke(MybatisMapperProxy.java:166) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at jdk.proxy2/jdk.proxy2.$Proxy140.selectPage(Unknown Source) ~[na:na]
+	at com.seckill.mall.cache.SeckillBloomInitializer.run(SeckillBloomInitializer.java:49) ~[classes/:na]
+	at org.springframework.boot.SpringApplication.lambda$callRunner$4(SpringApplication.java:786) ~[spring-boot-3.2.5.jar:3.2.5]
+	at org.springframework.util.function.ThrowingConsumer$1.acceptWithException(ThrowingConsumer.java:83) ~[spring-core-6.1.6.jar:6.1.6]
+	at org.springframework.util.function.ThrowingConsumer.accept(ThrowingConsumer.java:60) ~[spring-core-6.1.6.jar:6.1.6]
+	at org.springframework.util.function.ThrowingConsumer$1.accept(ThrowingConsumer.java:88) ~[spring-core-6.1.6.jar:6.1.6]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:798) ~[spring-boot-3.2.5.jar:3.2.5]
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:786) ~[spring-boot-3.2.5.jar:3.2.5]
+	at org.springframework.boot.SpringApplication.lambda$callRunners$3(SpringApplication.java:774) ~[spring-boot-3.2.5.jar:3.2.5]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:183) ~[na:na]
+	at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:357) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:510) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:150) ~[na:na]
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:173) ~[na:na]
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234) ~[na:na]
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596) ~[na:na]
+	at org.springframework.boot.SpringApplication.callRunners(SpringApplication.java:774) ~[spring-boot-3.2.5.jar:3.2.5]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:341) ~[spring-boot-3.2.5.jar:3.2.5]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354) ~[spring-boot-3.2.5.jar:3.2.5]
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1343) ~[spring-boot-3.2.5.jar:3.2.5]
+	at com.seckill.mall.SeckillMallApplication.main(SeckillMallApplication.java:18) ~[classes/:na]
+Caused by: org.apache.ibatis.exceptions.PersistenceException: 
+### Error querying database.  Cause: org.springframework.jdbc.CannotGetJdbcConnectionException: Failed to obtain JDBC Connection
+### The error may exist in com/seckill/mall/mapper/SeckillGoodsMapper.java (best guess)
+### The error may involve com.seckill.mall.mapper.SeckillGoodsMapper.selectList_mpCount
+### The error occurred while executing a query
+### Cause: org.springframework.jdbc.CannotGetJdbcConnectionException: Failed to obtain JDBC Connection
+	at org.apache.ibatis.exceptions.ExceptionFactory.wrapException(ExceptionFactory.java:30) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:156) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:147) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:142) ~[mybatis-3.5.15.jar:3.5.15]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:425) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	... 33 common frames omitted
+Caused by: org.springframework.jdbc.CannotGetJdbcConnectionException: Failed to obtain JDBC Connection
+	at org.springframework.jdbc.datasource.DataSourceUtils.getConnection(DataSourceUtils.java:84) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.mybatis.spring.transaction.SpringManagedTransaction.openConnection(SpringManagedTransaction.java:80) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at org.mybatis.spring.transaction.SpringManagedTransaction.getConnection(SpringManagedTransaction.java:67) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at org.apache.ibatis.executor.BaseExecutor.getConnection(BaseExecutor.java:348) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.SimpleExecutor.prepareStatement(SimpleExecutor.java:89) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.SimpleExecutor.doQuery(SimpleExecutor.java:64) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.BaseExecutor.queryFromDatabase(BaseExecutor.java:336) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.BaseExecutor.query(BaseExecutor.java:158) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.CachingExecutor.query(CachingExecutor.java:110) ~[mybatis-3.5.15.jar:3.5.15]
+	at com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor.willDoQuery(PaginationInnerInterceptor.java:135) ~[mybatis-plus-extension-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor.intercept(MybatisPlusInterceptor.java:75) ~[mybatis-plus-extension-3.5.5.jar:3.5.5]
+	at org.apache.ibatis.plugin.Plugin.invoke(Plugin.java:59) ~[mybatis-3.5.15.jar:3.5.15]
+	at jdk.proxy2/jdk.proxy2.$Proxy197.query(Unknown Source) ~[na:na]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:154) ~[mybatis-3.5.15.jar:3.5.15]
+	... 40 common frames omitted
+Caused by: com.mysql.cj.jdbc.exceptions.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at com.mysql.cj.jdbc.exceptions.SQLError.createCommunicationsException(SQLError.java:174) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:64) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:815) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.<init>(ConnectionImpl.java:438) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.getInstance(ConnectionImpl.java:241) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.NonRegisteringDriver.connect(NonRegisteringDriver.java:189) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:138) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:359) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:201) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:470) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:561) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:100) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:112) ~[HikariCP-5.0.1.jar:na]
+	at org.springframework.jdbc.datasource.DataSourceUtils.fetchConnection(DataSourceUtils.java:160) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.doGetConnection(DataSourceUtils.java:118) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.getConnection(DataSourceUtils.java:81) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	... 53 common frames omitted
+Caused by: com.mysql.cj.exceptions.CJCommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:480) ~[na:na]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:61) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:104) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:149) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createCommunicationsException(ExceptionFactory.java:165) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:88) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.NativeSession.connect(NativeSession.java:120) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.connectOneTryOnly(ConnectionImpl.java:935) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:805) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 66 common frames omitted
+Caused by: java.net.ConnectException: Connection refused: no further information
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method) ~[na:na]
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:597) ~[na:na]
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327) ~[na:na]
+	at java.base/java.net.Socket.connect(Socket.java:633) ~[na:na]
+	at com.mysql.cj.protocol.StandardSocketFactory.connect(StandardSocketFactory.java:153) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:62) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 69 common frames omitted
+
+2026-08-07T15:46:46.739+08:00  INFO 40792 --- [-172.19.190.106] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-08-07T15:46:46.739+08:00  INFO 40792 --- [-172.19.190.106] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-08-07T15:46:46.741+08:00  INFO 40792 --- [-172.19.190.106] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-08-07T15:46:47.629+08:00 ERROR 40792 --- [   scheduling-1] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Exception during pool initialization.
+
+com.mysql.cj.jdbc.exceptions.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at com.mysql.cj.jdbc.exceptions.SQLError.createCommunicationsException(SQLError.java:174) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:64) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:815) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.<init>(ConnectionImpl.java:438) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.getInstance(ConnectionImpl.java:241) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.NonRegisteringDriver.connect(NonRegisteringDriver.java:189) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:138) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:359) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:201) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:470) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:561) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:100) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:112) ~[HikariCP-5.0.1.jar:na]
+	at org.springframework.jdbc.datasource.DataSourceUtils.fetchConnection(DataSourceUtils.java:160) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.doGetConnection(DataSourceUtils.java:118) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.getConnection(DataSourceUtils.java:81) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.mybatis.spring.transaction.SpringManagedTransaction.openConnection(SpringManagedTransaction.java:80) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at org.mybatis.spring.transaction.SpringManagedTransaction.getConnection(SpringManagedTransaction.java:67) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at org.apache.ibatis.executor.BaseExecutor.getConnection(BaseExecutor.java:348) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.SimpleExecutor.prepareStatement(SimpleExecutor.java:89) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.SimpleExecutor.doQuery(SimpleExecutor.java:64) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.BaseExecutor.queryFromDatabase(BaseExecutor.java:336) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.BaseExecutor.query(BaseExecutor.java:158) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.CachingExecutor.query(CachingExecutor.java:110) ~[mybatis-3.5.15.jar:3.5.15]
+	at com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor.intercept(MybatisPlusInterceptor.java:81) ~[mybatis-plus-extension-3.5.5.jar:3.5.5]
+	at org.apache.ibatis.plugin.Plugin.invoke(Plugin.java:59) ~[mybatis-3.5.15.jar:3.5.15]
+	at jdk.proxy2/jdk.proxy2.$Proxy197.query(Unknown Source) ~[na:na]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:154) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:147) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:142) ~[mybatis-3.5.15.jar:3.5.15]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:425) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at jdk.proxy2/jdk.proxy2.$Proxy132.selectList(Unknown Source) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate.selectList(SqlSessionTemplate.java:224) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.executeForMany(MybatisMapperMethod.java:164) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:77) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:152) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at jdk.proxy2/jdk.proxy2.$Proxy140.selectList(Unknown Source) ~[na:na]
+	at com.seckill.mall.scheduler.SeckillStatusScheduler.reconcileStock(SeckillStatusScheduler.java:82) ~[classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:130) ~[spring-context-6.1.6.jar:6.1.6]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$2(ScheduledMethodRunnable.java:124) ~[spring-context-6.1.6.jar:6.1.6]
+	at io.micrometer.observation.Observation.observe(Observation.java:499) ~[micrometer-observation-1.12.5.jar:1.12.5]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:124) ~[spring-context-6.1.6.jar:6.1.6]
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54) ~[spring-context-6.1.6.jar:6.1.6]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.runAndReset$$$capture(FutureTask.java:305) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.runAndReset(FutureTask.java) ~[na:na]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:305) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:833) ~[na:na]
+Caused by: com.mysql.cj.exceptions.CJCommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:480) ~[na:na]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:61) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:104) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:149) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createCommunicationsException(ExceptionFactory.java:165) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:88) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.NativeSession.connect(NativeSession.java:120) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.connectOneTryOnly(ConnectionImpl.java:935) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:805) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 56 common frames omitted
+Caused by: java.net.ConnectException: Connection refused: no further information
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method) ~[na:na]
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:597) ~[na:na]
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327) ~[na:na]
+	at java.base/java.net.Socket.connect(Socket.java:633) ~[na:na]
+	at com.mysql.cj.protocol.StandardSocketFactory.connect(StandardSocketFactory.java:153) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:62) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 59 common frames omitted
+
+2026-08-07T15:46:47.630+08:00  INFO 40792 --- [-172.19.190.106] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-08-07T15:46:47.630+08:00 ERROR 40792 --- [   scheduling-1] c.s.m.scheduler.SeckillStatusScheduler   : 库存对账补偿任务异常
+
+org.mybatis.spring.MyBatisSystemException: null
+	at org.mybatis.spring.MyBatisExceptionTranslator.translateExceptionIfPossible(MyBatisExceptionTranslator.java:97) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:439) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at jdk.proxy2/jdk.proxy2.$Proxy132.selectList(Unknown Source) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate.selectList(SqlSessionTemplate.java:224) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.executeForMany(MybatisMapperMethod.java:164) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperMethod.execute(MybatisMapperMethod.java:77) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy$PlainMethodInvoker.invoke(MybatisMapperProxy.java:152) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at com.baomidou.mybatisplus.core.override.MybatisMapperProxy.invoke(MybatisMapperProxy.java:89) ~[mybatis-plus-core-3.5.5.jar:3.5.5]
+	at jdk.proxy2/jdk.proxy2.$Proxy140.selectList(Unknown Source) ~[na:na]
+	at com.seckill.mall.scheduler.SeckillStatusScheduler.reconcileStock(SeckillStatusScheduler.java:82) ~[classes/:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.runInternal(ScheduledMethodRunnable.java:130) ~[spring-context-6.1.6.jar:6.1.6]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.lambda$run$2(ScheduledMethodRunnable.java:124) ~[spring-context-6.1.6.jar:6.1.6]
+	at io.micrometer.observation.Observation.observe(Observation.java:499) ~[micrometer-observation-1.12.5.jar:1.12.5]
+	at org.springframework.scheduling.support.ScheduledMethodRunnable.run(ScheduledMethodRunnable.java:124) ~[spring-context-6.1.6.jar:6.1.6]
+	at org.springframework.scheduling.support.DelegatingErrorHandlingRunnable.run(DelegatingErrorHandlingRunnable.java:54) ~[spring-context-6.1.6.jar:6.1.6]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.runAndReset$$$capture(FutureTask.java:305) ~[na:na]
+	at java.base/java.util.concurrent.FutureTask.runAndReset(FutureTask.java) ~[na:na]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:305) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:833) ~[na:na]
+Caused by: org.apache.ibatis.exceptions.PersistenceException: 
+### Error querying database.  Cause: org.springframework.jdbc.CannotGetJdbcConnectionException: Failed to obtain JDBC Connection
+### The error may exist in com/seckill/mall/mapper/SeckillGoodsMapper.java (best guess)
+### The error may involve com.seckill.mall.mapper.SeckillGoodsMapper.selectList
+### The error occurred while executing a query
+### Cause: org.springframework.jdbc.CannotGetJdbcConnectionException: Failed to obtain JDBC Connection
+	at org.apache.ibatis.exceptions.ExceptionFactory.wrapException(ExceptionFactory.java:30) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:156) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:147) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:142) ~[mybatis-3.5.15.jar:3.5.15]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:425) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	... 24 common frames omitted
+Caused by: org.springframework.jdbc.CannotGetJdbcConnectionException: Failed to obtain JDBC Connection
+	at org.springframework.jdbc.datasource.DataSourceUtils.getConnection(DataSourceUtils.java:84) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.mybatis.spring.transaction.SpringManagedTransaction.openConnection(SpringManagedTransaction.java:80) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at org.mybatis.spring.transaction.SpringManagedTransaction.getConnection(SpringManagedTransaction.java:67) ~[mybatis-spring-3.0.3.jar:3.0.3]
+	at org.apache.ibatis.executor.BaseExecutor.getConnection(BaseExecutor.java:348) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.SimpleExecutor.prepareStatement(SimpleExecutor.java:89) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.SimpleExecutor.doQuery(SimpleExecutor.java:64) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.BaseExecutor.queryFromDatabase(BaseExecutor.java:336) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.BaseExecutor.query(BaseExecutor.java:158) ~[mybatis-3.5.15.jar:3.5.15]
+	at org.apache.ibatis.executor.CachingExecutor.query(CachingExecutor.java:110) ~[mybatis-3.5.15.jar:3.5.15]
+	at com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor.intercept(MybatisPlusInterceptor.java:81) ~[mybatis-plus-extension-3.5.5.jar:3.5.5]
+	at org.apache.ibatis.plugin.Plugin.invoke(Plugin.java:59) ~[mybatis-3.5.15.jar:3.5.15]
+	at jdk.proxy2/jdk.proxy2.$Proxy197.query(Unknown Source) ~[na:na]
+	at org.apache.ibatis.session.defaults.DefaultSqlSession.selectList(DefaultSqlSession.java:154) ~[mybatis-3.5.15.jar:3.5.15]
+	... 31 common frames omitted
+Caused by: com.mysql.cj.jdbc.exceptions.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at com.mysql.cj.jdbc.exceptions.SQLError.createCommunicationsException(SQLError.java:174) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:64) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:815) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.<init>(ConnectionImpl.java:438) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.getInstance(ConnectionImpl.java:241) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.NonRegisteringDriver.connect(NonRegisteringDriver.java:189) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:138) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:359) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:201) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:470) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:561) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:100) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:112) ~[HikariCP-5.0.1.jar:na]
+	at org.springframework.jdbc.datasource.DataSourceUtils.fetchConnection(DataSourceUtils.java:160) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.doGetConnection(DataSourceUtils.java:118) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.getConnection(DataSourceUtils.java:81) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	... 43 common frames omitted
+Caused by: com.mysql.cj.exceptions.CJCommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:480) ~[na:na]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:61) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:104) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:149) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createCommunicationsException(ExceptionFactory.java:165) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:88) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.NativeSession.connect(NativeSession.java:120) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.connectOneTryOnly(ConnectionImpl.java:935) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:805) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 56 common frames omitted
+Caused by: java.net.ConnectException: Connection refused: no further information
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method) ~[na:na]
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:597) ~[na:na]
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327) ~[na:na]
+	at java.base/java.net.Socket.connect(Socket.java:633) ~[na:na]
+	at com.mysql.cj.protocol.StandardSocketFactory.connect(StandardSocketFactory.java:153) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:62) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 59 common frames omitted
+
+2026-08-07T15:46:48.639+08:00 ERROR 40792 --- [-172.19.190.106] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Exception during pool initialization.
+
+com.mysql.cj.jdbc.exceptions.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at com.mysql.cj.jdbc.exceptions.SQLError.createCommunicationsException(SQLError.java:174) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:64) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:815) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.<init>(ConnectionImpl.java:438) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.getInstance(ConnectionImpl.java:241) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.NonRegisteringDriver.connect(NonRegisteringDriver.java:189) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:138) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:359) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:201) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:470) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:561) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:100) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:112) ~[HikariCP-5.0.1.jar:na]
+	at org.springframework.jdbc.datasource.DataSourceUtils.fetchConnection(DataSourceUtils.java:160) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.doGetConnection(DataSourceUtils.java:118) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.getConnection(DataSourceUtils.java:81) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:342) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator.getProduct(DataSourceHealthIndicator.java:122) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator.doDataSourceHealthCheck(DataSourceHealthIndicator.java:105) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator.doHealthCheck(DataSourceHealthIndicator.java:100) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.AbstractHealthIndicator.health(AbstractHealthIndicator.java:82) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthIndicator.getHealth(HealthIndicator.java:37) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpoint.getHealth(HealthEndpoint.java:82) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpoint.getHealth(HealthEndpoint.java:41) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpointSupport.getLoggedHealth(HealthEndpointSupport.java:172) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpointSupport.getContribution(HealthEndpointSupport.java:145) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpointSupport.getAggregateContribution(HealthEndpointSupport.java:156) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpointSupport.getContribution(HealthEndpointSupport.java:141) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpointSupport.getHealth(HealthEndpointSupport.java:110) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpointSupport.getHealth(HealthEndpointSupport.java:81) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpoint.health(HealthEndpoint.java:76) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpoint.health(HealthEndpoint.java:66) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.springframework.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:281) ~[spring-core-6.1.6.jar:6.1.6]
+	at org.springframework.boot.actuate.endpoint.invoke.reflect.ReflectiveOperationInvoker.invoke(ReflectiveOperationInvoker.java:74) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.endpoint.annotation.AbstractDiscoveredOperation.invoke(AbstractDiscoveredOperation.java:60) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.endpoint.jmx.EndpointMBean.invoke(EndpointMBean.java:124) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.endpoint.jmx.EndpointMBean.invoke(EndpointMBean.java:97) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at java.management/com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.invoke(DefaultMBeanServerInterceptor.java:814) ~[na:na]
+	at java.management/com.sun.jmx.mbeanserver.JmxMBeanServer.invoke(JmxMBeanServer.java:802) ~[na:na]
+	at java.management.rmi/javax.management.remote.rmi.RMIConnectionImpl.doOperation(RMIConnectionImpl.java:1472) ~[na:na]
+	at java.management.rmi/javax.management.remote.rmi.RMIConnectionImpl$PrivilegedOperation.run(RMIConnectionImpl.java:1310) ~[na:na]
+	at java.management.rmi/javax.management.remote.rmi.RMIConnectionImpl.doPrivilegedOperation(RMIConnectionImpl.java:1405) ~[na:na]
+	at java.management.rmi/javax.management.remote.rmi.RMIConnectionImpl.invoke(RMIConnectionImpl.java:829) ~[na:na]
+	at java.base/jdk.internal.reflect.GeneratedMethodAccessor28.invoke(Unknown Source) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at java.rmi/sun.rmi.server.UnicastServerRef.dispatch(UnicastServerRef.java:360) ~[na:na]
+	at java.rmi/sun.rmi.transport.Transport$1.run(Transport.java:200) ~[na:na]
+	at java.rmi/sun.rmi.transport.Transport$1.run(Transport.java:197) ~[na:na]
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:712) ~[na:na]
+	at java.rmi/sun.rmi.transport.Transport.serviceCall(Transport.java:196) ~[na:na]
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport.handleMessages(TCPTransport.java:587) ~[na:na]
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run0(TCPTransport.java:828) ~[na:na]
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.lambda$run$0(TCPTransport.java:705) ~[na:na]
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:399) ~[na:na]
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run(TCPTransport.java:704) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:833) ~[na:na]
+Caused by: com.mysql.cj.exceptions.CJCommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:480) ~[na:na]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:61) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:104) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:149) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createCommunicationsException(ExceptionFactory.java:165) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:88) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.NativeSession.connect(NativeSession.java:120) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.connectOneTryOnly(ConnectionImpl.java:935) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:805) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 60 common frames omitted
+Caused by: java.net.ConnectException: Connection refused: no further information
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method) ~[na:na]
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:597) ~[na:na]
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327) ~[na:na]
+	at java.base/java.net.Socket.connect(Socket.java:633) ~[na:na]
+	at com.mysql.cj.protocol.StandardSocketFactory.connect(StandardSocketFactory.java:153) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:62) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 63 common frames omitted
+
+2026-08-07T15:46:48.639+08:00  WARN 40792 --- [-172.19.190.106] o.s.b.a.jdbc.DataSourceHealthIndicator   : DataSource health check failed
+
+org.springframework.jdbc.CannotGetJdbcConnectionException: Failed to obtain JDBC Connection
+	at org.springframework.jdbc.datasource.DataSourceUtils.getConnection(DataSourceUtils.java:84) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:342) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator.getProduct(DataSourceHealthIndicator.java:122) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator.doDataSourceHealthCheck(DataSourceHealthIndicator.java:105) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.jdbc.DataSourceHealthIndicator.doHealthCheck(DataSourceHealthIndicator.java:100) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.AbstractHealthIndicator.health(AbstractHealthIndicator.java:82) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthIndicator.getHealth(HealthIndicator.java:37) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpoint.getHealth(HealthEndpoint.java:82) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpoint.getHealth(HealthEndpoint.java:41) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpointSupport.getLoggedHealth(HealthEndpointSupport.java:172) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpointSupport.getContribution(HealthEndpointSupport.java:145) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpointSupport.getAggregateContribution(HealthEndpointSupport.java:156) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpointSupport.getContribution(HealthEndpointSupport.java:141) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpointSupport.getHealth(HealthEndpointSupport.java:110) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpointSupport.getHealth(HealthEndpointSupport.java:81) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpoint.health(HealthEndpoint.java:76) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.health.HealthEndpoint.health(HealthEndpoint.java:66) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at org.springframework.util.ReflectionUtils.invokeMethod(ReflectionUtils.java:281) ~[spring-core-6.1.6.jar:6.1.6]
+	at org.springframework.boot.actuate.endpoint.invoke.reflect.ReflectiveOperationInvoker.invoke(ReflectiveOperationInvoker.java:74) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.endpoint.annotation.AbstractDiscoveredOperation.invoke(AbstractDiscoveredOperation.java:60) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.endpoint.jmx.EndpointMBean.invoke(EndpointMBean.java:124) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at org.springframework.boot.actuate.endpoint.jmx.EndpointMBean.invoke(EndpointMBean.java:97) ~[spring-boot-actuator-3.2.5.jar:3.2.5]
+	at java.management/com.sun.jmx.interceptor.DefaultMBeanServerInterceptor.invoke(DefaultMBeanServerInterceptor.java:814) ~[na:na]
+	at java.management/com.sun.jmx.mbeanserver.JmxMBeanServer.invoke(JmxMBeanServer.java:802) ~[na:na]
+	at java.management.rmi/javax.management.remote.rmi.RMIConnectionImpl.doOperation(RMIConnectionImpl.java:1472) ~[na:na]
+	at java.management.rmi/javax.management.remote.rmi.RMIConnectionImpl$PrivilegedOperation.run(RMIConnectionImpl.java:1310) ~[na:na]
+	at java.management.rmi/javax.management.remote.rmi.RMIConnectionImpl.doPrivilegedOperation(RMIConnectionImpl.java:1405) ~[na:na]
+	at java.management.rmi/javax.management.remote.rmi.RMIConnectionImpl.invoke(RMIConnectionImpl.java:829) ~[na:na]
+	at java.base/jdk.internal.reflect.GeneratedMethodAccessor28.invoke(Unknown Source) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568) ~[na:na]
+	at java.rmi/sun.rmi.server.UnicastServerRef.dispatch(UnicastServerRef.java:360) ~[na:na]
+	at java.rmi/sun.rmi.transport.Transport$1.run(Transport.java:200) ~[na:na]
+	at java.rmi/sun.rmi.transport.Transport$1.run(Transport.java:197) ~[na:na]
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:712) ~[na:na]
+	at java.rmi/sun.rmi.transport.Transport.serviceCall(Transport.java:196) ~[na:na]
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport.handleMessages(TCPTransport.java:587) ~[na:na]
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run0(TCPTransport.java:828) ~[na:na]
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.lambda$run$0(TCPTransport.java:705) ~[na:na]
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:399) ~[na:na]
+	at java.rmi/sun.rmi.transport.tcp.TCPTransport$ConnectionHandler.run(TCPTransport.java:704) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[na:na]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[na:na]
+	at java.base/java.lang.Thread.run(Thread.java:833) ~[na:na]
+Caused by: com.mysql.cj.jdbc.exceptions.CommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at com.mysql.cj.jdbc.exceptions.SQLError.createCommunicationsException(SQLError.java:174) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:64) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:815) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.<init>(ConnectionImpl.java:438) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.getInstance(ConnectionImpl.java:241) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.NonRegisteringDriver.connect(NonRegisteringDriver.java:189) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:138) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:359) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:201) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:470) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:561) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:100) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:112) ~[HikariCP-5.0.1.jar:na]
+	at org.springframework.jdbc.datasource.DataSourceUtils.fetchConnection(DataSourceUtils.java:160) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.doGetConnection(DataSourceUtils.java:118) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	at org.springframework.jdbc.datasource.DataSourceUtils.getConnection(DataSourceUtils.java:81) ~[spring-jdbc-6.1.6.jar:6.1.6]
+	... 47 common frames omitted
+Caused by: com.mysql.cj.exceptions.CJCommunicationsException: Communications link failure
+
+The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) ~[na:na]
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77) ~[na:na]
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:499) ~[na:na]
+	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:480) ~[na:na]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:61) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:104) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createException(ExceptionFactory.java:149) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.exceptions.ExceptionFactory.createCommunicationsException(ExceptionFactory.java:165) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:88) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.NativeSession.connect(NativeSession.java:120) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.connectOneTryOnly(ConnectionImpl.java:935) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:805) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 60 common frames omitted
+Caused by: java.net.ConnectException: Connection refused: no further information
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method) ~[na:na]
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:672) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542) ~[na:na]
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:597) ~[na:na]
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327) ~[na:na]
+	at java.base/java.net.Socket.connect(Socket.java:633) ~[na:na]
+	at com.mysql.cj.protocol.StandardSocketFactory.connect(StandardSocketFactory.java:153) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:62) ~[mysql-connector-j-8.3.0.jar:8.3.0]
+	... 63 common frames omitted
+

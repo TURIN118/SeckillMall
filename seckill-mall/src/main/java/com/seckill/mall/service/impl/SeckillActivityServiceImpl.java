@@ -19,10 +19,11 @@ import com.seckill.mall.vo.SeckillActivityVO;
 import com.seckill.mall.vo.SeckillGoodsVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -46,6 +47,7 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
     private final ProductMapper productMapper;
     private final SeckillGoodsService seckillGoodsService;
     private final ObjectMapper objectMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -109,18 +111,47 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
             createdGoodsIds.add(g.getId());
         }
 
-        // 5. 事务提交后预热缓存（避免回滚后缓存与 DB 不一致）
-        registerAfterCommit(() -> {
-            for (Long gid : createdGoodsIds) {
-                try {
-                    seckillGoodsService.preheatSeckill(gid);
-                } catch (Exception e) {
-                    log.warn("场次商品预热失败 gid={}", gid, e);
-                }
-            }
-        });
+        // C6 修复：使用 @TransactionalEventListener(AFTER_COMMIT) 替代 registerAfterCommit，
+        // 预热异常不影响主流程（事务已提交），且事件驱动方式更标准。
+        eventPublisher.publishEvent(new SeckillPreheatEvent(createdGoodsIds));
 
         return toActivityVO(activity, goodsList, productMap);
+    }
+
+    /**
+     * C6 修复：事务提交后预热缓存事件监听器。
+     * <p>
+     * 使用 {@link TransactionalEventListener}(phase = AFTER_COMMIT) 确保：
+     * 1) 预热在事务提交后执行，避免回滚后缓存与 DB 不一致
+     * 2) 预热异常不影响主流程（事务已提交，异常被 try-catch 吞掉）
+     * 3) 无事务上下文时（如手动调用），@TransactionalEventListener 默认不执行，
+     *    但可通过 fallbackExecution=true 启用。此处保留默认行为。
+     */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onSeckillPreheat(SeckillPreheatEvent event) {
+        for (Long gid : event.getGoodsIds()) {
+            try {
+                seckillGoodsService.preheatSeckill(gid);
+            } catch (Exception e) {
+                // C6 修复：预热异常仅记录日志，不影响主流程
+                log.warn("场次商品预热失败 gid={}", gid, e);
+            }
+        }
+    }
+
+    /**
+     * C6 修复：秒杀场次创建后预热事件。
+     */
+    public static class SeckillPreheatEvent {
+        private final List<Long> goodsIds;
+
+        public SeckillPreheatEvent(List<Long> goodsIds) {
+            this.goodsIds = goodsIds;
+        }
+
+        public List<Long> getGoodsIds() {
+            return goodsIds;
+        }
     }
 
     @Override
@@ -260,19 +291,6 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
         } catch (Exception e) {
             log.warn("反序列化图片列表失败: {}", images, e);
             return Collections.emptyList();
-        }
-    }
-
-    private void registerAfterCommit(Runnable action) {
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    action.run();
-                }
-            });
-        } else {
-            action.run();
         }
     }
 }

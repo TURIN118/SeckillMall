@@ -1,26 +1,74 @@
+# ============================================================
+# 生产环境配置（H-K1 修复：补齐全部连接配置，强制外部注入，无默认值，缺失即失败）
+# ============================================================
+# 所有 ${VAR:?required} 形式的变量在容器启动时若未注入则直接报错退出，
+# 杜绝"静默回落 localhost"或"使用弱默认值"的安全隐患。
+# ============================================================
+
 spring:
+  # ---------- 数据库（H-K1：url/username/password 全部必填，无默认值）----------
   datasource:
+    url: jdbc:mysql://${DB_HOST:?required}:${DB_PORT:?required}/${MYSQL_DATABASE:?required}?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai&useSSL=true&allowPublicKeyRetrieval=false&connectTimeout=5000&socketTimeout=30000
+    username: ${DB_USERNAME:?required}
+    password: ${DB_PASSWORD:?required}
+    driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 50
+      minimum-idle: 10
+      connection-timeout: 5000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # ---------- Redis（H-K2：host/port/password 全部必填）----------
   data:
     redis:
+      host: ${REDIS_HOST:?required}
+      port: ${REDIS_PORT:?required}
+      password: ${REDIS_PASSWORD:?required}
       lettuce:
         pool:
           max-active: 32
+          max-idle: 16
+          min-idle: 4
+
+  # ---------- RabbitMQ（H-K4：host/port/username/password 全部必填）----------
   rabbitmq:
+    host: ${RABBITMQ_HOST:?required}
+    port: ${RABBITMQ_PORT:?required}
+    username: ${RABBITMQ_USERNAME:?required}
+    password: ${RABBITMQ_PASSWORD:?required}
+    # H-C5 修复（组B）：开启 publisher confirm 与 returns，确保 broker 丢消息可感知
+    publisher-confirm-type: correlated
+    publisher-returns: true
     listener:
       simple:
+        acknowledge-mode: manual
+        prefetch: 1
         concurrency: 5
+        retry:
+          enabled: false
 
+# ---------- 日志 ----------
 logging:
   level:
     root: WARN
+    com.seckill.mall: INFO
   file:
     name: /var/log/seckill-mall/app.log
+
+# ---------- 秒杀安全配置 ----------
 seckill:
   security:
-    sign-secret: ${SECKILL_SIGN_SECRET}
+    # B2 修复：服务端防重放 token 签名密钥，必填，长度 >= 32
+    sign-secret: ${SECKILL_SIGN_SECRET:?required}
+    replay-window-seconds: 60
+    # C2 修复：可信反向代理 IP 白名单（逗号分隔），生产必须显式注入
+    trusted-proxy-ips: ${TRUSTED_PROXY_IPS:}
+    # M-K2 修复：CORS 生产允许的来源，必须显式注入，不允许通配
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:?required}
 
+# ---------- Swagger/Knife4j 生产关闭 ----------
 springdoc:
   api-docs:
     enabled: false
@@ -31,7 +79,31 @@ knife4j:
   enable: false
   production: true
 
+# ---------- JWT ----------
 jwt:
-
+  # B1 修复：私钥路径指向运行时挂载点（Dockerfile 中 ENV JWT_RSA_PRIVATE_KEY_PATH=/app/keys/private.pem）
+  rsa:
+    private-key-path: ${JWT_RSA_PRIVATE_KEY_PATH:/app/keys/private.pem}
+    public-key-path: ${JWT_RSA_PUBLIC_KEY_PATH:/app/keys/public.pem}
   access-token-expiration: 1800000
   refresh-token-expiration: 604800000
+
+# ---------- Actuator（L-S1 修复：生产不暴露健康详情）----------
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+        exclude: env,beans,configprops,loggers,threaddump,heapdump
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+  info:
+    env:
+      enabled: false
+
+# L-S7 修复：生产不暴露 info.app.* 详情
+info:
+  app:
+    name: seckill-mall

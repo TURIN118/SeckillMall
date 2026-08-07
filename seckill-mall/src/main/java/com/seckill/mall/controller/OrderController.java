@@ -7,12 +7,11 @@ import com.seckill.mall.dto.BuyNowRequest;
 import com.seckill.mall.dto.CartCheckoutRequest;
 import com.seckill.mall.dto.NormalOrderPayRequest;
 import com.seckill.mall.dto.ShipRequest;
-import com.seckill.mall.entity.SeckillOrder;
-import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.service.OrderService;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
+import com.seckill.mall.vo.SeckillOrderVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -46,7 +45,7 @@ public class OrderController {
 
     @Operation(summary = "我的订单列表（分页+状态筛选）")
     @GetMapping
-    public Result<PageResult<SeckillOrder>> list(
+    public Result<PageResult<SeckillOrderVO>> list(
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
@@ -56,7 +55,7 @@ public class OrderController {
 
     @Operation(summary = "订单详情")
     @GetMapping("/{orderId}")
-    public Result<SeckillOrder> detail(@PathVariable Long orderId) {
+    public Result<SeckillOrderVO> detail(@PathVariable Long orderId) {
         Long userId = securityUtils.getCurrentUserId();
         return Result.success(orderService.getOrderDetail(userId, orderId));
     }
@@ -64,8 +63,8 @@ public class OrderController {
     @Operation(summary = "确认支付（模拟支付）")
     @OperationLog(module = "ORDER", action = "PAY", targetIdSpEL = "#orderId", targetType = "ORDER")
     @PostMapping("/{orderId}/pay")
-    public Result<SeckillOrder> pay(@PathVariable Long orderId,
-                                    @RequestParam(defaultValue = "ALIPAY") String payMethod) {
+    public Result<SeckillOrderVO> pay(@PathVariable Long orderId,
+                                      @RequestParam(defaultValue = "ALIPAY") String payMethod) {
         Long userId = securityUtils.getCurrentUserId();
         return Result.success(orderService.payOrder(userId, orderId, payMethod));
     }
@@ -73,14 +72,14 @@ public class OrderController {
     @Operation(summary = "取消订单（仅待支付）")
     @OperationLog(module = "ORDER", action = "CANCEL", targetIdSpEL = "#orderId", targetType = "ORDER")
     @PostMapping("/{orderId}/cancel")
-    public Result<SeckillOrder> cancel(@PathVariable Long orderId) {
+    public Result<SeckillOrderVO> cancel(@PathVariable Long orderId) {
         Long userId = securityUtils.getCurrentUserId();
         return Result.success(orderService.cancelOrder(userId, orderId));
     }
 
     @Operation(summary = "查询订单状态")
     @GetMapping("/{orderId}/status")
-    public Result<OrderStatus> status(@PathVariable Long orderId) {
+    public Result<String> status(@PathVariable Long orderId) {
         Long userId = securityUtils.getCurrentUserId();
         return Result.success(orderService.getOrderStatus(userId, orderId));
     }

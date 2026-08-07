@@ -15,6 +15,30 @@ frontend/.vite/
 *.local
 
 # Environment files with secrets
+# B2/M-K1 修复: 旧规则 *.env 匹配不到 .env.development / .env.production,
+# 改为 .env / .env.* 覆盖所有 .env 变体, 保留 .env.example 与 *.example 模板.
 .env
+.env.*
 *.env
 !.env.example
+!.env.*.example
+
+# ============================================================
+# B1 修复: RSA 私钥/公钥禁止入库，必须由部署环境挂载（K8s Secret / Vault）
+# ============================================================
+**/resources/keys/*.pem
+*.pem
+
+# ============================================================
+# B5 修复: 含 PII 的数据库转储/迁移脚本禁止入库
+# ============================================================
+*_dump.sql
+*_dump*.sql
+seckill_mall.sql
+**/seckill_mall.sql
+# 03_migration.sql 含真实 PII（姓名/手机号/地址/邮箱），需单独审查后才能入库
+sql/03_migration.sql
+
+# 日志/堆栈转储
+*.dump
+*.hprof

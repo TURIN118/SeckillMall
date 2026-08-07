@@ -56,7 +56,7 @@ public class CategoryController {
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public Result<CategoryVO> update(@PathVariable Long id,
-                                     @RequestBody CategoryUpdateRequest request) {
+                                     @Valid @RequestBody CategoryUpdateRequest request) {
         return Result.success("编辑分类成功", categoryService.updateCategory(id, request));
     }
 

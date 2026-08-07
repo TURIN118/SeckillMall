@@ -71,11 +71,12 @@ public class ReplayProtectionFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        // 仅拦截秒杀下单接口的 POST 请求（排除后台管理接口 /admin）
+        // 仅拦截秒杀下单接口的 POST 请求（排除后台管理接口 /admin 和场次管理接口 /activities）
         String requestUri = request.getRequestURI();
         if (!"POST".equalsIgnoreCase(request.getMethod())
                 || !requestUri.startsWith("/api/v1/seckill/")
-                || requestUri.startsWith("/api/v1/seckill/admin")) {
+                || requestUri.startsWith("/api/v1/seckill/admin")
+                || requestUri.startsWith("/api/v1/seckill/activities")) {
             filterChain.doFilter(request, response);
             return;
         }

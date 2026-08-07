@@ -22,4 +22,12 @@ public class ChangePasswordRequest {
 
     @NotBlank(message = "确认密码不能为空")
     private String confirmPassword;
+
+    /**
+     * Bug2修复：修改密码增加验证码校验。
+     * 验证码发送目标为当前用户邮箱（邮箱为空时回退到手机号），
+     * 由前端调用 /api/v1/verification/send-email 发送。
+     */
+    @NotBlank(message = "验证码不能为空")
+    private String code;
 }

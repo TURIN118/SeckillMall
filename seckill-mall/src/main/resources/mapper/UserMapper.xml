@@ -17,6 +17,7 @@
         FROM t_user
         WHERE phone = #{phone}
           AND is_deleted = 0
+        LIMIT 1
     </select>
 
     <select id="findByEmail" resultType="com.seckill.mall.entity.User">
@@ -24,6 +25,25 @@
                role, status, is_deleted, create_time, update_time
         FROM t_user
         WHERE email = #{email}
+          AND is_deleted = 0
+        LIMIT 1
+    </select>
+
+    <!-- Bug12修复：根据邮箱查询用户列表，避免 selectOne 多结果异常 -->
+    <select id="findListByEmail" resultType="com.seckill.mall.entity.User">
+        SELECT id, username, password, phone, email, nickname, avatar_url,
+               role, status, is_deleted, create_time, update_time
+        FROM t_user
+        WHERE email = #{email}
+          AND is_deleted = 0
+    </select>
+
+    <!-- Bug12修复：根据手机号查询用户列表，避免 selectOne 多结果异常 -->
+    <select id="findListByPhone" resultType="com.seckill.mall.entity.User">
+        SELECT id, username, password, phone, email, nickname, avatar_url,
+               role, status, is_deleted, create_time, update_time
+        FROM t_user
+        WHERE phone = #{phone}
           AND is_deleted = 0
     </select>
 

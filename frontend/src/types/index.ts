@@ -539,6 +539,8 @@ export interface ChangePasswordRequest {
   oldPassword: string
   newPassword: string
   confirmPassword: string
+  /** Bug2修复: 验证码 (发送目标为当前用户邮箱, 邮箱为空时回退手机号) */
+  code: string
 }
 
 /** 商品查询请求 */

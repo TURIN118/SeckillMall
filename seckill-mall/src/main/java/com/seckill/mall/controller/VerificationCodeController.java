@@ -81,7 +81,9 @@ public class VerificationCodeController {
     @Operation(summary = "发送邮箱验证码")
     @PostMapping("/send-email")
     // 安全修复（M11/C3）：限流防暴力破解，60s 内同一 key 仅允许 1 次（seconds=60 现已生效）
-    @RateLimit(key = "send-email", capacity = 1, rate = 1, seconds = 60)
+    // Bug1修复：capacity 从 1 调整为 3，允许突发 3 次（应对重试/误操作），
+    // 避免 Redis 中残留已消耗但未过期的令牌导致首次点击就 429
+    @RateLimit(key = "send-email", capacity = 3, rate = 3, seconds = 60)
     public Result<Void> sendEmail(@RequestBody Map<String, String> body) {
         // 安全修复（H7）：服务端强校验邮箱格式，避免空值/非法字符触发下游异常或被滥用
         String email = body == null ? null : body.get("email");
@@ -100,7 +102,9 @@ public class VerificationCodeController {
     @Operation(summary = "发送短信验证码")
     @PostMapping("/send-sms")
     // 安全修复（M11/C3）：限流防暴力破解，60s 内同一 key 仅允许 1 次（seconds=60 现已生效）
-    @RateLimit(key = "send-sms", capacity = 1, rate = 1, seconds = 60)
+    // Bug1修复：capacity 从 1 调整为 3，允许突发 3 次（应对重试/误操作），
+    // 避免 Redis 中残留已消耗但未过期的令牌导致首次点击就 429
+    @RateLimit(key = "send-sms", capacity = 3, rate = 3, seconds = 60)
     public Result<Void> sendSms(@RequestBody Map<String, String> body) {
         // 安全修复（H7）：服务端强校验手机号格式
         String phone = body == null ? null : body.get("phone");

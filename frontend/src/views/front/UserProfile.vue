@@ -202,6 +202,21 @@
                 <div v-if="pwdErrors.confirmPassword" class="form-error">{{ pwdErrors.confirmPassword }}</div>
               </div>
 
+              <!-- Bug2修复: 修改密码需验证码校验, 发送到当前用户邮箱 -->
+              <div class="form-group">
+                <label class="form-label">验证码</label>
+                <div class="verify-row">
+                  <input v-model.trim="pwdForm.code" class="form-input verify-input"
+                    :class="{ error: pwdErrors.code }" type="text" placeholder="请输入邮箱验证码" maxlength="6" />
+                  <button class="btn-sm primary verify-btn" type="button"
+                    :disabled="pwdCodeCountdown > 0 || sendingPwdCode" @click="handleSendPwdCode">
+                    {{ pwdCodeCountdown > 0 ? `${pwdCodeCountdown}s` : (sendingPwdCode ? '发送中' : '发送验证码') }}
+                  </button>
+                </div>
+                <div v-if="pwdErrors.code" class="form-error">{{ pwdErrors.code }}</div>
+                <div v-if="!user?.email" class="form-tip" style="color: #e6a23c;">当前账号未绑定邮箱，无法发送验证码</div>
+              </div>
+
               <div class="form-actions">
                 <button class="btn-sm primary" type="submit" :disabled="pwdLoading">
                   {{ pwdLoading ? '修改中...' : '修改密码' }}
@@ -568,14 +583,21 @@ const pwdLoading = ref<boolean>(false)
 const pwdForm = reactive({
   oldPassword: '',
   newPassword: '',
-  confirmPassword: ''
+  confirmPassword: '',
+  code: ''
 })
 
 const pwdErrors = reactive({
   oldPassword: '',
   newPassword: '',
-  confirmPassword: ''
+  confirmPassword: '',
+  code: ''
 })
+
+/* === Bug2修复: 修改密码验证码倒计时 === */
+const pwdCodeCountdown = ref<number>(0)
+const sendingPwdCode = ref<boolean>(false)
+let pwdCodeTimer: ReturnType<typeof setInterval> | null = null
 
 /* === 基本信息: 编辑模式 === */
 const editing = ref<boolean>(false)
@@ -679,6 +701,7 @@ function validatePwdForm(): boolean {
   pwdErrors.oldPassword = ''
   pwdErrors.newPassword = ''
   pwdErrors.confirmPassword = ''
+  pwdErrors.code = ''
   let valid = true
   if (!pwdForm.oldPassword) {
     pwdErrors.oldPassword = '请输入当前密码'
@@ -696,6 +719,11 @@ function validatePwdForm(): boolean {
     valid = false
   } else if (pwdForm.confirmPassword !== pwdForm.newPassword) {
     pwdErrors.confirmPassword = '两次输入的密码不一致'
+    valid = false
+  }
+  // Bug2修复: 校验验证码
+  if (!pwdForm.code) {
+    pwdErrors.code = '请输入验证码'
     valid = false
   }
   return valid
@@ -720,7 +748,8 @@ async function handleChangePassword(): Promise<void> {
     await changePassword({
       oldPassword: pwdForm.oldPassword,
       newPassword: pwdForm.newPassword,
-      confirmPassword: pwdForm.confirmPassword
+      confirmPassword: pwdForm.confirmPassword,
+      code: pwdForm.code
     })
     ElMessage.success('密码修改成功，请重新登录')
     await userStore.logout()
@@ -737,9 +766,50 @@ function resetPwdForm(): void {
   pwdForm.oldPassword = ''
   pwdForm.newPassword = ''
   pwdForm.confirmPassword = ''
+  pwdForm.code = ''
   pwdErrors.oldPassword = ''
   pwdErrors.newPassword = ''
   pwdErrors.confirmPassword = ''
+  pwdErrors.code = ''
+}
+
+/** Bug2修复: 发送修改密码验证码 (发送到当前用户邮箱) */
+async function handleSendPwdCode(): Promise<void> {
+  const email = user.value?.email || ''
+  if (!email) {
+    ElMessage.warning('当前账号未绑定邮箱，无法发送验证码')
+    return
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    ElMessage.warning('邮箱格式不正确')
+    return
+  }
+  sendingPwdCode.value = true
+  try {
+    await sendEmailCode({ target: email })
+    ElMessage.success('邮箱验证码已发送')
+    startPwdCodeCountdown()
+  } catch {
+    // 错误已由拦截器处理
+  } finally {
+    sendingPwdCode.value = false
+  }
+}
+
+/** Bug2修复: 修改密码验证码倒计时 (60s) */
+function startPwdCodeCountdown(): void {
+  pwdCodeCountdown.value = 60
+  if (pwdCodeTimer) clearInterval(pwdCodeTimer)
+  pwdCodeTimer = setInterval(() => {
+    if (pwdCodeCountdown.value > 0) {
+      pwdCodeCountdown.value--
+    } else {
+      if (pwdCodeTimer) {
+        clearInterval(pwdCodeTimer)
+        pwdCodeTimer = null
+      }
+    }
+  }, 1000)
 }
 
 /* === 基本信息: 编辑模式 === */
@@ -1372,6 +1442,10 @@ watch(
 onUnmounted(() => {
   stopPhoneCountdown()
   stopEmailCountdown()
+  if (pwdCodeTimer) {
+    clearInterval(pwdCodeTimer)
+    pwdCodeTimer = null
+  }
 })
 </script>
 

@@ -98,12 +98,14 @@ public class ReplayProtectionFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        // 仅拦截秒杀下单接口的 POST 请求（排除后台管理接口 /admin 和场次管理接口 /activities）
+        // 仅拦截秒杀下单接口的 POST 请求（排除后台管理接口 /admin、场次管理接口 /activities、一键执行接口 /execute）
+        // Bug3修复：/api/v1/seckill/{id}/execute 是"一键执行秒杀"接口，设计上无需预取 token（内部自动获取），需排除拦截
         String requestUri = request.getRequestURI();
         if (!"POST".equalsIgnoreCase(request.getMethod())
                 || !requestUri.startsWith("/api/v1/seckill/")
                 || requestUri.startsWith("/api/v1/seckill/admin")
-                || requestUri.startsWith("/api/v1/seckill/activities")) {
+                || requestUri.startsWith("/api/v1/seckill/activities")
+                || requestUri.endsWith("/execute")) {
             filterChain.doFilter(request, response);
             return;
         }

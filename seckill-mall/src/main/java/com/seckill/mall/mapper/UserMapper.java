@@ -33,6 +33,27 @@ public interface UserMapper extends BaseMapper<User> {
     User findByEmail(@Param("email") String email);
 
     /**
+     * Bug12修复：根据邮箱查询用户列表（未删除）。
+     * <p>
+     * 数据库中 email 可能存在重复记录，使用 selectOne 会抛 TooManyResultsException。
+     * 改用 selectList 由调用方取第一条，避免异常。
+     *
+     * @param email 邮箱
+     * @return 用户实体列表，不存在返回空列表
+     */
+    List<User> findListByEmail(@Param("email") String email);
+
+    /**
+     * Bug12修复：根据手机号查询用户列表（未删除）。
+     * <p>
+     * 与 findListByEmail 同理，避免手机号重复时 selectOne 抛 TooManyResultsException。
+     *
+     * @param phone 手机号
+     * @return 用户实体列表，不存在返回空列表
+     */
+    List<User> findListByPhone(@Param("phone") String phone);
+
+    /**
      * 用户注册趋势：按日期分组统计注册数
      *
      * @param startDate 起始日期（含）

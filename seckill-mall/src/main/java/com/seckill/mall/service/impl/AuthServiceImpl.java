@@ -38,6 +38,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -236,6 +237,14 @@ public class AuthServiceImpl implements AuthService {
         User user = securityUtils.getCurrentUser();
         if (!passwordEncoder.matches(req.getOldPassword(), user.getPassword())) {
             throw new BusinessException(ErrorCode.PASSWORD_NOT_MATCH);
+        }
+        // Bug2修复：修改密码前先校验验证码，target 优先用邮箱，邮箱为空时回退到手机号
+        String verifyTarget = (user.getEmail() != null && !user.getEmail().isBlank())
+                ? user.getEmail()
+                : user.getPhone();
+        if (verifyTarget == null || verifyTarget.isBlank()
+                || !verificationCodeService.verifyCode(verifyTarget, req.getCode())) {
+            throw new BusinessException(ErrorCode.VERIFICATION_CODE_INVALID);
         }
         User update = new User();
         update.setId(user.getId());
@@ -447,6 +456,9 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * 根据验证方式与账号查询用户
+     * <p>
+     * Bug12修复：数据库中 email/phone 可能存在重复记录，使用 selectOne 会抛
+     * TooManyResultsException。改用 findListByEmail/findListByPhone 取第一条，避免异常。
      *
      * @param type    PHONE 或 EMAIL
      * @param account 手机号或邮箱
@@ -454,9 +466,11 @@ public class AuthServiceImpl implements AuthService {
      */
     private User findUserByAccount(String type, String account) {
         if (TYPE_PHONE.equals(type)) {
-            return userMapper.findByPhone(account);
+            List<User> users = userMapper.findListByPhone(account);
+            return users.isEmpty() ? null : users.get(0);
         } else if (TYPE_EMAIL.equals(type)) {
-            return userMapper.findByEmail(account);
+            List<User> users = userMapper.findListByEmail(account);
+            return users.isEmpty() ? null : users.get(0);
         }
         return null;
     }

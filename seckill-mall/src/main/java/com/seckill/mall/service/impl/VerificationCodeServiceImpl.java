@@ -85,6 +85,7 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
         String code = generateCode();
         // 存入 Redis
         storeCode(phone, code);
+        // TODO: 后期接入真实SSM短信服务，当前使用控制台输出验证码
         // L15 修复：System.out.println 改为 log.info，统一日志输出便于生产环境排查
         log.info("【短信验证码】phone={}, code={}（有效期5分钟）", phone, code);
         log.info("========================================");

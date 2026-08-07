@@ -25,6 +25,7 @@ import com.seckill.mall.service.AuthService;
 import com.seckill.mall.service.CaptchaService;
 import com.seckill.mall.service.UploadService;
 import com.seckill.mall.service.VerificationCodeService;
+import com.seckill.mall.utils.DataMaskUtil;
 import com.seckill.mall.vo.LoginVO;
 import com.seckill.mall.vo.TokenVO;
 import com.seckill.mall.vo.UploadResultVO;
@@ -379,12 +380,13 @@ public class AuthServiceImpl implements AuthService {
         UserVO vo = new UserVO();
         vo.setId(user.getId());
         vo.setUsername(user.getUsername());
-        vo.setPhone(user.getPhone());
+        vo.setPhone(DataMaskUtil.maskMobile(user.getPhone()));
         vo.setNickname(user.getNickname());
         vo.setAvatar(user.getAvatarUrl());
         vo.setRole(user.getRole() == null ? null : user.getRole().getCode());
         vo.setStatus(user.getStatus() == null ? null : user.getStatus().getCode());
         vo.setCreateTime(user.getCreateTime());
+        vo.setEmail(DataMaskUtil.maskEmail(user.getEmail()));
         return vo;
     }
 

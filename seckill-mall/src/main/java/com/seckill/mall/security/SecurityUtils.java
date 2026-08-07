@@ -63,6 +63,13 @@ public class SecurityUtils {
     }
 
     /**
+     * 获取当前用户邮箱
+     */
+    public String getCurrentEmail() {
+        return getCurrentUser().getEmail();
+    }
+
+    /**
      * 获取当前用户完整信息（需查 DB，谨慎使用）
      */
     public User getCurrentUser() {

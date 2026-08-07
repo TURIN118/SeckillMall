@@ -988,10 +988,10 @@ onUnmounted(() => {
   transform: translateY(-2px);
 }
 
-/* 左侧图片：水平布局固定宽度160px，高度填满卡片 */
+/* 左侧图片：水平布局固定宽度160px，固定高度160px避免拉伸 */
 .sk-card-img {
   width: 160px;
-  height: auto;
+  height: 160px;
   background: #f8f8f8;
   display: flex;
   align-items: center;
@@ -999,7 +999,7 @@ onUnmounted(() => {
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
-  align-self: stretch;
+  align-self: center;
 }
 
 .sk-card-img-tag {
@@ -1320,6 +1320,7 @@ onUnmounted(() => {
   /* 小屏下图片宽度减小到 120px */
   .sk-card-img {
     width: 120px;
+    height: 120px;
   }
 }
 
@@ -1331,6 +1332,7 @@ onUnmounted(() => {
   /* 超小屏下图片宽度进一步减小到 120px */
   .sk-card-img {
     width: 120px;
+    height: 120px;
   }
 }
 </style>

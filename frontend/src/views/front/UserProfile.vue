@@ -773,20 +773,20 @@ function resetPwdForm(): void {
   pwdErrors.code = ''
 }
 
-/** Bug2修复: 发送修改密码验证码 (发送到当前用户邮箱) */
+/** 发送修改密码验证码 (发送到当前用户邮箱) */
 async function handleSendPwdCode(): Promise<void> {
   const email = user.value?.email || ''
   if (!email) {
     ElMessage.warning('当前账号未绑定邮箱，无法发送验证码')
     return
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    ElMessage.warning('邮箱格式不正确')
-    return
-  }
+  // if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  //   ElMessage.warning('邮箱格式不正确')
+  //   return
+  // }
   sendingPwdCode.value = true
   try {
-    await sendEmailCode({ target: email })
+    await sendEmailCode({ target: "发送修改密码验证码" })
     ElMessage.success('邮箱验证码已发送')
     startPwdCodeCountdown()
   } catch {

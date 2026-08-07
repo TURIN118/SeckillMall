@@ -3,6 +3,7 @@ package com.seckill.mall.controller;
 import com.seckill.mall.annotation.RateLimit;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.Result;
+import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.service.VerificationCodeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Collections;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -26,7 +28,7 @@ import java.util.regex.Pattern;
  * <p>
  * 前缀 {@code /api/v1/verification}，发送与校验接口均可匿名访问
  * （在 {@code SecurityConfig} 白名单中配置）。
- *
+ * <p>
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
  * 文件名称：VerificationCodeController.java
@@ -39,18 +41,28 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class VerificationCodeController {
 
-    /** 邮箱格式正则 */
+    /**
+     * 邮箱格式正则
+     */
     private static final Pattern EMAIL_PATTERN =
             Pattern.compile("^[\\w.-]+@[\\w.-]+\\.\\w+$");
-    /** 手机号格式正则：11 位数字、首位为 1 */
+    /**
+     * 手机号格式正则：11 位数字、首位为 1
+     */
     private static final Pattern PHONE_PATTERN =
             Pattern.compile("^1\\d{10}$");
 
-    /** C2 修复：按目标维度的每日发送上限 key 前缀 */
+    /**
+     * C2 修复：按目标维度的每日发送上限 key 前缀
+     */
     private static final String DAILY_LIMIT_KEY_PREFIX = "verify:daily:";
-    /** C2 修复：单个目标每日最多发送次数（防短信轰炸/费用泵） */
+    /**
+     * C2 修复：单个目标每日最多发送次数（防短信轰炸/费用泵）
+     */
     private static final int DAILY_LIMIT_PER_TARGET = 10;
-    /** 每日限额窗口：24 小时（秒） */
+    /**
+     * 每日限额窗口：24 小时（秒）
+     */
     private static final long DAILY_WINDOW_SECONDS = 24L * 60L * 60L;
 
     /**
@@ -70,6 +82,7 @@ public class VerificationCodeController {
 
     private final VerificationCodeService verificationCodeService;
     private final StringRedisTemplate stringRedisTemplate;
+    private final SecurityUtils securityUtils;
 
     /**
      * C2 修复：单个目标（手机号/邮箱）每日发送总量上限，防费用泵/短信轰炸。
@@ -87,7 +100,14 @@ public class VerificationCodeController {
     public Result<Void> sendEmail(@RequestBody Map<String, String> body) {
         // 安全修复（H7）：服务端强校验邮箱格式，避免空值/非法字符触发下游异常或被滥用
         // Bug7修复：前端统一使用 target 字段传参，后端需用 target 取值（原 email 字段已废弃）
-        String email = body == null ? null : body.get("target");
+        String target = body == null ? null : body.get("target");
+        String email = null;
+        if (Objects.equals(target, "发送修改密码验证码")) {
+            email = securityUtils.getCurrentEmail();
+
+        } else {
+            email = target;
+        }
         if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
             return Result.error(ErrorCode.PARAM_ERROR);
         }

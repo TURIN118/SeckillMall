@@ -14,15 +14,16 @@
 
       <!-- 导航链接：秒杀专区 / 我的订单 / 购物车(带徽标) / 收藏夹 -->
       <nav class="mock-nav-links">
-        <a href="javascript:void(0)" @click="router.push('/seckill')">秒杀专区</a>
-        <a href="javascript:void(0)" @click="goOrders">我的订单</a>
+        <a href="javascript:void(0)" :class="{ active: route.path === '/seckill' }"
+          @click="router.push('/seckill')">秒杀专区</a>
+        <a href="javascript:void(0)" :class="{ active: route.path.startsWith('/user/orders') }" @click="goOrders">我的订单</a>
         <!-- 购物车链接 + 数量徽标 -->
-        <a href="javascript:void(0)" class="nav-cart-link" @click="goCart">
+        <a href="javascript:void(0)" class="nav-cart-link" :class="{ active: route.path === '/cart' }" @click="goCart">
           购物车
           <span v-if="cartStore.count > 0" class="cart-badge">{{ cartBadgeText }}</span>
         </a>
         <!-- 收藏夹链接 -->
-        <a href="javascript:void(0)" @click="goFavorites">收藏夹</a>
+        <a href="javascript:void(0)" :class="{ active: route.path === '/favorites' }" @click="goFavorites">收藏夹</a>
       </nav>
 
       <!-- 用户头像 + 自定义悬浮下拉菜单 -->
@@ -361,6 +362,12 @@ async function handleLogout(): Promise<void> {
 
 .mock-nav-links a:hover {
   color: #e53935;
+}
+
+/* 导航链接 active 高亮: 当前路由对应菜单显示红色 + 加粗 */
+.mock-nav-links a.active {
+  color: #e53935;
+  font-weight: 700;
 }
 
 /* 购物车链接: 相对定位以承载徽标 */

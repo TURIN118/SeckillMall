@@ -62,15 +62,15 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'user/address',
-        redirect: '/user/profile'
+        redirect: { path: '/user/profile', query: { tab: 'address' } }
       },
       {
         path: 'user/wallet',
-        redirect: '/user/profile'
+        redirect: { path: '/user/profile', query: { tab: 'wallet' } }
       },
       {
         path: 'user/coupons',
-        redirect: '/user/profile'
+        redirect: { path: '/user/profile', query: { tab: 'coupons' } }
       },
       {
         path: 'seckill',

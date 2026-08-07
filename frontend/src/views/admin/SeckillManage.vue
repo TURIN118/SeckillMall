@@ -87,10 +87,7 @@
                 :label="`${p.productName} (¥${formatPrice(p.originalPrice)})`" :value="p.id" />
             </el-select>
           </el-form-item>
-          <el-form-item :label="`活动名称${idx + 1}`" :prop="`goodsItems.${idx}.seckillName`"
-            :rules="[{ required: true, message: '请输入活动名称', trigger: 'blur' }]">
-            <el-input v-model="item.seckillName" placeholder="秒杀活动名称" maxlength="50" />
-          </el-form-item>
+
           <el-form-item :label="`秒杀价${idx + 1}`" :prop="`goodsItems.${idx}.seckillPrice`"
             :rules="[{ required: true, message: '请输入秒杀价格', trigger: 'blur' }]">
             <el-input-number v-model="item.seckillPrice" :min="0.01" :precision="2" :step="1"
@@ -372,13 +369,18 @@ async function handleSubmit(): Promise<void> {
   }
   submitting.value = true
   try {
+    // 活动名称为场次级别: 所有商品共享场次名称, 去除商品级冗余输入
+    const goodsItemsWithName = formData.goodsItems.map((item) => ({
+      ...item,
+      seckillName: formData.name
+    }))
     await createSeckillActivity({
       name: formData.name,
       startTime: formData.startTime,
       endTime: formData.endTime,
       perLimit: formData.perLimit,
       description: formData.description,
-      goodsItems: formData.goodsItems
+      goodsItems: goodsItemsWithName
     })
     ElMessage.success('场次创建成功')
     dialogVisible.value = false

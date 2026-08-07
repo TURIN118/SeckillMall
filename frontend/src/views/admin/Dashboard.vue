@@ -407,8 +407,10 @@ function buildUserTrendOption(data: TrendItemVO[]): echarts.EChartsCoreOption {
 const STATUS_LABEL_MAP: Record<string, string> = {
   UNPAID: '待支付',
   PAID: '已支付',
+  CANCELLING: '取消中',
   CANCELLED: '已取消',
   TIMEOUT: '已超时',
+  SHIPPED: '已发货',
   COMPLETED: '已完成'
 }
 
@@ -416,8 +418,10 @@ const STATUS_LABEL_MAP: Record<string, string> = {
 const STATUS_COLOR_MAP: Record<string, string> = {
   UNPAID: '#ff9800',
   PAID: '#1976d2',
+  CANCELLING: '#ff5722',
   CANCELLED: '#9e9e9e',
   TIMEOUT: '#f44336',
+  SHIPPED: '#7b1fa2',
   COMPLETED: '#4caf50'
 }
 
@@ -526,8 +530,16 @@ const orderLoading = ref(false)
 async function fetchRecentOrders(): Promise<void> {
   orderLoading.value = true
   try {
-    const res = await getOrderList({ pageNum: 1, pageSize: 5 })
-    recentOrders.value = res.data.list || []
+    // 请求较多条目后前端按创建时间倒序排列, 取前5条
+    // (getOrderList 不支持排序参数, 后端默认排序可能非时间倒序)
+    const res = await getOrderList({ pageNum: 1, pageSize: 50 })
+    const list = res.data.list || []
+    list.sort((a, b) => {
+      const timeA = a.createTime ? new Date(a.createTime).getTime() : 0
+      const timeB = b.createTime ? new Date(b.createTime).getTime() : 0
+      return timeB - timeA
+    })
+    recentOrders.value = list.slice(0, 5)
   } catch {
     // 加载失败时保留空列表，不阻塞页面
     recentOrders.value = []
@@ -537,10 +549,11 @@ async function fetchRecentOrders(): Promise<void> {
 }
 
 /* === 状态映射：对照 OrderManage.vue === */
-function getStatusLabel(status: OrderStatus): string {
-  const map: Record<OrderStatus, string> = {
+function getStatusLabel(status: OrderStatus | string): string {
+  const map: Record<string, string> = {
     UNPAID: '待支付',
     PAID: '已支付',
+    CANCELLING: '取消中',
     SHIPPED: '已发货',
     CANCELLED: '已取消',
     TIMEOUT: '已超时',
@@ -548,10 +561,11 @@ function getStatusLabel(status: OrderStatus): string {
   }
   return map[status] || status
 }
-function getStatusTagClass(status: OrderStatus): string {
-  const map: Record<OrderStatus, string> = {
+function getStatusTagClass(status: OrderStatus | string): string {
+  const map: Record<string, string> = {
     UNPAID: 'unpaid',
     PAID: 'paid',
+    CANCELLING: 'cancelled',
     SHIPPED: 'shipped',
     CANCELLED: 'cancelled',
     TIMEOUT: 'timeout',

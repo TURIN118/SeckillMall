@@ -518,7 +518,7 @@
  */
 defineOptions({ name: 'UserProfile' })
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import {
   Wallet,
@@ -553,6 +553,7 @@ import type {
 import dayjs from 'dayjs'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
 /** 快捷入口跳转 */
@@ -1345,9 +1346,27 @@ async function fetchUserInfo(): Promise<void> {
   }
 }
 
+/* === 根据路由 query.tab 切换标签页 (支持 /user/wallet /user/coupons /user/address 重定向) === */
+const VALID_TABS = ['info', 'password', 'wallet', 'address', 'coupons'] as const
+function applyTabFromQuery(): void {
+  const tab = route.query.tab
+  if (typeof tab === 'string' && VALID_TABS.includes(tab as typeof VALID_TABS[number])) {
+    activeTab.value = tab
+  }
+}
+
 onMounted(() => {
+  applyTabFromQuery()
   fetchUserInfo()
 })
+
+/* keep-alive 缓存下, 路由 query.tab 变化时同步切换标签页 */
+watch(
+  () => route.query.tab,
+  () => {
+    applyTabFromQuery()
+  }
+)
 
 /* === 组件卸载时清理倒计时定时器 === */
 onUnmounted(() => {

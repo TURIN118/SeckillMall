@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 @TableName("t_seckill_activity")
 public class SeckillActivity {
 
-    @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.ASSIGN_ID)
     private Long id;
 
     /** 场次名称 */

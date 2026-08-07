@@ -2,7 +2,6 @@ import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
-import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 import viteCompression from 'vite-plugin-compression'
 import { resolve } from 'path'
@@ -14,15 +13,11 @@ export default defineConfig(({ mode }) => {
     plugins: [
       vue(),
       AutoImport({
-        // ElementPlusResolver 自动按需引入 Element Plus 的 API (如 ElMessage, ElMessageBox)
-        resolvers: [ElementPlusResolver()],
         imports: ['vue', 'vue-router', 'pinia'],
         dts: 'src/auto-imports.d.ts',
         eslintrc: { enabled: false }
       }),
       Components({
-        // ElementPlusResolver 自动按需引入 Element Plus 组件及其样式
-        resolvers: [ElementPlusResolver()],
         dts: 'src/components.d.ts'
       }),
       // gzip 压缩: 对 > 10KB 的资源生成 .gz 文件, 配合 nginx 静态 gzip 进一步减小传输体积
@@ -114,16 +109,13 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             // Vue 核心 (vue + vue-router + pinia)
             'vue-vendor': ['vue', 'vue-router', 'pinia'],
+            // Element Plus 全量引入, 独立 chunk 提升缓存命中率
+            'element-plus': ['element-plus', '@element-plus/icons-vue'],
             // wangEditor 富文本编辑器 (仅商品编辑使用, 按需加载)
             'wangeditor': ['@wangeditor/editor', '@wangeditor/editor-for-vue'],
             // ECharts 图表库 (仅后台 Dashboard 使用, 按需引入后分离为独立 chunk)
-            // - 减小 Dashboard chunk 体积, 首次进入后台时 Dashboard 加载更快
-            // - echarts chunk 独立缓存, 其他页面若使用图表可直接命中缓存
             'echarts': ['echarts']
           }
-          // 注意: element-plus 不再配置 manualChunks,
-          // 因为已改为按需引入, 强制合并会抵消按需引入的体积优化效果.
-          // - element-plus: 各组件由 ElementPlusResolver 自动按需引入, rollup 自动分割
         }
       }
     }

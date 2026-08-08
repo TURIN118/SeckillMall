@@ -1449,10 +1449,10 @@ onUnmounted(() => {
 
 /* 改进4: 固定列数网格布局 (CSS Grid)
    说明: 原先使用 CSS columns 多列布局，但 columns 会根据容器宽度与内容高度动态计算列数，
-   导致切换分类或加载更多时列数从 5 变成 4。改用 Grid 固定 5 列，列数不再随内容多少变化。 */
+   导致切换分类或加载更多时列数从 6 变成 5。改用 Grid 固定 6 列，列数不再随内容多少变化。 */
 .recommend-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 12px;
 }
 
@@ -1546,9 +1546,9 @@ onUnmounted(() => {
 /* === 响应式：秒杀网格在小屏下退化为 2 列，超小屏退化为 1 列 === */
 @media (max-width: 1024px) {
 
-  /* 改进4: 网格在中等屏幕下 4 列 */
+  /* 改进4: 网格在中等屏幕下 5 列 */
   .recommend-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
   }
 }
 
@@ -1563,9 +1563,9 @@ onUnmounted(() => {
     height: 120px;
   }
 
-  /* 改进4: 网格在小屏下 3 列 */
+  /* 改进4: 网格在小屏下 4 列 */
   .recommend-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 

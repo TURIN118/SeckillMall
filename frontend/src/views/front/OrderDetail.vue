@@ -1,5 +1,5 @@
 <template>
-  <!-- 订单详情: 参考京东+淘宝订单详情设计 -->
+  <!-- 订单详情: 左右分栏布局,参考京东+淘宝订单详情设计 -->
   <div class="order-page">
     <!-- 加载骨架屏 -->
     <div v-if="loading" class="loading-wrap">
@@ -16,7 +16,7 @@
 
     <!-- 订单详情内容 -->
     <template v-else-if="order">
-      <!-- 1. 顶部状态横幅 (参考京东) -->
+      <!-- 1. 顶部状态横幅 (占满宽度,参考京东) -->
       <div class="order-status-banner">
         <div class="banner-left">
           <h2 class="status-title" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</h2>
@@ -47,7 +47,7 @@
         </div>
       </div>
 
-      <!-- 2. 进度步骤条 (4步: 下单→支付→发货→完成) -->
+      <!-- 2. 进度步骤条 (占满宽度,4步: 下单→支付→发货→完成) -->
       <div class="order-steps">
         <div class="step">
           <div class="step-dot done">&#10003;</div>
@@ -73,115 +73,138 @@
         </div>
       </div>
 
-      <!-- 3. 商品信息卡片 (参考淘宝, 表格式) -->
-      <div class="info-card">
-        <div class="card-header-bar">
-          <h3 class="card-title">商品信息</h3>
-          <span class="order-type-tag" :class="order.orderType === 'SECKILL' ? 'seckill' : 'normal'">
-            {{ order.orderType === 'SECKILL' ? '秒杀订单' : '普通订单' }}
-          </span>
-        </div>
-        <!-- 表头 -->
-        <div class="goods-table-head">
-          <div class="col-product">商品</div>
-          <div class="col-price">单价</div>
-          <div class="col-qty">数量</div>
-          <div class="col-subtotal">小计</div>
-        </div>
-        <!-- 商品行 -->
-        <div v-for="item in order.items" :key="item.productId" class="goods-table-row">
-          <div class="col-product">
-            <div class="goods-img">
-              <img v-if="item.productImage" :src="formatImageUrl(item.productImage)" :alt="item.productName" loading="lazy" />
-              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <path d="m21 15-5-5L5 21" />
-              </svg>
+      <!-- 3. 左右分栏内容 -->
+      <div class="order-content">
+        <!-- 左栏: 商品信息 + 金额汇总 -->
+        <div class="order-left">
+          <div class="info-card">
+            <div class="card-header-bar">
+              <h3 class="card-title">商品信息</h3>
+              <span class="order-type-tag" :class="order.orderType === 'SECKILL' ? 'seckill' : 'normal'">
+                {{ order.orderType === 'SECKILL' ? '秒杀订单' : '普通订单' }}
+              </span>
             </div>
-            <div class="goods-info">
-              <div class="goods-name">{{ item.productName }}</div>
-              <div v-if="item.skuAttributes" class="goods-sku">{{ item.skuAttributes }}</div>
+            <!-- 表头 -->
+            <div class="goods-table-head">
+              <div class="col-product">商品</div>
+              <div class="col-price">单价</div>
+              <div class="col-qty">数量</div>
+              <div class="col-subtotal">小计</div>
+            </div>
+            <!-- 商品行(限制最大高度,超出滚动) -->
+            <div class="goods-table-body">
+              <div v-for="item in order.items" :key="item.productId" class="goods-table-row">
+                <div class="col-product">
+                  <div class="goods-img">
+                    <img v-if="item.productImage" :src="formatImageUrl(item.productImage)" :alt="item.productName"
+                      loading="lazy" />
+                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <path d="m21 15-5-5L5 21" />
+                    </svg>
+                  </div>
+                  <div class="goods-info">
+                    <div class="goods-name">{{ item.productName }}</div>
+                    <div v-if="item.skuAttributes" class="goods-sku">{{ item.skuAttributes }}</div>
+                  </div>
+                </div>
+                <div class="col-price">¥{{ formatPrice(item.unitPrice) }}</div>
+                <div class="col-qty">{{ item.quantity }}</div>
+                <div class="col-subtotal">¥{{ formatPrice(item.unitPrice * item.quantity) }}</div>
+              </div>
+            </div>
+            <!-- 金额汇总 -->
+            <div class="goods-summary">
+              <div class="summary-line">
+                <span>商品总额</span>
+                <span>¥{{ formatPrice(order.totalAmount) }}</span>
+              </div>
+              <div class="summary-line total">
+                <span>实付金额</span>
+                <span class="total-amount">¥{{ formatPrice(order.totalAmount) }}</span>
+              </div>
             </div>
           </div>
-          <div class="col-price">¥{{ formatPrice(item.unitPrice) }}</div>
-          <div class="col-qty">{{ item.quantity }}</div>
-          <div class="col-subtotal">¥{{ formatPrice(item.unitPrice * item.quantity) }}</div>
         </div>
-        <!-- 金额汇总 -->
-        <div class="goods-summary">
-          <div class="summary-line">
-            <span>商品总额</span>
-            <span>¥{{ formatPrice(order.totalAmount) }}</span>
+
+        <!-- 右栏: 收货地址 + 订单信息 + 物流信息 -->
+        <div class="order-right">
+          <!-- 收货地址 -->
+          <div v-if="order.receiverName" class="info-card">
+            <div class="card-header-bar">
+              <h3 class="card-title">收货地址</h3>
+            </div>
+            <div class="address-content">
+              <div class="address-name-phone">
+                <span class="address-name">{{ order.receiverName }}</span>
+                <span class="address-phone">{{ order.receiverPhone }}</span>
+              </div>
+              <div class="address-detail">{{ fullAddress }}</div>
+            </div>
           </div>
-          <div class="summary-line total">
-            <span>实付金额</span>
-            <span class="total-amount">¥{{ formatPrice(order.totalAmount) }}</span>
+
+          <!-- 订单信息 -->
+          <div class="info-card">
+            <div class="card-header-bar">
+              <h3 class="card-title">订单信息</h3>
+            </div>
+            <div class="info-row">
+              <span class="info-label">订单编号</span>
+              <span class="info-value order-no" @click="copyOrderNo">
+                {{ order.orderNo }} <span class="copy-hint">复制</span>
+              </span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">支付方式</span>
+              <span class="info-value">{{ formatPayMethod(order.payMethod) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">下单时间</span>
+              <span class="info-value">{{ formatTime(order.createTime) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">支付时间</span>
+              <span class="info-value">{{ order.payTime ? formatTime(order.payTime) : '—' }}</span>
+            </div>
+            <div v-if="order.cancelTime" class="info-row">
+              <span class="info-label">取消时间</span>
+              <span class="info-value">{{ formatTime(order.cancelTime) }}</span>
+            </div>
+            <div v-if="order.cancelReason" class="info-row">
+              <span class="info-label">取消原因</span>
+              <span class="info-value">{{ order.cancelReason }}</span>
+            </div>
+            <div v-if="order.remark" class="info-row">
+              <span class="info-label">备注</span>
+              <span class="info-value remark">{{ order.remark }}</span>
+            </div>
+          </div>
+
+          <!-- 物流信息 (仅在有物流信息时显示) -->
+          <div v-if="order.shippingCompany || order.shippingNo" class="info-card">
+            <div class="card-header-bar">
+              <h3 class="card-title">物流信息</h3>
+            </div>
+            <div class="info-row">
+              <span class="info-label">物流公司</span>
+              <span class="info-value">{{ order.shippingCompany }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">快递单号</span>
+              <span class="info-value shipping-no" @click="copyShippingNo">
+                {{ order.shippingNo }} <span class="copy-hint">复制</span>
+              </span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">发货时间</span>
+              <span class="info-value">{{ formatTime(order.shipTime) }}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 4. 信息两列布局 (订单信息 + 物流信息) -->
-      <div class="info-grid">
-        <!-- 左列: 订单信息 -->
-        <div class="info-card">
-          <div class="card-header-bar">
-            <h3 class="card-title">订单信息</h3>
-          </div>
-          <div class="info-row">
-            <span class="info-label">订单编号</span>
-            <span class="info-value order-no" @click="copyOrderNo">
-              {{ order.orderNo }} <span class="copy-hint">复制</span>
-            </span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">支付方式</span>
-            <span class="info-value">{{ formatPayMethod(order.payMethod) }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">下单时间</span>
-            <span class="info-value">{{ formatTime(order.createTime) }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">支付时间</span>
-            <span class="info-value">{{ order.payTime ? formatTime(order.payTime) : '—' }}</span>
-          </div>
-          <div v-if="order.cancelTime" class="info-row">
-            <span class="info-label">取消时间</span>
-            <span class="info-value">{{ formatTime(order.cancelTime) }}</span>
-          </div>
-          <div v-if="order.cancelReason" class="info-row">
-            <span class="info-label">取消原因</span>
-            <span class="info-value">{{ order.cancelReason }}</span>
-          </div>
-          <div v-if="order.remark" class="info-row">
-            <span class="info-label">备注</span>
-            <span class="info-value remark">{{ order.remark }}</span>
-          </div>
-        </div>
-        <!-- 右列: 物流信息 (仅在有物流信息时显示) -->
-        <div v-if="order.shippingCompany || order.shippingNo" class="info-card">
-          <div class="card-header-bar">
-            <h3 class="card-title">物流信息</h3>
-          </div>
-          <div class="info-row">
-            <span class="info-label">物流公司</span>
-            <span class="info-value">{{ order.shippingCompany }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">快递单号</span>
-            <span class="info-value shipping-no" @click="copyShippingNo">
-              {{ order.shippingNo }} <span class="copy-hint">复制</span>
-            </span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">发货时间</span>
-            <span class="info-value">{{ formatTime(order.shipTime) }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 5. 支付方式选择弹窗 (保留原样) -->
+      <!-- 4. 支付方式选择弹窗 (保留原样) -->
       <el-dialog v-model="showPayDialog" title="选择支付方式" width="420px" append-to-body>
         <div class="pay-method-list">
           <div v-for="method in payMethodOptions" :key="method.value" class="pay-method-item"
@@ -236,6 +259,18 @@ interface UnifiedOrderDetail {
   /** 订单备注（后端 NormalOrder 实体 remark 字段，秒杀订单无此字段） */
   remark?: string
   items: OrderItemSnapshot[]
+  /** 收货地址-收件人 */
+  receiverName?: string
+  /** 收货地址-手机号 */
+  receiverPhone?: string
+  /** 收货地址-省 */
+  province?: string
+  /** 收货地址-市 */
+  city?: string
+  /** 收货地址-区 */
+  district?: string
+  /** 收货地址-详细地址 */
+  detailAddress?: string
 }
 
 /** 支付方式中文映射 */
@@ -274,6 +309,14 @@ const payMethodOptions = [
   { value: 'WECHAT', label: '微信支付', icon: '💬', desc: '模拟支付' },
   { value: 'WALLET', label: '钱包支付', icon: '👛', desc: '余额扣款' }
 ]
+
+/** 完整收货地址文本 */
+const fullAddress = computed<string>(() => {
+  if (!order.value) return ''
+  const o = order.value
+  if (!o.receiverName) return ''
+  return `${o.province || ''}${o.city || ''}${o.district || ''}${o.detailAddress || ''}`
+})
 
 /** 步骤 2 状态（支付完成） */
 const step2DotClass = computed<string>(() => {
@@ -438,7 +481,14 @@ function buildNormalOrder(detail: NormalOrderDetailVO): UnifiedOrderDetail {
       // 7.3 订单展示 SKU 信息（NormalOrderItem 实体新增字段自动序列化）
       skuId: item.skuId ?? null,
       skuAttributes: item.skuAttributes ?? null
-    }))
+    })),
+    // 收货地址字段透传
+    receiverName: detail.receiverName,
+    receiverPhone: detail.receiverPhone,
+    province: detail.province,
+    city: detail.city,
+    district: detail.district,
+    detailAddress: detail.detailAddress
   }
 }
 
@@ -481,7 +531,14 @@ async function buildSeckillOrder(seckill: SeckillOrder): Promise<UnifiedOrderDet
       productImage,
       unitPrice: seckill.seckillPrice,
       quantity: seckill.quantity
-    }]
+    }],
+    // 秒杀订单无收货地址
+    receiverName: undefined,
+    receiverPhone: undefined,
+    province: undefined,
+    city: undefined,
+    district: undefined,
+    detailAddress: undefined
   }
 }
 
@@ -722,7 +779,7 @@ onMounted(() => {
   margin-bottom: 24px;
 }
 
-/* === 顶部状态横幅 (参考京东) === */
+/* === 顶部状态横幅 (占满宽度,参考京东) === */
 .order-status-banner {
   display: flex;
   justify-content: space-between;
@@ -838,7 +895,7 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
-/* === 进度步骤条 (美化, 32px圆点) === */
+/* === 进度步骤条 (占满宽度,美化, 32px圆点) === */
 .order-steps {
   display: flex;
   align-items: flex-start;
@@ -917,6 +974,26 @@ onMounted(() => {
   background: #4caf50;
 }
 
+/* === 左右分栏布局 === */
+.order-content {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.order-left {
+  flex: 1.4;
+  min-width: 0;
+}
+
+.order-right {
+  flex: 1;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 /* === 信息卡片通用 === */
 .info-card {
   background: var(--color-bg-card);
@@ -925,6 +1002,11 @@ onMounted(() => {
   margin-bottom: 16px;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
+}
+
+/* 右栏卡片间距由 gap 控制 */
+.order-right .info-card {
+  margin-bottom: 0;
 }
 
 .card-header-bar {
@@ -963,7 +1045,7 @@ onMounted(() => {
 /* === 商品表格 === */
 .goods-table-head {
   display: grid;
-  grid-template-columns: 1fr 120px 80px 120px;
+  grid-template-columns: 1fr 100px 70px 100px;
   padding: 12px 20px;
   font-size: 13px;
   color: var(--color-text-secondary);
@@ -971,9 +1053,15 @@ onMounted(() => {
   background: var(--color-bg-subtle);
 }
 
+/* 商品行容器 - 限制最大高度,超出可滚动 */
+.goods-table-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
 .goods-table-row {
   display: grid;
-  grid-template-columns: 1fr 120px 80px 120px;
+  grid-template-columns: 1fr 100px 70px 100px;
   padding: 16px 20px;
   border-bottom: 1px solid var(--color-bg-subtle);
   align-items: center;
@@ -1084,13 +1172,36 @@ onMounted(() => {
   font-weight: 800;
 }
 
-/* === 信息两列布局 === */
-.info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+/* === 收货地址 === */
+.address-content {
+  padding: 16px 20px;
 }
 
+.address-name-phone {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+  align-items: baseline;
+}
+
+.address-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.address-phone {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.address-detail {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* === 订单信息行 === */
 .info-row {
   display: flex;
   justify-content: space-between;
@@ -1187,6 +1298,17 @@ onMounted(() => {
 }
 
 /* === 响应式 === */
+@media (max-width: 900px) {
+  /* 中等屏幕: 左右分栏改为上下堆叠 */
+  .order-content {
+    flex-direction: column;
+  }
+
+  .order-right {
+    max-width: none;
+  }
+}
+
 @media (max-width: 768px) {
   .order-page {
     padding: 16px;
@@ -1214,10 +1336,6 @@ onMounted(() => {
 
   .step-time {
     font-size: 10px;
-  }
-
-  .info-grid {
-    grid-template-columns: 1fr;
   }
 
   .goods-table-head {

@@ -442,6 +442,18 @@ export interface NormalOrder {
 export interface NormalOrderDetailVO {
   order: NormalOrder
   items: NormalOrderItem[]
+  /** 收货地址-收件人 */
+  receiverName?: string
+  /** 收货地址-手机号 */
+  receiverPhone?: string
+  /** 收货地址-省 */
+  province?: string
+  /** 收货地址-市 */
+  city?: string
+  /** 收货地址-区 */
+  district?: string
+  /** 收货地址-详细地址 */
+  detailAddress?: string
 }
 
 /** 统一订单列表项商品快照 */

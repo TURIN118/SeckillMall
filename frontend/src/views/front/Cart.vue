@@ -1,5 +1,5 @@
 <template>
-  <!-- 购物车页面：参考淘宝购物车设计风格 -->
+  <!-- 购物车页面：左右分栏布局（左侧商品列表 + 右侧结算明细面板） -->
   <div class="cart-page">
     <!-- 页头：左侧大标题 + 右侧商品数量提示 -->
     <div class="cart-header">
@@ -23,99 +23,119 @@
       <button class="btn-sm primary" type="button" @click="router.push('/products')">去逛逛</button>
     </div>
 
-    <!-- 购物车列表 -->
-    <div v-else class="cart-content">
-      <!-- 表头 -->
-      <div class="cart-table-head">
-        <div class="col-check">
+    <!-- 主体: 左右分栏布局 -->
+    <div v-else class="cart-body">
+      <!-- 左侧: 商品列表主内容区 -->
+      <div class="cart-main">
+        <!-- 商品列表卡片 -->
+        <div class="cart-content">
+          <!-- 表头 -->
+          <div class="cart-table-head">
+            <div class="col-check">
+              <el-checkbox :model-value="isAllSelected" :indeterminate="isIndeterminate"
+                @change="handleToggleAll">全选</el-checkbox>
+            </div>
+            <div class="col-info">商品信息</div>
+            <div class="col-price">单价</div>
+            <div class="col-quantity">数量</div>
+            <div class="col-subtotal">小计</div>
+            <div class="col-action">操作</div>
+          </div>
+
+          <!-- 商品行 -->
+          <div v-for="item in cartList" :key="item.id" class="cart-row"
+            :class="{ disabled: item.productStatus !== 'ON_SALE' }">
+            <!-- 复选框 -->
+            <div class="col-check">
+              <el-checkbox :model-value="item.selected" :disabled="item.productStatus !== 'ON_SALE'"
+                @change="(val: boolean | string | number) => handleToggleSelect(item, Boolean(val))" />
+            </div>
+
+            <!-- 商品信息: 图片 + 名称 + SKU属性 -->
+            <div class="col-info">
+              <div class="product-img" @click="goProductDetail(item.productId)">
+                <img v-if="item.skuMainImage || item.mainImage" :src="formatImageUrl(item.skuMainImage || item.mainImage)"
+                  :alt="item.productName" class="product-img-tag" loading="lazy" />
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                  class="product-img-placeholder">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="m21 15-5-5L5 21" />
+                </svg>
+              </div>
+              <div class="product-info">
+                <div class="product-name" @click="goProductDetail(item.productId)">{{ item.productName }}</div>
+                <div v-if="item.skuAttributes" class="product-sku-attrs">
+                  <svg class="product-sku-attrs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M3 6h18M3 12h18M3 18h18" />
+                  </svg>
+                  {{ item.skuAttributes }}
+                </div>
+                <div v-if="item.productStatus !== 'ON_SALE'" class="product-status-tag">已下架</div>
+              </div>
+            </div>
+
+            <!-- 单价 -->
+            <div class="col-price">
+              <span class="price-text">¥{{ formatPrice(item.originalPrice) }}</span>
+            </div>
+
+            <!-- 数量加减控件 -->
+            <div class="col-quantity">
+              <el-input-number v-model="item.quantity" :min="1" :max="Math.max(1, item.stock)"
+                :disabled="item.productStatus !== 'ON_SALE'" size="small"
+                @change="(val: number | undefined) => handleQuantityChange(item, val)" />
+              <div v-if="item.stock <= 5 && item.productStatus === 'ON_SALE'" class="stock-warn">
+                仅剩 {{ item.stock }} 件
+              </div>
+            </div>
+
+            <!-- 小计 -->
+            <div class="col-subtotal">
+              <span class="subtotal-text">¥{{ formatPrice(item.subtotal) }}</span>
+            </div>
+
+            <!-- 操作 -->
+            <div class="col-action">
+              <button class="btn-sm text danger" type="button" @click="handleDelete(item)">删除</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部工具栏 (全选 + 删除选中 + 清空) -->
+        <div class="cart-toolbar">
           <el-checkbox :model-value="isAllSelected" :indeterminate="isIndeterminate"
             @change="handleToggleAll">全选</el-checkbox>
-        </div>
-        <div class="col-info">商品信息</div>
-        <div class="col-price">单价</div>
-        <div class="col-quantity">数量</div>
-        <div class="col-subtotal">小计</div>
-        <div class="col-action">操作</div>
-      </div>
-
-      <!-- 商品行 -->
-      <div v-for="item in cartList" :key="item.id" class="cart-row"
-        :class="{ disabled: item.productStatus !== 'ON_SALE' }">
-        <!-- 复选框 -->
-        <div class="col-check">
-          <el-checkbox :model-value="item.selected" :disabled="item.productStatus !== 'ON_SALE'"
-            @change="(val: boolean | string | number) => handleToggleSelect(item, Boolean(val))" />
-        </div>
-
-        <!-- 商品信息: 图片 + 名称 + SKU属性 -->
-        <div class="col-info">
-          <div class="product-img" @click="goProductDetail(item.productId)">
-            <img v-if="item.skuMainImage || item.mainImage" :src="formatImageUrl(item.skuMainImage || item.mainImage)"
-              :alt="item.productName" class="product-img-tag" loading="lazy" />
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-              class="product-img-placeholder">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <path d="m21 15-5-5L5 21" />
-            </svg>
-          </div>
-          <div class="product-info">
-            <div class="product-name" @click="goProductDetail(item.productId)">{{ item.productName }}</div>
-            <div v-if="item.skuAttributes" class="product-sku-attrs">
-              <svg class="product-sku-attrs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2">
-                <path d="M3 6h18M3 12h18M3 18h18" />
-              </svg>
-              {{ item.skuAttributes }}
-            </div>
-            <div v-if="item.productStatus !== 'ON_SALE'" class="product-status-tag">已下架</div>
-          </div>
-        </div>
-
-        <!-- 单价 -->
-        <div class="col-price">
-          <span class="price-text">¥{{ formatPrice(item.originalPrice) }}</span>
-        </div>
-
-        <!-- 数量加减控件 -->
-        <div class="col-quantity">
-          <el-input-number v-model="item.quantity" :min="1" :max="Math.max(1, item.stock)"
-            :disabled="item.productStatus !== 'ON_SALE'" size="small"
-            @change="(val: number | undefined) => handleQuantityChange(item, val)" />
-          <div v-if="item.stock <= 5 && item.productStatus === 'ON_SALE'" class="stock-warn">
-            仅剩 {{ item.stock }} 件
-          </div>
-        </div>
-
-        <!-- 小计 -->
-        <div class="col-subtotal">
-          <span class="subtotal-text">¥{{ formatPrice(item.subtotal) }}</span>
-        </div>
-
-        <!-- 操作 -->
-        <div class="col-action">
-          <button class="btn-sm text danger" type="button" @click="handleDelete(item)">删除</button>
+          <button class="btn-sm" type="button" :disabled="selectedCount === 0" @click="handleBatchDelete">删除选中</button>
+          <button class="btn-sm" type="button" @click="handleClear">清空购物车</button>
         </div>
       </div>
-    </div>
 
-    <!-- 底部固定操作栏 (固定在视口底部，独立于卡片之外) -->
-    <div v-if="!loading && cartList.length > 0" class="cart-footer">
-      <div class="footer-left">
-        <el-checkbox :model-value="isAllSelected" :indeterminate="isIndeterminate"
-          @change="handleToggleAll">全选</el-checkbox>
-        <button class="btn-sm" type="button" :disabled="selectedCount === 0" @click="handleBatchDelete">删除选中</button>
-        <button class="btn-sm" type="button" @click="handleClear">清空购物车</button>
-      </div>
-      <div class="footer-right">
-        <div class="total-info">
-          已选 <span class="total-count">{{ selectedCount }}</span> 件商品
+      <!-- 右侧: 结算明细面板 (sticky 定位) -->
+      <div class="cart-sidebar">
+        <!-- 面板标题 -->
+        <div class="sidebar-title">结算明细</div>
+        <!-- 面板内容 -->
+        <div class="sidebar-body">
+          <div class="summary-row">
+            <span class="summary-label">商品总价</span>
+            <span class="summary-value">¥{{ formatPrice(totalAmount) }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">已选商品</span>
+            <span class="summary-value">{{ selectedCount }} 件</span>
+          </div>
+          <div class="summary-divider"></div>
         </div>
-        <div class="total-amount-wrap">
-          合计：<span class="total-amount">¥{{ formatPrice(totalAmount) }}</span>
+        <!-- 面板底部 -->
+        <div class="sidebar-footer">
+          <div class="summary-total">
+            <span class="summary-total-label">合计</span>
+            <span class="summary-total-value">¥{{ formatPrice(totalAmount) }}</span>
+          </div>
+          <button class="btn-checkout" type="button" :disabled="selectedCount === 0" @click="handleCheckout">去结算</button>
         </div>
-        <button class="btn-checkout" type="button" :disabled="selectedCount === 0"
-          @click="handleCheckout">去结算</button>
       </div>
     </div>
   </div>
@@ -397,13 +417,11 @@ onDeactivated(() => {
 </script>
 
 <style scoped>
-/* ===== 购物车页面 - 淘宝风格 ===== */
+/* ===== 购物车页面 - 左右分栏布局 ===== */
 
 /* 页面容器 */
 .cart-page {
   padding: 24px;
-  /* 底部留白：为固定操作栏(约 68px) + 安全间距留出空间 */
-  padding-bottom: 100px;
 }
 
 /* ===== 页头 ===== */
@@ -463,6 +481,19 @@ onDeactivated(() => {
   border-radius: var(--radius-lg);
 }
 
+/* ===== 主体: 左右分栏布局 ===== */
+.cart-body {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+/* 左侧: 商品列表主内容区 */
+.cart-main {
+  flex: 1;
+  min-width: 0;
+}
+
 /* ===== 购物车内容卡片 ===== */
 .cart-content {
   background: var(--color-bg-card);
@@ -474,9 +505,9 @@ onDeactivated(() => {
 /* ===== 表头 ===== */
 .cart-table-head {
   display: grid;
-  grid-template-columns: 60px 1fr 120px 160px 120px 80px;
+  grid-template-columns: 50px 1fr 100px 140px 100px 70px;
   align-items: center;
-  padding: 12px 20px;
+  padding: 12px 16px;
   background: #fafafa;
   border-bottom: 1px solid var(--color-border);
   font-size: 13px;
@@ -487,9 +518,9 @@ onDeactivated(() => {
 /* ===== 商品行 ===== */
 .cart-row {
   display: grid;
-  grid-template-columns: 60px 1fr 120px 160px 120px 80px;
+  grid-template-columns: 50px 1fr 100px 140px 100px 70px;
   align-items: center;
-  padding: 20px;
+  padding: 16px;
   border-bottom: 1px solid var(--color-border-light);
   transition: background 0.15s;
 }
@@ -524,8 +555,8 @@ onDeactivated(() => {
 
 /* 商品图片 */
 .product-img {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -628,7 +659,7 @@ onDeactivated(() => {
 
 /* ===== 小计列 (红色醒目) ===== */
 .subtotal-text {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--color-primary);
 }
@@ -655,67 +686,104 @@ onDeactivated(() => {
   justify-content: center;
 }
 
-/* ===== 底部固定操作栏 ===== */
-.cart-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  /* padding-bottom 36px 确保覆盖 FrontLayout 的深色页脚(约 67px)，
-     避免深色页脚露出形成"黑色区域" */
-  padding: 16px 24px 36px;
-  background: #ffffff;
-  border-top: 1px solid var(--color-border);
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
-  z-index: 50;
-  box-sizing: border-box;
-}
-
-.footer-left {
+/* ===== 底部工具栏 (全选 + 删除选中 + 清空) ===== */
+.cart-toolbar {
   display: flex;
   align-items: center;
   gap: 16px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
-.footer-right {
-  display: flex;
-  align-items: center;
-  gap: 24px;
+/* ===== 右侧结算面板 (sticky 定位) ===== */
+.cart-sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  position: sticky;
+  top: 80px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
-/* 已选数量 */
-.total-info {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-}
-
-.total-count {
+/* 面板标题 */
+.sidebar-title {
+  padding: 16px 20px;
+  font-size: 16px;
   font-weight: 700;
-  color: var(--color-primary);
-  margin: 0 2px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-subtle);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
-/* 合计金额 */
-.total-amount-wrap {
+/* 面板内容 */
+.sidebar-body {
+  padding: 20px;
+}
+
+/* 摘要行 */
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.summary-label {
+  color: var(--color-text-secondary);
+}
+
+.summary-value {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+/* 分隔线 */
+.summary-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 16px 0;
+}
+
+/* 面板底部 */
+.sidebar-footer {
+  padding: 16px 20px 20px;
+  border-top: 1px solid var(--color-border-light);
+  background: var(--color-bg-subtle);
+}
+
+/* 合计行 */
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 16px;
+}
+
+.summary-total-label {
   font-size: 14px;
   color: var(--color-text-secondary);
 }
 
-.total-amount {
-  font-size: 22px;
+.summary-total-value {
+  font-size: 24px;
   font-weight: 800;
   color: var(--color-primary);
-  margin-left: 2px;
   letter-spacing: 0.01em;
 }
 
-/* ===== 去结算按钮 (大号醒目) ===== */
+/* ===== 去结算按钮 (全宽) ===== */
 .btn-checkout {
-  padding: 10px 40px;
-  font-size: 15px;
+  width: 100%;
+  padding: 12px 0;
+  font-size: 16px;
   font-weight: 700;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -791,27 +859,17 @@ onDeactivated(() => {
 
 /* ===== 响应式设计 ===== */
 
-/* 中等屏幕：缩小列宽 */
+/* 中等屏幕：右侧面板宽度缩小到 260px */
 @media (max-width: 1024px) {
-  .cart-table-head,
-  .cart-row {
-    grid-template-columns: 50px 1fr 100px 140px 100px 70px;
-  }
-
-  .cart-table-head {
-    padding: 12px 16px;
-  }
-
-  .cart-row {
-    padding: 16px;
+  .cart-sidebar {
+    width: 260px;
   }
 }
 
-/* 小屏幕：紧凑布局 */
+/* 小屏幕：改为上下布局（右侧面板移到下方） */
 @media (max-width: 768px) {
   .cart-page {
     padding: 16px;
-    padding-bottom: 90px;
   }
 
   .cart-title {
@@ -820,6 +878,18 @@ onDeactivated(() => {
 
   .cart-count-tip {
     font-size: 12px;
+  }
+
+  /* 改为上下布局 */
+  .cart-body {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .cart-sidebar {
+    width: 100%;
+    position: static;
+    align-self: stretch;
   }
 
   .cart-table-head,
@@ -846,30 +916,8 @@ onDeactivated(() => {
     font-size: 14px;
   }
 
-  .cart-footer {
-    padding: 12px 12px 24px;
-  }
-
-  .footer-left {
-    gap: 8px;
-  }
-
-  .footer-right {
-    gap: 12px;
-  }
-
-  .total-info,
-  .total-amount-wrap {
-    font-size: 12px;
-  }
-
-  .total-amount {
-    font-size: 18px;
-  }
-
-  .btn-checkout {
-    padding: 8px 24px;
-    font-size: 14px;
+  .summary-total-value {
+    font-size: 20px;
   }
 
   .btn-sm {

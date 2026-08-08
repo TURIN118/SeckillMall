@@ -44,12 +44,13 @@
               </svg>
               个人中心
             </div>
-            <div class="dd-item" @click="goOrders">
+            <div class="dd-item" @click="router.push('/user/wallet')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                <path d="M21 12V7H5a2 2 0 010-4h14v4" />
+                <path d="M3 5v14a2 2 0 002 2h16v-5" />
+                <path d="M18 12a2 2 0 000 4h3v-4z" />
               </svg>
-              我的订单
+              我的钱包
             </div>
             <div class="dd-item" @click="router.push('/user/address')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

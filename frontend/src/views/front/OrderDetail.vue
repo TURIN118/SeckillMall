@@ -655,8 +655,6 @@ onMounted(() => {
 /* === 页面容器 === */
 .order-page {
   padding: 24px;
-  max-width: 1000px;
-  margin: 0 auto;
 }
 
 /* === 加载骨架屏 === */

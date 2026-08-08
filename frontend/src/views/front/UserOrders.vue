@@ -1,112 +1,119 @@
 <template>
-  <!-- 参考京东/淘宝订单页：顶部头部+标签页+订单卡片(头部+商品列表+汇总操作)+分页 -->
+  <!-- 两列布局：左侧 sticky 状态导航栏 + 右侧订单卡片内容区 -->
   <div class="order-page">
-
-    <!-- 状态标签页 -->
-    <div class="order-tabs">
-      <div v-for="tab in tabs" :key="tab.name" class="order-tab" :class="{ active: activeTab === tab.name }"
-        @click="handleTabChange(tab.name)">
-        {{ tab.label }}
-      </div>
-    </div>
-
-    <!-- 加载骨架屏 -->
-    <div v-if="loading" class="skeleton-list">
-      <div v-for="i in 3" :key="i" class="skeleton-item"></div>
-    </div>
-
-    <!-- 空状态 -->
-    <div v-else-if="orderList.length === 0" class="empty-state">
-      <div class="empty-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="80" height="80">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <path d="m21 15-5-5L5 21" />
-        </svg>
-      </div>
-      <p class="empty-text">还没有订单，快去秒杀好物吧！</p>
-      <button class="btn-sm primary" @click="router.push('/')">去逛逛</button>
-    </div>
-
-    <!-- 订单列表 -->
-    <div v-else class="order-list">
-      <div v-for="order in orderList" :key="order.id" class="order-card"
-        :class="{ 'order-disabled': isDisabledStatus(order.status) }">
-        <!-- 卡片头部：订单类型 + 订单号 + 下单时间 + 状态 -->
-        <div class="order-card-header">
-          <div class="order-card-header-left">
-            <span class="order-type-tag" :class="order.orderType === 'SECKILL' ? 'seckill' : 'normal'">
-              {{ order.orderType === 'SECKILL' ? '秒杀订单' : '普通订单' }}
-            </span>
-            <span class="order-card-no">订单号：{{ order.orderNo }}</span>
-            <span class="order-card-time">{{ formatTime(order.createTime) }}</span>
+    <div class="order-body">
+      <!-- 左侧状态导航栏 -->
+      <aside class="order-sidebar">
+        <div class="sidebar-title">我的订单</div>
+        <nav class="sidebar-nav">
+          <div v-for="tab in tabs" :key="tab.name" class="nav-item"
+            :class="{ active: activeTab === tab.name }" @click="handleTabChange(tab.name)">
+            <span class="nav-label">{{ tab.label }}</span>
           </div>
-          <div class="order-card-header-right">
-            <span class="status-tag" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
-          </div>
+        </nav>
+      </aside>
+
+      <!-- 右侧内容区 -->
+      <div class="order-main">
+        <!-- 加载骨架屏 -->
+        <div v-if="loading" class="skeleton-list">
+          <div v-for="i in 3" :key="i" class="skeleton-item"></div>
         </div>
 
-        <!-- 卡片主体：商品列表 + 汇总操作 -->
-        <div class="order-card-body" @click="goDetail(order)">
-          <!-- 商品列表 -->
-          <div class="order-goods-list">
-            <div v-for="(item, idx) in (order.items || [])" :key="idx" class="order-goods-item">
-              <div class="order-goods-img">
-                <img v-if="item.productImage" :src="formatImageUrl(item.productImage)" :alt="item.productName"
-                  loading="lazy" />
-                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <path d="m21 15-5-5L5 21" />
-                </svg>
+        <!-- 空状态 -->
+        <div v-else-if="orderList.length === 0" class="empty-state">
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="80" height="80">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <path d="m21 15-5-5L5 21" />
+            </svg>
+          </div>
+          <p class="empty-text">还没有订单，快去秒杀好物吧！</p>
+          <button class="btn-sm primary" @click="router.push('/')">去逛逛</button>
+        </div>
+
+        <!-- 订单列表 -->
+        <div v-else class="order-list">
+          <div v-for="order in orderList" :key="order.id" class="order-card"
+            :class="{ 'order-disabled': isDisabledStatus(order.status) }">
+            <!-- 卡片头部：订单类型 + 订单号 + 下单时间 + 状态 -->
+            <div class="order-card-header">
+              <div class="order-card-header-left">
+                <span class="order-type-tag" :class="order.orderType === 'SECKILL' ? 'seckill' : 'normal'">
+                  {{ order.orderType === 'SECKILL' ? '秒杀订单' : '普通订单' }}
+                </span>
+                <span class="order-card-no">订单号：{{ order.orderNo }}</span>
+                <span class="order-card-time">{{ formatTime(order.createTime) }}</span>
               </div>
-              <div class="order-goods-info">
-                <div class="order-goods-name">{{ item.productName || '—' }}</div>
-                <div class="order-goods-spec">
-                  <span class="goods-quantity">x{{ item.quantity }}</span>
+              <div class="order-card-header-right">
+                <span class="status-tag" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
+              </div>
+            </div>
+
+            <!-- 卡片主体：商品列表 + 汇总操作 -->
+            <div class="order-card-body" @click="goDetail(order)">
+              <!-- 商品列表 -->
+              <div class="order-goods-list">
+                <div v-for="(item, idx) in (order.items || [])" :key="idx" class="order-goods-item">
+                  <div class="order-goods-img">
+                    <img v-if="item.productImage" :src="formatImageUrl(item.productImage)" :alt="item.productName"
+                      loading="lazy" />
+                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <path d="m21 15-5-5L5 21" />
+                    </svg>
+                  </div>
+                  <div class="order-goods-info">
+                    <div class="order-goods-name">{{ item.productName || '—' }}</div>
+                    <div class="order-goods-spec">
+                      <span class="goods-quantity">x{{ item.quantity }}</span>
+                    </div>
+                  </div>
+                  <div class="order-goods-price">
+                    <span class="price-symbol">¥</span>{{ formatPrice(item.price) }}
+                  </div>
+                </div>
+                <!-- 无商品占位 -->
+                <div v-if="!order.items || order.items.length === 0" class="order-goods-empty">
+                  暂无商品信息
                 </div>
               </div>
-              <div class="order-goods-price">
-                <span class="price-symbol">¥</span>{{ formatPrice(item.price) }}
+
+              <!-- 右侧汇总和操作 -->
+              <div class="order-card-summary">
+                <div class="order-card-amount">
+                  <span class="amount-label">实付款</span>
+                  <span class="amount-value">{{ formatPrice(order.totalAmount) }}</span>
+                </div>
+                <div class="order-card-actions">
+                  <template v-if="order.status === 'UNPAID'">
+                    <button class="btn-sm" @click.stop="goDetail(order)">查看详情</button>
+                    <button class="btn-sm text" @click.stop="handleCancel(order)">取消订单</button>
+                    <button class="btn-sm primary" @click.stop="goPay(order)">去支付</button>
+                  </template>
+                  <template v-else-if="order.status === 'SHIPPED'">
+                    <button class="btn-sm" @click.stop="goDetail(order)">查看详情</button>
+                    <button class="btn-sm primary" :disabled="confirmLoadingId === order.id"
+                      @click.stop="handleConfirm(order)">
+                      {{ confirmLoadingId === order.id ? '确认中...' : '确认收货' }}
+                    </button>
+                  </template>
+                  <template v-else>
+                    <button class="btn-sm" @click.stop="goDetail(order)">查看详情</button>
+                  </template>
+                </div>
               </div>
             </div>
-            <!-- 无商品占位 -->
-            <div v-if="!order.items || order.items.length === 0" class="order-goods-empty">
-              暂无商品信息
-            </div>
           </div>
 
-          <!-- 右侧汇总和操作 -->
-          <div class="order-card-summary">
-            <div class="order-card-amount">
-              <span class="amount-label">实付款</span>
-              <span class="amount-value">{{ formatPrice(order.totalAmount) }}</span>
-            </div>
-            <div class="order-card-actions">
-              <template v-if="order.status === 'UNPAID'">
-                <button class="btn-sm" @click.stop="goDetail(order)">查看详情</button>
-                <button class="btn-sm text" @click.stop="handleCancel(order)">取消订单</button>
-                <button class="btn-sm primary" @click.stop="goPay(order)">去支付</button>
-              </template>
-              <template v-else-if="order.status === 'SHIPPED'">
-                <button class="btn-sm" @click.stop="goDetail(order)">查看详情</button>
-                <button class="btn-sm primary" :disabled="confirmLoadingId === order.id"
-                  @click.stop="handleConfirm(order)">
-                  {{ confirmLoadingId === order.id ? '确认中...' : '确认收货' }}
-                </button>
-              </template>
-              <template v-else>
-                <button class="btn-sm" @click.stop="goDetail(order)">查看详情</button>
-              </template>
-            </div>
+          <!-- 分页 -->
+          <div class="order-pagination" v-if="total > 0">
+            <PaginationWrapper :total="total" :page-num="pageNum" :page-size="pageSize" :page-sizes="[10, 20, 50]"
+              @change="handlePageChange" />
           </div>
         </div>
-      </div>
-
-      <!-- 分页 -->
-      <div class="order-pagination" v-if="total > 0">
-        <PaginationWrapper :total="total" :page-num="pageNum" :page-size="pageSize" :page-sizes="[10, 20, 50]"
-          @change="handlePageChange" />
       </div>
     </div>
   </div>
@@ -288,55 +295,80 @@ onMounted(() => {
 /* ============ 页面容器 ============ */
 .order-page {
   padding: 24px;
-
 }
 
-/* ============ 状态标签页 ============ */
-.order-tabs {
+/* ============ 两列布局主体 ============ */
+.order-body {
   display: flex;
-  gap: 0;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+/* ============ 左侧状态导航栏 ============ */
+.order-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px;
+  align-self: flex-start;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  margin-bottom: 16px;
   overflow: hidden;
 }
 
-.order-tab {
-  flex: 1;
-  padding: 14px 20px;
+.sidebar-title {
+  padding: 16px 20px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  background: var(--color-bg-subtle);
+  border-bottom: 1px solid var(--color-border-light, var(--color-border));
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
   font-size: 14px;
-  font-weight: 600;
   color: var(--color-text-secondary);
   cursor: pointer;
-  text-align: center;
-  border-bottom: 3px solid transparent;
-  transition: all 0.2s;
-  position: relative;
+  transition: all 0.15s;
+  border-bottom: 1px solid var(--color-border-light, var(--color-border));
   user-select: none;
 }
 
-.order-tab:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 16px;
-  width: 1px;
-  background: var(--color-border);
+.nav-item:last-child {
+  border-bottom: none;
 }
 
-.order-tab:hover {
-  color: var(--color-primary);
+.nav-item:hover {
   background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
 }
 
-.order-tab.active {
+.nav-item.active {
   color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
-  background: #fff;
-  font-weight: 700;
+  font-weight: 600;
+  background: var(--color-primary-light, rgba(229, 57, 53, 0.08));
+  border-left: 3px solid var(--color-primary);
+  padding-left: 17px;
+}
+
+.nav-label {
+  line-height: 1.4;
+}
+
+/* ============ 右侧内容区 ============ */
+.order-main {
+  flex: 1;
+  min-width: 0;
 }
 
 /* ============ 骨架屏 ============ */
@@ -735,21 +767,40 @@ onMounted(() => {
     padding: 12px;
   }
 
-
-  .order-tabs {
-    overflow-x: auto;
-    border-radius: var(--radius-md);
+  .order-body {
+    flex-direction: column;
+    gap: 16px;
   }
 
-  .order-tab {
-    flex: 0 0 auto;
+  .order-sidebar {
+    width: 100%;
+    position: static;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .nav-item {
+    white-space: nowrap;
+    border-bottom: none;
+    border-right: 1px solid var(--color-border-light, var(--color-border));
     padding: 12px 16px;
     font-size: 13px;
-    white-space: nowrap;
   }
 
-  .order-tab:not(:last-child)::after {
-    display: none;
+  .nav-item:last-child {
+    border-right: none;
+  }
+
+  .nav-item.active {
+    border-left: none;
+    border-bottom: 2px solid var(--color-primary);
+    padding-left: 16px;
   }
 
   .order-card-header {

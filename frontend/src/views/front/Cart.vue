@@ -1,11 +1,18 @@
 <template>
   <!-- 购物车页面：左右分栏布局（左侧商品列表 + 右侧结算明细面板） -->
   <div class="cart-page">
-    <!-- 页头：左侧大标题 + 右侧商品数量提示 -->
+    <!-- 页头：左侧大标题 + 右侧操作按钮与商品数量提示 -->
     <div class="cart-header">
       <h2 class="cart-title">购物车</h2>
-      <div v-if="!loading && cartList.length > 0" class="cart-count-tip">
-        共 <span class="cart-count-num">{{ cartList.length }}</span> 件商品
+      <div class="cart-header-right">
+        <div v-if="!loading && cartList.length > 0" class="cart-count-tip">
+          共 <span class="cart-count-num">{{ cartList.length }}</span> 件商品
+        </div>
+        <template v-if="!loading && cartList.length > 0">
+          <button class="btn-sm" type="button" :disabled="selectedCount === 0"
+            @click="handleBatchDelete">删除选中</button>
+          <button class="btn-sm" type="button" @click="handleClear">清空购物车</button>
+        </template>
       </div>
     </div>
 
@@ -29,14 +36,11 @@
       <div class="cart-main">
         <!-- 商品列表卡片 -->
         <div class="cart-content">
-          <!-- 表头: 全选 + 删除选中 + 清空购物车 -->
+          <!-- 表头: 全选 -->
           <div class="cart-table-head">
             <div class="col-check">
               <el-checkbox :model-value="isAllSelected" :indeterminate="isIndeterminate"
                 @change="handleToggleAll">全选</el-checkbox>
-              <button class="btn-sm btn-head" type="button" :disabled="selectedCount === 0"
-                @click="handleBatchDelete">删除选中</button>
-              <button class="btn-sm btn-head" type="button" @click="handleClear">清空购物车</button>
             </div>
             <div class="col-info">商品信息</div>
             <div class="col-price">单价</div>
@@ -46,7 +50,7 @@
           </div>
 
           <!-- 商品行 -->
-          <div v-for="item in cartList" :key="item.id" class="cart-row"
+          <div v-for="item in pagedCartList" :key="item.id" class="cart-row"
             :class="{ disabled: item.productStatus !== 'ON_SALE' }">
             <!-- 复选框 -->
             <div class="col-check">
@@ -105,6 +109,18 @@
               <button class="btn-sm text danger" type="button" @click="handleDelete(item)">删除</button>
             </div>
           </div>
+        </div>
+
+        <!-- 分页组件 (商品数量超过 pageSize 时显示) -->
+        <div v-if="cartList.length > pageSize" class="cart-pagination">
+          <el-pagination
+            v-model:current-page="pageNum"
+            v-model:page-size="pageSize"
+            :total="cartList.length"
+            :page-sizes="[10, 20, 50]"
+            layout="total, sizes, prev, pager, next"
+            @change="handlePageChange"
+          />
         </div>
       </div>
 
@@ -196,6 +212,10 @@ const cartList = ref<CartItemVO[]>([])
 /** 列表加载中 */
 const loading = ref<boolean>(false)
 
+/** 分页相关变量 (前端假分页，因后端 /api/v1/cart/list 不支持分页参数) */
+const pageNum = ref<number>(1)
+const pageSize = ref<number>(10)
+
 /** 数量更新防抖映射 (避免频繁请求) */
 const quantityTimers = new Map<number | string, ReturnType<typeof setTimeout>>()
 
@@ -239,6 +259,12 @@ const isIndeterminate = computed<boolean>(() => {
   return selected > 0 && selected < selectableItems.value.length
 })
 
+/** 当前页显示的购物车列表 (前端假分页: slice 数组) */
+const pagedCartList = computed<CartItemVO[]>(() => {
+  const start = (pageNum.value - 1) * pageSize.value
+  return cartList.value.slice(start, start + pageSize.value)
+})
+
 /* === 工具函数 === */
 
 /** 格式化价格 (保留两位小数) */
@@ -256,6 +282,11 @@ async function loadCartList(): Promise<void> {
       ...item,
       selected: Boolean(item.selected)
     }))
+    // 修正越界页码: 删除商品后当前页可能无数据，回退到最后一页
+    const maxPage = Math.max(1, Math.ceil(cartList.value.length / pageSize.value))
+    if (pageNum.value > maxPage) {
+      pageNum.value = maxPage
+    }
   } catch {
     cartList.value = []
   } finally {
@@ -267,6 +298,18 @@ async function loadCartList(): Promise<void> {
 async function refreshAll(): Promise<void> {
   await loadCartList()
   await cartStore.fetchCount()
+}
+
+/* === 分页事件处理 === */
+
+/** 分页变化 (页码或每页条数变化时触发) */
+function handlePageChange(): void {
+  // 前端假分页: 仅需更新视图，pagedCartList 计算属性会自动响应
+  // 滚动到商品列表顶部，提升用户体验
+  const tableHead = document.querySelector('.cart-table-head')
+  if (tableHead) {
+    tableHead.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }
 }
 
 /* === 事件处理 === */
@@ -450,9 +493,16 @@ onDeactivated(() => {
 /* ===== 页头 ===== */
 .cart-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+}
+
+/* 页头右侧容器: 容纳商品数量提示 + 操作按钮 */
+.cart-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .cart-title {
@@ -525,10 +575,22 @@ onDeactivated(() => {
   overflow: hidden;
 }
 
-/* ===== 表头 (含全选 + 删除选中 + 清空购物车) ===== */
+/* ===== 分页组件 ===== */
+.cart-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+/* ===== 表头 (含全选) ===== */
 .cart-table-head {
   display: grid;
-  grid-template-columns: 240px 1fr 100px 140px 100px 70px;
+  grid-template-columns: 50px 1fr 100px 140px 100px 70px;
   align-items: center;
   padding: 12px 16px;
   background: #fafafa;
@@ -541,7 +603,7 @@ onDeactivated(() => {
 /* ===== 商品行 ===== */
 .cart-row {
   display: grid;
-  grid-template-columns: 240px 1fr 100px 140px 100px 70px;
+  grid-template-columns: 50px 1fr 100px 140px 100px 70px;
   align-items: center;
   padding: 16px;
   border-bottom: 1px solid var(--color-border-light);
@@ -568,17 +630,6 @@ onDeactivated(() => {
   justify-content: center;
 }
 
-/* 表头复选框列: 左对齐 + 间距，容纳全选 + 删除选中 + 清空购物车 */
-.cart-table-head .col-check {
-  justify-content: flex-start;
-  gap: 8px;
-}
-
-/* ===== 表头操作按钮 (紧凑样式，与表头高度匹配) ===== */
-.btn-head {
-  padding: 3px 10px;
-  font-size: 12px;
-}
 
 /* ===== 商品信息列 ===== */
 .col-info {
@@ -998,7 +1049,7 @@ onDeactivated(() => {
 
   .cart-table-head,
   .cart-row {
-    grid-template-columns: 200px 1fr 80px 110px 80px 60px;
+    grid-template-columns: 40px 1fr 80px 110px 80px 60px;
     padding: 10px 8px;
     font-size: 12px;
   }
@@ -1029,9 +1080,9 @@ onDeactivated(() => {
     font-size: 11px;
   }
 
-  .btn-head {
-    padding: 2px 8px;
-    font-size: 11px;
+  /* 小屏幕下页头右侧按钮间距收紧 */
+  .cart-header-right {
+    gap: 8px;
   }
 }
 </style>

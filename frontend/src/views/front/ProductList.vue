@@ -1,33 +1,10 @@
 <template>
-  <!-- 商品分类/搜索页 (参考淘宝: 左侧分类树 + 顶部面包屑 + 筛选区 + 商品网格 + 分页) -->
+  <!-- 商品分类/搜索页 (参考淘宝: 左侧分类树 + 筛选区 + 商品网格 + 分页) -->
   <div class="category-page">
-    <!-- 1. 面包屑导航 -->
-    <div class="breadcrumb-bar">
-      <div class="breadcrumb-inner">
-        <span class="crumb clickable" @click="goHome">首页</span>
-        <span class="crumb-sep">&gt;</span>
-        <template v-if="keyword">
-          <span class="crumb">搜索结果</span>
-          <span class="crumb-sep">&gt;</span>
-          <span class="crumb current">"{{ keyword }}"</span>
-        </template>
-        <template v-else-if="categoryId && currentCategoryPath.length > 0">
-          <template v-for="(cat, idx) in currentCategoryPath" :key="cat.id">
-            <span class="crumb clickable" :class="{ current: idx === currentCategoryPath.length - 1 }"
-              @click="handleCategoryClick(cat.id)">{{ cat.categoryName }}</span>
-            <span v-if="idx < currentCategoryPath.length - 1" class="crumb-sep">&gt;</span>
-          </template>
-        </template>
-        <template v-else>
-          <span class="crumb current">全部商品</span>
-        </template>
-      </div>
-    </div>
-
-    <!-- 2. 双栏布局: 左侧分类树 + 右侧商品区 -->
+    <!-- 双栏布局: 左侧分类树 + 右侧商品区 -->
     <div class="main-layout">
       <!-- 左侧分类树 (参考首页 Home.vue category-sidebar 风格) -->
-      <aside class="category-tree">
+      <aside class="category-tree" @mouseleave="handleTreeLeaveAll">
         <!-- 滚动容器：包裹分类项，超出可滚动 -->
         <div class="tree-scroll" ref="treeScrollRef">
           <div class="tree-item all" :class="{ active: !categoryId }" @click="handleCategoryClick(undefined)">
@@ -263,27 +240,6 @@ function getSortParams(): { sortBy?: string; sortOrder?: string } {
   }
 }
 
-/* === 面包屑相关计算 === */
-
-/** 当前分类路径 (一级 + 二级), 用于面包屑显示 */
-const currentCategoryPath = computed<CategoryTreeNode[]>(() => {
-  if (!categoryId.value) return []
-  const idStr = categoryId.value
-  for (const cat of categoryList.value) {
-    if (String(cat.id) === idStr) return [cat]
-    if (cat.children && cat.children.length > 0) {
-      const child = cat.children.find(c => String(c.id) === idStr)
-      if (child) return [cat, child]
-    }
-  }
-  return []
-})
-
-/** 当前分类名称 (面包屑及结果标识用) */
-const currentCategoryName = computed<string>(() => {
-  const path = currentCategoryPath.value
-  return path.length > 0 ? path[path.length - 1].categoryName : ''
-})
 
 /* === 数据拉取 === */
 
@@ -404,6 +360,19 @@ function handlePanelLeave(): void {
   }, HOVER_DELAY)
 }
 
+// 鼠标离开整个分类树区域：立即隐藏浮层（取消所有待执行的显示/隐藏定时器）
+function handleTreeLeaveAll(): void {
+  if (hoverEnterTimer) {
+    clearTimeout(hoverEnterTimer)
+    hoverEnterTimer = null
+  }
+  if (hoverLeaveTimer) {
+    clearTimeout(hoverLeaveTimer)
+    hoverLeaveTimer = null
+  }
+  hoverCategoryId.value = null
+}
+
 /* === 事件处理 === */
 
 /** 分类点击: 通过路由跳转驱动状态 (传 undefined 表示点击"全部分类") */
@@ -501,10 +470,6 @@ function goProductDetail(id: number | string): void {
   router.push(`/products/${id}`)
 }
 
-/** 跳转首页 */
-function goHome(): void {
-  router.push('/')
-}
 
 /** 分页变化 */
 function handlePageChange(payload: { pageNum: number; pageSize: number }): void {
@@ -575,54 +540,7 @@ watch(
   flex-direction: column;
 }
 
-/* === 1. 面包屑导航 === */
-.breadcrumb-bar {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  padding: 10px 16px;
-  margin-bottom: 12px;
-  /* sticky 固定不滑动（防御性：内部已通过 flex 限制滚动） */
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  flex-shrink: 0;
-}
-
-.breadcrumb-inner {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  flex-wrap: wrap;
-}
-
-.crumb {
-  color: var(--color-text-secondary);
-  line-height: 1.4;
-}
-
-.crumb.clickable {
-  cursor: pointer;
-  transition: color 0.15s;
-}
-
-.crumb.clickable:hover {
-  color: var(--color-primary);
-}
-
-.crumb.current {
-  color: var(--color-text-primary);
-  font-weight: 600;
-}
-
-.crumb-sep {
-  color: var(--color-text-muted);
-  font-size: 12px;
-}
-
-/* === 2. 双栏布局 === */
+/* === 双栏布局 === */
 .main-layout {
   display: flex;
   gap: 16px;

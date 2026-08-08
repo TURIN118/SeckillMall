@@ -19,7 +19,8 @@
           </div>
 
           <!-- 二级分类浮层提取到外层，不受滚动容器 overflow 裁剪 -->
-          <div v-if="hoverPanelData" class="sidebar-panel" :style="{ top: panelTop + 'px' }">
+          <div v-if="hoverPanelData" class="sidebar-panel" :style="{ top: panelTop + 'px' }"
+            @mouseenter="handlePanelEnter" @mouseleave="handlePanelLeave">
             <div class="panel-header">
               <span class="panel-title">{{ hoverPanelData.categoryName }}</span>
               <span class="panel-hint">全部分类</span>
@@ -273,6 +274,27 @@ function handleSidebarLeave(categoryId: number | string): void {
   // 若不是当前显示项，直接返回
   if (hoverCategoryId.value !== categoryId) return
   // 延迟 200ms 隐藏，给用户时间移到浮层上
+  hoverLeaveTimer = setTimeout(() => {
+    hoverCategoryId.value = null
+  }, HOVER_DELAY)
+}
+
+/** 浮层鼠标进入：取消隐藏定时器，保持显示 */
+function handlePanelEnter(): void {
+  if (hoverLeaveTimer) {
+    clearTimeout(hoverLeaveTimer)
+    hoverLeaveTimer = null
+  }
+}
+
+/** 浮层鼠标离开：启动隐藏定时器 */
+function handlePanelLeave(): void {
+  // 取消任何正在等待的显示
+  if (hoverEnterTimer) {
+    clearTimeout(hoverEnterTimer)
+    hoverEnterTimer = null
+  }
+  // 延迟 200ms 隐藏
   hoverLeaveTimer = setTimeout(() => {
     hoverCategoryId.value = null
   }, HOVER_DELAY)

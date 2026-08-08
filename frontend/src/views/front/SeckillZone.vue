@@ -97,8 +97,10 @@
 
                   <!-- 操作按钮 -->
                   <div class="card-action">
-                    <button v-if="item.status === 'ACTIVE'" class="btn-seckill"
+                    <button v-if="item.status === 'ACTIVE' && item.availableCount > 0" class="btn-seckill"
                       @click.stop="goDetail(item)">立即抢购</button>
+                    <button v-else-if="item.status === 'ACTIVE' && item.availableCount === 0"
+                      class="btn-seckill btn-ended" disabled>已抢完</button>
                     <button v-else-if="item.status === 'PENDING'" class="btn-seckill btn-pending"
                       @click.stop="goDetail(item)">即将开始</button>
                     <button v-else class="btn-seckill btn-ended" disabled>已结束</button>
@@ -168,7 +170,10 @@
                   <div class="stock-text ended-stock">已结束</div>
                 </template>
                 <div class="card-action">
-                  <button v-if="item.status === 'ACTIVE'" class="btn-seckill" @click.stop="goDetail(item)">立即抢购</button>
+                  <button v-if="item.status === 'ACTIVE' && item.availableCount > 0" class="btn-seckill"
+                    @click.stop="goDetail(item)">立即抢购</button>
+                  <button v-else-if="item.status === 'ACTIVE' && item.availableCount === 0"
+                    class="btn-seckill btn-ended" disabled>已抢完</button>
                   <button v-else-if="item.status === 'PENDING'" class="btn-seckill btn-pending"
                     @click.stop="goDetail(item)">即将开始</button>
                   <button v-else class="btn-seckill btn-ended" disabled>已结束</button>
@@ -358,6 +363,12 @@ async function goDetail(item: SeckillGoodsVO): Promise<void> {
   // 2. 活动状态校验
   if (item.status !== 'ACTIVE') {
     ElMessage.info('活动未开始或已结束')
+    return
+  }
+
+  // 2.1 库存校验: 已抢完时阻止抢购
+  if (item.availableCount === 0 || item.availableCount === undefined) {
+    ElMessage.warning('手慢了，商品已抢完')
     return
   }
 

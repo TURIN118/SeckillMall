@@ -19,31 +19,44 @@
         <!-- 导航菜单 -->
         <nav class="sidebar-nav">
           <div class="nav-item" :class="{ active: activeTab === 'info' }" @click="activeTab = 'info'">
-            <el-icon class="nav-icon"><InfoFilled /></el-icon>
+            <el-icon class="nav-icon">
+              <InfoFilled />
+            </el-icon>
             <span class="nav-text">基本信息</span>
           </div>
           <div class="nav-item" :class="{ active: activeTab === 'password' }" @click="activeTab = 'password'">
             <svg class="nav-icon svg-icon" viewBox="0 0 1024 1024" fill="currentColor">
-              <path d="M832 464h-68V320c0-70.7-57.3-128-128-128H384c-70.7 0-128 57.3-128 128v144h-68c-17.7 0-32 14.3-32 32v368c0 17.7 14.3 32 32 32h640c17.7 0 32-14.3 32-32V496c0-17.7-14.3-32-32-32zM332 320c0-35.3 28.7-64 64-64h272c35.3 0 64 28.7 64 64v144H332V320zm436 224c0 17.7-14.3 32-32 32s-32-14.3-32-32 14.3-32 32-32 32 14.3 32 32z" />
+              <path
+                d="M832 464h-68V320c0-70.7-57.3-128-128-128H384c-70.7 0-128 57.3-128 128v144h-68c-17.7 0-32 14.3-32 32v368c0 17.7 14.3 32 32 32h640c17.7 0 32-14.3 32-32V496c0-17.7-14.3-32-32-32zM332 320c0-35.3 28.7-64 64-64h272c35.3 0 64 28.7 64 64v144H332V320zm436 224c0 17.7-14.3 32-32 32s-32-14.3-32-32 14.3-32 32-32 32 14.3 32 32z" />
             </svg>
             <span class="nav-text">修改密码</span>
           </div>
           <div class="nav-item" :class="{ active: activeTab === 'wallet' }" @click="activeTab = 'wallet'">
-            <el-icon class="nav-icon"><Wallet /></el-icon>
+            <el-icon class="nav-icon">
+              <Wallet />
+            </el-icon>
             <span class="nav-text">我的钱包</span>
           </div>
           <div class="nav-item" :class="{ active: activeTab === 'address' }" @click="activeTab = 'address'">
-            <el-icon class="nav-icon"><Location /></el-icon>
+            <el-icon class="nav-icon">
+              <Location />
+            </el-icon>
             <span class="nav-text">收货地址</span>
           </div>
           <div class="nav-item" :class="{ active: activeTab === 'coupons' }" @click="activeTab = 'coupons'">
-            <el-icon class="nav-icon"><Ticket /></el-icon>
+            <el-icon class="nav-icon">
+              <Ticket />
+            </el-icon>
             <span class="nav-text">我的优惠券</span>
           </div>
           <div class="nav-item nav-item-link" @click="goTo('/user/orders')">
-            <el-icon class="nav-icon"><List /></el-icon>
+            <el-icon class="nav-icon">
+              <List />
+            </el-icon>
             <span class="nav-text">我的订单</span>
-            <el-icon class="nav-arrow"><ArrowRight /></el-icon>
+            <el-icon class="nav-arrow">
+              <ArrowRight />
+            </el-icon>
           </div>
         </nav>
       </aside>
@@ -175,7 +188,8 @@
                     </div>
                     <div class="strength-bar" :class="{ active: passwordStrength >= 2, mid: passwordStrength === 2 }">
                     </div>
-                    <div class="strength-bar" :class="{ active: passwordStrength >= 3, strong: passwordStrength === 3 }">
+                    <div class="strength-bar"
+                      :class="{ active: passwordStrength >= 3, strong: passwordStrength === 3 }">
                     </div>
                   </div>
                   <div class="strength-text" :class="strengthClass">密码强度：{{ strengthLabel }}</div>
@@ -194,8 +208,8 @@
                 <div class="form-group">
                   <label class="form-label">验证码</label>
                   <div class="verify-row">
-                    <input v-model.trim="pwdForm.code" class="form-input verify-input" :class="{ error: pwdErrors.code }"
-                      type="text" placeholder="请输入邮箱验证码" maxlength="6" />
+                    <input v-model.trim="pwdForm.code" class="form-input verify-input"
+                      :class="{ error: pwdErrors.code }" type="text" placeholder="请输入邮箱验证码" maxlength="6" />
                     <button class="btn-sm primary verify-btn" type="button"
                       :disabled="pwdCodeCountdown > 0 || sendingPwdCode" @click="handleSendPwdCode">
                       {{ pwdCodeCountdown > 0 ? `${pwdCodeCountdown}s` : (sendingPwdCode ? '发送中' : '发送验证码') }}
@@ -309,8 +323,8 @@
                   <el-input v-model.trim="rechargeForm.cardNo" placeholder="请输入充值卡卡号" maxlength="32" clearable />
                 </el-form-item>
                 <el-form-item label="卡密" prop="cardPassword">
-                  <el-input v-model.trim="rechargeForm.cardPassword" type="password" placeholder="请输入充值卡卡密" maxlength="64"
-                    show-password clearable @keyup.enter="handleRecharge" />
+                  <el-input v-model.trim="rechargeForm.cardPassword" type="password" placeholder="请输入充值卡卡密"
+                    maxlength="64" show-password clearable @keyup.enter="handleRecharge" />
                 </el-form-item>
                 <div class="recharge-tip">
                   <el-icon>
@@ -1441,15 +1455,14 @@ onUnmounted(() => {
 <style scoped>
 /* ==================== 页面容器 ==================== */
 .profile-page {
-  padding: 24px 16px;
+  padding: 24px;
   min-height: 100vh;
   background: var(--color-bg-subtle, #f5f5f5);
 }
 
 /* 加载骨架屏 */
 .loading-wrap {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
   background: var(--color-bg-card, #fff);
   border: 1px solid var(--color-border, #e5e7eb);
   border-radius: var(--radius-lg, 12px);
@@ -1480,8 +1493,7 @@ onUnmounted(() => {
 
 /* ==================== 主容器: 左侧导航 + 右侧内容 ==================== */
 .profile-container {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
   display: flex;
   gap: 20px;
   align-items: flex-start;

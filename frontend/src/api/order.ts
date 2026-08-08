@@ -1,7 +1,7 @@
 /**
  * 订单 API - 严格匹配 default.md
  */
-import { get, post } from './request'
+import { get, post, del } from './request'
 import type { AxiosRequestConfig } from 'axios'
 import type {
   Result,
@@ -15,13 +15,21 @@ import type {
   AdminOrderQueryRequest
 } from '@/types'
 
-/** 我的订单列表 (分页+状态筛选) */
+/** 我的订单列表 (分页+状态筛选+订单类型筛选) */
 export function getOrderList(params: {
   status?: OrderStatus
+  orderType?: string
   pageNum?: number
   pageSize?: number
 }): Promise<Result<PageResult<SeckillOrder>>> {
   return get<PageResult<SeckillOrder>>('/api/v1/orders', params)
+}
+
+/** 删除订单 (仅已完成/已取消状态可删除)
+ *  DELETE /api/v1/orders/{id}
+ */
+export function deleteOrder(id: number | string): Promise<Result<void>> {
+  return del<void>(`/api/v1/orders/${id}`)
 }
 
 /**
@@ -140,11 +148,13 @@ export function confirmNormalOrder(orderId: number | string): Promise<Result<Nor
 
 /**
  * 统一订单列表（秒杀+普通）
- * GET /api/v1/orders/unified?status=&pageNum=&pageSize=
+ * GET /api/v1/orders/unified?status=&orderType=&pageNum=&pageSize=
  * 后端合并查询两套订单表，按 createTime 降序返回
+ * 支持按订单类型筛选：NORMAL-普通订单 / SECKILL-秒杀订单
  */
 export function getUnifiedOrderList(params: {
   status?: string
+  orderType?: string
   pageNum?: number
   pageSize?: number
 }): Promise<Result<PageResult<OrderListItemVO>>> {

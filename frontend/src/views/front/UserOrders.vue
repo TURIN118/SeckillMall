@@ -6,9 +6,25 @@
       <aside class="order-sidebar">
         <div class="sidebar-title">我的订单</div>
         <nav class="sidebar-nav">
-          <div v-for="tab in tabs" :key="tab.name" class="nav-item"
-            :class="{ active: activeTab === tab.name }" @click="handleTabChange(tab.name)">
+          <!-- 订单状态筛选 -->
+          <div v-for="tab in tabs" :key="tab.name" class="nav-item" :class="{ active: activeTab === tab.name }"
+            @click="handleTabChange(tab.name)">
             <span class="nav-label">{{ tab.label }}</span>
+          </div>
+
+          <!-- 订单类型筛选分组 -->
+          <div class="nav-group-title">订单类型</div>
+          <div class="nav-item" :class="{ active: activeOrderType === undefined }"
+            @click="handleOrderTypeClick(undefined)">
+            <span class="nav-label">全部</span>
+          </div>
+          <div class="nav-item" :class="{ active: activeOrderType === 'NORMAL' }"
+            @click="handleOrderTypeClick('NORMAL')">
+            <span class="nav-label">普通订单</span>
+          </div>
+          <div class="nav-item" :class="{ active: activeOrderType === 'SECKILL' }"
+            @click="handleOrderTypeClick('SECKILL')">
+            <span class="nav-label">秒杀订单</span>
           </div>
         </nav>
       </aside>
@@ -37,73 +53,71 @@
         <div v-else class="order-list">
           <div v-for="order in orderList" :key="order.id" class="order-card"
             :class="{ 'order-disabled': isDisabledStatus(order.status) }">
-            <!-- 卡片头部：订单类型 + 订单号 + 下单时间 + 状态 -->
-            <div class="order-card-header">
-              <div class="order-card-header-left">
+            <!-- 第1行：卡片头部 - 类型标签 + 订单号 + 状态 + 更多下拉菜单 -->
+            <div class="card-header">
+              <div class="card-header-left">
                 <span class="order-type-tag" :class="order.orderType === 'SECKILL' ? 'seckill' : 'normal'">
                   {{ order.orderType === 'SECKILL' ? '秒杀订单' : '普通订单' }}
                 </span>
-                <span class="order-card-no">订单号：{{ order.orderNo }}</span>
-                <span class="order-card-time">{{ formatTime(order.createTime) }}</span>
+                <span class="order-no">订单号: {{ order.orderNo }}</span>
               </div>
-              <div class="order-card-header-right">
-                <span class="status-tag" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
+              <div class="card-header-right">
+                <span class="order-status" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
+                <el-dropdown trigger="click" @command="(cmd: string) => handleMoreCommand(cmd, order)">
+                  <span class="more-btn" @click.stop>⋯</span>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="detail">查看详情</el-dropdown-item>
+                      <el-dropdown-item command="delete"
+                        v-if="order.status === 'COMPLETED' || order.status === 'CANCELLED'">
+                        删除订单
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
               </div>
             </div>
 
-            <!-- 卡片主体：商品列表 + 汇总操作 -->
-            <div class="order-card-body" @click="goDetail(order)">
-              <!-- 商品列表 -->
-              <div class="order-goods-list">
-                <div v-for="(item, idx) in (order.items || [])" :key="idx" class="order-goods-item">
-                  <div class="order-goods-img">
-                    <img v-if="item.productImage" :src="formatImageUrl(item.productImage)" :alt="item.productName"
-                      loading="lazy" />
-                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <path d="m21 15-5-5L5 21" />
-                    </svg>
-                  </div>
-                  <div class="order-goods-info">
-                    <div class="order-goods-name">{{ item.productName || '—' }}</div>
-                    <div class="order-goods-spec">
-                      <span class="goods-quantity">x{{ item.quantity }}</span>
-                    </div>
-                  </div>
-                  <div class="order-goods-price">
-                    <span class="price-symbol">¥</span>{{ formatPrice(item.price) }}
-                  </div>
+            <!-- 第2行：商品信息 - 横向排列 -->
+            <div class="card-body" @click="goDetail(order)">
+              <div v-for="(item, idx) in (order.items || [])" :key="idx" class="order-goods-row">
+                <div class="goods-img">
+                  <img v-if="item.productImage" :src="formatImageUrl(item.productImage)" :alt="item.productName"
+                    loading="lazy" />
+                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="m21 15-5-5L5 21" />
+                  </svg>
                 </div>
-                <!-- 无商品占位 -->
-                <div v-if="!order.items || order.items.length === 0" class="order-goods-empty">
-                  暂无商品信息
-                </div>
+                <div class="goods-name">{{ item.productName || '—' }}</div>
+                <div class="goods-price">¥{{ formatPrice(item.price) }}</div>
+                <div class="goods-qty">×{{ item.quantity }}</div>
+                <div class="goods-subtotal">¥{{ formatPrice(item.price * item.quantity) }}</div>
               </div>
+              <!-- 无商品占位 -->
+              <div v-if="!order.items || order.items.length === 0" class="order-goods-empty">
+                暂无商品信息
+              </div>
+            </div>
 
-              <!-- 右侧汇总和操作 -->
-              <div class="order-card-summary">
-                <div class="order-card-amount">
-                  <span class="amount-label">实付款</span>
-                  <span class="amount-value">{{ formatPrice(order.totalAmount) }}</span>
-                </div>
-                <div class="order-card-actions">
-                  <template v-if="order.status === 'UNPAID'">
-                    <button class="btn-sm" @click.stop="goDetail(order)">查看详情</button>
-                    <button class="btn-sm text" @click.stop="handleCancel(order)">取消订单</button>
-                    <button class="btn-sm primary" @click.stop="goPay(order)">去支付</button>
-                  </template>
-                  <template v-else-if="order.status === 'SHIPPED'">
-                    <button class="btn-sm" @click.stop="goDetail(order)">查看详情</button>
-                    <button class="btn-sm primary" :disabled="confirmLoadingId === order.id"
-                      @click.stop="handleConfirm(order)">
-                      {{ confirmLoadingId === order.id ? '确认中...' : '确认收货' }}
-                    </button>
-                  </template>
-                  <template v-else>
-                    <button class="btn-sm" @click.stop="goDetail(order)">查看详情</button>
-                  </template>
-                </div>
+            <!-- 第3行：卡片底部 - 时间 + 实付金额 + 操作按钮 -->
+            <div class="card-footer">
+              <div class="footer-left">
+                <span class="order-time">{{ formatTime(order.createTime) }}</span>
+              </div>
+              <div class="footer-right">
+                <span class="total-amount">实付 ¥{{ formatPrice(order.totalAmount) }}</span>
+                <button v-if="order.status === 'UNPAID'" class="btn-sm" @click.stop="handleCancel(order)">
+                  取消订单
+                </button>
+                <button v-if="order.status === 'UNPAID'" class="btn-sm primary" @click.stop="goPay(order)">
+                  去支付
+                </button>
+                <button v-if="order.status === 'PAID' || order.status === 'SHIPPED'" class="btn-sm primary"
+                  :disabled="confirmLoadingId === order.id" @click.stop="handleConfirm(order)">
+                  {{ confirmLoadingId === order.id ? '确认中...' : '确认收货' }}
+                </button>
               </div>
             </div>
           </div>
@@ -123,11 +137,19 @@
 /**
  * P07 我的订单
  * 严格对照 index.html .order-page / .order-tabs / .order-card 样式
+ * 增强: 侧边栏订单类型筛选 + 3行紧凑卡片布局 + 更多下拉菜单(查看详情/删除)
  */
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUnifiedOrderList, cancelOrder, cancelNormalOrder, confirmOrder, confirmNormalOrder } from '@/api/order'
+import {
+  getUnifiedOrderList,
+  cancelOrder,
+  cancelNormalOrder,
+  confirmOrder,
+  confirmNormalOrder,
+  deleteOrder
+} from '@/api/order'
 
 import PaginationWrapper from '@/components/PaginationWrapper.vue'
 import { formatImageUrl } from '@/utils/image'
@@ -140,6 +162,8 @@ const loading = ref<boolean>(false)
 const orderList = ref<OrderListItemVO[]>([])
 const total = ref<number>(0)
 const activeTab = ref<string>('all')
+/** 当前选中的订单类型筛选：undefined=全部 / NORMAL=普通 / SECKILL=秒杀 */
+const activeOrderType = ref<string | undefined>(undefined)
 const pageNum = ref<number>(1)
 const pageSize = ref<number>(10)
 const confirmLoadingId = ref<number | string | null>(null)
@@ -183,12 +207,13 @@ function isDisabledStatus(status: string): boolean {
   return status === 'CANCELLED' || status === 'TIMEOUT'
 }
 
-/** 拉取订单列表 */
+/** 拉取订单列表 (支持状态 + 订单类型筛选) */
 async function fetchOrders(): Promise<void> {
   loading.value = true
   try {
     const res = await getUnifiedOrderList({
       status: activeTab.value === 'all' ? undefined : activeTab.value,
+      orderType: activeOrderType.value,
       pageNum: pageNum.value,
       pageSize: pageSize.value
     })
@@ -201,9 +226,16 @@ async function fetchOrders(): Promise<void> {
   }
 }
 
-/** 标签切换 */
+/** 状态标签切换 */
 function handleTabChange(name: string): void {
   activeTab.value = name
+  pageNum.value = 1
+  fetchOrders()
+}
+
+/** 订单类型筛选切换 */
+function handleOrderTypeClick(type: string | undefined): void {
+  activeOrderType.value = type
   pageNum.value = 1
   fetchOrders()
 }
@@ -274,6 +306,26 @@ async function handleConfirm(order: OrderListItemVO): Promise<void> {
   }
 }
 
+/** 更多操作下拉菜单命令处理 (查看详情 / 删除订单) */
+async function handleMoreCommand(command: string, order: OrderListItemVO): Promise<void> {
+  if (command === 'detail') {
+    goDetail(order)
+  } else if (command === 'delete') {
+    try {
+      await ElMessageBox.confirm('确定要删除该订单吗？', '提示', {
+        type: 'warning',
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      })
+      await deleteOrder(order.id)
+      ElMessage.success('订单已删除')
+      // 重新加载订单列表
+      fetchOrders()
+    } catch {
+      // 用户取消或删除失败
+    }
+  }
+}
 
 /** 格式化时间 */
 function formatTime(time: string): string {
@@ -281,7 +333,7 @@ function formatTime(time: string): string {
   return dayjs(time).format('YYYY-MM-DD HH:mm:ss')
 }
 
-/** 格式化价格（不带 ¥ 符号，由 ::before 提供） */
+/** 格式化价格（不带 ¥ 符号，由调用方拼接） */
 function formatPrice(price: number): string {
   return Number(price || 0).toFixed(2)
 }
@@ -363,6 +415,16 @@ onMounted(() => {
 
 .nav-label {
   line-height: 1.4;
+}
+
+/* 订单类型分组标题 */
+.nav-group-title {
+  padding: 12px 20px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+  border-top: 1px solid var(--color-border-light, var(--color-border));
 }
 
 /* ============ 右侧内容区 ============ */
@@ -448,8 +510,8 @@ onMounted(() => {
   opacity: 0.65;
 }
 
-/* 卡片头部 */
-.order-card-header {
+/* ============ 第1行：卡片头部 ============ */
+.card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -458,27 +520,23 @@ onMounted(() => {
   border-bottom: 1px solid var(--color-border);
 }
 
-.order-card-header-left {
+.card-header-left {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.order-card-no {
+.order-no {
   font-size: 13px;
   color: var(--color-text-primary);
   font-weight: 500;
 }
 
-.order-card-time {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-}
-
-.order-card-header-right {
+.card-header-right {
   display: flex;
   align-items: center;
+  gap: 12px;
 }
 
 /* 订单类型标签 */
@@ -486,23 +544,23 @@ onMounted(() => {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
 .order-type-tag.seckill {
-  background: #fff1f0;
+  background: rgba(229, 57, 53, 0.1);
   color: #cf1322;
 }
 
 .order-type-tag.normal {
-  background: #e6f4ff;
+  background: rgba(59, 130, 246, 0.1);
   color: #1677ff;
 }
 
-/* 状态标签：unpaid 橙 / paid 绿 / shipped 蓝 / cancelled 灰 / timeout 红 / completed 蓝 */
-.status-tag {
+/* 订单状态标签 */
+.order-status {
   display: inline-block;
   padding: 4px 12px;
   border-radius: 4px;
@@ -511,68 +569,78 @@ onMounted(() => {
   letter-spacing: 0.02em;
 }
 
-.status-tag.unpaid {
+.order-status.unpaid {
   background: var(--tag-unpaid-bg);
   color: var(--tag-unpaid-fg);
 }
 
-.status-tag.paid {
+.order-status.paid {
   background: var(--tag-paid-bg);
   color: var(--tag-paid-fg);
 }
 
-.status-tag.shipped {
+.order-status.shipped {
   background: #e6f4ff;
   color: #1677ff;
 }
 
-.status-tag.cancelled {
+.order-status.cancelled {
   background: var(--tag-cancelled-bg);
   color: var(--tag-cancelled-fg);
 }
 
-.status-tag.timeout {
+.order-status.timeout {
   background: var(--tag-timeout-bg);
   color: var(--tag-timeout-fg);
 }
 
-.status-tag.completed {
+.order-status.completed {
   background: var(--tag-completed-bg);
   color: var(--tag-completed-fg);
 }
 
-/* ============ 卡片主体 ============ */
-.order-card-body {
-  display: flex;
-  align-items: stretch;
+/* 更多操作按钮 */
+.more-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.more-btn:hover {
+  color: var(--color-text-primary);
+  background: var(--color-bg-card);
+}
+
+/* ============ 第2行：商品信息 ============ */
+.card-body {
+  padding: 8px 20px;
   cursor: pointer;
 }
 
-/* 商品列表 */
-.order-goods-list {
-  flex: 1;
-  padding: 16px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.order-goods-item {
+.order-goods-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px dashed var(--color-border);
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--color-border-light, var(--color-border));
 }
 
-.order-goods-item:last-child {
+.order-goods-row:last-child {
   border-bottom: none;
 }
 
-.order-goods-img {
-  width: 64px;
-  height: 64px;
+.goods-img {
+  width: 60px;
+  height: 60px;
   background: var(--color-bg-subtle);
   border-radius: var(--radius-md);
   display: flex;
@@ -583,32 +651,26 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.order-goods-img img {
+.goods-img img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s;
 }
 
-.order-goods-item:hover .order-goods-img img {
+.order-goods-row:hover .goods-img img {
   transform: scale(1.06);
 }
 
-.order-goods-img svg {
+.goods-img svg {
   width: 24px;
   height: 24px;
   color: var(--color-text-muted);
 }
 
-.order-goods-info {
+.goods-name {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.order-goods-name {
   font-size: 14px;
   font-weight: 500;
   color: var(--color-text-primary);
@@ -617,35 +679,27 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-.order-goods-spec {
-  font-size: 12px;
+.goods-price {
+  font-size: 13px;
   color: var(--color-text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.goods-quantity {
-  display: inline-block;
-  padding: 1px 6px;
-  background: var(--color-bg-subtle);
-  border-radius: 3px;
-  font-size: 11px;
-  color: var(--color-text-secondary);
-}
-
-.order-goods-price {
+  flex-shrink: 0;
   font-family: var(--font-price);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-primary);
+}
+
+.goods-qty {
+  font-size: 13px;
+  color: var(--color-text-secondary);
   flex-shrink: 0;
 }
 
-.price-symbol {
-  color: var(--color-text-secondary);
-  margin-right: 1px;
-  font-size: 12px;
+.goods-subtotal {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-align: right;
+  flex-shrink: 0;
+  min-width: 80px;
+  font-family: var(--font-price);
 }
 
 .order-goods-empty {
@@ -655,53 +709,38 @@ onMounted(() => {
   color: var(--color-text-muted);
 }
 
-/* ============ 右侧汇总和操作 ============ */
-.order-card-summary {
-  width: 220px;
-  padding: 16px 20px;
-  border-left: 1px solid var(--color-border);
+/* ============ 第3行：卡片底部 ============ */
+.card-footer {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 16px;
-  flex-shrink: 0;
-  background: linear-gradient(to bottom, #fff, var(--color-bg-subtle));
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
 }
 
-.order-card-amount {
+.footer-left {
   display: flex;
-  align-items: baseline;
-  gap: 6px;
-  width: 100%;
-  justify-content: flex-end;
+  align-items: center;
 }
 
-.amount-label {
+.order-time {
   font-size: 12px;
   color: var(--color-text-secondary);
 }
 
-.amount-value {
-  font-family: var(--font-price);
-  font-size: 20px;
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.total-amount {
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-primary);
-  line-height: 1;
-}
-
-.amount-value::before {
-  content: '\A5';
-  font-size: 14px;
-  margin-right: 2px;
-}
-
-.order-card-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-  align-items: stretch;
+  margin-right: 16px;
+  font-family: var(--font-price);
 }
 
 /* ============ 小按钮系统 ============ */
@@ -803,59 +842,70 @@ onMounted(() => {
     padding-left: 16px;
   }
 
-  .order-card-header {
+  .nav-group-title {
+    border-top: none;
+    border-right: 1px solid var(--color-border-light, var(--color-border));
+    padding: 12px 16px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+    align-self: center;
+  }
+
+  .card-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
     padding: 10px 12px;
   }
 
-  .order-card-header-left {
+  .card-header-left {
     gap: 8px;
   }
 
-  .order-card-body {
-    flex-direction: column;
+  .card-header-right {
+    width: 100%;
+    justify-content: space-between;
   }
 
-  .order-goods-list {
-    padding: 12px;
+  .card-body {
+    padding: 8px 12px;
   }
 
-  .order-goods-img {
+  .goods-img {
     width: 48px;
     height: 48px;
   }
 
-  .order-goods-img svg {
+  .goods-img svg {
     width: 20px;
     height: 20px;
   }
 
-  .order-goods-name {
+  .goods-name {
     font-size: 13px;
   }
 
-  .order-card-summary {
-    width: 100%;
-    border-left: none;
-    border-top: 1px solid var(--color-border);
+  .goods-subtotal {
+    font-size: 14px;
+    min-width: 64px;
+  }
+
+  .card-footer {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
     padding: 12px;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--color-bg-subtle);
   }
 
-  .order-card-actions {
-    flex-direction: row;
-    width: auto;
-    flex-wrap: wrap;
+  .footer-right {
+    width: 100%;
     justify-content: flex-end;
+    flex-wrap: wrap;
   }
 
-  .amount-value {
-    font-size: 18px;
+  .total-amount {
+    font-size: 15px;
+    margin-right: 0;
   }
 
   .order-pagination {

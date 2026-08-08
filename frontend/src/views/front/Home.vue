@@ -154,11 +154,12 @@
         <span class="recommend-tag" :class="{ active: recommendCategoryId === undefined }"
           @click="handleRecommendCategoryClick(undefined)">全部</span>
         <span v-for="cat in recommendCategories" :key="cat.id" class="recommend-tag"
-          :class="{ active: recommendCategoryId === cat.id }"
-          @click="handleRecommendCategoryClick(cat.id)">{{ cat.categoryName }}</span>
+          :class="{ active: recommendCategoryId === cat.id }" @click="handleRecommendCategoryClick(cat.id)">{{
+            cat.categoryName }}</span>
       </div>
       <div v-loading="recommendLoading" class="recommend-grid">
-        <div v-for="item in recommendItems" :key="item.id" class="p-card recommend-card" @click="goProductDetail(item.id)">
+        <div v-for="item in recommendItems" :key="item.id" class="p-card recommend-card"
+          @click="goProductDetail(item.id)">
           <div class="p-card-img recommend-img">
             <img v-if="item.image" :src="formatImageUrl(item.image)" :alt="item.name" class="p-card-img-tag"
               loading="lazy" />
@@ -183,7 +184,9 @@
       </div>
       <!-- 改进5: 无限滚动哨兵元素 + 加载更多 / 没有更多了 提示 -->
       <div v-if="recommendItems.length > 0 && recommendHasMore" ref="recommendSentinel" class="recommend-sentinel">
-        <el-icon v-if="recommendLoadingMore" class="is-loading"><Loading /></el-icon>
+        <el-icon v-if="recommendLoadingMore" class="is-loading">
+          <Loading />
+        </el-icon>
         <span v-else>滚动加载更多...</span>
       </div>
       <div v-if="!recommendHasMore && recommendItems.length > 0" class="recommend-end">
@@ -623,7 +626,7 @@ function shuffleRecommend(): void {
   const arr = [...recommendItems.value]
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+      ;[arr[i], arr[j]] = [arr[j], arr[i]]
   }
   recommendItems.value = arr
 }
@@ -1444,18 +1447,17 @@ onUnmounted(() => {
   border-color: #e53935;
 }
 
-/* 改进4: 瀑布流多列布局 (CSS columns) */
+/* 改进4: 固定列数网格布局 (CSS Grid)
+   说明: 原先使用 CSS columns 多列布局，但 columns 会根据容器宽度与内容高度动态计算列数，
+   导致切换分类或加载更多时列数从 5 变成 4。改用 Grid 固定 5 列，列数不再随内容多少变化。 */
 .recommend-grid {
-  column-count: 5;
-  column-gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
 }
 
-/* 瀑布流中的卡片：避免被列分割，宽度占满单列 */
+/* 网格中的卡片：Grid 会自动按行排布，无需 break-inside / inline-block / width */
 .recommend-grid .recommend-card {
-  break-inside: avoid;
-  display: inline-block;
-  width: 100%;
-  margin-bottom: 12px;
   /* 换一换时的淡入动画 */
   animation: recommend-fade-in 0.3s ease;
 }
@@ -1543,9 +1545,10 @@ onUnmounted(() => {
 
 /* === 响应式：秒杀网格在小屏下退化为 2 列，超小屏退化为 1 列 === */
 @media (max-width: 1024px) {
-  /* 改进4: 瀑布流在中等屏幕下 4 列 */
+
+  /* 改进4: 网格在中等屏幕下 4 列 */
   .recommend-grid {
-    column-count: 4;
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
@@ -1560,9 +1563,9 @@ onUnmounted(() => {
     height: 120px;
   }
 
-  /* 改进4: 瀑布流在小屏下 3 列 */
+  /* 改进4: 网格在小屏下 3 列 */
   .recommend-grid {
-    column-count: 3;
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -1577,9 +1580,9 @@ onUnmounted(() => {
     height: 120px;
   }
 
-  /* 改进4: 瀑布流在超小屏下 2 列 */
+  /* 改进4: 网格在超小屏下 2 列 */
   .recommend-grid {
-    column-count: 2;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

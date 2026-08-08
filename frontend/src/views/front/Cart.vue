@@ -29,11 +29,14 @@
       <div class="cart-main">
         <!-- 商品列表卡片 -->
         <div class="cart-content">
-          <!-- 表头 -->
+          <!-- 表头: 全选 + 删除选中 + 清空购物车 -->
           <div class="cart-table-head">
             <div class="col-check">
               <el-checkbox :model-value="isAllSelected" :indeterminate="isIndeterminate"
                 @change="handleToggleAll">全选</el-checkbox>
+              <button class="btn-sm btn-head" type="button" :disabled="selectedCount === 0"
+                @click="handleBatchDelete">删除选中</button>
+              <button class="btn-sm btn-head" type="button" @click="handleClear">清空购物车</button>
             </div>
             <div class="col-info">商品信息</div>
             <div class="col-price">单价</div>
@@ -54,8 +57,9 @@
             <!-- 商品信息: 图片 + 名称 + SKU属性 -->
             <div class="col-info">
               <div class="product-img" @click="goProductDetail(item.productId)">
-                <img v-if="item.skuMainImage || item.mainImage" :src="formatImageUrl(item.skuMainImage || item.mainImage)"
-                  :alt="item.productName" class="product-img-tag" loading="lazy" />
+                <img v-if="item.skuMainImage || item.mainImage"
+                  :src="formatImageUrl(item.skuMainImage || item.mainImage)" :alt="item.productName"
+                  class="product-img-tag" loading="lazy" />
                 <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
                   class="product-img-placeholder">
                   <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -102,14 +106,6 @@
             </div>
           </div>
         </div>
-
-        <!-- 底部工具栏 (全选 + 删除选中 + 清空) -->
-        <div class="cart-toolbar">
-          <el-checkbox :model-value="isAllSelected" :indeterminate="isIndeterminate"
-            @change="handleToggleAll">全选</el-checkbox>
-          <button class="btn-sm" type="button" :disabled="selectedCount === 0" @click="handleBatchDelete">删除选中</button>
-          <button class="btn-sm" type="button" @click="handleClear">清空购物车</button>
-        </div>
       </div>
 
       <!-- 右侧: 结算明细面板 (sticky 定位) -->
@@ -118,6 +114,32 @@
         <div class="sidebar-title">结算明细</div>
         <!-- 面板内容 -->
         <div class="sidebar-body">
+          <!-- 选中商品列表 (最多显示5个，超过显示"等N件商品") -->
+          <div v-if="selectedCount > 0" class="selected-items">
+            <div v-for="item in cartList.filter(i => i.selected && i.productStatus === 'ON_SALE').slice(0, 5)"
+              :key="item.id" class="selected-item">
+              <div class="selected-item-img">
+                <img v-if="item.skuMainImage || item.mainImage"
+                  :src="formatImageUrl(item.skuMainImage || item.mainImage)" :alt="item.productName"
+                  class="selected-item-img-tag" loading="lazy" />
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                  class="selected-item-img-placeholder">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="m21 15-5-5L5 21" />
+                </svg>
+              </div>
+              <div class="selected-item-info">
+                <div class="selected-item-name">{{ item.productName }}</div>
+                <div class="selected-item-meta">{{ item.quantity }} × ¥{{ formatPrice(item.originalPrice) }}</div>
+              </div>
+            </div>
+            <div v-if="selectedCount > 5" class="more-items">等 {{ selectedCount }} 件商品</div>
+          </div>
+          <div v-else class="selected-empty">暂未选中商品</div>
+
+          <div class="summary-divider"></div>
+
           <div class="summary-row">
             <span class="summary-label">商品总价</span>
             <span class="summary-value">¥{{ formatPrice(totalAmount) }}</span>
@@ -134,7 +156,8 @@
             <span class="summary-total-label">合计</span>
             <span class="summary-total-value">¥{{ formatPrice(totalAmount) }}</span>
           </div>
-          <button class="btn-checkout" type="button" :disabled="selectedCount === 0" @click="handleCheckout">去结算</button>
+          <button class="btn-checkout" type="button" :disabled="selectedCount === 0"
+            @click="handleCheckout">去结算</button>
         </div>
       </div>
     </div>
@@ -502,10 +525,10 @@ onDeactivated(() => {
   overflow: hidden;
 }
 
-/* ===== 表头 ===== */
+/* ===== 表头 (含全选 + 删除选中 + 清空购物车) ===== */
 .cart-table-head {
   display: grid;
-  grid-template-columns: 50px 1fr 100px 140px 100px 70px;
+  grid-template-columns: 240px 1fr 100px 140px 100px 70px;
   align-items: center;
   padding: 12px 16px;
   background: #fafafa;
@@ -518,7 +541,7 @@ onDeactivated(() => {
 /* ===== 商品行 ===== */
 .cart-row {
   display: grid;
-  grid-template-columns: 50px 1fr 100px 140px 100px 70px;
+  grid-template-columns: 240px 1fr 100px 140px 100px 70px;
   align-items: center;
   padding: 16px;
   border-bottom: 1px solid var(--color-border-light);
@@ -543,6 +566,18 @@ onDeactivated(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* 表头复选框列: 左对齐 + 间距，容纳全选 + 删除选中 + 清空购物车 */
+.cart-table-head .col-check {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+/* ===== 表头操作按钮 (紧凑样式，与表头高度匹配) ===== */
+.btn-head {
+  padding: 3px 10px;
+  font-size: 12px;
 }
 
 /* ===== 商品信息列 ===== */
@@ -686,18 +721,6 @@ onDeactivated(() => {
   justify-content: center;
 }
 
-/* ===== 底部工具栏 (全选 + 删除选中 + 清空) ===== */
-.cart-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 12px 16px;
-  margin-top: 12px;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-}
-
 /* ===== 右侧结算面板 (sticky 定位) ===== */
 .cart-sidebar {
   width: 300px;
@@ -724,6 +747,87 @@ onDeactivated(() => {
 /* 面板内容 */
 .sidebar-body {
   padding: 20px;
+}
+
+/* ===== 选中商品列表 (结算明细面板内) ===== */
+.selected-items {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 4px;
+}
+
+.selected-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--color-border-light);
+}
+
+.selected-item:last-child {
+  border-bottom: none;
+}
+
+.selected-item-img {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--color-bg-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.selected-item-img-tag {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.selected-item-img-placeholder {
+  width: 20px;
+  height: 20px;
+  color: #ccc;
+}
+
+.selected-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 商品名称 (1行截断) */
+.selected-item-name {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selected-item-meta {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+/* 超过5个商品的提示 */
+.more-items {
+  padding: 8px 0 4px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* 暂无选中商品占位 */
+.selected-empty {
+  padding: 16px 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  text-align: center;
 }
 
 /* 摘要行 */
@@ -894,7 +998,7 @@ onDeactivated(() => {
 
   .cart-table-head,
   .cart-row {
-    grid-template-columns: 40px 1fr 80px 110px 80px 60px;
+    grid-template-columns: 200px 1fr 80px 110px 80px 60px;
     padding: 10px 8px;
     font-size: 12px;
   }
@@ -922,6 +1026,11 @@ onDeactivated(() => {
 
   .btn-sm {
     padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  .btn-head {
+    padding: 2px 8px;
     font-size: 11px;
   }
 }

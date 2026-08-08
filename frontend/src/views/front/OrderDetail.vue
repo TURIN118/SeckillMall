@@ -19,13 +19,11 @@
       <!-- 1. 顶部状态横幅 (占满宽度,参考京东) -->
       <div class="order-status-banner">
         <div class="banner-left">
-          <button class="btn-action outline" @click="router.push('/user/orders')">返回订单列表</button>
           <h2 class="status-title" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</h2>
           <div class="order-meta">
             <span class="meta-item">订单号: {{ order.orderNo }}</span>
             <span class="meta-item">下单时间: {{ formatTime(order.createTime) }}</span>
           </div>
-          <span v-if="order.status === 'PAID'" class="waiting-hint">商家备货中</span>
         </div>
         <div class="banner-right">
           <!-- 状态相关操作按钮 -->
@@ -37,11 +35,15 @@
               {{ payLoading ? '支付中...' : '立即支付' }}
             </button>
           </template>
+          <template v-else-if="order.status === 'PAID'">
+            <span class="waiting-hint">商家备货中</span>
+          </template>
           <template v-else-if="order.status === 'SHIPPED'">
             <button class="btn-action primary" :disabled="confirmLoading" @click="handleConfirm">
               {{ confirmLoading ? '确认中...' : '确认收货' }}
             </button>
           </template>
+          <button class="btn-action outline" @click="router.push('/user/orders')">返回订单列表</button>
         </div>
       </div>
 
@@ -793,9 +795,6 @@ onMounted(() => {
 .banner-left {
   min-width: 0;
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .status-title {
@@ -1300,7 +1299,6 @@ onMounted(() => {
 
 /* === 响应式 === */
 @media (max-width: 900px) {
-
   /* 中等屏幕: 左右分栏改为上下堆叠 */
   .order-content {
     flex-direction: column;

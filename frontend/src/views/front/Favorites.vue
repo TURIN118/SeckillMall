@@ -14,7 +14,8 @@
           <div class="nav-item" :class="{ active: filterType === 'ON_SALE' }" @click="handleFilterChange('ON_SALE')">
             <span class="nav-label">在售</span>
           </div>
-          <div class="nav-item" :class="{ active: filterType === 'OFF_SHELF' }" @click="handleFilterChange('OFF_SHELF')">
+          <div class="nav-item" :class="{ active: filterType === 'OFF_SHELF' }"
+            @click="handleFilterChange('OFF_SHELF')">
             <span class="nav-label">已下架</span>
           </div>
 
@@ -33,14 +34,30 @@
             <span class="nav-label">销量优先</span>
           </div>
         </nav>
-        <!-- sidebar 底部管理按钮 -->
+        <!-- sidebar 底部：管理按钮 / 管理模式下批量操作 -->
         <div class="sidebar-footer">
-          <button v-if="!manageMode && favoriteList.length > 0" class="btn-manage" type="button" @click="manageMode = true">
+          <!-- 非管理模式：管理按钮 -->
+          <button v-if="!manageMode && favoriteList.length > 0" class="btn-manage" type="button"
+            @click="manageMode = true">
             管理收藏
           </button>
-          <button v-else-if="manageMode" class="btn-manage active" type="button" @click="exitManage">
-            退出管理
-          </button>
+          <!-- 管理模式：全选 + 批量操作 + 退出管理 -->
+          <template v-else-if="manageMode">
+            <div class="sidebar-batch-info">
+              <el-checkbox :model-value="isAllSelected" :indeterminate="isIndeterminate"
+                @change="handleToggleAll">全选</el-checkbox>
+              <span class="sidebar-batch-count">已选 {{ selectedIds.length }} 件</span>
+            </div>
+            <button class="btn-batch-cart" type="button" :disabled="selectedIds.length === 0 || batchAdding"
+              @click="handleBatchAddCart">
+              {{ batchAdding ? '加入中...' : '批量加入购物车' }}
+            </button>
+            <button class="btn-batch-remove" type="button" :disabled="selectedIds.length === 0 || batchRemoving"
+              @click="handleBatchRemove">
+              {{ batchRemoving ? '取消中...' : '批量取消收藏' }}
+            </button>
+            <button class="btn-manage active" type="button" @click="exitManage">退出管理</button>
+          </template>
         </div>
       </aside>
 
@@ -114,25 +131,6 @@
               :page-sizes="[20, 40, 60]" @change="handlePageChange" />
           </div>
 
-          <!-- 管理模式批量操作栏 -->
-          <div v-if="manageMode" class="batch-bar">
-            <div class="batch-left">
-              <el-checkbox :model-value="isAllSelected" :indeterminate="isIndeterminate" @change="handleToggleAll">
-                全选
-              </el-checkbox>
-              <span class="batch-count">已选 {{ selectedIds.length }} 件</span>
-            </div>
-            <div class="batch-right">
-              <button class="btn-batch-cart" type="button" :disabled="selectedIds.length === 0 || batchAdding"
-                @click="handleBatchAddCart">
-                {{ batchAdding ? '加入中...' : '批量加入购物车' }}
-              </button>
-              <button class="btn-batch-remove" type="button" :disabled="selectedIds.length === 0 || batchRemoving"
-                @click="handleBatchRemove">
-                {{ batchRemoving ? '取消中...' : '批量取消收藏' }}
-              </button>
-            </div>
-          </div>
         </template>
       </div>
     </div>
@@ -519,6 +517,9 @@ onActivated(() => {
 .sidebar-footer {
   padding: 12px 16px;
   border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .btn-manage {
@@ -542,6 +543,66 @@ onActivated(() => {
   background: var(--color-primary);
   color: #fff;
   border-color: var(--color-primary);
+}
+
+/* sidebar 批量操作区域 */
+.sidebar-batch-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding: 4px 0;
+}
+
+.sidebar-batch-count {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* sidebar 内批量按钮 (宽度100%) */
+.sidebar-footer .btn-batch-cart,
+.sidebar-footer .btn-batch-remove {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.sidebar-footer .btn-batch-cart {
+  color: var(--color-primary);
+  background: #fff;
+  border: 1px solid var(--color-primary);
+}
+
+.sidebar-footer .btn-batch-cart:hover:not(:disabled) {
+  background: var(--color-primary-light, rgba(229, 57, 53, 0.08));
+}
+
+.sidebar-footer .btn-batch-cart:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.sidebar-footer .btn-batch-remove {
+  color: #fff;
+  background: var(--color-primary);
+  border: none;
+}
+
+.sidebar-footer .btn-batch-remove:hover:not(:disabled) {
+  background: var(--btn-hover);
+}
+
+.sidebar-footer .btn-batch-remove:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background: var(--btn-disabled-bg, #ccc);
 }
 
 /* === 右侧主区域 === */
@@ -590,11 +651,11 @@ onActivated(() => {
   margin-bottom: 16px;
 }
 
-/* === 收藏商品卡片网格 (4列) === */
+/* === 收藏商品卡片网格 (6列) === */
 .favorites-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
 }
 
 /* === 收藏卡片 === */
@@ -782,84 +843,6 @@ onActivated(() => {
   justify-content: center;
 }
 
-/* === 管理模式批量操作栏 === */
-.batch-bar {
-  margin-top: 16px;
-  padding: 16px 20px;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.batch-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.batch-count {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-}
-
-.batch-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* 批量加入购物车按钮 (次要) */
-.btn-batch-cart {
-  padding: 8px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-primary);
-  background: #fff;
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  transition: all 0.15s;
-  letter-spacing: 0.02em;
-}
-
-.btn-batch-cart:hover:not(:disabled) {
-  background: var(--color-primary-light, rgba(229, 57, 53, 0.08));
-}
-
-.btn-batch-cart:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-/* 批量取消收藏按钮 (主要) */
-.btn-batch-remove {
-  padding: 8px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-  background: var(--color-primary);
-  border: none;
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  transition: background 0.15s;
-  letter-spacing: 0.02em;
-}
-
-.btn-batch-remove:hover:not(:disabled) {
-  background: var(--btn-hover);
-}
-
-.btn-batch-remove:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-  background: var(--btn-disabled-bg, #ccc);
-  color: var(--btn-disabled-fg, #fff);
-}
 
 /* === 空状态去逛逛按钮 === */
 .btn-sm {
@@ -897,7 +880,7 @@ onActivated(() => {
 /* === 响应式 === */
 @media (max-width: 1200px) {
   .favorites-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
@@ -913,30 +896,12 @@ onActivated(() => {
   }
 
   .favorites-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
   }
 
   .fav-price {
     font-size: 14px;
-  }
-
-  .batch-bar {
-    padding: 12px 16px;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-
-  .batch-left,
-  .batch-right {
-    justify-content: space-between;
-  }
-
-  .btn-batch-cart,
-  .btn-batch-remove {
-    padding: 8px 16px;
-    flex: 1;
   }
 }
 

@@ -745,7 +745,7 @@ onUnmounted(() => {
 .seckill-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: 12px;
   margin-top: 16px;
 }
 
@@ -770,7 +770,7 @@ onUnmounted(() => {
 .card-img {
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 160px;
   background: #f5f5f5;
   overflow: hidden;
 }
@@ -795,7 +795,7 @@ onUnmounted(() => {
   position: absolute;
   top: 10px;
   left: 10px;
-  padding: 4px 10px;
+  padding: 3px 8px;
   font-size: 11px;
   font-weight: 600;
   color: #fff;
@@ -820,16 +820,16 @@ onUnmounted(() => {
 
 /* === 卡片主体 === */
 .card-body {
-  padding: 12px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: 8px;
+  gap: 6px;
 }
 
-/* 商品名称（14px, 600, 单行省略） */
+/* 商品名称（13px, 600, 单行省略） */
 .card-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #1a1a1a;
   line-height: 1.4;
@@ -846,7 +846,7 @@ onUnmounted(() => {
 }
 
 .price-seckill {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #E94560;
   font-family: 'SF Pro Display', 'PingFang SC', sans-serif;
@@ -914,11 +914,11 @@ onUnmounted(() => {
   padding-top: 4px;
 }
 
-/* === 抢购按钮（全宽，40px高，8px圆角） === */
+/* === 抢购按钮（全宽，34px高，8px圆角） === */
 .btn-seckill {
   width: 100%;
-  height: 40px;
-  font-size: 14px;
+  height: 34px;
+  font-size: 13px;
   font-weight: 600;
   color: #fff;
   background: linear-gradient(135deg, #FF4B2B, #FF416C);

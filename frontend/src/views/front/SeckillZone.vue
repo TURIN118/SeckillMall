@@ -89,8 +89,7 @@
                 <!-- 库存信息 -->
                 <template v-if="item.status === 'ACTIVE'">
                   <div class="stock-bar">
-                    <div class="stock-bar-fill" :class="stockLevel(item)"
-                      :style="{ width: soldPercent(item) + '%' }">
+                    <div class="stock-bar-fill" :class="stockLevel(item)" :style="{ width: soldPercent(item) + '%' }">
                     </div>
                   </div>
                   <div class="stock-text" :class="{ danger: isLowStock(item) }">
@@ -163,8 +162,7 @@
                 </div>
                 <template v-if="item.status === 'ACTIVE'">
                   <div class="stock-bar">
-                    <div class="stock-bar-fill" :class="stockLevel(item)"
-                      :style="{ width: soldPercent(item) + '%' }">
+                    <div class="stock-bar-fill" :class="stockLevel(item)" :style="{ width: soldPercent(item) + '%' }">
                     </div>
                   </div>
                   <div class="stock-text" :class="{ danger: isLowStock(item) }">
@@ -201,16 +199,14 @@
       </template>
     </div>
 
-    <!-- === 秒杀规则提示（底部小卡片，填充空白） === -->
+    <!-- === 秒杀规则提示（紧凑横向条，不占满整行） === -->
     <div v-if="!loading && (sortedActivities.length > 0 || legacySeckillList.length > 0)" class="seckill-rules">
-      <div class="rules-card">
-        <h3 class="rules-title">秒杀规则</h3>
-        <div class="rules-list">
-          <div class="rule-item"><span class="rule-num">1</span>秒杀商品数量有限，先到先得</div>
-          <div class="rule-item"><span class="rule-num">2</span>每位用户每场秒杀限购一件，不可重复参与</div>
-          <div class="rule-item"><span class="rule-num">3</span>秒杀订单需在15分钟内完成支付，超时自动取消</div>
-          <div class="rule-item"><span class="rule-num">4</span>秒杀商品不支持退换货，请谨慎购买</div>
-        </div>
+      <div class="rules-bar">
+        <span class="rules-label">
+          <svg class="rules-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          秒杀规则
+        </span>
+        <span class="rules-text">数量有限先到先得 · 限购一件不可重复 · 15分钟内完成支付 · 不支持退换货</span>
       </div>
     </div>
   </div>
@@ -1169,66 +1165,43 @@ onUnmounted(() => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
-/* === 秒杀规则卡片 === */
+/* === 秒杀规则紧凑横向条 === */
 .seckill-rules {
-  margin-top: 24px;
-}
-
-.rules-card {
-  background: #fff;
-  border: 1px solid var(--color-border, #e5e7eb);
-  border-radius: 12px;
-  padding: 20px 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  box-sizing: border-box;
-}
-
-.rules-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--color-text-primary, #1a1a1a);
-  margin: 0 0 12px;
+  margin-top: 20px;
   display: flex;
+  justify-content: flex-end;
+}
+
+.rules-bar {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-}
-
-.rules-title::before {
-  content: '';
-  display: inline-block;
-  width: 4px;
-  height: 16px;
-  background: linear-gradient(135deg, #FF4B2B, #FF416C);
-  border-radius: 2px;
-}
-
-.rules-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-}
-
-.rule-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--color-text-secondary, #6B7280);
-  line-height: 1.5;
-}
-
-.rule-num {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--color-primary-light, rgba(229, 57, 53, 0.08));
-  color: var(--color-primary, #E94560);
+  padding: 10px 20px;
+  background: rgba(255, 75, 43, 0.04);
+  border: 1px solid rgba(255, 75, 43, 0.15);
+  border-radius: 8px;
   font-size: 12px;
-  font-weight: 700;
-  display: flex;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.rules-label {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
+  font-weight: 600;
+  color: #FF4B2B;
+  white-space: nowrap;
+}
+
+.rules-icon {
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
+}
+
+.rules-text {
+  white-space: nowrap;
+  letter-spacing: 0.01em;
 }
 
 /* === 响应式 === */
@@ -1259,9 +1232,6 @@ onUnmounted(() => {
     grid-template-columns: repeat(4, 1fr);
   }
 
-  .rules-list {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* 3列: <=768px */
@@ -1283,6 +1253,16 @@ onUnmounted(() => {
 
   .skeleton-card {
     height: 240px;
+  }
+
+  .rules-bar {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .rules-text {
+    white-space: normal;
+    line-height: 1.6;
   }
 }
 

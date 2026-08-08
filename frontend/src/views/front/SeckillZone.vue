@@ -1,129 +1,137 @@
 <template>
   <div class="seckill-zone-page">
 
-    <!-- === 内容区 === -->
-    <div class="zone-content">
-      <!-- 骨架屏 -->
-      <div v-if="loading" class="skeleton-section-list">
-        <div v-for="i in 2" :key="i" class="skeleton-section">
-          <div class="skeleton-section-header"></div>
-          <div class="skeleton-grid">
-            <div v-for="j in 4" :key="j" class="skeleton-card"></div>
-          </div>
+    <!-- === 顶部 Hero 区（左右分栏：标题+倒计时 / 场次标签） === -->
+    <div class="seckill-hero">
+      <!-- 左侧：标题 + 倒计时 -->
+      <div class="hero-left">
+        <div class="hero-title-wrap">
+          <svg class="hero-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" />
+          </svg>
+          <h1 class="hero-title">限时秒杀</h1>
+        </div>
+        <div v-if="currentActivity && currentActivity.status !== 2" class="hero-countdown">
+          <span class="hero-cd-label">{{ currentActivity.status === 1 ? '距结束' : '距开始' }}</span>
+          <span class="hero-cd-block">{{ heroCountdown.hours }}</span>
+          <span class="hero-cd-sep">:</span>
+          <span class="hero-cd-block">{{ heroCountdown.minutes }}</span>
+          <span class="hero-cd-sep">:</span>
+          <span class="hero-cd-block">{{ heroCountdown.seconds }}</span>
+        </div>
+        <div v-else class="hero-countdown hero-countdown-static">
+          <span class="hero-cd-label">敬请期待</span>
         </div>
       </div>
 
-      <!-- 场次列表 -->
+      <!-- 右侧：场次标签横向滚动 -->
+      <div class="hero-tabs" v-if="sortedActivities.length > 0">
+        <div v-for="activity in sortedActivities" :key="activity.id" class="session-tab"
+          :class="{ active: selectedActivityId === activity.id, [statusClass(activity)]: true }"
+          @click="selectActivity(activity.id)">
+          <span class="tab-status">{{ statusText(activity) }}</span>
+          <span class="tab-name">{{ activity.name }}</span>
+          <span class="tab-time">{{ formatTime(activity.startTime) }}</span>
+        </div>
+      </div>
+      <!-- 无场次时右侧占位提示 -->
+      <div class="hero-tabs hero-tabs-empty" v-else>
+        <span class="tabs-placeholder">暂无场次</span>
+      </div>
+    </div>
+
+    <!-- === 内容区 === -->
+    <div class="seckill-content">
+      <!-- 骨架屏 -->
+      <div v-if="loading" class="skeleton-grid">
+        <div v-for="i in 12" :key="i" class="skeleton-card"></div>
+      </div>
+
       <template v-else>
-        <div v-if="sortedActivities.length > 0">
-          <div v-for="activity in sortedActivities" :key="activity.id" class="activity-section">
-            <!-- 场次头部 -->
-            <div class="activity-header">
-              <div class="activity-title-wrap">
-                <h2 class="activity-name">{{ activity.name }}</h2>
-                <span class="activity-status" :class="statusClass(activity)">{{ statusText(activity) }}</span>
-                <span class="activity-time">{{ formatTime(activity.startTime) }} - {{ formatTime(activity.endTime)
-                }}</span>
-              </div>
-              <div v-if="activity.status !== 2" class="activity-countdown">
-                <span class="cd-label">{{ activity.status === 1 ? '距结束' : '距开始' }}</span>
-                <span class="cd-block">{{
-                  countdown(activity.status === 1 ? activity.endTime : activity.startTime).hours }}</span>
-                <span class="cd-sep">:</span>
-                <span class="cd-block">{{
-                  countdown(activity.status === 1 ? activity.endTime : activity.startTime).minutes }}</span>
-                <span class="cd-sep">:</span>
-                <span class="cd-block">{{
-                  countdown(activity.status === 1 ? activity.endTime : activity.startTime).seconds }}</span>
-              </div>
-            </div>
-
-            <!-- 场次描述 -->
-            <div v-if="activity.description" class="activity-desc">{{ activity.description }}</div>
-
-            <!-- 商品网格 -->
-            <div v-if="filteredGoods(activity).length > 0" class="seckill-grid">
-              <div v-for="item in filteredGoods(activity)" :key="item.id" class="seckill-card" @click="goDetail(item)">
-                <!-- 商品图片 -->
-                <div class="card-img">
-                  <el-image v-if="cardImage(item)" :src="cardImage(item)" fit="cover" class="card-img-tag" lazy>
-                    <template #error>
-                      <div class="img-placeholder">
-                        <el-icon :size="40">
-                          <Picture />
-                        </el-icon>
-                      </div>
-                    </template>
-                  </el-image>
-                  <div v-else class="img-placeholder">
-                    <el-icon :size="40">
-                      <Picture />
-                    </el-icon>
-                  </div>
-                  <!-- 状态标签 -->
-                  <span class="status-tag" :class="goodsStatusClass(item)">{{ goodsStatusText(item) }}</span>
-                </div>
-
-                <!-- 卡片主体 -->
-                <div class="card-body">
-                  <!-- Bug 11 修复: 移除重复的 seckillName (活动名称已在场次标题显示), 只显示商品名称 -->
-                  <div class="card-name" :title="item.productName">{{ item.productName }}</div>
-
-                  <!-- 价格行 -->
-                  <div class="card-prices">
-                    <span class="price-seckill">{{ formatPrice(item.seckillPrice) }}</span>
-                    <span v-if="getOriginalPrice(item) && getOriginalPrice(item)! > item.seckillPrice"
-                      class="price-original">¥{{
-                        formatNumber(getOriginalPrice(item)!) }}</span>
-                  </div>
-
-                  <!-- 库存信息 -->
-                  <template v-if="item.status === 'ACTIVE'">
-                    <div class="stock-bar">
-                      <div class="stock-bar-fill" :class="stockLevel(item)" :style="{ width: soldPercent(item) + '%' }">
-                      </div>
-                    </div>
-                    <div class="stock-text" :class="{ danger: isLowStock(item) }">
-                      <template v-if="isLowStock(item)">仅剩 {{ item.availableCount }} 件！手慢无</template>
-                      <template v-else>已抢 {{ soldPercent(item) }}% · 剩余 {{ item.availableCount }} 件</template>
+        <!-- 有场次数据 -->
+        <template v-if="sortedActivities.length > 0">
+          <!-- 选中场次的商品 -->
+          <div v-if="currentGoods.length > 0" class="seckill-grid">
+            <div v-for="item in currentGoods" :key="item.id" class="seckill-card" @click="goDetail(item)">
+              <!-- 商品图片 -->
+              <div class="card-img">
+                <el-image v-if="cardImage(item)" :src="cardImage(item)" fit="cover" class="card-img-tag" lazy>
+                  <template #error>
+                    <div class="img-placeholder">
+                      <el-icon :size="40">
+                        <Picture />
+                      </el-icon>
                     </div>
                   </template>
-                  <template v-else-if="item.status === 'PENDING'">
-                    <div class="stock-text pending-stock">限量 {{ item.stockCount }} 件 · 每人限购 {{ item.perLimit }} 件</div>
-                  </template>
-                  <template v-else>
-                    <div class="stock-text ended-stock">已结束</div>
-                  </template>
+                </el-image>
+                <div v-else class="img-placeholder">
+                  <el-icon :size="40">
+                    <Picture />
+                  </el-icon>
+                </div>
+                <!-- 状态标签 -->
+                <span class="status-tag" :class="goodsStatusClass(item)">{{ goodsStatusText(item) }}</span>
+              </div>
 
-                  <!-- 操作按钮 -->
-                  <div class="card-action">
-                    <button v-if="item.status === 'ACTIVE' && Number(item.availableCount) > 0" class="btn-seckill"
-                      @click.stop="goDetail(item)">立即抢购</button>
-                    <button v-else-if="item.status === 'ACTIVE' && (!item.availableCount || Number(item.availableCount) <= 0)"
-                      class="btn-seckill btn-ended" disabled>已抢完</button>
-                    <button v-else-if="item.status === 'PENDING'" class="btn-seckill btn-pending"
-                      @click.stop="goDetail(item)">即将开始</button>
-                    <button v-else class="btn-seckill btn-ended" disabled>已结束</button>
+              <!-- 卡片主体 -->
+              <div class="card-body">
+                <!-- Bug 11 修复: 移除重复的 seckillName (活动名称已在场次标题显示), 只显示商品名称 -->
+                <div class="card-name" :title="item.productName">{{ item.productName }}</div>
+
+                <!-- 价格行 -->
+                <div class="card-prices">
+                  <span class="price-seckill">{{ formatPrice(item.seckillPrice) }}</span>
+                  <span v-if="getOriginalPrice(item) && getOriginalPrice(item)! > item.seckillPrice"
+                    class="price-original">¥{{
+                      formatNumber(getOriginalPrice(item)!) }}</span>
+                </div>
+
+                <!-- 库存信息 -->
+                <template v-if="item.status === 'ACTIVE'">
+                  <div class="stock-bar">
+                    <div class="stock-bar-fill" :class="stockLevel(item)"
+                      :style="{ width: soldPercent(item) + '%' }">
+                    </div>
                   </div>
+                  <div class="stock-text" :class="{ danger: isLowStock(item) }">
+                    <template v-if="isLowStock(item)">仅剩 {{ item.availableCount }} 件！手慢无</template>
+                    <template v-else>已抢 {{ soldPercent(item) }}% · 剩余 {{ item.availableCount }} 件</template>
+                  </div>
+                </template>
+                <template v-else-if="item.status === 'PENDING'">
+                  <div class="stock-text pending-stock">限量 {{ item.stockCount }} 件 · 每人限购 {{ item.perLimit }} 件
+                  </div>
+                </template>
+                <template v-else>
+                  <div class="stock-text ended-stock">已结束</div>
+                </template>
+
+                <!-- 操作按钮 -->
+                <div class="card-action">
+                  <button v-if="item.status === 'ACTIVE' && Number(item.availableCount) > 0" class="btn-seckill"
+                    @click.stop="goDetail(item)">立即抢购</button>
+                  <button
+                    v-else-if="item.status === 'ACTIVE' && (!item.availableCount || Number(item.availableCount) <= 0)"
+                    class="btn-seckill btn-ended" disabled>已抢完</button>
+                  <button v-else-if="item.status === 'PENDING'" class="btn-seckill btn-pending"
+                    @click.stop="goDetail(item)">即将开始</button>
+                  <button v-else class="btn-seckill btn-ended" disabled>已结束</button>
                 </div>
               </div>
-            </div>
-
-            <!-- 场次下无匹配商品（被分类筛选过滤） -->
-            <div v-else class="empty-in-section">
-              <el-empty :image-size="80" description="该场次下暂无匹配商品" />
             </div>
           </div>
-        </div>
+          <!-- 场次下无商品 -->
+          <div v-else class="empty-in-section">
+            <el-empty :image-size="80" description="该场次下暂无商品" />
+          </div>
+        </template>
 
         <!-- H-F3 修复: 旧版秒杀数据展示区 (双轨制合并) -->
         <!-- 当新版场次化 API 无数据, 但旧版 /seckill/list 有数据时, 展示旧版数据 -->
-        <div v-if="sortedActivities.length === 0 && legacySeckillList.length > 0" class="legacy-section">
-          <div class="activity-header">
-            <div class="activity-title-wrap">
-              <h2 class="activity-name">秒杀商品</h2>
-              <span class="activity-status status-active">进行中</span>
-            </div>
+        <template v-else-if="legacySeckillList.length > 0">
+          <div class="legacy-header">
+            <h2 class="legacy-title">秒杀商品</h2>
+            <span class="activity-status status-active">进行中</span>
           </div>
           <div class="seckill-grid">
             <div v-for="item in filteredLegacyGoods" :key="item.id" class="seckill-card" @click="goDetail(item)">
@@ -155,7 +163,8 @@
                 </div>
                 <template v-if="item.status === 'ACTIVE'">
                   <div class="stock-bar">
-                    <div class="stock-bar-fill" :class="stockLevel(item)" :style="{ width: soldPercent(item) + '%' }">
+                    <div class="stock-bar-fill" :class="stockLevel(item)"
+                      :style="{ width: soldPercent(item) + '%' }">
                     </div>
                   </div>
                   <div class="stock-text" :class="{ danger: isLowStock(item) }">
@@ -164,7 +173,8 @@
                   </div>
                 </template>
                 <template v-else-if="item.status === 'PENDING'">
-                  <div class="stock-text pending-stock">限量 {{ item.stockCount }} 件 · 每人限购 {{ item.perLimit }} 件</div>
+                  <div class="stock-text pending-stock">限量 {{ item.stockCount }} 件 · 每人限购 {{ item.perLimit }} 件
+                  </div>
                 </template>
                 <template v-else>
                   <div class="stock-text ended-stock">已结束</div>
@@ -172,7 +182,8 @@
                 <div class="card-action">
                   <button v-if="item.status === 'ACTIVE' && Number(item.availableCount) > 0" class="btn-seckill"
                     @click.stop="goDetail(item)">立即抢购</button>
-                  <button v-else-if="item.status === 'ACTIVE' && (!item.availableCount || Number(item.availableCount) <= 0)"
+                  <button
+                    v-else-if="item.status === 'ACTIVE' && (!item.availableCount || Number(item.availableCount) <= 0)"
                     class="btn-seckill btn-ended" disabled>已抢完</button>
                   <button v-else-if="item.status === 'PENDING'" class="btn-seckill btn-pending"
                     @click.stop="goDetail(item)">即将开始</button>
@@ -181,13 +192,26 @@
               </div>
             </div>
           </div>
-        </div>
+        </template>
 
         <!-- 空状态 -->
-        <div v-if="sortedActivities.length === 0 && legacySeckillList.length === 0" class="empty-state">
+        <div v-else class="empty-state">
           <el-empty :image-size="120" description="暂无秒杀活动" />
         </div>
       </template>
+    </div>
+
+    <!-- === 秒杀规则提示（底部小卡片，填充空白） === -->
+    <div v-if="!loading && (sortedActivities.length > 0 || legacySeckillList.length > 0)" class="seckill-rules">
+      <div class="rules-card">
+        <h3 class="rules-title">秒杀规则</h3>
+        <div class="rules-list">
+          <div class="rule-item"><span class="rule-num">1</span>秒杀商品数量有限，先到先得</div>
+          <div class="rule-item"><span class="rule-num">2</span>每位用户每场秒杀限购一件，不可重复参与</div>
+          <div class="rule-item"><span class="rule-num">3</span>秒杀订单需在15分钟内完成支付，超时自动取消</div>
+          <div class="rule-item"><span class="rule-num">4</span>秒杀商品不支持退换货，请谨慎购买</div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -202,7 +226,7 @@
  * - 每 8 秒静默刷新数据，每秒驱动倒计时
  * - 使用 getTimeOffset() 处理服务器时间偏移
  */
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Picture } from '@element-plus/icons-vue'
@@ -549,6 +573,43 @@ function checkActivityExpired(): void {
   }
 }
 
+/* === 重构新增: 场次标签切换逻辑 === */
+/** 当前选中的场次ID */
+const selectedActivityId = ref<number | string | null>(null)
+
+/** 选中场次 */
+function selectActivity(id: number | string): void {
+  selectedActivityId.value = id
+}
+
+/** 当前选中的场次对象 */
+const currentActivity = computed<SeckillActivityVO | null>(() => {
+  if (!selectedActivityId.value) return sortedActivities.value[0] || null
+  return sortedActivities.value.find((a) => a.id === selectedActivityId.value) || null
+})
+
+/** 当前场次的商品列表 */
+const currentGoods = computed<SeckillGoodsVO[]>(() => {
+  if (!currentActivity.value) return []
+  return filteredGoods(currentActivity.value)
+})
+
+/** Hero区域倒计时（当前场次的倒计时） */
+const heroCountdown = computed(() => {
+  if (!currentActivity.value || currentActivity.value.status === 2) {
+    return { hours: '00', minutes: '00', seconds: '00' }
+  }
+  const target = currentActivity.value.status === 1 ? currentActivity.value.endTime : currentActivity.value.startTime
+  return countdown(target)
+})
+
+/** watch sortedActivities 变化时自动选中第一个场次 */
+watch(sortedActivities, (list) => {
+  if (list.length > 0 && !list.find((a) => a.id === selectedActivityId.value)) {
+    selectedActivityId.value = list[0].id
+  }
+}, { immediate: true })
+
 /* === 生命周期 === */
 // 数据刷新定时器, 每 8 秒静默刷新秒杀场次列表,
 // 让前端展示的 availableCount / 已抢 / 剩余 与后端保持同步 (与倒计时 tickTimer 分开)
@@ -577,59 +638,228 @@ onUnmounted(() => {
 
 <style scoped>
 /*
- * 秒杀专区现代化UI样式
+ * 秒杀专区现代化UI样式（场次标签切换+6列网格版）
  * 设计参考: Material Design 3 + Apple HIG
  * 主色调: #FF4B2B → #FF416C 渐变 (秒杀主题)
  * 强调色: #E94560 (秒杀价)
  * 间距系统: 8pt 网格
  */
 
-/* === 页面根 === */
+/* === 页面根 - 与首页宽度一致，不内收 === */
 .seckill-zone-page {
-  padding: 24px 24px 32px;
+  padding: 24px;
+  padding-bottom: 32px;
   font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
   color: var(--color-text-primary);
   box-sizing: border-box;
 }
 
+/* === 顶部 Hero 区（左右分栏） === */
+.seckill-hero {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  margin-bottom: 20px;
+}
+
+/* 左侧：标题+倒计时（渐变背景，限制宽度） */
+.hero-left {
+  width: 320px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #FF4B2B, #FF416C);
+  border-radius: 12px;
+  padding: 20px 24px;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  box-shadow: 0 4px 16px rgba(255, 75, 43, 0.25);
+  box-sizing: border-box;
+}
+
+.hero-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero-icon {
+  width: 28px;
+  height: 28px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.hero-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.hero-countdown {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hero-countdown-static {
+  gap: 0;
+}
+
+.hero-cd-label {
+  font-size: 13px;
+  opacity: 0.9;
+  margin-right: 8px;
+  font-weight: 500;
+}
+
+.hero-cd-block {
+  min-width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  font-variant-numeric: tabular-nums;
+  padding: 0 4px;
+  box-sizing: border-box;
+}
+
+.hero-cd-sep {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* 右侧：场次标签横向滚动 */
+.hero-tabs {
+  flex: 1;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px;
+  align-items: center;
+  min-width: 0;
+}
+
+.hero-tabs-empty {
+  justify-content: center;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px dashed var(--color-border, #e5e7eb);
+  padding: 24px;
+}
+
+.tabs-placeholder {
+  color: var(--color-text-muted, #9CA3AF);
+  font-size: 14px;
+}
+
+/* 自定义滚动条 */
+.hero-tabs::-webkit-scrollbar {
+  height: 6px;
+}
+
+.hero-tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.hero-tabs::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 99px;
+}
+
+.hero-tabs::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.session-tab {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+  transition: all 0.15s;
+  box-sizing: border-box;
+}
+
+.session-tab:hover {
+  border-color: #FF4B2B;
+  box-shadow: 0 2px 8px rgba(255, 75, 43, 0.1);
+  transform: translateY(-1px);
+}
+
+.session-tab.active {
+  border-color: #FF4B2B;
+  background: linear-gradient(135deg, rgba(255, 75, 43, 0.06), rgba(255, 65, 108, 0.06));
+  box-shadow: 0 2px 8px rgba(255, 75, 43, 0.15);
+}
+
+.tab-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 99px;
+  display: inline-block;
+  width: fit-content;
+  line-height: 14px;
+}
+
+.session-tab.status-active .tab-status {
+  background: linear-gradient(135deg, #FF4B2B, #FF416C);
+  color: #fff;
+}
+
+.session-tab.status-pending .tab-status {
+  background: #FA8B17;
+  color: #fff;
+}
+
+.session-tab.status-ended .tab-status {
+  background: #9CA3AF;
+  color: #fff;
+}
+
+.tab-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1a1a1a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-time {
+  font-size: 11px;
+  color: var(--color-text-muted, #9CA3AF);
+  font-weight: 500;
+}
+
 /* === 内容区 === */
-.zone-content {
+.seckill-content {
   width: 100%;
   box-sizing: border-box;
 }
 
-/* === 骨架屏 === */
-.skeleton-section-list {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.skeleton-section {
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-}
-
-.skeleton-section-header {
-  height: 28px;
-  width: 220px;
-  margin-bottom: 16px;
-  border-radius: 8px;
-  background-image: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: skeleton-loading 1.4s ease infinite;
-}
-
+/* === 骨架屏（6列网格） === */
 .skeleton-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
 }
 
 .skeleton-card {
-  height: 360px;
+  height: 280px;
   background: #fff;
   border-radius: 12px;
   background-image: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
@@ -647,55 +877,28 @@ onUnmounted(() => {
   }
 }
 
-/* === 场次区块（白色圆角卡片） === */
-.activity-section {
-  margin-bottom: 24px;
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  box-sizing: border-box;
-  transition: box-shadow 0.2s ease;
-}
-
-/* H-F3 修复: 旧版秒杀数据区块样式 (复用场次区块样式) */
-.legacy-section {
-  margin-bottom: 24px;
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  box-sizing: border-box;
-}
-
-/* === 场次头部 === */
-.activity-header {
+/* === 旧版秒杀数据头部 === */
+.legacy-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
   gap: 12px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
-.activity-title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.activity-name {
+.legacy-title {
   font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary, #1a1a1a);
   margin: 0;
   line-height: 1.4;
   letter-spacing: -0.01em;
 }
 
-/* 场次状态标签 */
+/* 场次状态标签（用于 legacy-header） */
 .activity-status {
   display: inline-flex;
   align-items: center;
@@ -720,64 +923,11 @@ onUnmounted(() => {
   background: #9CA3AF;
 }
 
-.activity-time {
-  font-size: 12px;
-  color: #9CA3AF;
-  font-weight: 500;
-}
-
-/* === 场次倒计时（紧凑数字块设计） === */
-.activity-countdown {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.activity-countdown .cd-label {
-  font-size: 12px;
-  color: #6B7280;
-  margin-right: 6px;
-  font-weight: 500;
-}
-
-.activity-countdown .cd-block {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 4px;
-  text-align: center;
-  background: #1a1a1a;
-  color: #fff;
-  border-radius: 6px;
-  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
-  font-size: 13px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.activity-countdown .cd-sep {
-  color: #1a1a1a;
-  font-weight: 700;
-  font-size: 13px;
-}
-
-.activity-desc {
-  margin: 12px 0 0;
-  font-size: 13px;
-  color: #6B7280;
-  line-height: 1.5;
-}
-
-/* === 秒杀卡片网格（4列桌面 / 3列平板 / 2列手机 / 1列小手机） === */
+/* === 秒杀卡片网格（6列桌面） === */
 .seckill-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 12px;
-  margin-top: 16px;
 }
 
 /* === 单个秒杀卡片 === */
@@ -797,11 +947,11 @@ onUnmounted(() => {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
-/* === 卡片图片（固定高度200px） === */
+/* === 卡片图片（缩小到140px） === */
 .card-img {
   position: relative;
   width: 100%;
-  height: 160px;
+  height: 140px;
   background: #f5f5f5;
   overflow: hidden;
 }
@@ -849,18 +999,18 @@ onUnmounted(() => {
   background: rgba(156, 163, 175, 0.95);
 }
 
-/* === 卡片主体 === */
+/* === 卡片主体（紧凑布局） === */
 .card-body {
-  padding: 10px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: 6px;
+  gap: 5px;
 }
 
-/* 商品名称（13px, 600, 单行省略） */
+/* 商品名称（12px, 600, 单行省略） */
 .card-name {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: #1a1a1a;
   line-height: 1.4;
@@ -873,11 +1023,11 @@ onUnmounted(() => {
 .card-prices {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 6px;
 }
 
 .price-seckill {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: #E94560;
   font-family: 'SF Pro Display', 'PingFang SC', sans-serif;
@@ -886,7 +1036,7 @@ onUnmounted(() => {
 }
 
 .price-original {
-  font-size: 12px;
+  font-size: 11px;
   color: #9CA3AF;
   text-decoration: line-through;
   font-weight: 400;
@@ -945,10 +1095,10 @@ onUnmounted(() => {
   padding-top: 4px;
 }
 
-/* === 抢购按钮（全宽，34px高，8px圆角） === */
+/* === 抢购按钮（全宽，32px高，8px圆角） === */
 .btn-seckill {
   width: 100%;
-  height: 34px;
+  height: 32px;
   font-size: 13px;
   font-weight: 600;
   color: #fff;
@@ -1002,8 +1152,10 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px;
-  margin-top: 16px;
+  padding: 60px 24px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 /* === 空状态 === */
@@ -1012,33 +1164,116 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 80px 24px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+/* === 秒杀规则卡片 === */
+.seckill-rules {
+  margin-top: 24px;
+}
+
+.rules-card {
+  background: #fff;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+}
+
+.rules-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary, #1a1a1a);
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rules-title::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  background: linear-gradient(135deg, #FF4B2B, #FF416C);
+  border-radius: 2px;
+}
+
+.rules-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.rule-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-secondary, #6B7280);
+  line-height: 1.5;
+}
+
+.rule-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-primary-light, rgba(229, 57, 53, 0.08));
+  color: var(--color-primary, #E94560);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 /* === 响应式 === */
-/* 4列: 768-1024px */
-@media (max-width: 1024px) {
+/* 5列: <=1200px */
+@media (max-width: 1200px) {
+
+  .skeleton-grid,
+  .seckill-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* 4列: <=900px, Hero 改纵向布局 */
+@media (max-width: 900px) {
+  .seckill-hero {
+    flex-direction: column;
+  }
+
+  .hero-left {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
 
   .skeleton-grid,
   .seckill-grid {
     grid-template-columns: repeat(4, 1fr);
   }
+
+  .rules-list {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* 3列: 480-768px */
+/* 3列: <=768px */
 @media (max-width: 768px) {
   .seckill-zone-page {
     padding: 16px 16px 24px;
   }
 
-  .activity-section,
-  .legacy-section {
-    padding: 16px 18px;
-  }
-
-  .activity-header {
+  .hero-left {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 12px;
   }
 
   .skeleton-grid,
@@ -1047,11 +1282,11 @@ onUnmounted(() => {
   }
 
   .skeleton-card {
-    height: 320px;
+    height: 240px;
   }
 }
 
-/* 2列: <480px */
+/* 2列: <=480px */
 @media (max-width: 480px) {
 
   .skeleton-grid,

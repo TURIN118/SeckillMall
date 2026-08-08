@@ -1,5 +1,5 @@
 <template>
-  <!-- 严格对照 index.html .order-page / .order-steps / .pay-summary 样式 -->
+  <!-- 订单详情: 参考京东+淘宝订单详情设计 -->
   <div class="order-page">
     <!-- 加载骨架屏 -->
     <div v-if="loading" class="loading-wrap">
@@ -11,24 +11,48 @@
       <div class="error-icon">!</div>
       <h3 class="error-title">订单不存在</h3>
       <p class="error-desc">您访问的订单可能已被删除</p>
-      <button class="btn-sm primary" @click="router.push('/user/orders')">返回订单列表</button>
+      <button class="btn-action primary" @click="router.push('/user/orders')">返回订单列表</button>
     </div>
 
     <!-- 订单详情内容 -->
     <template v-else-if="order">
-      <!-- 面包屑 -->
-      <nav class="breadcrumb">
-        <router-link to="/user/orders" class="breadcrumb-link">我的订单</router-link>
-        <span class="breadcrumb-sep">&gt;</span>
-        <span class="breadcrumb-current">订单详情</span>
-      </nav>
+      <!-- 1. 顶部状态横幅 (参考京东) -->
+      <div class="order-status-banner">
+        <div class="banner-left">
+          <h2 class="status-title" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</h2>
+          <div class="order-meta">
+            <span class="meta-item">订单号: {{ order.orderNo }}</span>
+            <span class="meta-item">下单时间: {{ formatTime(order.createTime) }}</span>
+          </div>
+        </div>
+        <div class="banner-right">
+          <!-- 状态相关操作按钮 -->
+          <template v-if="order.status === 'UNPAID'">
+            <button class="btn-action outline" :disabled="cancelLoading" @click="handleCancel">
+              {{ cancelLoading ? '取消中...' : '取消订单' }}
+            </button>
+            <button class="btn-action primary" :disabled="payLoading" @click="handlePay">
+              {{ payLoading ? '支付中...' : '立即支付' }}
+            </button>
+          </template>
+          <template v-else-if="order.status === 'PAID'">
+            <span class="waiting-hint">商家备货中</span>
+          </template>
+          <template v-else-if="order.status === 'SHIPPED'">
+            <button class="btn-action primary" :disabled="confirmLoading" @click="handleConfirm">
+              {{ confirmLoading ? '确认中...' : '确认收货' }}
+            </button>
+          </template>
+          <button class="btn-action outline" @click="router.push('/user/orders')">返回订单列表</button>
+        </div>
+      </div>
 
-      <!-- 进度步骤条（4步：下单→支付→发货→完成） -->
+      <!-- 2. 进度步骤条 (4步: 下单→支付→发货→完成) -->
       <div class="order-steps">
         <div class="step">
           <div class="step-dot done">&#10003;</div>
           <span class="step-label">下单成功</span>
-          <span class="step-time">{{ formatTimeShort(order.createTime) }}</span>
+          <span class="step-time active">{{ formatTimeShort(order.createTime) }}</span>
           <div class="step-line done"></div>
         </div>
         <div class="step">
@@ -49,117 +73,115 @@
         </div>
       </div>
 
-      <!-- 商品信息卡片（对照 .order-card，支持多商品遍历） -->
-      <div class="order-card product-card" v-for="item in order.items" :key="item.productId">
-        <div class="order-card-img large">
-          <img v-if="item.productImage" :src="formatImageUrl(item.productImage)" :alt="item.productName" loading="lazy"
-            sizes="80px" class="order-card-img-tag" />
-          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <path d="m21 15-5-5L5 21" />
-          </svg>
-        </div>
-        <div class="order-card-info">
-          <div class="order-card-name large">{{ item.productName }}</div>
-          <div v-if="item.skuAttributes" class="order-item__sku">
-            <svg class="order-item__sku-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 6h18M3 12h18M3 18h18" />
-            </svg>
-            {{ item.skuAttributes }}
-          </div>
-          <div class="order-card-time">单价 ¥{{ formatPrice(item.unitPrice) }} | 数量 {{ item.quantity }} 件</div>
-          <div class="product-meta">
-            <span>单价：<strong class="seckill-price">¥{{ formatPrice(item.unitPrice) }}</strong></span>
-            <span>数量：{{ item.quantity }} 件</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 订单信息汇总（对照 .pay-summary） -->
-      <div class="pay-summary">
-        <div class="pay-summary-row">
-          <span>订单编号</span>
-          <span class="order-no-value" @click="copyOrderNo">
-            {{ order.orderNo }}
-            <span class="copy-hint">复制</span>
+      <!-- 3. 商品信息卡片 (参考淘宝, 表格式) -->
+      <div class="info-card">
+        <div class="card-header-bar">
+          <h3 class="card-title">商品信息</h3>
+          <span class="order-type-tag" :class="order.orderType === 'SECKILL' ? 'seckill' : 'normal'">
+            {{ order.orderType === 'SECKILL' ? '秒杀订单' : '普通订单' }}
           </span>
         </div>
-        <div class="pay-summary-row">
-          <span>下单时间</span>
-          <span>{{ formatTime(order.createTime) }}</span>
+        <!-- 表头 -->
+        <div class="goods-table-head">
+          <div class="col-product">商品</div>
+          <div class="col-price">单价</div>
+          <div class="col-qty">数量</div>
+          <div class="col-subtotal">小计</div>
         </div>
-        <div class="pay-summary-row">
-          <span>支付方式</span>
-          <span>{{ formatPayMethod(order.payMethod) }}</span>
+        <!-- 商品行 -->
+        <div v-for="item in order.items" :key="item.productId" class="goods-table-row">
+          <div class="col-product">
+            <div class="goods-img">
+              <img v-if="item.productImage" :src="formatImageUrl(item.productImage)" :alt="item.productName" loading="lazy" />
+              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="m21 15-5-5L5 21" />
+              </svg>
+            </div>
+            <div class="goods-info">
+              <div class="goods-name">{{ item.productName }}</div>
+              <div v-if="item.skuAttributes" class="goods-sku">{{ item.skuAttributes }}</div>
+            </div>
+          </div>
+          <div class="col-price">¥{{ formatPrice(item.unitPrice) }}</div>
+          <div class="col-qty">{{ item.quantity }}</div>
+          <div class="col-subtotal">¥{{ formatPrice(item.unitPrice * item.quantity) }}</div>
         </div>
-        <div class="pay-summary-row">
-          <span>支付时间</span>
-          <span>{{ order.payTime ? formatTime(order.payTime) : '—' }}</span>
-        </div>
-        <div class="pay-summary-row">
-          <span>订单状态</span>
-          <span class="status-tag" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
-        </div>
-        <div v-if="order.cancelTime" class="pay-summary-row">
-          <span>取消时间</span>
-          <span>{{ formatTime(order.cancelTime) }}</span>
-        </div>
-        <div v-if="order.cancelReason" class="pay-summary-row">
-          <span>取消原因</span>
-          <span>{{ order.cancelReason }}</span>
-        </div>
-        <div v-if="order.remark" class="pay-summary-row">
-          <span>备注</span>
-          <span class="remark-value">{{ order.remark }}</span>
-        </div>
-        <div class="pay-summary-row total-row">
-          <span class="total-label">应付金额</span>
-          <span class="pay-summary-total">¥{{ formatPrice(order.totalAmount) }}</span>
-        </div>
-      </div>
-
-      <!-- 物流信息（SHIPPED/COMPLETED状态显示） -->
-      <div v-if="order.shippingCompany || order.shippingNo" class="pay-summary shipping-summary">
-        <div class="pay-summary-row">
-          <span>物流公司</span>
-          <span>{{ order.shippingCompany }}</span>
-        </div>
-        <div class="pay-summary-row">
-          <span>快递单号</span>
-          <span class="shipping-no-value" @click="copyShippingNo">
-            {{ order.shippingNo }}
-            <span class="copy-hint">复制</span>
-          </span>
-        </div>
-        <div class="pay-summary-row">
-          <span>发货时间</span>
-          <span>{{ formatTime(order.shipTime) }}</span>
+        <!-- 金额汇总 -->
+        <div class="goods-summary">
+          <div class="summary-line">
+            <span>商品总额</span>
+            <span>¥{{ formatPrice(order.totalAmount) }}</span>
+          </div>
+          <div class="summary-line total">
+            <span>实付金额</span>
+            <span class="total-amount">¥{{ formatPrice(order.totalAmount) }}</span>
+          </div>
         </div>
       </div>
 
-      <!-- 操作栏 -->
-      <div class="action-bar">
-        <template v-if="order.status === 'UNPAID'">
-          <button class="btn-sm text large" :disabled="cancelLoading" @click="handleCancel">
-            {{ cancelLoading ? '取消中...' : '取消订单' }}
-          </button>
-          <button class="btn-sm primary large" :disabled="payLoading" @click="handlePay">
-            {{ payLoading ? '支付中...' : '去支付' }}
-          </button>
-        </template>
-        <template v-else-if="order.status === 'PAID'">
-          <span class="waiting-hint">等待发货</span>
-        </template>
-        <template v-else-if="order.status === 'SHIPPED'">
-          <button class="btn-sm primary large" :disabled="confirmLoading" @click="handleConfirm">
-            {{ confirmLoading ? '确认中...' : '确认收货' }}
-          </button>
-        </template>
-        <button class="btn-sm large" @click="router.push('/user/orders')">返回订单列表</button>
+      <!-- 4. 信息两列布局 (订单信息 + 物流信息) -->
+      <div class="info-grid">
+        <!-- 左列: 订单信息 -->
+        <div class="info-card">
+          <div class="card-header-bar">
+            <h3 class="card-title">订单信息</h3>
+          </div>
+          <div class="info-row">
+            <span class="info-label">订单编号</span>
+            <span class="info-value order-no" @click="copyOrderNo">
+              {{ order.orderNo }} <span class="copy-hint">复制</span>
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">支付方式</span>
+            <span class="info-value">{{ formatPayMethod(order.payMethod) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">下单时间</span>
+            <span class="info-value">{{ formatTime(order.createTime) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">支付时间</span>
+            <span class="info-value">{{ order.payTime ? formatTime(order.payTime) : '—' }}</span>
+          </div>
+          <div v-if="order.cancelTime" class="info-row">
+            <span class="info-label">取消时间</span>
+            <span class="info-value">{{ formatTime(order.cancelTime) }}</span>
+          </div>
+          <div v-if="order.cancelReason" class="info-row">
+            <span class="info-label">取消原因</span>
+            <span class="info-value">{{ order.cancelReason }}</span>
+          </div>
+          <div v-if="order.remark" class="info-row">
+            <span class="info-label">备注</span>
+            <span class="info-value remark">{{ order.remark }}</span>
+          </div>
+        </div>
+        <!-- 右列: 物流信息 (仅在有物流信息时显示) -->
+        <div v-if="order.shippingCompany || order.shippingNo" class="info-card">
+          <div class="card-header-bar">
+            <h3 class="card-title">物流信息</h3>
+          </div>
+          <div class="info-row">
+            <span class="info-label">物流公司</span>
+            <span class="info-value">{{ order.shippingCompany }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">快递单号</span>
+            <span class="info-value shipping-no" @click="copyShippingNo">
+              {{ order.shippingNo }} <span class="copy-hint">复制</span>
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">发货时间</span>
+            <span class="info-value">{{ formatTime(order.shipTime) }}</span>
+          </div>
+        </div>
       </div>
 
-      <!-- 支付方式选择弹窗 (Bug 7 修复: 去支付时选择支付方式, 不直接扣费) -->
+      <!-- 5. 支付方式选择弹窗 (保留原样) -->
       <el-dialog v-model="showPayDialog" title="选择支付方式" width="420px" append-to-body>
         <div class="pay-method-list">
           <div v-for="method in payMethodOptions" :key="method.value" class="pay-method-item"
@@ -170,8 +192,8 @@
           </div>
         </div>
         <template #footer>
-          <button class="btn-sm text large" @click="showPayDialog = false">取消</button>
-          <button class="btn-sm primary large" :disabled="payLoading" @click="confirmPay">
+          <button class="btn-action outline" @click="showPayDialog = false">取消</button>
+          <button class="btn-action primary" :disabled="payLoading" @click="confirmPay">
             {{ payLoading ? '支付中...' : '确认支付' }}
           </button>
         </template>
@@ -630,11 +652,14 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 严格对照 index.html .order-page 样式 */
+/* === 页面容器 === */
 .order-page {
   padding: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
+/* === 加载骨架屏 === */
 .loading-wrap {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
@@ -664,7 +689,7 @@ onMounted(() => {
   }
 }
 
-/* 错误状态 */
+/* === 错误状态 === */
 .error-state {
   display: flex;
   flex-direction: column;
@@ -699,45 +724,132 @@ onMounted(() => {
   margin-bottom: 24px;
 }
 
-/* 面包屑 */
-.breadcrumb {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  margin-bottom: 16px;
+/* === 顶部状态横幅 (参考京东) === */
+.order-status-banner {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 6px;
+  padding: 20px 24px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
 }
 
-.breadcrumb-link {
-  color: var(--color-text-secondary);
-  text-decoration: none;
-  cursor: pointer;
-  transition: color 0.2s;
+.banner-left {
+  min-width: 0;
+  flex: 1;
 }
 
-.breadcrumb-link:hover {
-  color: var(--color-primary);
+.status-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--color-text-primary);
 }
 
-.breadcrumb-sep {
+.status-title.unpaid {
+  color: #ff9800;
+}
+
+.status-title.paid {
+  color: #4caf50;
+}
+
+.status-title.shipped {
+  color: #1677ff;
+}
+
+.status-title.completed {
+  color: #1677ff;
+}
+
+.status-title.cancelled,
+.status-title.timeout {
   color: var(--color-text-muted);
 }
 
-.breadcrumb-current {
-  color: var(--color-text-primary);
-  font-weight: 600;
+.order-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  flex-wrap: wrap;
 }
 
-/* 进度步骤条：对照 .order-steps 样式 */
+.meta-item {
+  white-space: nowrap;
+}
+
+.banner-right {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* === 等待发货提示 === */
+.waiting-hint {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding: 8px 16px;
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-md);
+}
+
+/* === 操作按钮 === */
+.btn-action {
+  padding: 8px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.btn-action.primary {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+}
+
+.btn-action.primary:hover:not(:disabled) {
+  background: var(--btn-hover);
+}
+
+.btn-action.primary:disabled {
+  background: var(--btn-loading-bg);
+  cursor: not-allowed;
+}
+
+.btn-action.outline {
+  background: #fff;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+
+.btn-action.outline:hover:not(:disabled) {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* === 进度步骤条 (美化, 32px圆点) === */
 .order-steps {
   display: flex;
-  align-items: center;
-  margin-bottom: 24px;
-  padding: 20px;
+  align-items: flex-start;
+  padding: 24px 20px;
   background: var(--color-bg-card);
-  border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
 }
 
 .step {
@@ -748,22 +860,21 @@ onMounted(() => {
   position: relative;
 }
 
-/* step-dot: done 绿 / current 红 / pending 灰 */
 .step-dot {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   z-index: 1;
 }
 
 .step-dot.done {
-  background: var(--color-success);
+  background: #4caf50;
   color: #fff;
 }
 
@@ -773,19 +884,21 @@ onMounted(() => {
 }
 
 .step-dot.pending {
-  background: var(--btn-disabled-bg);
-  color: var(--btn-disabled-fg);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+  border: 2px solid var(--color-border);
 }
 
 .step-label {
-  font-size: 11px;
-  color: var(--color-text-secondary);
+  font-size: 13px;
+  color: var(--color-text-primary);
+  font-weight: 500;
 }
 
 .step-time {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-secondary);
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .step-time.active {
@@ -794,148 +907,220 @@ onMounted(() => {
 
 .step-line {
   position: absolute;
-  top: 14px;
+  top: 16px;
   left: 50%;
   width: 100%;
   height: 2px;
-  background: var(--btn-disabled-bg);
+  background: var(--color-border);
   z-index: 0;
 }
 
 .step-line.done {
-  background: var(--color-success);
+  background: #4caf50;
 }
 
-/* 商品信息卡片：对照 .order-card 样式 */
-.order-card {
+/* === 信息卡片通用 === */
+.info-card {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 16px;
   margin-bottom: 16px;
-  display: flex;
-  gap: 16px;
-  align-items: center;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
-.order-card-img {
-  width: 72px;
-  height: 72px;
+.card-header-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
   background: var(--color-bg-subtle);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
 }
 
-.order-card-img.large {
-  width: 96px;
-  height: 96px;
-}
-
-.order-card-img svg {
-  width: 28px;
-  height: 28px;
-  color: var(--color-text-muted);
-}
-
-.order-card-img.large svg {
-  width: 36px;
-  height: 36px;
-}
-
-.order-card-img-tag {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 6px;
-}
-
-.order-card-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.order-card-name {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: var(--color-text-primary);
-}
-
-.order-card-name.large {
+.card-title {
   font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
 }
 
-.order-card-time {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-}
-
-.product-meta {
-  margin-top: 8px;
-  display: flex;
-  gap: 16px;
+.order-type-tag {
+  padding: 2px 10px;
   font-size: 12px;
-  color: var(--color-text-secondary);
-}
-
-/* 7.3 订单明细展示 SKU 属性 */
-.order-item__sku {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin: 4px 0;
-  padding: 2px 8px;
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  background: var(--color-bg-subtle);
+  font-weight: 600;
   border-radius: 4px;
-  border: 1px solid var(--color-border-light);
 }
 
-.order-item__sku-icon {
-  width: 12px;
-  height: 12px;
-  color: var(--color-text-muted);
-  flex-shrink: 0;
+.order-type-tag.seckill {
+  background: var(--color-primary);
+  color: #fff;
 }
 
-.seckill-price {
-  color: var(--color-primary);
-  font-family: var(--font-price);
-  font-size: 16px;
+.order-type-tag.normal {
+  background: #1677ff;
+  color: #fff;
 }
 
-/* 订单信息汇总：对照 .pay-summary 样式 */
-.pay-summary {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 20px;
-}
-
-.pay-summary-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
+/* === 商品表格 === */
+.goods-table-head {
+  display: grid;
+  grid-template-columns: 1fr 120px 80px 120px;
+  padding: 12px 20px;
   font-size: 13px;
-  border-bottom: 1px solid var(--color-bg-subtle);
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
 }
 
-.pay-summary-row:last-child {
+.goods-table-row {
+  display: grid;
+  grid-template-columns: 1fr 120px 80px 120px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-bg-subtle);
+  align-items: center;
+}
+
+.goods-table-row:last-child {
   border-bottom: none;
 }
 
-.pay-summary-row span:first-child {
+.col-product {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.goods-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--color-bg-subtle);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+
+.goods-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.goods-img svg {
+  width: 28px;
+  height: 28px;
+}
+
+.goods-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.goods-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.goods-sku {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+  padding: 2px 8px;
+  background: var(--color-bg-subtle);
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.col-price,
+.col-qty,
+.col-subtotal {
+  font-size: 14px;
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+.col-subtotal {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* === 金额汇总 === */
+.goods-summary {
+  padding: 16px 20px;
+  background: var(--color-bg-subtle);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.summary-line {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
   color: var(--color-text-secondary);
 }
 
-.pay-summary-row .order-no-value {
-  font-family: var(--font-mono);
+.summary-line.total {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.total-amount {
+  color: var(--color-primary);
+  font-size: 20px;
+  font-family: var(--font-price);
+  font-weight: 800;
+}
+
+/* === 信息两列布局 === */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 20px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--color-bg-subtle);
+  gap: 12px;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.info-value {
+  color: var(--color-text-primary);
+  text-align: right;
+  min-width: 0;
+}
+
+.info-value.order-no,
+.info-value.shipping-no {
   cursor: pointer;
+  font-family: var(--font-mono);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -947,160 +1132,17 @@ onMounted(() => {
   font-family: var(--font-family);
 }
 
-.order-no-value:hover .copy-hint {
+.info-value.order-no:hover .copy-hint,
+.info-value.shipping-no:hover .copy-hint {
   color: var(--color-primary);
 }
 
-/* 物流信息区域 */
-.shipping-summary {
-  margin-top: 16px;
-}
-
-.shipping-no-value {
-  font-family: var(--font-mono);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.shipping-no-value:hover .copy-hint {
-  color: var(--color-primary);
-}
-
-.total-row {
-  border-top: 1px solid var(--color-border);
-  padding-top: 12px;
-  margin-top: 4px;
-}
-
-.total-label {
-  font-weight: 700;
-  color: var(--color-text-primary) !important;
-}
-
-.pay-summary-total {
-  font-family: var(--font-price);
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--color-primary);
-}
-
-/* 状态标签 */
-.status-tag {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.status-tag.unpaid {
-  background: var(--tag-unpaid-bg);
-  color: var(--tag-unpaid-fg);
-}
-
-.status-tag.paid {
-  background: var(--tag-paid-bg);
-  color: var(--tag-paid-fg);
-}
-
-.status-tag.cancelled {
-  background: var(--tag-cancelled-bg);
-  color: var(--tag-cancelled-fg);
-}
-
-.status-tag.timeout {
-  background: var(--tag-timeout-bg);
-  color: var(--tag-timeout-fg);
-}
-
-.status-tag.completed {
-  background: var(--tag-completed-bg);
-  color: var(--tag-completed-fg);
-}
-
-.status-tag.shipped {
-  background: #e6f4ff;
-  color: #1677ff;
-}
-
-/* 操作栏 */
-.action-bar {
-  margin-top: 20px;
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-/* 等待发货提示 */
-.waiting-hint {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  padding: 8px 16px;
-  background: var(--color-bg-subtle);
-  border-radius: 4px;
-}
-
-/* 小按钮 */
-.btn-sm {
-  padding: 5px 14px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  border: 1px solid var(--color-border);
-  background: #fff;
-  color: var(--color-text-primary);
-  letter-spacing: 0.02em;
-}
-
-.btn-sm.large {
-  padding: 8px 28px;
-  font-size: 13px;
-}
-
-.btn-sm.primary {
-  background: var(--color-primary);
-  color: #fff;
-  border-color: var(--color-primary);
-}
-
-.btn-sm.primary:hover {
-  background: var(--btn-hover);
-}
-
-.btn-sm.primary:disabled {
-  background: var(--btn-loading-bg);
-  cursor: not-allowed;
-}
-
-.btn-sm.text {
-  border: none;
-  background: none;
-  color: var(--color-text-secondary);
-}
-
-.btn-sm.text:hover {
-  color: var(--color-primary);
-}
-
-.btn-sm.text:disabled {
-  color: var(--color-text-muted);
-  cursor: not-allowed;
-}
-
-/* === 备注样式 (Bug 9 修复) === */
-.remark-value {
-  color: var(--color-text-primary);
+.info-value.remark {
   word-break: break-all;
-  text-align: right;
   max-width: 70%;
 }
 
-/* === 支付方式选择弹窗 (Bug 7 修复) === */
+/* === 支付方式选择弹窗 (保留原样) === */
 .pay-method-list {
   display: flex;
   flex-direction: column;
@@ -1144,5 +1186,79 @@ onMounted(() => {
 .pay-method-desc {
   font-size: 12px;
   color: var(--color-text-muted);
+}
+
+/* === 响应式 === */
+@media (max-width: 768px) {
+  .order-page {
+    padding: 16px;
+  }
+
+  .order-status-banner {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 16px;
+  }
+
+  .banner-right {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .order-steps {
+    padding: 20px 12px;
+  }
+
+  .step-label {
+    font-size: 12px;
+  }
+
+  .step-time {
+    font-size: 10px;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .goods-table-head {
+    display: none;
+  }
+
+  .goods-table-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 16px;
+  }
+
+  .col-price,
+  .col-qty,
+  .col-subtotal {
+    text-align: left;
+  }
+
+  .col-price::before {
+    content: "单价: ";
+    color: var(--color-text-secondary);
+  }
+
+  .col-qty::before {
+    content: "数量: ";
+    color: var(--color-text-secondary);
+  }
+
+  .col-subtotal::before {
+    content: "小计: ";
+    color: var(--color-text-secondary);
+  }
+
+  .goods-summary {
+    align-items: stretch;
+  }
+
+  .summary-line {
+    justify-content: space-between;
+  }
 }
 </style>

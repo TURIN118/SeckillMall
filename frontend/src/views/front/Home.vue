@@ -129,10 +129,11 @@
             </div>
             <div class="sk-stock-text" :class="{ danger: item.danger }">{{ item.stockText }}</div>
             <!-- 立即抢购按钮 -->
-            <button class="sk-buy-btn" :disabled="item.pending || buyingId === item.id"
+            <button class="sk-buy-btn" :disabled="item.pending || item.soldOut || buyingId === item.id"
               @click.stop="handleSeckillBuy(item)">
               <span v-if="buyingId === item.id" class="sk-btn-loading">下单中...</span>
               <template v-else-if="item.pending">即将开始</template>
+              <template v-else-if="item.soldOut">已抢完</template>
               <template v-else>立即抢购</template>
             </button>
           </div>
@@ -400,6 +401,7 @@ interface SeckillCardItem {
   pending?: boolean
   pendingStart?: string
   pendingTime?: string
+  soldOut?: boolean
 }
 
 /** 格式化时间为 MM-DD HH:mm */
@@ -446,7 +448,8 @@ function toCardItem(item: SeckillGoodsVO): SeckillCardItem {
     danger: isLowStock,
     pending: isPending,
     pendingStart: formatStartTime(item.startTime),
-    pendingTime: formatStartTime(item.startTime)
+    pendingTime: formatStartTime(item.startTime),
+    soldOut: !isPending && available <= 0
   }
 }
 

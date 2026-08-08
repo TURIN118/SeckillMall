@@ -20,6 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -132,14 +133,15 @@ public class OrderController {
 
     // ==================== 统一订单列表（需求1 合并秒杀+普通） ====================
 
-    @Operation(summary = "统一订单列表（秒杀+普通）")
+    @Operation(summary = "统一订单列表（秒杀+普通，支持orderType筛选）")
     @GetMapping("/unified")
     public Result<PageResult<OrderListItemVO>> unifiedList(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String orderType,
             @RequestParam(required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(orderService.getUnifiedOrderList(userId, status, pageNum, pageSize));
+        return Result.success(orderService.getUnifiedOrderList(userId, status, orderType, pageNum, pageSize));
     }
 
     @Operation(summary = "普通订单详情（normal-detail 别名，与 /detail 等价）")
@@ -189,5 +191,16 @@ public class OrderController {
         Long userId = securityUtils.getCurrentUserId();
         orderService.confirmNormalOrder(userId, orderId);
         return Result.success("确认收货成功", null);
+    }
+
+    // ==================== 订单逻辑删除（需求：订单逻辑删除+类型筛选） ====================
+
+    @Operation(summary = "逻辑删除订单（仅已完成/已取消可删除）")
+    @OperationLog(module = "ORDER", action = "DELETE", targetIdSpEL = "#orderId", targetType = "ORDER")
+    @DeleteMapping("/{orderId}")
+    public Result<Void> deleteOrder(@PathVariable Long orderId) {
+        Long userId = securityUtils.getCurrentUserId();
+        orderService.deleteOrder(orderId, userId);
+        return Result.success("订单删除成功", null);
     }
 }

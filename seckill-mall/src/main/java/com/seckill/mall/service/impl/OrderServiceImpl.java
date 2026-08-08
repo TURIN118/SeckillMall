@@ -490,6 +490,72 @@ public class OrderServiceImpl implements OrderService {
         log.info("物理删除秒杀订单成功 orderId={} orderNo={}", orderId, order.getOrderNo());
     }
 
+    /**
+     * 逻辑删除订单（需求：订单逻辑删除+类型筛选）。
+     * <p>
+     * 自动识别秒杀订单与普通订单：先查秒杀订单表，未命中再查普通订单表。
+     * 仅允许 COMPLETED 或 CANCELLED 状态的订单逻辑删除，其他状态抛 {@code ORDER_DELETE_FAILED}。
+     * 利用 MyBatis-Plus {@code @TableLogic} 注解，调用 deleteById/updateById 即可自动逻辑删除。
+     *
+     * @param orderId 订单 ID
+     * @param userId  当前操作用户 ID
+     * @return true 表示删除成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteOrder(Long orderId, Long userId) {
+        if (orderId == null || userId == null) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "订单ID/用户ID不能为空");
+        }
+
+        // 1. 先尝试秒杀订单表
+        SeckillOrder seckillOrder = seckillOrderMapper.selectById(orderId);
+        if (seckillOrder != null) {
+            // 校验归属
+            if (!userId.equals(seckillOrder.getUserId())) {
+                throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+            }
+            // 校验状态：仅 COMPLETED / CANCELLED 可删除
+            checkOrderDeletable(seckillOrder.getStatus());
+            // 逻辑删除：@TableLogic 注解使 deleteById 自动 set is_deleted=1
+            int rows = seckillOrderMapper.deleteById(orderId);
+            log.info("逻辑删除秒杀订单成功 orderId={} orderNo={} userId={}", orderId, seckillOrder.getOrderNo(), userId);
+            return rows > 0;
+        }
+
+        // 2. 秒杀订单表未命中，尝试普通订单表
+        NormalOrder normalOrder = normalOrderMapper.selectById(orderId);
+        if (normalOrder != null) {
+            // 校验归属
+            if (!userId.equals(normalOrder.getUserId())) {
+                throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+            }
+            // 校验状态：仅 COMPLETED / CANCELLED 可删除
+            checkOrderDeletable(normalOrder.getStatus());
+            // 逻辑删除：@TableLogic 注解使 deleteById 自动 set is_deleted=1
+            int rows = normalOrderMapper.deleteById(orderId);
+            log.info("逻辑删除普通订单成功 orderId={} orderNo={} userId={}", orderId, normalOrder.getOrderNo(), userId);
+            return rows > 0;
+        }
+
+        // 3. 两张表都未命中，订单不存在
+        throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+    }
+
+    /**
+     * 校验订单状态是否允许逻辑删除。
+     * <p>
+     * 仅 COMPLETED（已完成）与 CANCELLED（已取消）状态允许删除，
+     * 其他状态（UNPAID/PAID/SHIPPED/TIMEOUT/CANCELLING）抛 {@code ORDER_DELETE_FAILED}。
+     *
+     * @param status 订单状态
+     */
+    private void checkOrderDeletable(OrderStatus status) {
+        if (status != OrderStatus.COMPLETED && status != OrderStatus.CANCELLED) {
+            throw new BusinessException(ErrorCode.ORDER_DELETE_FAILED);
+        }
+    }
+
     private SeckillOrder loadAndCheckOwnership(Long userId, Long orderId) {
         SeckillOrder order = seckillOrderMapper.selectById(orderId);
         if (order == null || !userId.equals(order.getUserId())) {
@@ -1182,37 +1248,45 @@ public class OrderServiceImpl implements OrderService {
     // ==================== 统一订单列表（需求1 合并秒杀+普通） ====================
 
     @Override
-    public PageResult<OrderListItemVO> getUnifiedOrderList(Long userId, String status,
+    public PageResult<OrderListItemVO> getUnifiedOrderList(Long userId, String status, String orderType,
                                                             Integer pageNum, Integer pageSize) {
         int num = pageNum == null || pageNum < 1 ? 1 : pageNum;
         int size = pageSize == null || pageSize < 1 ? 10 : Math.min(pageSize, 50);
 
         // 1. 解析状态筛选（null 表示不筛选）
         OrderStatus statusFilter = parseStatusFromString(status);
+        // 1.1 解析订单类型筛选（null/空 表示不筛选，仅查询对应类型；NORMAL-仅普通订单，SECKILL-仅秒杀订单）
+        String typeFilter = parseOrderType(orderType);
 
         // 2. 查询秒杀订单（按 userId + status 过滤，按 createTime 降序）
         // H11 修复：原代码全量加载后内存分页，存在性能与内存风险。
         // 此处添加 LIMIT 兜底（最多查 pageNum*pageSize 条），避免大用户量全表加载。
         // 完整方案应改为 DB 层分页（分别按页查询秒杀/普通订单后归并），此处先做限流保护。
         int maxLoad = num * size;
-        LambdaQueryWrapper<SeckillOrder> skWrapper = new LambdaQueryWrapper<SeckillOrder>()
-                .eq(SeckillOrder::getUserId, userId)
-                .orderByDesc(SeckillOrder::getCreateTime)
-                .last("LIMIT " + maxLoad);
-        if (statusFilter != null) {
-            skWrapper.eq(SeckillOrder::getStatus, statusFilter);
+        List<SeckillOrder> seckillOrders = java.util.Collections.emptyList();
+        if (typeFilter == null || "SECKILL".equals(typeFilter)) {
+            LambdaQueryWrapper<SeckillOrder> skWrapper = new LambdaQueryWrapper<SeckillOrder>()
+                    .eq(SeckillOrder::getUserId, userId)
+                    .orderByDesc(SeckillOrder::getCreateTime)
+                    .last("LIMIT " + maxLoad);
+            if (statusFilter != null) {
+                skWrapper.eq(SeckillOrder::getStatus, statusFilter);
+            }
+            seckillOrders = seckillOrderMapper.selectList(skWrapper);
         }
-        List<SeckillOrder> seckillOrders = seckillOrderMapper.selectList(skWrapper);
 
         // 3. 查询普通订单（按 userId + status 过滤，按 createTime 降序）
-        LambdaQueryWrapper<NormalOrder> normalWrapper = new LambdaQueryWrapper<NormalOrder>()
-                .eq(NormalOrder::getUserId, userId)
-                .orderByDesc(NormalOrder::getCreateTime)
-                .last("LIMIT " + maxLoad);
-        if (statusFilter != null) {
-            normalWrapper.eq(NormalOrder::getStatus, statusFilter);
+        List<NormalOrder> normalOrders = java.util.Collections.emptyList();
+        if (typeFilter == null || "NORMAL".equals(typeFilter)) {
+            LambdaQueryWrapper<NormalOrder> normalWrapper = new LambdaQueryWrapper<NormalOrder>()
+                    .eq(NormalOrder::getUserId, userId)
+                    .orderByDesc(NormalOrder::getCreateTime)
+                    .last("LIMIT " + maxLoad);
+            if (statusFilter != null) {
+                normalWrapper.eq(NormalOrder::getStatus, statusFilter);
+            }
+            normalOrders = normalOrderMapper.selectList(normalWrapper);
         }
-        List<NormalOrder> normalOrders = normalOrderMapper.selectList(normalWrapper);
 
         // 4. 批量查询秒杀订单对应的商品快照（避免 N+1）
         List<Long> skProductIds = seckillOrders.stream()
@@ -1263,6 +1337,23 @@ public class OrderServiceImpl implements OrderService {
         } catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    /**
+     * 解析订单类型参数（不区分大小写，非法值返回 null 表示不筛选）。
+     *
+     * @param orderType 订单类型字符串
+     * @return "NORMAL" / "SECKILL" / null（不筛选）
+     */
+    private String parseOrderType(String orderType) {
+        if (orderType == null || orderType.isBlank()) {
+            return null;
+        }
+        String upper = orderType.toUpperCase();
+        if ("NORMAL".equals(upper) || "SECKILL".equals(upper)) {
+            return upper;
+        }
+        return null;
     }
 
     /**

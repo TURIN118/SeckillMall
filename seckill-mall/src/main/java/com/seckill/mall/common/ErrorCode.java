@@ -67,6 +67,7 @@ public enum ErrorCode {
     ORDER_STATUS_ERROR(3003, "订单状态异常"),
     ORDER_TIMEOUT(3004, "订单支付超时，已自动取消"),
     ORDER_CANCEL_FAILED(3005, "订单无法取消"),
+    ORDER_DELETE_FAILED(3006, "订单无法删除，仅已完成或已取消的订单可删除"),
 
     // 收货地址相关
     ADDRESS_NOT_FOUND(5001, "收货地址不存在"),

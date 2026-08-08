@@ -1,10 +1,34 @@
 <template>
-  <!-- 严格对照 index.html .order-page / .order-tabs / .order-card 样式 -->
+  <!-- 参考京东/淘宝订单页：顶部头部+标签页+订单卡片(头部+商品列表+汇总操作)+分页 -->
   <div class="order-page">
-    <!-- 标签页 -->
+    <!-- 页面头部：标题 + 搜索框 -->
+    <div class="order-header">
+      <div class="order-header-left">
+        <svg class="order-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+          <path d="M3 6h18" />
+          <path d="M16 10a4 4 0 0 1-8 0" />
+        </svg>
+        <h2 class="order-title">我的订单</h2>
+        <span class="order-subtitle">管理您的全部订单</span>
+      </div>
+      <div class="order-header-right">
+        <div class="order-search">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          <input type="text" placeholder="搜索订单号或商品名称" class="search-input" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 状态标签页 -->
     <div class="order-tabs">
-      <div v-for="tab in tabs" :key="tab.name" class="order-tab" :class="{ active: activeTab === tab.name }"
-        @click="handleTabChange(tab.name)">{{ tab.label }}</div>
+      <div v-for="tab in tabs" :key="tab.name" class="order-tab"
+        :class="{ active: activeTab === tab.name }" @click="handleTabChange(tab.name)">
+        {{ tab.label }}
+      </div>
     </div>
 
     <!-- 加载骨架屏 -->
@@ -15,7 +39,7 @@
     <!-- 空状态 -->
     <div v-else-if="orderList.length === 0" class="empty-state">
       <div class="empty-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="80" height="80">
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <circle cx="8.5" cy="8.5" r="1.5" />
           <path d="m21 15-5-5L5 21" />
@@ -26,61 +50,85 @@
     </div>
 
     <!-- 订单列表 -->
-    <div v-else>
+    <div v-else class="order-list">
       <div v-for="order in orderList" :key="order.id" class="order-card"
-        :class="{ 'order-disabled': isDisabledStatus(order.status) }" @click="goDetail(order)">
-        <!-- 商品图：显示第一个商品图片，无图则显示 SVG 占位 -->
-        <div class="order-card-img">
-          <img v-if="order.items && order.items.length > 0 && order.items[0].productImage"
-            :src="formatImageUrl(order.items[0].productImage)" :alt="order.items[0].productName"
-            class="order-card-img-tag" loading="lazy" />
-          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <path d="m21 15-5-5L5 21" />
-          </svg>
-        </div>
-
-        <!-- 信息 -->
-        <div class="order-card-info">
-          <div class="order-card-name">
-            {{ order.items && order.items.length > 0 ? order.items[0].productName : '—' }}
-            <span v-if="order.items && order.items.length > 1" class="order-item-count">等{{ order.items.length
-            }}件商品</span>
-          </div>
-          <div class="order-card-time">
-            下单时间：{{ formatTime(order.createTime) }} &nbsp;|&nbsp; 订单号：{{ order.orderNo }}
-          </div>
-          <div class="order-card-status">
+        :class="{ 'order-disabled': isDisabledStatus(order.status) }">
+        <!-- 卡片头部：订单类型 + 订单号 + 下单时间 + 状态 -->
+        <div class="order-card-header">
+          <div class="order-card-header-left">
             <span class="order-type-tag" :class="order.orderType === 'SECKILL' ? 'seckill' : 'normal'">
               {{ order.orderType === 'SECKILL' ? '秒杀订单' : '普通订单' }}
             </span>
+            <span class="order-card-no">订单号：{{ order.orderNo }}</span>
+            <span class="order-card-time">{{ formatTime(order.createTime) }}</span>
+          </div>
+          <div class="order-card-header-right">
             <span class="status-tag" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
           </div>
         </div>
 
-        <!-- 右侧金额和操作 -->
-        <div class="order-card-right">
-          <div class="order-card-price">{{ formatPrice(order.totalAmount) }}</div>
-          <div class="order-card-actions">
-            <template v-if="order.status === 'UNPAID'">
-              <button class="btn-sm text" @click.stop="handleCancel(order)">取消订单</button>
-              <button class="btn-sm primary" @click.stop="goPay(order)">去支付</button>
-            </template>
-            <template v-else-if="order.status === 'SHIPPED'">
-              <button class="btn-sm primary" :disabled="confirmLoadingId === order.id" @click.stop="handleConfirm(order)">
-                {{ confirmLoadingId === order.id ? '确认中...' : '确认收货' }}
-              </button>
-              <button class="btn-sm" @click.stop="goDetail(order)">查看订单</button>
-            </template>
-            <button v-else class="btn-sm" @click.stop="goDetail(order)">查看订单</button>
+        <!-- 卡片主体：商品列表 + 汇总操作 -->
+        <div class="order-card-body" @click="goDetail(order)">
+          <!-- 商品列表 -->
+          <div class="order-goods-list">
+            <div v-for="(item, idx) in (order.items || [])" :key="idx" class="order-goods-item">
+              <div class="order-goods-img">
+                <img v-if="item.productImage" :src="formatImageUrl(item.productImage)" :alt="item.productName"
+                  loading="lazy" />
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="m21 15-5-5L5 21" />
+                </svg>
+              </div>
+              <div class="order-goods-info">
+                <div class="order-goods-name">{{ item.productName || '—' }}</div>
+                <div class="order-goods-spec">
+                  <span class="goods-quantity">x{{ item.quantity }}</span>
+                </div>
+              </div>
+              <div class="order-goods-price">
+                <span class="price-symbol">¥</span>{{ formatPrice(item.price) }}
+              </div>
+            </div>
+            <!-- 无商品占位 -->
+            <div v-if="!order.items || order.items.length === 0" class="order-goods-empty">
+              暂无商品信息
+            </div>
+          </div>
+
+          <!-- 右侧汇总和操作 -->
+          <div class="order-card-summary">
+            <div class="order-card-amount">
+              <span class="amount-label">实付款</span>
+              <span class="amount-value">{{ formatPrice(order.totalAmount) }}</span>
+            </div>
+            <div class="order-card-actions">
+              <template v-if="order.status === 'UNPAID'">
+                <button class="btn-sm" @click.stop="goDetail(order)">查看详情</button>
+                <button class="btn-sm text" @click.stop="handleCancel(order)">取消订单</button>
+                <button class="btn-sm primary" @click.stop="goPay(order)">去支付</button>
+              </template>
+              <template v-else-if="order.status === 'SHIPPED'">
+                <button class="btn-sm" @click.stop="goDetail(order)">查看详情</button>
+                <button class="btn-sm primary" :disabled="confirmLoadingId === order.id"
+                  @click.stop="handleConfirm(order)">
+                  {{ confirmLoadingId === order.id ? '确认中...' : '确认收货' }}
+                </button>
+              </template>
+              <template v-else>
+                <button class="btn-sm" @click.stop="goDetail(order)">查看详情</button>
+              </template>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- 分页 -->
-      <PaginationWrapper v-if="total > 0" :total="total" :page-num="pageNum" :page-size="pageSize"
-        :page-sizes="[10, 20, 50]" @change="handlePageChange" />
+      <div class="order-pagination" v-if="total > 0">
+        <PaginationWrapper :total="total" :page-num="pageNum" :page-size="pageSize"
+          :page-sizes="[10, 20, 50]" @change="handlePageChange" />
+      </div>
     </div>
   </div>
 </template>
@@ -258,47 +306,157 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 严格对照 index.html .order-page 样式 */
+/* ============ 页面容器 ============ */
 .order-page {
   padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* 标签页 */
+/* ============ 页面头部 ============ */
+.order-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 20px 24px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.order-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.order-title-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.order-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.order-subtitle {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-left: 4px;
+}
+
+.order-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.order-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 260px;
+  padding: 8px 12px 8px 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-subtle);
+  font-size: 13px;
+  color: var(--color-text-primary);
+  outline: none;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  border-color: var(--color-primary);
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(245, 49, 49, 0.1);
+}
+
+.search-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* ============ 状态标签页 ============ */
 .order-tabs {
   display: flex;
   gap: 0;
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: 20px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
 }
 
 .order-tab {
-  padding: 10px 20px;
-  font-size: 13px;
+  flex: 1;
+  padding: 14px 20px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-text-secondary);
   cursor: pointer;
-  border-bottom: 2px solid transparent;
+  text-align: center;
+  border-bottom: 3px solid transparent;
   transition: all 0.2s;
+  position: relative;
+  user-select: none;
+}
+
+.order-tab:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 16px;
+  width: 1px;
+  background: var(--color-border);
+}
+
+.order-tab:hover {
+  color: var(--color-primary);
+  background: var(--color-bg-subtle);
 }
 
 .order-tab.active {
   color: var(--color-primary);
   border-bottom-color: var(--color-primary);
+  background: #fff;
+  font-weight: 700;
 }
 
-/* 骨架屏 */
+/* ============ 骨架屏 ============ */
 .skeleton-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .skeleton-item {
-  height: 104px;
+  height: 220px;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  background-image: linear-gradient(90deg, var(--color-bg-subtle) 25%, var(--color-bg-muted) 50%, var(--color-bg-subtle) 75%);
+  background-image: linear-gradient(90deg, var(--color-bg-subtle) 25%, #f5f5f5 50%, var(--color-bg-subtle) 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.4s ease infinite;
 }
@@ -313,91 +471,97 @@ onMounted(() => {
   }
 }
 
-/* 空状态 */
+/* ============ 空状态 ============ */
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px 24px;
+  padding: 100px 24px;
   text-align: center;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
 .empty-icon {
   color: var(--color-text-muted);
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  opacity: 0.6;
 }
 
 .empty-text {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-text-secondary);
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
-/* 订单卡片：对照 .order-card 样式 */
+/* ============ 订单列表 ============ */
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ============ 订单卡片 ============ */
 .order-card {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 16px;
-  margin-bottom: 12px;
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  cursor: pointer;
-  transition: box-shadow 0.2s;
+  overflow: hidden;
+  transition: box-shadow 0.25s, transform 0.25s;
 }
 
 .order-card:hover {
   box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
 }
 
 .order-disabled {
   opacity: 0.65;
 }
 
-/* 商品图 72x72 */
-.order-card-img {
-  width: 72px;
-  height: 72px;
-  background: var(--color-bg-subtle);
-  border-radius: 6px;
+/* 卡片头部 */
+.order-card-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: var(--color-text-muted);
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--color-bg-subtle);
+  border-bottom: 1px solid var(--color-border);
 }
 
-.order-card-img svg {
-  width: 28px;
-  height: 28px;
-  color: var(--color-text-muted);
+.order-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.order-card-img-tag {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 6px;
+.order-card-no {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  font-weight: 500;
 }
 
-.order-item-count {
+.order-card-time {
   font-size: 12px;
-  font-weight: 400;
   color: var(--color-text-secondary);
-  margin-left: 6px;
 }
 
-/* 订单类型标签：seckill 红 / normal 蓝 */
+.order-card-header-right {
+  display: flex;
+  align-items: center;
+}
+
+/* 订单类型标签 */
 .order-type-tag {
   display: inline-block;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  margin-right: 6px;
 }
 
 .order-type-tag.seckill {
@@ -410,51 +574,12 @@ onMounted(() => {
   color: #1677ff;
 }
 
-.order-card-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.order-card-name {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: var(--color-text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.order-card-time {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-}
-
-.order-card-status {
-  margin-top: 6px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.order-countdown-text {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--color-primary);
-}
-
-.countdown-suffix {
-  color: var(--color-text-secondary);
-}
-
-/* 状态标签：unpaid 橙 / paid 绿 / cancelled 灰 / timeout 红 / completed 蓝 */
+/* 状态标签：unpaid 橙 / paid 绿 / shipped 蓝 / cancelled 灰 / timeout 红 / completed 蓝 */
 .status-tag {
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -489,42 +614,188 @@ onMounted(() => {
   color: var(--tag-completed-fg);
 }
 
-/* 右侧 */
-.order-card-right {
-  text-align: right;
+/* ============ 卡片主体 ============ */
+.order-card-body {
+  display: flex;
+  align-items: stretch;
+  cursor: pointer;
+}
+
+/* 商品列表 */
+.order-goods-list {
+  flex: 1;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.order-goods-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.order-goods-item:last-child {
+  border-bottom: none;
+}
+
+.order-goods-img {
+  width: 64px;
+  height: 64px;
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  overflow: hidden;
+}
+
+.order-goods-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.order-goods-item:hover .order-goods-img img {
+  transform: scale(1.06);
+}
+
+.order-goods-img svg {
+  width: 24px;
+  height: 24px;
+  color: var(--color-text-muted);
+}
+
+.order-goods-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.order-goods-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-goods-spec {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.goods-quantity {
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--color-bg-subtle);
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.order-goods-price {
+  font-family: var(--font-price);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
   flex-shrink: 0;
 }
 
-.order-card-price {
-  font-family: var(--font-price);
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.order-card-price::before {
-  content: '\A5';
+.price-symbol {
+  color: var(--color-text-secondary);
+  margin-right: 1px;
   font-size: 12px;
 }
 
-.order-card-actions {
-  margin-top: 8px;
+.order-goods-empty {
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* ============ 右侧汇总和操作 ============ */
+.order-card-summary {
+  width: 220px;
+  padding: 16px 20px;
+  border-left: 1px solid var(--color-border);
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 16px;
+  flex-shrink: 0;
+  background: linear-gradient(to bottom, #fff, var(--color-bg-subtle));
+}
+
+.order-card-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
   justify-content: flex-end;
 }
 
-/* 小按钮：primary 红底白字 */
-.btn-sm {
-  padding: 5px 14px;
-  border-radius: 4px;
+.amount-label {
   font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.amount-value {
+  font-family: var(--font-price);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.amount-value::before {
+  content: '\A5';
+  font-size: 14px;
+  margin-right: 2px;
+}
+
+.order-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  align-items: stretch;
+}
+
+/* ============ 小按钮系统 ============ */
+.btn-sm {
+  padding: 7px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   border: 1px solid var(--color-border);
   background: #fff;
   color: var(--color-text-primary);
   letter-spacing: 0.02em;
+  transition: all 0.2s;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.btn-sm:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .btn-sm.primary {
@@ -535,15 +806,136 @@ onMounted(() => {
 
 .btn-sm.primary:hover {
   background: var(--btn-hover);
+  color: #fff;
 }
 
 .btn-sm.text {
   border: none;
   background: none;
   color: var(--color-text-secondary);
+  padding: 7px 8px;
 }
 
 .btn-sm.text:hover {
   color: var(--color-primary);
+  background: none;
+}
+
+.btn-sm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============ 分页 ============ */
+.order-pagination {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0 8px;
+  margin-top: 8px;
+}
+
+/* ============ 响应式 768px 以下 ============ */
+@media (max-width: 768px) {
+  .order-page {
+    padding: 12px;
+  }
+
+  .order-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .order-header-left {
+    justify-content: center;
+  }
+
+  .order-title {
+    font-size: 18px;
+  }
+
+  .order-subtitle {
+    display: none;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .order-tabs {
+    overflow-x: auto;
+    border-radius: var(--radius-md);
+  }
+
+  .order-tab {
+    flex: 0 0 auto;
+    padding: 12px 16px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .order-tab:not(:last-child)::after {
+    display: none;
+  }
+
+  .order-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .order-card-header-left {
+    gap: 8px;
+  }
+
+  .order-card-body {
+    flex-direction: column;
+  }
+
+  .order-goods-list {
+    padding: 12px;
+  }
+
+  .order-goods-img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .order-goods-img svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .order-goods-name {
+    font-size: 13px;
+  }
+
+  .order-card-summary {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    padding: 12px;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--color-bg-subtle);
+  }
+
+  .order-card-actions {
+    flex-direction: row;
+    width: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .amount-value {
+    font-size: 18px;
+  }
+
+  .order-pagination {
+    padding: 16px 0 4px;
+  }
 }
 </style>

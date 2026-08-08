@@ -95,25 +95,7 @@
               </div>
             </div>
 
-            <!-- 分享/收藏 -->
-            <div class="action-row">
-              <span class="action-item" :class="{ favorited: isFavorited }" @click="handleFavorite">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path
-                    d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-                </svg>
-                {{ isFavorited ? '已收藏' : '收藏' }}
-              </span>
-              <span class="action-item" @click="handleShare">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="18" cy="5" r="3" />
-                  <circle cx="6" cy="12" r="3" />
-                  <circle cx="18" cy="19" r="3" />
-                  <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" />
-                </svg>
-                分享
-              </span>
-            </div>
+
           </div>
 
           <!-- 右列: 商品信息区增强 -->
@@ -275,209 +257,209 @@
 
             <!-- Tab 内容：卡片容器 -->
             <div class="tab-content-wrap">
-            <!-- 商品详情 -->
-            <div v-if="activeTab === 'detail'" class="tab-content" :key="'detail'">
-              <div v-if="product.detailHtml" class="desc-content" v-html="safeDetailHtml"></div>
-              <div v-else-if="product.description" class="desc-content">
-                <p>{{ product.description }}</p>
-              </div>
-              <div v-else class="desc-empty">暂无商品描述</div>
-            </div>
-
-            <!-- 规格参数 -->
-            <div v-if="activeTab === 'spec'" class="tab-content" :key="'spec'">
-              <table class="spec-table">
-                <tbody>
-                  <tr>
-                    <td class="spec-key">商品名称</td>
-                    <td class="spec-val">{{ product.productName }}</td>
-                  </tr>
-                  <tr>
-                    <td class="spec-key">分类</td>
-                    <td class="spec-val">{{categoryPath.map(c => c.categoryName).join(' > ') || product.categoryName}}
-                    </td>
-                  </tr>
-                  <tr v-if="hasSku">
-                    <td class="spec-key">价格区间</td>
-                    <td class="spec-val">
-                      ¥{{ formatPrice(product.minPrice) }} ~ ¥{{ formatPrice(product.maxPrice) }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="spec-key">库存</td>
-                    <td class="spec-val">{{ hasSku ? (product.totalStock || 0) : product.stock }} 件</td>
-                  </tr>
-                  <tr>
-                    <td class="spec-key">销量</td>
-                    <td class="spec-val">{{ product.salesCount }} 件</td>
-                  </tr>
-                  <template v-if="hasSku && currentSku">
-                    <tr>
-                      <td class="spec-key">当前规格</td>
-                      <td class="spec-val">{{ formatSkuAttributes(currentSku.attributes) }}</td>
-                    </tr>
-                    <tr>
-                      <td class="spec-key">当前单价</td>
-                      <td class="spec-val">¥{{ formatPrice(currentSku.price) }}</td>
-                    </tr>
-                    <tr>
-                      <td class="spec-key">当前库存</td>
-                      <td class="spec-val">{{ currentSku.stock }} 件</td>
-                    </tr>
-                  </template>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- 用户评价（Tab面板内完整评价 + 写评价按钮 + 弹窗） -->
-            <div v-if="activeTab === 'review'" class="tab-content" :key="'review'">
-              <!-- 评分概览 + 筛选标签 + 写评价按钮（设计稿 review-summary 结构） -->
-              <div class="review-summary">
-                <!-- 评分 -->
-                <div class="review-score">
-                  <div class="review-score__num">{{ reviewStats.avgScore }}</div>
-                  <div class="review-score__stars">
-                    <svg v-for="star in 5" :key="star" viewBox="0 0 24 24"
-                      :fill="star <= Math.round(Number(reviewStats.avgScore)) ? 'currentColor' : 'none'"
-                      :stroke="star <= Math.round(Number(reviewStats.avgScore)) ? 'none' : 'currentColor'"
-                      stroke-width="2">
-                      <path
-                        d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                  </div>
-                  <div class="review-score__count">共 {{ reviewTotal }} 条评价</div>
+              <!-- 商品详情 -->
+              <div v-if="activeTab === 'detail'" class="tab-content" :key="'detail'">
+                <div v-if="product.detailHtml" class="desc-content" v-html="safeDetailHtml"></div>
+                <div v-else-if="product.description" class="desc-content">
+                  <p>{{ product.description }}</p>
                 </div>
-                <!-- 筛选标签云 -->
-                <div class="review-tags">
-                  <span class="review-tag" :class="{ active: reviewFilter === 'all' }"
-                    @click="switchReviewFilter('all')">
-                    全部 <span class="count">{{ reviewTotal }}</span>
-                  </span>
-                  <span class="review-tag" :class="{ active: reviewFilter === 'good' }"
-                    @click="switchReviewFilter('good')">
-                    好评 <span class="count">{{ reviewStats.goodCount }}</span>
-                  </span>
-                  <span class="review-tag" :class="{ active: reviewFilter === 'neutral' }"
-                    @click="switchReviewFilter('neutral')">
-                    中评 <span class="count">{{ reviewStats.neutralCount }}</span>
-                  </span>
-                  <span class="review-tag" :class="{ active: reviewFilter === 'bad' }"
-                    @click="switchReviewFilter('bad')">
-                    差评 <span class="count">{{ reviewStats.badCount }}</span>
-                  </span>
-                </div>
-                <!-- 写评价按钮（点击打开弹窗） -->
-                <button class="review-write-btn" @click="openReviewModal">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
-                  </svg>
-                  写评价
-                </button>
+                <div v-else class="desc-empty">暂无商品描述</div>
               </div>
 
-              <!-- 评价列表（设计稿 review-list / review-item 结构） -->
-              <div class="review-list" v-loading="reviewLoading">
-                <div v-if="filteredReviewList.length === 0 && !reviewLoading" class="review-empty">
-                  暂无评价，快来抢沙发吧！
-                </div>
-                <div v-for="review in filteredReviewList" :key="review.id" class="review-item">
-                  <div class="review-item__head">
-                    <div class="review-item__avatar">{{ (review.userName || '匿')[0] }}</div>
-                    <div class="review-item__user-info">
-                      <div class="review-item__user">{{ review.userName || '匿名用户' }}</div>
-                      <div v-if="review.skuAttributes" class="review-item__sku">{{ review.skuAttributes }}</div>
-                    </div>
-                    <div class="review-item__stars">
+              <!-- 规格参数 -->
+              <div v-if="activeTab === 'spec'" class="tab-content" :key="'spec'">
+                <table class="spec-table">
+                  <tbody>
+                    <tr>
+                      <td class="spec-key">商品名称</td>
+                      <td class="spec-val">{{ product.productName }}</td>
+                    </tr>
+                    <tr>
+                      <td class="spec-key">分类</td>
+                      <td class="spec-val">{{categoryPath.map(c => c.categoryName).join(' > ') || product.categoryName}}
+                      </td>
+                    </tr>
+                    <tr v-if="hasSku">
+                      <td class="spec-key">价格区间</td>
+                      <td class="spec-val">
+                        ¥{{ formatPrice(product.minPrice) }} ~ ¥{{ formatPrice(product.maxPrice) }}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="spec-key">库存</td>
+                      <td class="spec-val">{{ hasSku ? (product.totalStock || 0) : product.stock }} 件</td>
+                    </tr>
+                    <tr>
+                      <td class="spec-key">销量</td>
+                      <td class="spec-val">{{ product.salesCount }} 件</td>
+                    </tr>
+                    <template v-if="hasSku && currentSku">
+                      <tr>
+                        <td class="spec-key">当前规格</td>
+                        <td class="spec-val">{{ formatSkuAttributes(currentSku.attributes) }}</td>
+                      </tr>
+                      <tr>
+                        <td class="spec-key">当前单价</td>
+                        <td class="spec-val">¥{{ formatPrice(currentSku.price) }}</td>
+                      </tr>
+                      <tr>
+                        <td class="spec-key">当前库存</td>
+                        <td class="spec-val">{{ currentSku.stock }} 件</td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- 用户评价（Tab面板内完整评价 + 写评价按钮 + 弹窗） -->
+              <div v-if="activeTab === 'review'" class="tab-content" :key="'review'">
+                <!-- 评分概览 + 筛选标签 + 写评价按钮（设计稿 review-summary 结构） -->
+                <div class="review-summary">
+                  <!-- 评分 -->
+                  <div class="review-score">
+                    <div class="review-score__num">{{ reviewStats.avgScore }}</div>
+                    <div class="review-score__stars">
                       <svg v-for="star in 5" :key="star" viewBox="0 0 24 24"
-                        :fill="star <= review.rating ? 'currentColor' : 'none'"
-                        :stroke="star <= review.rating ? 'none' : 'currentColor'" stroke-width="2">
+                        :fill="star <= Math.round(Number(reviewStats.avgScore)) ? 'currentColor' : 'none'"
+                        :stroke="star <= Math.round(Number(reviewStats.avgScore)) ? 'none' : 'currentColor'"
+                        stroke-width="2">
                         <path
                           d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                       </svg>
                     </div>
+                    <div class="review-score__count">共 {{ reviewTotal }} 条评价</div>
                   </div>
-                  <div class="review-item__content">{{ review.content }}</div>
-                  <div v-if="review.images && review.images.length > 0" class="review-item__images">
-                    <el-image v-for="(img, idx) in review.images" :key="idx" :src="formatImageUrl(img)" fit="cover"
-                      class="review-item__img" lazy />
+                  <!-- 筛选标签云 -->
+                  <div class="review-tags">
+                    <span class="review-tag" :class="{ active: reviewFilter === 'all' }"
+                      @click="switchReviewFilter('all')">
+                      全部 <span class="count">{{ reviewTotal }}</span>
+                    </span>
+                    <span class="review-tag" :class="{ active: reviewFilter === 'good' }"
+                      @click="switchReviewFilter('good')">
+                      好评 <span class="count">{{ reviewStats.goodCount }}</span>
+                    </span>
+                    <span class="review-tag" :class="{ active: reviewFilter === 'neutral' }"
+                      @click="switchReviewFilter('neutral')">
+                      中评 <span class="count">{{ reviewStats.neutralCount }}</span>
+                    </span>
+                    <span class="review-tag" :class="{ active: reviewFilter === 'bad' }"
+                      @click="switchReviewFilter('bad')">
+                      差评 <span class="count">{{ reviewStats.badCount }}</span>
+                    </span>
                   </div>
-                  <div class="review-item__meta">
-                    <span>{{ formatTime(review.createTime) }}</span>
-                    <span v-if="review.skuAttributes">规格：{{ review.skuAttributes }}</span>
+                  <!-- 写评价按钮（点击打开弹窗） -->
+                  <button class="review-write-btn" @click="openReviewModal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                    </svg>
+                    写评价
+                  </button>
+                </div>
+
+                <!-- 评价列表（设计稿 review-list / review-item 结构） -->
+                <div class="review-list" v-loading="reviewLoading">
+                  <div v-if="filteredReviewList.length === 0 && !reviewLoading" class="review-empty">
+                    暂无评价，快来抢沙发吧！
                   </div>
-                  <div v-if="review.replyContent" class="review-reply">
-                    <div class="reply-label">商家回复：</div>
-                    <div class="reply-content">{{ review.replyContent }}</div>
-                    <div v-if="review.replyTime" class="reply-time">{{ formatTime(review.replyTime) }}</div>
+                  <div v-for="review in filteredReviewList" :key="review.id" class="review-item">
+                    <div class="review-item__head">
+                      <div class="review-item__avatar">{{ (review.userName || '匿')[0] }}</div>
+                      <div class="review-item__user-info">
+                        <div class="review-item__user">{{ review.userName || '匿名用户' }}</div>
+                        <div v-if="review.skuAttributes" class="review-item__sku">{{ review.skuAttributes }}</div>
+                      </div>
+                      <div class="review-item__stars">
+                        <svg v-for="star in 5" :key="star" viewBox="0 0 24 24"
+                          :fill="star <= review.rating ? 'currentColor' : 'none'"
+                          :stroke="star <= review.rating ? 'none' : 'currentColor'" stroke-width="2">
+                          <path
+                            d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="review-item__content">{{ review.content }}</div>
+                    <div v-if="review.images && review.images.length > 0" class="review-item__images">
+                      <el-image v-for="(img, idx) in review.images" :key="idx" :src="formatImageUrl(img)" fit="cover"
+                        class="review-item__img" lazy />
+                    </div>
+                    <div class="review-item__meta">
+                      <span>{{ formatTime(review.createTime) }}</span>
+                      <span v-if="review.skuAttributes">规格：{{ review.skuAttributes }}</span>
+                    </div>
+                    <div v-if="review.replyContent" class="review-reply">
+                      <div class="reply-label">商家回复：</div>
+                      <div class="reply-content">{{ review.replyContent }}</div>
+                      <div v-if="review.replyTime" class="reply-time">{{ formatTime(review.replyTime) }}</div>
+                    </div>
                   </div>
+                </div>
+
+                <!-- 评论分页 -->
+                <div v-if="reviewTotal > reviewPageSize" class="review-pagination">
+                  <button class="btn-sm" :disabled="reviewPageNum <= 1"
+                    @click="changeReviewPage(reviewPageNum - 1)">上一页</button>
+                  <span class="page-info-text">第 {{ reviewPageNum }} 页 / 共 {{ reviewTotalPages }} 页</span>
+                  <button class="btn-sm" :disabled="reviewPageNum >= reviewTotalPages"
+                    @click="changeReviewPage(reviewPageNum + 1)">下一页</button>
                 </div>
               </div>
 
-              <!-- 评论分页 -->
-              <div v-if="reviewTotal > reviewPageSize" class="review-pagination">
-                <button class="btn-sm" :disabled="reviewPageNum <= 1"
-                  @click="changeReviewPage(reviewPageNum - 1)">上一页</button>
-                <span class="page-info-text">第 {{ reviewPageNum }} 页 / 共 {{ reviewTotalPages }} 页</span>
-                <button class="btn-sm" :disabled="reviewPageNum >= reviewTotalPages"
-                  @click="changeReviewPage(reviewPageNum + 1)">下一页</button>
+              <!-- 售后保障 -->
+              <div v-if="activeTab === 'service'" class="tab-content" :key="'service'">
+                <ul class="service-list">
+                  <li>
+                    <div class="service-list-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      </svg>
+                    </div>
+                    <div class="service-list-text">
+                      <h4>正品保障</h4>
+                      <p>所有商品均为正品，假一赔十。支持品牌官方验证，确保每一件商品来源可靠。</p>
+                    </div>
+                  </li>
+                  <li>
+                    <div class="service-list-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                    </div>
+                    <div class="service-list-text">
+                      <h4>7天无理由退换货</h4>
+                      <p>自签收日起 7 天内可无理由退换，商品未使用、包装完好即可申请，运费由商家承担。</p>
+                    </div>
+                  </li>
+                  <li>
+                    <div class="service-list-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+                      </svg>
+                    </div>
+                    <div class="service-list-text">
+                      <h4>极速退款</h4>
+                      <p>符合条件的退款申请 24 小时内处理完成，退款金额原路返回，最快 1 小时到账。</p>
+                    </div>
+                  </li>
+                  <li>
+                    <div class="service-list-icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="3" width="15" height="13" />
+                        <polygon points="16,8 20,8 23,11 23,16 16,16 16,8" />
+                        <circle cx="5.5" cy="18.5" r="2.5" />
+                        <circle cx="18.5" cy="18.5" r="2.5" />
+                      </svg>
+                    </div>
+                    <div class="service-list-text">
+                      <h4>运费险</h4>
+                      <p>退换货无忧，运费由商家承担。签收后 15 天内因质量问题产生的退换货运费全额赔付。</p>
+                    </div>
+                  </li>
+                </ul>
               </div>
-            </div>
-
-            <!-- 售后保障 -->
-            <div v-if="activeTab === 'service'" class="tab-content" :key="'service'">
-              <ul class="service-list">
-                <li>
-                  <div class="service-list-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    </svg>
-                  </div>
-                  <div class="service-list-text">
-                    <h4>正品保障</h4>
-                    <p>所有商品均为正品，假一赔十。支持品牌官方验证，确保每一件商品来源可靠。</p>
-                  </div>
-                </li>
-                <li>
-                  <div class="service-list-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                  </div>
-                  <div class="service-list-text">
-                    <h4>7天无理由退换货</h4>
-                    <p>自签收日起 7 天内可无理由退换，商品未使用、包装完好即可申请，运费由商家承担。</p>
-                  </div>
-                </li>
-                <li>
-                  <div class="service-list-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-                    </svg>
-                  </div>
-                  <div class="service-list-text">
-                    <h4>极速退款</h4>
-                    <p>符合条件的退款申请 24 小时内处理完成，退款金额原路返回，最快 1 小时到账。</p>
-                  </div>
-                </li>
-                <li>
-                  <div class="service-list-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="1" y="3" width="15" height="13" />
-                      <polygon points="16,8 20,8 23,11 23,16 16,16 16,8" />
-                      <circle cx="5.5" cy="18.5" r="2.5" />
-                      <circle cx="18.5" cy="18.5" r="2.5" />
-                    </svg>
-                  </div>
-                  <div class="service-list-text">
-                    <h4>运费险</h4>
-                    <p>退换货无忧，运费由商家承担。签收后 15 天内因质量问题产生的退换货运费全额赔付。</p>
-                  </div>
-                </li>
-              </ul>
-            </div>
             </div>
           </div>
 
@@ -493,7 +475,8 @@
                 </div>
                 <div class="aside-param">
                   <span class="label">分类</span>
-                  <span class="value">{{ categoryPath.map(c => c.categoryName).join(' > ') || product.categoryName }}</span>
+                  <span class="value">{{categoryPath.map(c => c.categoryName).join(' > ') || product.categoryName
+                    }}</span>
                 </div>
                 <div class="aside-param">
                   <span class="label">价格</span>
@@ -1429,7 +1412,7 @@ onUnmounted(() => {
    ============================================================ */
 .product-detail-page {
   /* 与首页 .page-home 一致：仅控制左右及底部留白，顶部由各子区域自行控制 */
-  padding: 0 24px 24px;
+  padding: 16px 24px 24px;
 }
 
 .loading-wrap {

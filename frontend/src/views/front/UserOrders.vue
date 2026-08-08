@@ -7,6 +7,7 @@
         <div class="sidebar-title">我的订单</div>
         <nav class="sidebar-nav">
           <!-- 订单状态筛选 -->
+          <div class="nav-group-title nav-group-title--first">订单状态</div>
           <div v-for="tab in tabs" :key="tab.name" class="nav-item" :class="{ active: activeTab === tab.name }"
             @click="handleTabChange(tab.name)">
             <span class="nav-label">{{ tab.label }}</span>
@@ -425,6 +426,11 @@ onMounted(() => {
   color: var(--color-text-muted);
   letter-spacing: 0.02em;
   border-top: 1px solid var(--color-border-light, var(--color-border));
+}
+
+/* 第一个分组标题紧挨 sidebar-title(已有 border-bottom), 去掉 border-top 避免双线 */
+.nav-group-title--first {
+  border-top: none;
 }
 
 /* ============ 右侧内容区 ============ */

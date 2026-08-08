@@ -1,526 +1,515 @@
 <template>
-  <!-- 严格对照 index.html .profile-layout 样式 -->
   <div class="profile-page">
     <!-- 加载骨架屏 -->
     <div v-if="loading" class="loading-wrap">
       <div v-for="i in 6" :key="i" class="skeleton-line"></div>
     </div>
 
-    <div v-else-if="user" class="profile-layout">
-      <!-- 左列: 用户信息卡片 -->
-      <div class="profile-card">
-        <div class="profile-avatar">{{ avatarText }}</div>
-        <div class="profile-name">{{ user.nickname || user.username }}</div>
-        <div class="profile-phone">{{ maskedPhone }}</div>
-        <span class="role-badge" :class="roleClass">{{ roleLabel }}</span>
-        <dl class="profile-meta">
-          <div class="profile-meta-row">
-            <dt>用户名</dt>
-            <dd>{{ user.username }}</dd>
-          </div>
-          <div class="profile-meta-row">
-            <dt>邮箱</dt>
-            <dd>{{ user.email || '—' }}</dd>
-          </div>
-          <div class="profile-meta-row">
-            <dt>注册时间</dt>
-            <dd>{{ formatDate(user.createTime) }}</dd>
-          </div>
-          <div class="profile-meta-row">
-            <dt>账号状态</dt>
-            <dd>{{ user.status === 'ACTIVE' ? '正常' : '已禁用' }}</dd>
-          </div>
-        </dl>
-        <!-- 快捷入口 -->
-        <div class="profile-shortcuts">
-          <div class="shortcut-item" @click="activeTab = 'wallet'">
-            <el-icon>
-              <Wallet />
-            </el-icon>
-            <span>我的钱包</span>
-          </div>
-          <div class="shortcut-item" @click="activeTab = 'coupons'">
-            <el-icon>
-              <Ticket />
-            </el-icon>
-            <span>我的优惠券</span>
-          </div>
-          <div class="shortcut-item" @click="activeTab = 'address'">
-            <el-icon>
-              <Location />
-            </el-icon>
-            <span>收货地址</span>
-          </div>
-          <div class="shortcut-item" @click="goTo('/user/orders')">
-            <el-icon>
-              <List />
-            </el-icon>
-            <span>我的订单</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 右列: 标签页内容 -->
-      <div class="profile-main">
-        <!-- 标签页 -->
-        <div class="profile-tabs">
-          <div class="profile-tab" :class="{ active: activeTab === 'info' }" @click="activeTab = 'info'">基本信息</div>
-          <div class="profile-tab" :class="{ active: activeTab === 'password' }" @click="activeTab = 'password'">修改密码
-          </div>
-          <div class="profile-tab" :class="{ active: activeTab === 'wallet' }" @click="activeTab = 'wallet'">我的钱包
-          </div>
-          <div class="profile-tab" :class="{ active: activeTab === 'address' }" @click="activeTab = 'address'">收货地址
-          </div>
-          <div class="profile-tab" :class="{ active: activeTab === 'coupons' }" @click="activeTab = 'coupons'">我的优惠券
-          </div>
+    <div v-else-if="user" class="profile-container">
+      <!-- 左侧侧边栏 -->
+      <aside class="profile-sidebar">
+        <!-- 用户信息卡片 -->
+        <div class="sidebar-user-card">
+          <div class="user-avatar">{{ avatarText }}</div>
+          <div class="user-name">{{ user.nickname || user.username }}</div>
+          <div class="user-phone">{{ maskedPhone }}</div>
+          <span class="role-badge" :class="roleClass">{{ roleLabel }}</span>
         </div>
 
-        <!-- Tab 1: 基本信息 -->
-        <div v-if="activeTab === 'info'" class="profile-form">
-          <div class="info-card">
-            <!-- 只读展示模式 -->
-            <template v-if="!editing">
-              <div class="info-row">
-                <div class="info-label">用户名</div>
-                <div class="info-value">{{ user.username }}</div>
-              </div>
-              <div class="info-row">
-                <div class="info-label">昵称</div>
-                <div class="info-value">{{ user.nickname || '—' }}</div>
-              </div>
-              <div class="info-row">
-                <div class="info-label">手机号</div>
-                <div class="info-value">{{ maskedPhone }}</div>
-              </div>
-              <div class="info-row">
-                <div class="info-label">邮箱</div>
-                <div class="info-value">{{ user.email || '—' }}</div>
-              </div>
-              <div class="info-row">
-                <div class="info-label">注册时间</div>
-                <div class="info-value">{{ formatTime(user.createTime) }}</div>
-              </div>
-              <div class="info-actions">
-                <button class="btn-sm primary" type="button" @click="enterEdit">修改信息</button>
-              </div>
-            </template>
+        <!-- 导航菜单 -->
+        <nav class="sidebar-nav">
+          <div class="nav-item" :class="{ active: activeTab === 'info' }" @click="activeTab = 'info'">
+            <el-icon class="nav-icon"><InfoFilled /></el-icon>
+            <span class="nav-text">基本信息</span>
+          </div>
+          <div class="nav-item" :class="{ active: activeTab === 'password' }" @click="activeTab = 'password'">
+            <svg class="nav-icon svg-icon" viewBox="0 0 1024 1024" fill="currentColor">
+              <path d="M832 464h-68V320c0-70.7-57.3-128-128-128H384c-70.7 0-128 57.3-128 128v144h-68c-17.7 0-32 14.3-32 32v368c0 17.7 14.3 32 32 32h640c17.7 0 32-14.3 32-32V496c0-17.7-14.3-32-32-32zM332 320c0-35.3 28.7-64 64-64h272c35.3 0 64 28.7 64 64v144H332V320zm436 224c0 17.7-14.3 32-32 32s-32-14.3-32-32 14.3-32 32-32 32 14.3 32 32z" />
+            </svg>
+            <span class="nav-text">修改密码</span>
+          </div>
+          <div class="nav-item" :class="{ active: activeTab === 'wallet' }" @click="activeTab = 'wallet'">
+            <el-icon class="nav-icon"><Wallet /></el-icon>
+            <span class="nav-text">我的钱包</span>
+          </div>
+          <div class="nav-item" :class="{ active: activeTab === 'address' }" @click="activeTab = 'address'">
+            <el-icon class="nav-icon"><Location /></el-icon>
+            <span class="nav-text">收货地址</span>
+          </div>
+          <div class="nav-item" :class="{ active: activeTab === 'coupons' }" @click="activeTab = 'coupons'">
+            <el-icon class="nav-icon"><Ticket /></el-icon>
+            <span class="nav-text">我的优惠券</span>
+          </div>
+          <div class="nav-item nav-item-link" @click="goTo('/user/orders')">
+            <el-icon class="nav-icon"><List /></el-icon>
+            <span class="nav-text">我的订单</span>
+            <el-icon class="nav-arrow"><ArrowRight /></el-icon>
+          </div>
+        </nav>
+      </aside>
 
-            <!-- 编辑模式 -->
-            <template v-else>
-              <div class="info-row">
-                <div class="info-label">用户名</div>
-                <div class="info-value readonly">{{ user.username }}</div>
-              </div>
-              <div class="info-row">
-                <label class="info-label" for="edit-nickname">昵称</label>
-                <input id="edit-nickname" v-model.trim="editForm.nickname" class="form-input" type="text"
-                  placeholder="请输入昵称" maxlength="20" />
-              </div>
-              <div class="info-row">
-                <label class="info-label" for="edit-phone">手机号</label>
-                <div class="info-edit-cell">
-                  <input id="edit-phone" v-model.trim="editForm.phone" class="form-input"
-                    :class="{ error: editErrors.phone }" type="text" placeholder="请输入 11 位手机号" maxlength="11" />
-                  <div v-if="editErrors.phone" class="form-error">{{ editErrors.phone }}</div>
-                  <!-- 验证码输入 + 发送按钮 (仅手机号变更时需要) -->
-                  <div v-if="isPhoneChanged" class="verify-row">
-                    <input v-model.trim="editForm.phoneCode" class="form-input verify-input"
-                      :class="{ error: editErrors.phoneCode }" type="text" placeholder="请输入短信验证码" maxlength="6" />
+      <!-- 右侧内容区 -->
+      <main class="profile-content">
+        <!-- 内容头部 (面包屑/标题) -->
+        <div class="content-header">
+          <h2 class="content-title">
+            <span v-if="activeTab === 'info'">基本信息</span>
+            <span v-else-if="activeTab === 'password'">修改密码</span>
+            <span v-else-if="activeTab === 'wallet'">我的钱包</span>
+            <span v-else-if="activeTab === 'address'">收货地址</span>
+            <span v-else-if="activeTab === 'coupons'">我的优惠券</span>
+          </h2>
+        </div>
+
+        <!-- 内容主体 -->
+        <div class="content-body">
+          <!-- Tab 1: 基本信息 -->
+          <div v-if="activeTab === 'info'" class="profile-form">
+            <div class="info-card">
+              <!-- 只读展示模式 -->
+              <template v-if="!editing">
+                <div class="info-row">
+                  <div class="info-label">用户名</div>
+                  <div class="info-value">{{ user.username }}</div>
+                </div>
+                <div class="info-row">
+                  <div class="info-label">昵称</div>
+                  <div class="info-value">{{ user.nickname || '—' }}</div>
+                </div>
+                <div class="info-row">
+                  <div class="info-label">手机号</div>
+                  <div class="info-value">{{ maskedPhone }}</div>
+                </div>
+                <div class="info-row">
+                  <div class="info-label">邮箱</div>
+                  <div class="info-value">{{ user.email || '—' }}</div>
+                </div>
+                <div class="info-row">
+                  <div class="info-label">注册时间</div>
+                  <div class="info-value">{{ formatTime(user.createTime) }}</div>
+                </div>
+                <div class="info-actions">
+                  <button class="btn-sm primary" type="button" @click="enterEdit">修改信息</button>
+                </div>
+              </template>
+
+              <!-- 编辑模式 -->
+              <template v-else>
+                <div class="info-row">
+                  <div class="info-label">用户名</div>
+                  <div class="info-value readonly">{{ user.username }}</div>
+                </div>
+                <div class="info-row">
+                  <label class="info-label" for="edit-nickname">昵称</label>
+                  <input id="edit-nickname" v-model.trim="editForm.nickname" class="form-input" type="text"
+                    placeholder="请输入昵称" maxlength="20" />
+                </div>
+                <div class="info-row">
+                  <label class="info-label" for="edit-phone">手机号</label>
+                  <div class="info-edit-cell">
+                    <input id="edit-phone" v-model.trim="editForm.phone" class="form-input"
+                      :class="{ error: editErrors.phone }" type="text" placeholder="请输入 11 位手机号" maxlength="11" />
+                    <div v-if="editErrors.phone" class="form-error">{{ editErrors.phone }}</div>
+                    <!-- 验证码输入 + 发送按钮 (仅手机号变更时需要) -->
+                    <div v-if="isPhoneChanged" class="verify-row">
+                      <input v-model.trim="editForm.phoneCode" class="form-input verify-input"
+                        :class="{ error: editErrors.phoneCode }" type="text" placeholder="请输入短信验证码" maxlength="6" />
+                      <button class="btn-sm primary verify-btn" type="button"
+                        :disabled="phoneCountdown > 0 || sendingPhoneCode" @click="handleSendPhoneCode">
+                        {{ phoneCountdown > 0 ? `${phoneCountdown}s` : (sendingPhoneCode ? '发送中' : '发送验证码') }}
+                      </button>
+                    </div>
+                    <div v-if="editErrors.phoneCode" class="form-error">{{ editErrors.phoneCode }}</div>
+                  </div>
+                </div>
+                <div class="info-row">
+                  <label class="info-label" for="edit-email">邮箱</label>
+                  <div class="info-edit-cell">
+                    <input id="edit-email" v-model.trim="editForm.email" class="form-input"
+                      :class="{ error: editErrors.email }" type="text" placeholder="请输入邮箱 (可选)" />
+                    <div v-if="editErrors.email" class="form-error">{{ editErrors.email }}</div>
+                    <!-- 验证码输入 + 发送按钮 (仅邮箱变更时需要) -->
+                    <div v-if="isEmailChanged" class="verify-row">
+                      <input v-model.trim="editForm.emailCode" class="form-input verify-input"
+                        :class="{ error: editErrors.emailCode }" type="text" placeholder="请输入邮箱验证码" maxlength="6" />
+                      <button class="btn-sm primary verify-btn" type="button"
+                        :disabled="emailCountdown > 0 || sendingEmailCode" @click="handleSendEmailCode">
+                        {{ emailCountdown > 0 ? `${emailCountdown}s` : (sendingEmailCode ? '发送中' : '发送验证码') }}
+                      </button>
+                    </div>
+                    <div v-if="editErrors.emailCode" class="form-error">{{ editErrors.emailCode }}</div>
+                  </div>
+                </div>
+                <div class="info-row">
+                  <div class="info-label">注册时间</div>
+                  <div class="info-value readonly">{{ formatTime(user.createTime) }}</div>
+                </div>
+                <div class="info-actions">
+                  <button class="btn-sm primary" type="button" :disabled="editLoading" @click="handleSaveProfile">
+                    {{ editLoading ? '保存中...' : '保存' }}
+                  </button>
+                  <button class="btn-sm" type="button" :disabled="editLoading" @click="cancelEdit">取消</button>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Tab 2: 修改密码 -->
+          <div v-else-if="activeTab === 'password'" class="profile-form">
+            <div class="pwd-card">
+              <form @submit.prevent="handleChangePassword">
+                <div class="form-group">
+                  <label class="form-label">旧密码</label>
+                  <input v-model.trim="pwdForm.oldPassword" class="form-input" :class="{ error: pwdErrors.oldPassword }"
+                    type="password" placeholder="请输入当前密码" autocomplete="current-password" />
+                  <div v-if="pwdErrors.oldPassword" class="form-error">{{ pwdErrors.oldPassword }}</div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">新密码</label>
+                  <input v-model.trim="pwdForm.newPassword" class="form-input" :class="{ error: pwdErrors.newPassword }"
+                    type="password" placeholder="请输入新密码 (6-20位)" autocomplete="new-password" />
+                  <!-- 密码强度指示器 -->
+                  <div class="strength-bars">
+                    <div class="strength-bar" :class="{ active: passwordStrength >= 1, weak: passwordStrength === 1 }">
+                    </div>
+                    <div class="strength-bar" :class="{ active: passwordStrength >= 2, mid: passwordStrength === 2 }">
+                    </div>
+                    <div class="strength-bar" :class="{ active: passwordStrength >= 3, strong: passwordStrength === 3 }">
+                    </div>
+                  </div>
+                  <div class="strength-text" :class="strengthClass">密码强度：{{ strengthLabel }}</div>
+                  <div v-if="pwdErrors.newPassword" class="form-error">{{ pwdErrors.newPassword }}</div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">确认新密码</label>
+                  <input v-model.trim="pwdForm.confirmPassword" class="form-input"
+                    :class="{ error: pwdErrors.confirmPassword }" type="password" placeholder="请再次输入新密码"
+                    autocomplete="new-password" />
+                  <div v-if="pwdErrors.confirmPassword" class="form-error">{{ pwdErrors.confirmPassword }}</div>
+                </div>
+
+                <!-- Bug2修复: 修改密码需验证码校验, 发送到当前用户邮箱 -->
+                <div class="form-group">
+                  <label class="form-label">验证码</label>
+                  <div class="verify-row">
+                    <input v-model.trim="pwdForm.code" class="form-input verify-input" :class="{ error: pwdErrors.code }"
+                      type="text" placeholder="请输入邮箱验证码" maxlength="6" />
                     <button class="btn-sm primary verify-btn" type="button"
-                      :disabled="phoneCountdown > 0 || sendingPhoneCode" @click="handleSendPhoneCode">
-                      {{ phoneCountdown > 0 ? `${phoneCountdown}s` : (sendingPhoneCode ? '发送中' : '发送验证码') }}
+                      :disabled="pwdCodeCountdown > 0 || sendingPwdCode" @click="handleSendPwdCode">
+                      {{ pwdCodeCountdown > 0 ? `${pwdCodeCountdown}s` : (sendingPwdCode ? '发送中' : '发送验证码') }}
                     </button>
                   </div>
-                  <div v-if="editErrors.phoneCode" class="form-error">{{ editErrors.phoneCode }}</div>
+                  <div v-if="pwdErrors.code" class="form-error">{{ pwdErrors.code }}</div>
+                  <div v-if="!user?.email" class="form-tip" style="color: #e6a23c;">当前账号未绑定邮箱，无法发送验证码</div>
                 </div>
-              </div>
-              <div class="info-row">
-                <label class="info-label" for="edit-email">邮箱</label>
-                <div class="info-edit-cell">
-                  <input id="edit-email" v-model.trim="editForm.email" class="form-input"
-                    :class="{ error: editErrors.email }" type="text" placeholder="请输入邮箱 (可选)" />
-                  <div v-if="editErrors.email" class="form-error">{{ editErrors.email }}</div>
-                  <!-- 验证码输入 + 发送按钮 (仅邮箱变更时需要) -->
-                  <div v-if="isEmailChanged" class="verify-row">
-                    <input v-model.trim="editForm.emailCode" class="form-input verify-input"
-                      :class="{ error: editErrors.emailCode }" type="text" placeholder="请输入邮箱验证码" maxlength="6" />
-                    <button class="btn-sm primary verify-btn" type="button"
-                      :disabled="emailCountdown > 0 || sendingEmailCode" @click="handleSendEmailCode">
-                      {{ emailCountdown > 0 ? `${emailCountdown}s` : (sendingEmailCode ? '发送中' : '发送验证码') }}
-                    </button>
-                  </div>
-                  <div v-if="editErrors.emailCode" class="form-error">{{ editErrors.emailCode }}</div>
+
+                <div class="form-actions">
+                  <button class="btn-sm primary" type="submit" :disabled="pwdLoading">
+                    {{ pwdLoading ? '修改中...' : '修改密码' }}
+                  </button>
+                  <button class="btn-sm" type="button" @click="resetPwdForm">重置</button>
                 </div>
+                <div class="form-tip">修改成功后将自动退出登录，需重新登录</div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Tab 3: 我的钱包 -->
+          <div v-else-if="activeTab === 'wallet'" class="wallet-tab">
+            <!-- 余额展示卡片 -->
+            <div class="wallet-balance-card" v-loading="walletBalanceLoading">
+              <div class="wallet-balance-icon">
+                <el-icon>
+                  <Wallet />
+                </el-icon>
               </div>
-              <div class="info-row">
-                <div class="info-label">注册时间</div>
-                <div class="info-value readonly">{{ formatTime(user.createTime) }}</div>
+              <div class="wallet-balance-info">
+                <div class="wallet-balance-label">我的余额 (元)</div>
+                <div class="wallet-balance-amount">¥ {{ formatMoney(walletBalance) }}</div>
               </div>
-              <div class="info-actions">
-                <button class="btn-sm primary" type="button" :disabled="editLoading" @click="handleSaveProfile">
-                  {{ editLoading ? '保存中...' : '保存' }}
+              <div class="wallet-balance-actions">
+                <button class="btn-sm primary wallet-recharge-btn" type="button" @click="openRechargeDialog">
+                  <el-icon class="btn-icon">
+                    <Plus />
+                  </el-icon>充值
                 </button>
-                <button class="btn-sm" type="button" :disabled="editLoading" @click="cancelEdit">取消</button>
               </div>
-            </template>
-          </div>
-        </div>
+            </div>
 
-        <!-- Tab 2: 修改密码 -->
-        <div v-else-if="activeTab === 'password'" class="profile-form">
-          <div class="pwd-card">
-            <form @submit.prevent="handleChangePassword">
-              <div class="form-group">
-                <label class="form-label">旧密码</label>
-                <input v-model.trim="pwdForm.oldPassword" class="form-input" :class="{ error: pwdErrors.oldPassword }"
-                  type="password" placeholder="请输入当前密码" autocomplete="current-password" />
-                <div v-if="pwdErrors.oldPassword" class="form-error">{{ pwdErrors.oldPassword }}</div>
+            <!-- 交易记录 (前10条) -->
+            <div class="wallet-records-section">
+              <div class="wallet-section-header">
+                <h3 class="wallet-section-title">交易记录</h3>
+                <button class="btn-sm text" type="button" @click="loadWalletRecords">
+                  <el-icon>
+                    <Refresh />
+                  </el-icon>刷新
+                </button>
               </div>
 
-              <div class="form-group">
-                <label class="form-label">新密码</label>
-                <input v-model.trim="pwdForm.newPassword" class="form-input" :class="{ error: pwdErrors.newPassword }"
-                  type="password" placeholder="请输入新密码 (6-20位)" autocomplete="new-password" />
-                <!-- 密码强度指示器 -->
-                <div class="strength-bars">
-                  <div class="strength-bar" :class="{ active: passwordStrength >= 1, weak: passwordStrength === 1 }">
-                  </div>
-                  <div class="strength-bar" :class="{ active: passwordStrength >= 2, mid: passwordStrength === 2 }">
-                  </div>
-                  <div class="strength-bar" :class="{ active: passwordStrength >= 3, strong: passwordStrength === 3 }">
-                  </div>
-                </div>
-                <div class="strength-text" :class="strengthClass">密码强度：{{ strengthLabel }}</div>
-                <div v-if="pwdErrors.newPassword" class="form-error">{{ pwdErrors.newPassword }}</div>
+              <!-- 加载中 -->
+              <div v-if="walletRecordsLoading" class="wallet-loading-state">
+                <el-icon class="is-loading">
+                  <Loading />
+                </el-icon>
+                <span class="wallet-loading-text">加载中...</span>
               </div>
 
-              <div class="form-group">
-                <label class="form-label">确认新密码</label>
-                <input v-model.trim="pwdForm.confirmPassword" class="form-input"
-                  :class="{ error: pwdErrors.confirmPassword }" type="password" placeholder="请再次输入新密码"
-                  autocomplete="new-password" />
-                <div v-if="pwdErrors.confirmPassword" class="form-error">{{ pwdErrors.confirmPassword }}</div>
+              <!-- 空状态 -->
+              <div v-else-if="walletRecords.length === 0" class="wallet-empty-state">
+                <el-empty description="暂无交易记录" />
               </div>
 
-              <!-- Bug2修复: 修改密码需验证码校验, 发送到当前用户邮箱 -->
-              <div class="form-group">
-                <label class="form-label">验证码</label>
-                <div class="verify-row">
-                  <input v-model.trim="pwdForm.code" class="form-input verify-input" :class="{ error: pwdErrors.code }"
-                    type="text" placeholder="请输入邮箱验证码" maxlength="6" />
-                  <button class="btn-sm primary verify-btn" type="button"
-                    :disabled="pwdCodeCountdown > 0 || sendingPwdCode" @click="handleSendPwdCode">
-                    {{ pwdCodeCountdown > 0 ? `${pwdCodeCountdown}s` : (sendingPwdCode ? '发送中' : '发送验证码') }}
+              <!-- 记录表格 -->
+              <div v-else class="wallet-records-table-wrap">
+                <table class="wallet-records-table">
+                  <thead>
+                    <tr>
+                      <th>类型</th>
+                      <th>金额</th>
+                      <th>时间</th>
+                      <th>备注</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="row in walletRecords.slice(0, 10)" :key="row.id">
+                      <td>
+                        <el-tag :type="recordTagType(row.type)" size="small" effect="plain">
+                          {{ recordTypeLabel(row.type) }}
+                        </el-tag>
+                      </td>
+                      <td>
+                        <span class="wallet-amount-cell" :class="{ income: row.amount >= 0, expense: row.amount < 0 }">
+                          {{ row.amount >= 0 ? '+' : '' }}¥ {{ formatMoney(row.amount) }}
+                        </span>
+                      </td>
+                      <td class="wallet-time-cell">{{ formatTime(row.createTime) }}</td>
+                      <td class="wallet-remark-cell">{{ row.remark || '—' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <!-- 查看更多 -->
+                <div v-if="walletRecords.length > 10" class="wallet-records-footer">
+                  <button class="btn-sm text" type="button" @click="goTo('/user/wallet')">
+                    查看更多 <el-icon>
+                      <ArrowRight />
+                    </el-icon>
                   </button>
                 </div>
-                <div v-if="pwdErrors.code" class="form-error">{{ pwdErrors.code }}</div>
-                <div v-if="!user?.email" class="form-tip" style="color: #e6a23c;">当前账号未绑定邮箱，无法发送验证码</div>
               </div>
+            </div>
 
-              <div class="form-actions">
-                <button class="btn-sm primary" type="submit" :disabled="pwdLoading">
-                  {{ pwdLoading ? '修改中...' : '修改密码' }}
-                </button>
-                <button class="btn-sm" type="button" @click="resetPwdForm">重置</button>
-              </div>
-              <div class="form-tip">修改成功后将自动退出登录，需重新登录</div>
-            </form>
-          </div>
-        </div>
-
-        <!-- Tab 3: 我的钱包 -->
-        <div v-else-if="activeTab === 'wallet'" class="wallet-tab">
-          <!-- 余额展示卡片 -->
-          <div class="wallet-balance-card" v-loading="walletBalanceLoading">
-            <div class="wallet-balance-icon">
-              <el-icon>
-                <Wallet />
-              </el-icon>
-            </div>
-            <div class="wallet-balance-info">
-              <div class="wallet-balance-label">我的余额 (元)</div>
-              <div class="wallet-balance-amount">¥ {{ formatMoney(walletBalance) }}</div>
-            </div>
-            <div class="wallet-balance-actions">
-              <button class="btn-sm primary wallet-recharge-btn" type="button" @click="openRechargeDialog">
-                <el-icon class="btn-icon">
-                  <Plus />
-                </el-icon>充值
-              </button>
-            </div>
+            <!-- 充值弹窗 -->
+            <el-dialog v-model="rechargeDialogVisible" title="钱包充值" width="460px" :close-on-click-modal="false"
+              destroy-on-close @closed="resetRechargeForm">
+              <el-form ref="rechargeFormRef" :model="rechargeForm" :rules="rechargeRules" label-width="80px">
+                <el-form-item label="卡号" prop="cardNo">
+                  <el-input v-model.trim="rechargeForm.cardNo" placeholder="请输入充值卡卡号" maxlength="32" clearable />
+                </el-form-item>
+                <el-form-item label="卡密" prop="cardPassword">
+                  <el-input v-model.trim="rechargeForm.cardPassword" type="password" placeholder="请输入充值卡卡密" maxlength="64"
+                    show-password clearable @keyup.enter="handleRecharge" />
+                </el-form-item>
+                <div class="recharge-tip">
+                  <el-icon>
+                    <InfoFilled />
+                  </el-icon>
+                  <span>请输入正确的充值卡卡号和卡密，充值后卡将作废</span>
+                </div>
+              </el-form>
+              <template #footer>
+                <el-button @click="rechargeDialogVisible = false">取消</el-button>
+                <el-button type="primary" :loading="rechargeSubmitting" @click="handleRecharge">
+                  确认充值
+                </el-button>
+              </template>
+            </el-dialog>
           </div>
 
-          <!-- 交易记录 (前10条) -->
-          <div class="wallet-records-section">
-            <div class="wallet-section-header">
-              <h3 class="wallet-section-title">交易记录</h3>
-              <button class="btn-sm text" type="button" @click="loadWalletRecords">
-                <el-icon>
-                  <Refresh />
-                </el-icon>刷新
+          <!-- Tab 4: 收货地址 -->
+          <div v-else-if="activeTab === 'address'" class="address-tab">
+            <!-- 页头：标题 + 新增按钮 -->
+            <div class="address-header">
+              <h3 class="address-title">收货地址管理</h3>
+              <button class="btn-sm primary" type="button" @click="openAddDialog">
+                <span class="btn-plus">+</span> 新增地址
               </button>
             </div>
 
             <!-- 加载中 -->
-            <div v-if="walletRecordsLoading" class="wallet-loading-state">
+            <div v-if="addressLoading" class="address-loading-state">
               <el-icon class="is-loading">
                 <Loading />
               </el-icon>
-              <span class="wallet-loading-text">加载中...</span>
+              <span class="address-loading-text">加载中...</span>
             </div>
 
             <!-- 空状态 -->
-            <div v-else-if="walletRecords.length === 0" class="wallet-empty-state">
-              <el-empty description="暂无交易记录" />
-            </div>
-
-            <!-- 记录表格 -->
-            <div v-else class="wallet-records-table-wrap">
-              <table class="wallet-records-table">
-                <thead>
-                  <tr>
-                    <th>类型</th>
-                    <th>金额</th>
-                    <th>时间</th>
-                    <th>备注</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="row in walletRecords.slice(0, 10)" :key="row.id">
-                    <td>
-                      <el-tag :type="recordTagType(row.type)" size="small" effect="plain">
-                        {{ recordTypeLabel(row.type) }}
-                      </el-tag>
-                    </td>
-                    <td>
-                      <span class="wallet-amount-cell" :class="{ income: row.amount >= 0, expense: row.amount < 0 }">
-                        {{ row.amount >= 0 ? '+' : '' }}¥ {{ formatMoney(row.amount) }}
-                      </span>
-                    </td>
-                    <td class="wallet-time-cell">{{ formatTime(row.createTime) }}</td>
-                    <td class="wallet-remark-cell">{{ row.remark || '—' }}</td>
-                  </tr>
-                </tbody>
-              </table>
-              <!-- 查看更多 -->
-              <div v-if="walletRecords.length > 10" class="wallet-records-footer">
-                <button class="btn-sm text" type="button" @click="goTo('/user/wallet')">
-                  查看更多 <el-icon>
-                    <ArrowRight />
-                  </el-icon>
-                </button>
+            <div v-else-if="addressList.length === 0" class="address-empty-state">
+              <div class="address-empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
               </div>
+              <p class="address-empty-text">还没有收货地址，快去添加吧！</p>
+              <button class="btn-sm primary" type="button" @click="openAddDialog">新增地址</button>
             </div>
-          </div>
 
-          <!-- 充值弹窗 -->
-          <el-dialog v-model="rechargeDialogVisible" title="钱包充值" width="460px" :close-on-click-modal="false"
-            destroy-on-close @closed="resetRechargeForm">
-            <el-form ref="rechargeFormRef" :model="rechargeForm" :rules="rechargeRules" label-width="80px">
-              <el-form-item label="卡号" prop="cardNo">
-                <el-input v-model.trim="rechargeForm.cardNo" placeholder="请输入充值卡卡号" maxlength="32" clearable />
-              </el-form-item>
-              <el-form-item label="卡密" prop="cardPassword">
-                <el-input v-model.trim="rechargeForm.cardPassword" type="password" placeholder="请输入充值卡卡密" maxlength="64"
-                  show-password clearable @keyup.enter="handleRecharge" />
-              </el-form-item>
-              <div class="recharge-tip">
-                <el-icon>
-                  <InfoFilled />
-                </el-icon>
-                <span>请输入正确的充值卡卡号和卡密，充值后卡将作废</span>
-              </div>
-            </el-form>
-            <template #footer>
-              <el-button @click="rechargeDialogVisible = false">取消</el-button>
-              <el-button type="primary" :loading="rechargeSubmitting" @click="handleRecharge">
-                确认充值
-              </el-button>
-            </template>
-          </el-dialog>
-        </div>
+            <!-- 地址列表：响应式卡片网格 -->
+            <el-row v-else :gutter="16" class="address-grid">
+              <el-col v-for="addr in addressList" :key="addr.id" :xs="24" :sm="24" :md="12" :lg="8" :xl="8"
+                class="address-col">
+                <div class="address-card" :class="{ 'address-default': addr.isDefault === 1 }">
+                  <!-- 顶部：姓名 + 手机号 + 默认标签 -->
+                  <div class="card-top">
+                    <div class="card-name-row">
+                      <span class="address-name">{{ addr.receiverName }}</span>
+                      <span class="address-phone">{{ addr.receiverPhone }}</span>
+                      <el-tag v-if="addr.isDefault === 1" type="danger" size="small" effect="dark"
+                        class="default-tag">默认</el-tag>
+                    </div>
+                  </div>
 
-        <!-- Tab 4: 收货地址 -->
-        <div v-else-if="activeTab === 'address'" class="address-tab">
-          <!-- 页头：标题 + 新增按钮 -->
-          <div class="address-header">
-            <h3 class="address-title">收货地址管理</h3>
-            <button class="btn-sm primary" type="button" @click="openAddDialog">
-              <span class="btn-plus">+</span> 新增地址
-            </button>
-          </div>
+                  <!-- 中部：详细地址 -->
+                  <div class="card-detail">
+                    <el-icon class="detail-icon">
+                      <Location />
+                    </el-icon>
+                    <span class="detail-text">
+                      {{ addr.province }}{{ addr.city }}{{ addr.district }} {{ addr.detailAddress }}
+                    </span>
+                  </div>
 
-          <!-- 加载中 -->
-          <div v-if="addressLoading" class="address-loading-state">
-            <el-icon class="is-loading">
-              <Loading />
-            </el-icon>
-            <span class="address-loading-text">加载中...</span>
-          </div>
-
-          <!-- 空状态 -->
-          <div v-else-if="addressList.length === 0" class="address-empty-state">
-            <div class="address-empty-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="64" height="64">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-            </div>
-            <p class="address-empty-text">还没有收货地址，快去添加吧！</p>
-            <button class="btn-sm primary" type="button" @click="openAddDialog">新增地址</button>
-          </div>
-
-          <!-- 地址列表：响应式卡片网格 -->
-          <el-row v-else :gutter="16" class="address-grid">
-            <el-col v-for="addr in addressList" :key="addr.id" :xs="24" :sm="24" :md="12" :lg="8" :xl="8"
-              class="address-col">
-              <div class="address-card" :class="{ 'address-default': addr.isDefault === 1 }">
-                <!-- 顶部：姓名 + 手机号 + 默认标签 -->
-                <div class="card-top">
-                  <div class="card-name-row">
-                    <span class="address-name">{{ addr.receiverName }}</span>
-                    <span class="address-phone">{{ addr.receiverPhone }}</span>
-                    <el-tag v-if="addr.isDefault === 1" type="danger" size="small" effect="dark"
-                      class="default-tag">默认</el-tag>
+                  <!-- 底部：操作按钮 -->
+                  <div class="card-actions">
+                    <button v-if="addr.isDefault !== 1" class="btn-sm text" type="button"
+                      @click="handleSetDefault(addr)">设为默认</button>
+                    <button class="btn-sm text" type="button" @click="openEditDialog(addr)">编辑</button>
+                    <button class="btn-sm text danger" type="button" @click="handleDeleteAddress(addr)">删除</button>
                   </div>
                 </div>
+              </el-col>
+            </el-row>
 
-                <!-- 中部：详细地址 -->
-                <div class="card-detail">
-                  <el-icon class="detail-icon">
-                    <Location />
-                  </el-icon>
-                  <span class="detail-text">
-                    {{ addr.province }}{{ addr.city }}{{ addr.district }} {{ addr.detailAddress }}
-                  </span>
-                </div>
+            <!-- 新增/编辑弹窗 -->
+            <el-dialog v-model="addressDialogVisible" :title="addressDialogTitle" width="500px"
+              :close-on-click-modal="false" append-to-body>
+              <el-form ref="addressFormRef" :model="addressFormData" :rules="addressFormRules" label-width="100px">
+                <el-form-item label="姓名" prop="receiverName">
+                  <el-input v-model="addressFormData.receiverName" placeholder="请输入收货人姓名" maxlength="20"
+                    show-word-limit />
+                </el-form-item>
+                <el-form-item label="手机号" prop="receiverPhone">
+                  <el-input v-model="addressFormData.receiverPhone" placeholder="请输入 11 位手机号" maxlength="11" />
+                </el-form-item>
+                <el-form-item label="省份" prop="province">
+                  <el-input v-model="addressFormData.province" placeholder="如：北京市" maxlength="30" />
+                </el-form-item>
+                <el-form-item label="城市" prop="city">
+                  <el-input v-model="addressFormData.city" placeholder="如：北京市" maxlength="30" />
+                </el-form-item>
+                <el-form-item label="区/县" prop="district">
+                  <el-input v-model="addressFormData.district" placeholder="如：海淀区" maxlength="30" />
+                </el-form-item>
+                <el-form-item label="详细地址" prop="detailAddress">
+                  <el-input v-model="addressFormData.detailAddress" type="textarea" :rows="2"
+                    placeholder="请输入详细地址（街道、门牌号等）" maxlength="200" show-word-limit />
+                </el-form-item>
+                <el-form-item label="设为默认">
+                  <el-switch v-model="addressFormData.isDefault" />
+                </el-form-item>
+              </el-form>
+              <template #footer>
+                <el-button @click="addressDialogVisible = false">取消</el-button>
+                <el-button type="primary" :loading="addressSubmitting" @click="handleAddressSubmit">确定</el-button>
+              </template>
+            </el-dialog>
+          </div>
 
-                <!-- 底部：操作按钮 -->
-                <div class="card-actions">
-                  <button v-if="addr.isDefault !== 1" class="btn-sm text" type="button"
-                    @click="handleSetDefault(addr)">设为默认</button>
-                  <button class="btn-sm text" type="button" @click="openEditDialog(addr)">编辑</button>
-                  <button class="btn-sm text danger" type="button" @click="handleDeleteAddress(addr)">删除</button>
-                </div>
+          <!-- Tab 5: 我的优惠券 -->
+          <div v-else-if="activeTab === 'coupons'" class="coupons-tab">
+            <!-- 子Tab切换 -->
+            <div class="coupon-tabs">
+              <div v-for="tab in couponSubTabs" :key="tab.value" class="coupon-tab"
+                :class="{ active: couponActiveSubTab === tab.value }" @click="switchCouponSubTab(tab.value)">
+                {{ tab.label }}
+                <span class="tab-count">({{ couponTabCountMap[tab.value] || 0 }})</span>
               </div>
-            </el-col>
-          </el-row>
-
-          <!-- 新增/编辑弹窗 -->
-          <el-dialog v-model="addressDialogVisible" :title="addressDialogTitle" width="500px"
-            :close-on-click-modal="false" append-to-body>
-            <el-form ref="addressFormRef" :model="addressFormData" :rules="addressFormRules" label-width="100px">
-              <el-form-item label="姓名" prop="receiverName">
-                <el-input v-model="addressFormData.receiverName" placeholder="请输入收货人姓名" maxlength="20"
-                  show-word-limit />
-              </el-form-item>
-              <el-form-item label="手机号" prop="receiverPhone">
-                <el-input v-model="addressFormData.receiverPhone" placeholder="请输入 11 位手机号" maxlength="11" />
-              </el-form-item>
-              <el-form-item label="省份" prop="province">
-                <el-input v-model="addressFormData.province" placeholder="如：北京市" maxlength="30" />
-              </el-form-item>
-              <el-form-item label="城市" prop="city">
-                <el-input v-model="addressFormData.city" placeholder="如：北京市" maxlength="30" />
-              </el-form-item>
-              <el-form-item label="区/县" prop="district">
-                <el-input v-model="addressFormData.district" placeholder="如：海淀区" maxlength="30" />
-              </el-form-item>
-              <el-form-item label="详细地址" prop="detailAddress">
-                <el-input v-model="addressFormData.detailAddress" type="textarea" :rows="2"
-                  placeholder="请输入详细地址（街道、门牌号等）" maxlength="200" show-word-limit />
-              </el-form-item>
-              <el-form-item label="设为默认">
-                <el-switch v-model="addressFormData.isDefault" />
-              </el-form-item>
-            </el-form>
-            <template #footer>
-              <el-button @click="addressDialogVisible = false">取消</el-button>
-              <el-button type="primary" :loading="addressSubmitting" @click="handleAddressSubmit">确定</el-button>
-            </template>
-          </el-dialog>
-        </div>
-
-        <!-- Tab 5: 我的优惠券 -->
-        <div v-else-if="activeTab === 'coupons'" class="coupons-tab">
-          <!-- 子Tab切换 -->
-          <div class="coupon-tabs">
-            <div v-for="tab in couponSubTabs" :key="tab.value" class="coupon-tab"
-              :class="{ active: couponActiveSubTab === tab.value }" @click="switchCouponSubTab(tab.value)">
-              {{ tab.label }}
-              <span class="tab-count">({{ couponTabCountMap[tab.value] || 0 }})</span>
             </div>
-          </div>
 
-          <!-- 加载中 -->
-          <div v-if="couponLoading" class="coupon-loading-state">
-            <el-icon class="is-loading">
-              <Loading />
-            </el-icon>
-            <span class="coupon-loading-text">加载中...</span>
-          </div>
+            <!-- 加载中 -->
+            <div v-if="couponLoading" class="coupon-loading-state">
+              <el-icon class="is-loading">
+                <Loading />
+              </el-icon>
+              <span class="coupon-loading-text">加载中...</span>
+            </div>
 
-          <!-- 空状态 -->
-          <div v-else-if="couponList.length === 0" class="coupon-empty-state">
-            <el-empty :description="couponEmptyText" />
-          </div>
+            <!-- 空状态 -->
+            <div v-else-if="couponList.length === 0" class="coupon-empty-state">
+              <el-empty :description="couponEmptyText" />
+            </div>
 
-          <!-- 优惠券卡片网格 -->
-          <el-row v-else :gutter="16" class="coupon-grid">
-            <el-col v-for="item in couponList" :key="item.id" :xs="24" :sm="12" :md="12" :lg="8" :xl="6"
-              class="coupon-col">
-              <div class="coupon-card" :class="couponCardClass(item)">
-                <!-- 左侧面额区 -->
-                <div class="coupon-left">
-                  <template v-if="item.coupon.type === 'AMOUNT'">
-                    <div class="coupon-value">
-                      <span class="value-unit">¥</span>
-                      <span class="value-num">{{ formatCouponAmount(item.coupon.amount) }}</span>
-                    </div>
-                    <div class="coupon-type-label">满减券</div>
-                  </template>
-                  <template v-else>
-                    <div class="coupon-value">
-                      <span class="value-num discount">{{ formatCouponDiscount(item.coupon.amount) }}</span>
-                      <span class="value-unit">折</span>
-                    </div>
-                    <div class="coupon-type-label">折扣券</div>
-                  </template>
-                </div>
-
-                <!-- 右侧信息区 -->
-                <div class="coupon-right">
-                  <div class="coupon-name">{{ item.coupon.name }}</div>
-                  <div class="coupon-condition">
+            <!-- 优惠券卡片网格 -->
+            <el-row v-else :gutter="16" class="coupon-grid">
+              <el-col v-for="item in couponList" :key="item.id" :xs="24" :sm="12" :md="12" :lg="8" :xl="6"
+                class="coupon-col">
+                <div class="coupon-card" :class="couponCardClass(item)">
+                  <!-- 左侧面额区 -->
+                  <div class="coupon-left">
                     <template v-if="item.coupon.type === 'AMOUNT'">
-                      满 {{ formatCouponMoney(item.coupon.minAmount) }} 元可用
+                      <div class="coupon-value">
+                        <span class="value-unit">¥</span>
+                        <span class="value-num">{{ formatCouponAmount(item.coupon.amount) }}</span>
+                      </div>
+                      <div class="coupon-type-label">满减券</div>
                     </template>
                     <template v-else>
-                      <span v-if="item.coupon.minAmount > 0">
-                        满 {{ formatCouponMoney(item.coupon.minAmount) }} 元可用
-                      </span>
-                      <span v-else>无门槛</span>
+                      <div class="coupon-value">
+                        <span class="value-num discount">{{ formatCouponDiscount(item.coupon.amount) }}</span>
+                        <span class="value-unit">折</span>
+                      </div>
+                      <div class="coupon-type-label">折扣券</div>
                     </template>
                   </div>
-                  <div class="coupon-time">
-                    {{ formatCouponDate(item.coupon.startTime) }} ~ {{ formatCouponDate(item.coupon.endTime) }}
-                  </div>
-                  <div class="coupon-status">
-                    <el-tag :type="couponStatusTagType(item.status)" size="small" effect="dark">
-                      {{ couponStatusLabel(item.status) }}
-                    </el-tag>
-                  </div>
-                </div>
 
-                <!-- 已使用/已过期标记 (右上角) -->
-                <div v-if="item.status !== 'UNUSED'" class="coupon-mark">
-                  <span class="mark-text">{{ couponStatusLabel(item.status) }}</span>
+                  <!-- 右侧信息区 -->
+                  <div class="coupon-right">
+                    <div class="coupon-name">{{ item.coupon.name }}</div>
+                    <div class="coupon-condition">
+                      <template v-if="item.coupon.type === 'AMOUNT'">
+                        满 {{ formatCouponMoney(item.coupon.minAmount) }} 元可用
+                      </template>
+                      <template v-else>
+                        <span v-if="item.coupon.minAmount > 0">
+                          满 {{ formatCouponMoney(item.coupon.minAmount) }} 元可用
+                        </span>
+                        <span v-else>无门槛</span>
+                      </template>
+                    </div>
+                    <div class="coupon-time">
+                      {{ formatCouponDate(item.coupon.startTime) }} ~ {{ formatCouponDate(item.coupon.endTime) }}
+                    </div>
+                    <div class="coupon-status">
+                      <el-tag :type="couponStatusTagType(item.status)" size="small" effect="dark">
+                        {{ couponStatusLabel(item.status) }}
+                      </el-tag>
+                    </div>
+                  </div>
+
+                  <!-- 已使用/已过期标记 (右上角) -->
+                  <div v-if="item.status !== 'UNUSED'" class="coupon-mark">
+                    <span class="mark-text">{{ couponStatusLabel(item.status) }}</span>
+                  </div>
                 </div>
-              </div>
-            </el-col>
-          </el-row>
+              </el-col>
+            </el-row>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   </div>
 </template>
@@ -1450,14 +1439,20 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ==================== 页面容器 ==================== */
 .profile-page {
-  padding-bottom: 24px;
+  padding: 24px 16px;
+  min-height: 100vh;
+  background: var(--color-bg-subtle, #f5f5f5);
 }
 
+/* 加载骨架屏 */
 .loading-wrap {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  max-width: 1200px;
+  margin: 0 auto;
+  background: var(--color-bg-card, #fff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-lg, 12px);
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -1466,9 +1461,9 @@ onUnmounted(() => {
 
 .skeleton-line {
   height: 20px;
-  background: var(--color-bg-subtle);
+  background: var(--color-bg-subtle, #f5f5f5);
   border-radius: 4px;
-  background-image: linear-gradient(90deg, var(--color-bg-subtle) 25%, var(--color-bg-muted) 50%, var(--color-bg-subtle) 75%);
+  background-image: linear-gradient(90deg, var(--color-bg-subtle, #f5f5f5) 25%, var(--color-bg-muted, #e0e0e0) 50%, var(--color-bg-subtle, #f5f5f5) 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.4s ease infinite;
 }
@@ -1483,150 +1478,196 @@ onUnmounted(() => {
   }
 }
 
-/* 严格对照 index.html .profile-layout 样式 */
-.profile-layout {
+/* ==================== 主容器: 左侧导航 + 右侧内容 ==================== */
+.profile-container {
+  max-width: 1200px;
+  margin: 0 auto;
   display: flex;
-  gap: 24px;
-  padding: 24px;
+  gap: 20px;
+  align-items: flex-start;
 }
 
-/* 左列用户卡片 */
-.profile-card {
-  width: 260px;
+/* ==================== 左侧侧边栏 ==================== */
+.profile-sidebar {
+  width: 200px;
   flex-shrink: 0;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 32px 24px;
-  text-align: center;
+  background: var(--color-bg-card, #fff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
+  position: sticky;
+  top: 20px;
 }
 
-/* 头像 80px 圆形渐变 */
-.profile-avatar {
-  width: 80px;
-  height: 80px;
+/* 用户信息卡片 */
+.sidebar-user-card {
+  padding: 28px 16px 20px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(229, 57, 53, 0.06) 0%, transparent 100%);
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.user-avatar {
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  margin: 0 auto 16px;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  margin: 0 auto 12px;
+  background: linear-gradient(135deg, var(--color-primary, #e53935), var(--color-accent, #ff6f00));
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
-  cursor: pointer;
-  position: relative;
+  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3);
 }
 
-.profile-name {
-  font-size: 18px;
-  font-weight: 800;
+.user-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary, #1f2937);
   margin-bottom: 4px;
-  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.profile-phone {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  margin-bottom: 12px;
+.user-phone {
+  font-size: 12px;
+  color: var(--color-text-secondary, #6b7280);
+  margin-bottom: 10px;
 }
 
 /* 角色徽章 */
 .role-badge {
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 3px;
+  padding: 2px 10px;
+  border-radius: 12px;
   font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .role-badge.admin {
-  background: var(--tag-timeout-bg);
-  color: var(--tag-timeout-fg);
+  background: var(--tag-timeout-bg, #fee2e2);
+  color: var(--tag-timeout-fg, #dc2626);
 }
 
 .role-badge.seller {
-  background: var(--tag-unpaid-bg);
-  color: var(--tag-unpaid-fg);
+  background: var(--tag-unpaid-bg, #fef3c7);
+  color: var(--tag-unpaid-fg, #d97706);
 }
 
 .role-badge.buyer {
-  background: var(--tag-completed-bg);
-  color: var(--tag-completed-fg);
+  background: var(--tag-completed-bg, #dbeafe);
+  color: var(--tag-completed-fg, #2563eb);
 }
 
-.profile-meta {
-  font-size: 12px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--color-border);
-  text-align: left;
+/* 导航菜单 */
+.sidebar-nav {
+  padding: 8px 0;
 }
 
-.profile-meta-row {
+.nav-item {
   display: flex;
-  justify-content: space-between;
-  padding: 6px 0;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #6b7280);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  user-select: none;
 }
 
-.profile-meta-row dt {
-  color: var(--color-text-secondary);
+.nav-item:hover {
+  background: var(--color-bg-subtle, #f5f5f5);
+  color: var(--color-text-primary, #1f2937);
 }
 
-.profile-meta-row dd {
-  font-weight: 600;
-  color: var(--color-text-primary);
+.nav-item.active {
+  color: var(--color-primary, #e53935);
+  background: rgba(229, 57, 53, 0.06);
+  border-left-color: var(--color-primary, #e53935);
+  font-weight: 700;
 }
 
-/* 右列主内容 */
-.profile-main {
+.nav-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.svg-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.nav-text {
   flex: 1;
   min-width: 0;
 }
 
-/* 标签页 */
-.profile-tabs {
-  display: flex;
-  gap: 0;
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: 24px;
+.nav-arrow {
+  font-size: 12px;
+  color: var(--color-text-muted, #9ca3af);
+  flex-shrink: 0;
 }
 
-.profile-tab {
-  padding: 10px 24px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
+.nav-item-link:hover .nav-arrow {
+  color: var(--color-primary, #e53935);
 }
 
-.profile-tab.active {
-  color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
+/* ==================== 右侧内容区 ==================== */
+.profile-content {
+  flex: 1;
+  min-width: 0;
+  background: var(--color-bg-card, #fff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-lg, 12px);
+  overflow: hidden;
 }
 
-/* 表单：max-width 420px */
+/* 内容头部 */
+.content-header {
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  background: var(--color-bg-card, #fff);
+}
+
+.content-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text-primary, #1f2937);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+/* 内容主体 */
+.content-body {
+  padding: 24px 28px;
+}
+
+/* ==================== 表单通用样式 ==================== */
 .profile-form {
-  max-width: 420px;
+  max-width: 560px;
 }
 
 /* 基本信息: 白底卡片 */
 .info-card {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
+  background: var(--color-bg-subtle, #fafafa);
+  border: 1px solid var(--color-border-light, #f0f0f0);
   border-radius: 8px;
   padding: 24px;
 }
 
-/* 修改密码: 白底卡片 (与 .info-card 风格协调, 加轻微阴影提升层次感) */
+/* 修改密码: 白底卡片 */
 .pwd-card {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
+  background: var(--color-bg-subtle, #fafafa);
+  border: 1px solid var(--color-border-light, #f0f0f0);
   border-radius: 8px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 /* 字段行: label-value 横向布局, 行间分隔线 */
@@ -1634,7 +1675,7 @@ onUnmounted(() => {
   display: flex;
   align-items: flex-start;
   padding: 12px 0;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-light, #f0f0f0);
 }
 
 .info-row:last-of-type {
@@ -1646,7 +1687,7 @@ onUnmounted(() => {
   width: 88px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
   letter-spacing: 0.02em;
   line-height: 24px;
 }
@@ -1655,13 +1696,13 @@ onUnmounted(() => {
   flex: 1;
   min-width: 0;
   font-size: 15px;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #1f2937);
   line-height: 24px;
   word-break: break-all;
 }
 
 .info-value.readonly {
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
 }
 
 /* 编辑模式: input 占满 value 区 */
@@ -1691,7 +1732,7 @@ onUnmounted(() => {
   display: block;
   font-size: 12px;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
   margin-bottom: 6px;
   letter-spacing: 0.02em;
 }
@@ -1699,13 +1740,13 @@ onUnmounted(() => {
 .form-value {
   font-size: 14px;
   padding: 8px 0;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #1f2937);
 }
 
 .form-input {
   width: 100%;
   height: 40px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border, #e5e7eb);
   border-radius: 4px;
   padding: 0 12px;
   font-size: 13px;
@@ -1713,21 +1754,21 @@ onUnmounted(() => {
   outline: none;
   box-sizing: border-box;
   background: #fff;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #1f2937);
 }
 
 .form-input:focus {
-  border-color: var(--color-primary);
+  border-color: var(--color-primary, #e53935);
   box-shadow: 0 0 0 2px rgba(229, 57, 53, 0.1);
 }
 
 .form-input.error {
-  border-color: var(--color-danger);
+  border-color: var(--color-danger, #dc2626);
 }
 
 .form-error {
   font-size: 11px;
-  color: var(--color-danger);
+  color: var(--color-danger, #dc2626);
   margin-top: 4px;
 }
 
@@ -1741,39 +1782,39 @@ onUnmounted(() => {
 .strength-bar {
   flex: 1;
   height: 3px;
-  background: var(--btn-disabled-bg);
+  background: var(--btn-disabled-bg, #d1d5db);
   border-radius: 2px;
   transition: background 0.2s;
 }
 
 .strength-bar.active.weak {
-  background: var(--color-danger);
+  background: var(--color-danger, #dc2626);
 }
 
 .strength-bar.active.mid {
-  background: var(--color-warning);
+  background: var(--color-warning, #f59e0b);
 }
 
 .strength-bar.active.strong {
-  background: var(--color-success);
+  background: var(--color-success, #10b981);
 }
 
 .strength-text {
   font-size: 10px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
   margin-top: 2px;
 }
 
 .strength-text.weak {
-  color: var(--color-danger);
+  color: var(--color-danger, #dc2626);
 }
 
 .strength-text.mid {
-  color: var(--color-warning);
+  color: var(--color-warning, #f59e0b);
 }
 
 .strength-text.strong {
-  color: var(--color-success);
+  color: var(--color-success, #10b981);
 }
 
 .form-actions {
@@ -1784,7 +1825,7 @@ onUnmounted(() => {
 
 .form-tip {
   font-size: 11px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
   margin-top: 8px;
 }
 
@@ -1795,60 +1836,34 @@ onUnmounted(() => {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border, #e5e7eb);
   background: #fff;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #1f2937);
   letter-spacing: 0.02em;
+  transition: all 0.2s;
+}
+
+.btn-sm:hover {
+  border-color: var(--color-primary, #e53935);
+  color: var(--color-primary, #e53935);
 }
 
 .btn-sm.primary {
-  background: var(--color-primary);
+  background: var(--color-primary, #e53935);
   color: #fff;
-  border-color: var(--color-primary);
+  border-color: var(--color-primary, #e53935);
 }
 
 .btn-sm.primary:hover {
-  background: var(--btn-hover);
+  background: var(--btn-hover, #d32f2f);
+  color: #fff;
+  border-color: var(--btn-hover, #d32f2f);
 }
 
 .btn-sm.primary:disabled {
-  background: var(--btn-loading-bg);
+  background: var(--btn-loading-bg, #f3b4b4);
   cursor: not-allowed;
-}
-
-/* === 左侧快捷入口 === */
-.profile-shortcuts {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--color-border);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.shortcut-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 4px;
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  background: var(--color-bg-subtle);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-  user-select: none;
-}
-
-.shortcut-item:hover {
-  color: var(--color-primary);
-  background: rgba(229, 57, 53, 0.08);
-}
-
-.shortcut-item .el-icon {
-  font-size: 16px;
-  flex-shrink: 0;
+  border-color: var(--btn-loading-bg, #f3b4b4);
 }
 
 /* === 验证码行 (输入框 + 发送按钮) === */
@@ -1875,7 +1890,7 @@ onUnmounted(() => {
   align-items: center;
 }
 
-/* === 钱包 Tab 样式 === */
+/* ==================== 钱包 Tab 样式 ==================== */
 .wallet-tab {
   /* 不限制 max-width，让钱包内容更饱满 */
 }
@@ -1885,7 +1900,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 20px;
-  background: linear-gradient(135deg, var(--color-primary), #d32f2f);
+  background: linear-gradient(135deg, var(--color-primary, #e53935), #d32f2f);
   color: #fff;
   border-radius: 12px;
   padding: 24px 28px;
@@ -1930,7 +1945,7 @@ onUnmounted(() => {
 
 .wallet-recharge-btn {
   background: #fff;
-  color: var(--color-primary);
+  color: var(--color-primary, #e53935);
   border-color: #fff;
   display: inline-flex;
   align-items: center;
@@ -1939,12 +1954,14 @@ onUnmounted(() => {
 
 .wallet-recharge-btn:hover {
   background: rgba(255, 255, 255, 0.9);
+  color: var(--color-primary, #e53935);
+  border-color: rgba(255, 255, 255, 0.9);
 }
 
 /* 交易记录区 */
 .wallet-records-section {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
+  background: var(--color-bg-subtle, #fafafa);
+  border: 1px solid var(--color-border-light, #f0f0f0);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -1954,13 +1971,14 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  background: var(--color-bg-card, #fff);
 }
 
 .wallet-section-title {
   font-size: 15px;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #1f2937);
   margin: 0;
 }
 
@@ -1971,13 +1989,13 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 48px 24px;
-  color: var(--color-text-muted);
+  color: var(--color-text-muted, #9ca3af);
   gap: 12px;
 }
 
 .wallet-loading-text {
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
 }
 
 .wallet-empty-state {
@@ -1995,28 +2013,29 @@ onUnmounted(() => {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  background: var(--color-bg-card, #fff);
 }
 
 .wallet-records-table thead th {
-  background: var(--color-bg-subtle);
+  background: var(--color-bg-subtle, #f5f5f5);
   padding: 9px 16px;
   text-align: left;
   font-weight: 600;
   font-size: 12px;
-  color: var(--color-text-secondary);
-  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-secondary, #6b7280);
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
   letter-spacing: 0.02em;
 }
 
 .wallet-records-table tbody td {
   padding: 10px 16px;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-light, #f0f0f0);
   vertical-align: middle;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #1f2937);
 }
 
 .wallet-records-table tbody tr:hover {
-  background: var(--color-bg-subtle);
+  background: var(--color-bg-subtle, #f5f5f5);
 }
 
 .wallet-records-table tbody tr:last-child td {
@@ -2029,21 +2048,21 @@ onUnmounted(() => {
 }
 
 .wallet-amount-cell.income {
-  color: var(--color-success);
+  color: var(--color-success, #10b981);
 }
 
 .wallet-amount-cell.expense {
-  color: var(--color-danger);
+  color: var(--color-danger, #dc2626);
 }
 
 .wallet-time-cell {
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
   font-size: 12px;
   white-space: nowrap;
 }
 
 .wallet-remark-cell {
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
   max-width: 220px;
   word-break: break-all;
 }
@@ -2053,8 +2072,8 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   padding: 12px 0;
-  border-top: 1px solid var(--color-border);
-  background: var(--color-bg-card);
+  border-top: 1px solid var(--color-border, #e5e7eb);
+  background: var(--color-bg-card, #fff);
 }
 
 .wallet-records-footer .btn-sm.text {
@@ -2070,14 +2089,14 @@ onUnmounted(() => {
   gap: 6px;
   margin-top: 4px;
   padding: 8px 12px;
-  background: var(--color-bg-subtle);
+  background: var(--color-bg-subtle, #f5f5f5);
   border-radius: 4px;
   font-size: 12px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
 }
 
 .recharge-tip .el-icon {
-  color: var(--color-primary);
+  color: var(--color-primary, #e53935);
   font-size: 14px;
   flex-shrink: 0;
 }
@@ -2091,7 +2110,7 @@ onUnmounted(() => {
 .btn-sm.text {
   border: none;
   background: none;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
   padding: 6px 10px;
   display: inline-flex;
   align-items: center;
@@ -2099,10 +2118,11 @@ onUnmounted(() => {
 }
 
 .btn-sm.text:hover {
-  color: var(--color-primary);
+  color: var(--color-primary, #e53935);
+  border-color: transparent;
 }
 
-/* === 收货地址 Tab 样式 === */
+/* ==================== 收货地址 Tab 样式 ==================== */
 .address-tab {
   /* 不限制 max-width，让地址卡片网格更饱满 */
 }
@@ -2117,7 +2137,7 @@ onUnmounted(() => {
 .address-title {
   font-size: 16px;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #1f2937);
   margin: 0;
 }
 
@@ -2127,13 +2147,13 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 64px 24px;
-  color: var(--color-text-muted);
+  color: var(--color-text-muted, #9ca3af);
   gap: 12px;
 }
 
 .address-loading-text {
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
 }
 
 .address-empty-state {
@@ -2146,13 +2166,13 @@ onUnmounted(() => {
 }
 
 .address-empty-icon {
-  color: var(--color-text-muted);
+  color: var(--color-text-muted, #9ca3af);
   margin-bottom: 16px;
 }
 
 .address-empty-text {
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
   margin-bottom: 20px;
 }
 
@@ -2186,7 +2206,7 @@ onUnmounted(() => {
 }
 
 .address-card.address-default {
-  border-color: var(--color-primary);
+  border-color: var(--color-primary, #e53935);
   box-shadow: 0 2px 12px rgba(229, 57, 53, 0.15);
 }
 
@@ -2209,13 +2229,13 @@ onUnmounted(() => {
 .address-name {
   font-size: 16px;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #1f2937);
   line-height: 1.2;
 }
 
 .address-phone {
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
 }
 
 .default-tag {
@@ -2228,14 +2248,14 @@ onUnmounted(() => {
   align-items: flex-start;
   gap: 6px;
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
   line-height: 1.6;
   min-height: 42px;
 }
 
 .detail-icon {
   font-size: 15px;
-  color: var(--color-primary);
+  color: var(--color-primary, #e53935);
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -2255,7 +2275,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 4px;
   padding-top: 8px;
-  border-top: 1px solid var(--color-border-light);
+  border-top: 1px solid var(--color-border-light, #f0f0f0);
   margin-top: auto;
 }
 
@@ -2266,10 +2286,11 @@ onUnmounted(() => {
 }
 
 .btn-sm.text.danger:hover {
-  color: var(--color-primary);
+  color: var(--color-primary, #e53935);
+  border-color: transparent;
 }
 
-/* === 优惠券 Tab 样式 === */
+/* ==================== 优惠券 Tab 样式 ==================== */
 .coupons-tab {
   /* 不限制 max-width，让优惠券卡片网格更饱满 */
 }
@@ -2277,9 +2298,9 @@ onUnmounted(() => {
 .coupon-tabs {
   display: flex;
   gap: 0;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
   margin-bottom: 20px;
-  background: var(--color-bg-card);
+  background: var(--color-bg-subtle, #fafafa);
   border-radius: 8px 8px 0 0;
   padding: 0 8px;
 }
@@ -2288,7 +2309,7 @@ onUnmounted(() => {
   padding: 12px 24px;
   font-size: 14px;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
   cursor: pointer;
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
@@ -2298,22 +2319,22 @@ onUnmounted(() => {
 }
 
 .coupon-tab:hover {
-  color: var(--color-primary);
+  color: var(--color-primary, #e53935);
 }
 
 .coupon-tab.active {
-  color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
+  color: var(--color-primary, #e53935);
+  border-bottom-color: var(--color-primary, #e53935);
 }
 
 .tab-count {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--color-text-muted, #9ca3af);
   font-weight: 500;
 }
 
 .coupon-tab.active .tab-count {
-  color: var(--color-primary);
+  color: var(--color-primary, #e53935);
   opacity: 0.8;
 }
 
@@ -2323,13 +2344,13 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 64px 24px;
-  color: var(--color-text-muted);
+  color: var(--color-text-muted, #9ca3af);
   gap: 12px;
 }
 
 .coupon-loading-text {
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
 }
 
 .coupon-empty-state {
@@ -2352,7 +2373,7 @@ onUnmounted(() => {
   position: relative;
   display: flex;
   background: #fff;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border, #e5e7eb);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
@@ -2368,7 +2389,7 @@ onUnmounted(() => {
 .coupon-left {
   width: 130px;
   flex-shrink: 0;
-  background: linear-gradient(135deg, var(--color-primary), #d32f2f);
+  background: linear-gradient(135deg, var(--color-primary, #e53935), #d32f2f);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -2429,7 +2450,7 @@ onUnmounted(() => {
 .coupon-name {
   font-size: 15px;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #1f2937);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2437,12 +2458,12 @@ onUnmounted(() => {
 
 .coupon-condition {
   font-size: 13px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
 }
 
 .coupon-time {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--color-text-muted, #9ca3af);
 }
 
 .coupon-status {
@@ -2457,7 +2478,7 @@ onUnmounted(() => {
 
 .coupon-card.is-used .coupon-name,
 .coupon-card.is-expired .coupon-name {
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #6b7280);
 }
 
 /* 右上角状态标记 */
@@ -2478,20 +2499,97 @@ onUnmounted(() => {
   background: rgba(0, 0, 0, 0.5);
 }
 
-/* 响应式 */
+/* ==================== 响应式 ==================== */
 @media (max-width: 768px) {
-  .profile-layout {
+  .profile-page {
+    padding: 12px 8px;
+  }
+
+  .profile-container {
     flex-direction: column;
+    gap: 12px;
   }
 
-  .profile-card {
+  /* 侧边栏变为顶部横向导航 */
+  .profile-sidebar {
     width: 100%;
+    position: static;
   }
 
-  .profile-shortcuts {
-    grid-template-columns: 1fr 1fr;
+  .sidebar-user-card {
+    padding: 20px 16px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
   }
 
+  .user-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    margin: 0;
+    flex-shrink: 0;
+  }
+
+  .user-name {
+    font-size: 15px;
+    margin-bottom: 2px;
+    text-align: left;
+  }
+
+  .user-phone {
+    margin-bottom: 4px;
+  }
+
+  /* 导航变横向 */
+  .sidebar-nav {
+    display: flex;
+    overflow-x: auto;
+    padding: 0;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav-item {
+    padding: 10px 16px;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    flex-shrink: 0;
+    font-size: 13px;
+  }
+
+  .nav-item.active {
+    border-left-color: transparent;
+    border-bottom-color: var(--color-primary, #e53935);
+  }
+
+  .nav-icon {
+    font-size: 16px;
+  }
+
+  .svg-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* 内容区 */
+  .content-header {
+    padding: 16px 16px;
+  }
+
+  .content-title {
+    font-size: 16px;
+  }
+
+  .content-body {
+    padding: 16px;
+  }
+
+  .profile-form {
+    max-width: 100%;
+  }
+
+  /* 钱包 */
   .wallet-balance-card {
     flex-direction: column;
     align-items: flex-start;
@@ -2503,6 +2601,7 @@ onUnmounted(() => {
     font-size: 24px;
   }
 
+  /* 地址 */
   .address-col {
     margin-bottom: 12px;
   }
@@ -2511,6 +2610,7 @@ onUnmounted(() => {
     padding: 14px;
   }
 
+  /* 优惠券 */
   .coupon-card {
     height: 120px;
   }

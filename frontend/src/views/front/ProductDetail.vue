@@ -142,7 +142,9 @@
             <div class="info-cards fade-in-item stagger-4">
               <div class="info-card">
                 <span class="info-card-label">分类</span>
-                <span class="info-card-value">{{ categoryPath.map(c => c.categoryName).join(' > ') || product.categoryName }}</span>
+                <span class="info-card-value">{{categoryPath.map(c => c.categoryName).join(' > ') ||
+                  product.categoryName
+                  }}</span>
               </div>
               <div class="info-card">
                 <span class="info-card-label">库存</span>
@@ -289,7 +291,8 @@
                 </tr>
                 <tr>
                   <td class="spec-key">分类</td>
-                  <td class="spec-val">{{ categoryPath.map(c => c.categoryName).join(' > ') || product.categoryName }}</td>
+                  <td class="spec-val">{{categoryPath.map(c => c.categoryName).join(' > ') || product.categoryName}}
+                  </td>
                 </tr>
                 <tr v-if="hasSku">
                   <td class="spec-key">价格区间</td>

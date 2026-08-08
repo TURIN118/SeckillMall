@@ -23,7 +23,7 @@
                 <h2 class="activity-name">{{ activity.name }}</h2>
                 <span class="activity-status" :class="statusClass(activity)">{{ statusText(activity) }}</span>
                 <span class="activity-time">{{ formatTime(activity.startTime) }} - {{ formatTime(activity.endTime)
-                  }}</span>
+                }}</span>
               </div>
               <div v-if="activity.status !== 2" class="activity-countdown">
                 <span class="cd-label">{{ activity.status === 1 ? '距结束' : '距开始' }}</span>

@@ -1,9 +1,12 @@
 <template>
-  <!-- 购物车页面：参照 UserAddress.vue / UserOrders.vue 卡片风格 -->
+  <!-- 购物车页面：参考淘宝购物车设计风格 -->
   <div class="cart-page">
-    <!-- 页头 -->
+    <!-- 页头：左侧大标题 + 右侧商品数量提示 -->
     <div class="cart-header">
-      <h2 class="cart-title">我的购物车</h2>
+      <h2 class="cart-title">购物车</h2>
+      <div v-if="!loading && cartList.length > 0" class="cart-count-tip">
+        共 <span class="cart-count-num">{{ cartList.length }}</span> 件商品
+      </div>
     </div>
 
     <!-- 加载中 -->
@@ -94,23 +97,25 @@
           <button class="btn-sm text danger" type="button" @click="handleDelete(item)">删除</button>
         </div>
       </div>
+    </div>
 
-      <!-- 底部操作栏 (固定在视口底部) -->
-      <div class="cart-footer">
-        <div class="footer-left">
-          <el-checkbox :model-value="isAllSelected" :indeterminate="isIndeterminate"
-            @change="handleToggleAll">全选</el-checkbox>
-          <button class="btn-sm" type="button" :disabled="selectedCount === 0" @click="handleBatchDelete">删除选中</button>
-          <button class="btn-sm" type="button" @click="handleClear">清空购物车</button>
+    <!-- 底部固定操作栏 (固定在视口底部，独立于卡片之外) -->
+    <div v-if="!loading && cartList.length > 0" class="cart-footer">
+      <div class="footer-left">
+        <el-checkbox :model-value="isAllSelected" :indeterminate="isIndeterminate"
+          @change="handleToggleAll">全选</el-checkbox>
+        <button class="btn-sm" type="button" :disabled="selectedCount === 0" @click="handleBatchDelete">删除选中</button>
+        <button class="btn-sm" type="button" @click="handleClear">清空购物车</button>
+      </div>
+      <div class="footer-right">
+        <div class="total-info">
+          已选 <span class="total-count">{{ selectedCount }}</span> 件商品
         </div>
-        <div class="footer-right">
-          <div class="total-info">
-            已选 <span class="total-count">{{ selectedCount }}</span> 件商品
-            合计：<span class="total-amount">¥{{ formatPrice(totalAmount) }}</span>
-          </div>
-          <button class="btn-checkout" type="button" :disabled="selectedCount === 0"
-            @click="handleCheckout">去结算</button>
+        <div class="total-amount-wrap">
+          合计：<span class="total-amount">¥{{ formatPrice(totalAmount) }}</span>
         </div>
+        <button class="btn-checkout" type="button" :disabled="selectedCount === 0"
+          @click="handleCheckout">去结算</button>
       </div>
     </div>
   </div>
@@ -392,28 +397,43 @@ onDeactivated(() => {
 </script>
 
 <style scoped>
-/* 参照 UserAddress.vue .address-page 样式 */
+/* ===== 购物车页面 - 淘宝风格 ===== */
+
+/* 页面容器 */
 .cart-page {
   padding: 24px;
-  padding-bottom: 80px;
+  /* 底部留白：为固定操作栏(约 68px) + 安全间距留出空间 */
+  padding-bottom: 100px;
 }
 
-/* 页头 */
+/* ===== 页头 ===== */
 .cart-header {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   margin-bottom: 20px;
 }
 
 .cart-title {
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--color-text-primary);
   margin: 0;
+  letter-spacing: 0.02em;
 }
 
-/* 加载中状态 */
+.cart-count-tip {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.cart-count-num {
+  font-weight: 600;
+  color: var(--color-primary);
+  margin: 0 2px;
+}
+
+/* ===== 加载中状态 ===== */
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -429,18 +449,21 @@ onDeactivated(() => {
   color: var(--color-text-secondary);
 }
 
-/* 空状态 */
+/* ===== 空状态 ===== */
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 24px 40px;
+  padding: 80px 24px 60px;
   text-align: center;
-  gap: 16px;
+  gap: 20px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
-/* 购物车内容 */
+/* ===== 购物车内容卡片 ===== */
 .cart-content {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
@@ -448,12 +471,12 @@ onDeactivated(() => {
   overflow: hidden;
 }
 
-/* 表头 */
+/* ===== 表头 ===== */
 .cart-table-head {
   display: grid;
-  grid-template-columns: 80px 1fr 120px 160px 120px 80px;
+  grid-template-columns: 60px 1fr 120px 160px 120px 80px;
   align-items: center;
-  padding: 12px 16px;
+  padding: 12px 20px;
   background: #fafafa;
   border-bottom: 1px solid var(--color-border);
   font-size: 13px;
@@ -461,12 +484,12 @@ onDeactivated(() => {
   color: var(--color-text-secondary);
 }
 
-/* 商品行 */
+/* ===== 商品行 ===== */
 .cart-row {
   display: grid;
-  grid-template-columns: 80px 1fr 120px 160px 120px 80px;
+  grid-template-columns: 60px 1fr 120px 160px 120px 80px;
   align-items: center;
-  padding: 16px;
+  padding: 20px;
   border-bottom: 1px solid var(--color-border-light);
   transition: background 0.15s;
 }
@@ -479,18 +502,19 @@ onDeactivated(() => {
   background: #fafafa;
 }
 
+/* 下架商品降低不透明度 */
 .cart-row.disabled {
-  opacity: 0.6;
+  opacity: 0.55;
 }
 
-/* 复选框列 */
+/* ===== 复选框列 ===== */
 .col-check {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* 商品信息列 */
+/* ===== 商品信息列 ===== */
 .col-info {
   display: flex;
   align-items: center;
@@ -498,18 +522,24 @@ onDeactivated(() => {
   min-width: 0;
 }
 
+/* 商品图片 */
 .product-img {
   width: 80px;
   height: 80px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
   overflow: hidden;
   flex-shrink: 0;
   cursor: pointer;
-  background: #f8f8f8;
+  background: var(--color-bg-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: border-color 0.15s;
+}
+
+.product-img:hover {
+  border-color: var(--color-primary);
 }
 
 .product-img-tag {
@@ -524,11 +554,13 @@ onDeactivated(() => {
   color: #ccc;
 }
 
+/* 商品信息文本区 */
 .product-info {
   flex: 1;
   min-width: 0;
 }
 
+/* 商品名称 (2行截断) */
 .product-name {
   font-size: 14px;
   font-weight: 500;
@@ -539,34 +571,37 @@ onDeactivated(() => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  transition: color 0.15s;
 }
 
 .product-name:hover {
   color: var(--color-primary);
 }
 
+/* 已下架标记 */
 .product-status-tag {
   display: inline-block;
-  margin-top: 4px;
-  padding: 1px 6px;
-  font-size: 11px;
+  margin-top: 6px;
+  padding: 2px 8px;
+  font-size: 12px;
   color: #9ca3af;
   background: #f3f4f6;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
 }
 
-/* 7.2 购物车展示 SKU 属性 */
+/* SKU 属性标签 */
 .product-sku-attrs {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-top: 4px;
+  margin-top: 6px;
   padding: 2px 8px;
   font-size: 12px;
   color: var(--color-text-secondary);
-  background: var(--color-bg-subtle, #f5f5f5);
-  border-radius: 4px;
-  border: 1px solid var(--color-border-light, #eee);
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-light);
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -576,11 +611,11 @@ onDeactivated(() => {
 .product-sku-attrs-icon {
   width: 12px;
   height: 12px;
-  color: var(--color-text-muted, #999);
+  color: var(--color-text-muted);
   flex-shrink: 0;
 }
 
-/* 单价列 */
+/* ===== 单价列 ===== */
 .col-price,
 .col-subtotal {
   text-align: center;
@@ -591,33 +626,36 @@ onDeactivated(() => {
   color: var(--color-text-secondary);
 }
 
+/* ===== 小计列 (红色醒目) ===== */
 .subtotal-text {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-primary);
 }
 
-/* 数量列 */
+/* ===== 数量列 ===== */
 .col-quantity {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
+/* 库存警告 (橙色) */
 .stock-warn {
-  font-size: 11px;
+  font-size: 12px;
   color: #ff9800;
+  font-weight: 500;
 }
 
-/* 操作列 */
+/* ===== 操作列 ===== */
 .col-action {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* 底部操作栏 */
+/* ===== 底部固定操作栏 ===== */
 .cart-footer {
   position: fixed;
   bottom: 0;
@@ -626,12 +664,12 @@ onDeactivated(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  /* padding-bottom 增大到 36px, 使底部栏总高度(约 68px) ≥ FrontLayout 页脚高度(约 67px),
-     完全覆盖页脚避免深色页脚露出形成"黑色区域" */
-  padding: 12px 24px 36px;
+  /* padding-bottom 36px 确保覆盖 FrontLayout 的深色页脚(约 67px)，
+     避免深色页脚露出形成"黑色区域" */
+  padding: 16px 24px 36px;
   background: #ffffff;
   border-top: 1px solid var(--color-border);
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
   z-index: 50;
   box-sizing: border-box;
 }
@@ -645,37 +683,46 @@ onDeactivated(() => {
 .footer-right {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
 }
 
+/* 已选数量 */
 .total-info {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-text-secondary);
 }
 
 .total-count {
   font-weight: 700;
   color: var(--color-primary);
+  margin: 0 2px;
+}
+
+/* 合计金额 */
+.total-amount-wrap {
+  font-size: 14px;
+  color: var(--color-text-secondary);
 }
 
 .total-amount {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--color-primary);
-  margin-left: 4px;
+  margin-left: 2px;
+  letter-spacing: 0.01em;
 }
 
-/* 结算按钮 */
+/* ===== 去结算按钮 (大号醒目) ===== */
 .btn-checkout {
-  padding: 8px 32px;
-  font-size: 14px;
+  padding: 10px 40px;
+  font-size: 15px;
   font-weight: 700;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   border: none;
   background: var(--color-primary);
   color: #ffffff;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.05em;
   transition: background 0.15s;
 }
 
@@ -689,10 +736,10 @@ onDeactivated(() => {
   cursor: not-allowed;
 }
 
-/* 小按钮 (对照 UserAddress.vue .btn-sm) */
+/* ===== 小按钮样式系统 ===== */
 .btn-sm {
   padding: 5px 14px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -703,6 +750,12 @@ onDeactivated(() => {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  transition: all 0.15s;
+}
+
+.btn-sm:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .btn-sm:disabled {
@@ -718,6 +771,7 @@ onDeactivated(() => {
 
 .btn-sm.primary:hover {
   background: var(--btn-hover);
+  color: #fff;
 }
 
 .btn-sm.text {
@@ -735,21 +789,43 @@ onDeactivated(() => {
   color: var(--color-primary);
 }
 
-/* 响应式 */
-@media (max-width: 1024px) {
+/* ===== 响应式设计 ===== */
 
+/* 中等屏幕：缩小列宽 */
+@media (max-width: 1024px) {
   .cart-table-head,
   .cart-row {
-    grid-template-columns: 60px 1fr 100px 140px 100px 70px;
+    grid-template-columns: 50px 1fr 100px 140px 100px 70px;
+  }
+
+  .cart-table-head {
+    padding: 12px 16px;
+  }
+
+  .cart-row {
+    padding: 16px;
   }
 }
 
+/* 小屏幕：紧凑布局 */
 @media (max-width: 768px) {
+  .cart-page {
+    padding: 16px;
+    padding-bottom: 90px;
+  }
+
+  .cart-title {
+    font-size: 20px;
+  }
+
+  .cart-count-tip {
+    font-size: 12px;
+  }
 
   .cart-table-head,
   .cart-row {
-    grid-template-columns: 40px 1fr 80px 120px 80px 60px;
-    padding: 12px 8px;
+    grid-template-columns: 40px 1fr 80px 110px 80px 60px;
+    padding: 10px 8px;
     font-size: 12px;
   }
 
@@ -758,8 +834,20 @@ onDeactivated(() => {
     height: 60px;
   }
 
+  .col-info {
+    gap: 8px;
+  }
+
+  .product-name {
+    font-size: 13px;
+  }
+
+  .subtotal-text {
+    font-size: 14px;
+  }
+
   .cart-footer {
-    padding: 10px 12px;
+    padding: 12px 12px 24px;
   }
 
   .footer-left {
@@ -768,6 +856,25 @@ onDeactivated(() => {
 
   .footer-right {
     gap: 12px;
+  }
+
+  .total-info,
+  .total-amount-wrap {
+    font-size: 12px;
+  }
+
+  .total-amount {
+    font-size: 18px;
+  }
+
+  .btn-checkout {
+    padding: 8px 24px;
+    font-size: 14px;
+  }
+
+  .btn-sm {
+    padding: 4px 10px;
+    font-size: 11px;
   }
 }
 </style>

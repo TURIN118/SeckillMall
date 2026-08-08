@@ -1,36 +1,23 @@
 <template>
   <div class="seckill-zone-page">
 
-    <!-- === 顶部 Hero 区（左右分栏：标题+倒计时 / 场次标签） === -->
-    <div class="seckill-hero">
-      <!-- 左侧：标题 + 倒计时 -->
-      <div class="hero-left">
-        <div class="hero-title-wrap">
-          <svg class="hero-icon" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" />
-          </svg>
-          <h1 class="hero-title">限时秒杀</h1>
-        </div>
-        <div v-if="currentActivity && currentActivity.status !== 2" class="hero-countdown">
-          <span class="hero-cd-label">{{ currentActivity.status === 1 ? '距结束' : '距开始' }}</span>
-          <span class="hero-cd-block">{{ heroCountdown.hours }}</span>
-          <span class="hero-cd-sep">:</span>
-          <span class="hero-cd-block">{{ heroCountdown.minutes }}</span>
-          <span class="hero-cd-sep">:</span>
-          <span class="hero-cd-block">{{ heroCountdown.seconds }}</span>
-        </div>
-        <div v-else class="hero-countdown hero-countdown-static">
-          <span class="hero-cd-label">敬请期待</span>
-        </div>
-        <!-- 秒杀规则（融入Hero卡片内部） -->
-        <div class="hero-rules">
-          <span class="hero-rules-label">秒杀规则</span>
-          <span class="hero-rules-text">数量有限先到先得 · 限购一件 · 15分钟内支付 · 不支持退换</span>
-        </div>
+    <!-- === 顶部标题行（无背景） === -->
+    <div class="seckill-top-bar">
+      <div class="top-title-wrap">
+        <svg class="top-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" />
+        </svg>
+        <h1 class="top-title">限时秒杀</h1>
       </div>
+      <div class="top-rules">
+        <span class="top-rules-label">秒杀规则</span>
+        <span class="top-rules-text">数量有限先到先得 · 限购一件 · 15分钟内支付 · 不支持退换</span>
+      </div>
+    </div>
 
-      <!-- 右侧：场次标签横向滚动 -->
-      <div class="hero-tabs" v-if="sortedActivities.length > 0">
+    <!-- === 场次标签行 + 倒计时 === -->
+    <div class="seckill-sessions">
+      <div class="sessions-tabs" v-if="sortedActivities.length > 0">
         <div v-for="activity in sortedActivities" :key="activity.id" class="session-tab"
           :class="{ active: selectedActivityId === activity.id, [statusClass(activity)]: true }"
           @click="selectActivity(activity.id)">
@@ -39,9 +26,20 @@
           <span class="tab-time">{{ formatTime(activity.startTime) }}</span>
         </div>
       </div>
-      <!-- 无场次时右侧占位提示 -->
-      <div class="hero-tabs hero-tabs-empty" v-else>
+      <div class="sessions-tabs sessions-tabs-empty" v-else>
         <span class="tabs-placeholder">暂无场次</span>
+      </div>
+      <!-- 当前场次倒计时 -->
+      <div v-if="currentActivity && currentActivity.status !== 2" class="session-countdown">
+        <span class="session-cd-label">{{ currentActivity.status === 1 ? '距结束' : '距开始' }}</span>
+        <span class="session-cd-block">{{ heroCountdown.hours }}</span>
+        <span class="session-cd-sep">:</span>
+        <span class="session-cd-block">{{ heroCountdown.minutes }}</span>
+        <span class="session-cd-sep">:</span>
+        <span class="session-cd-block">{{ heroCountdown.seconds }}</span>
+      </div>
+      <div v-else class="session-countdown session-cd-static">
+        <span class="session-cd-label">敬请期待</span>
       </div>
     </div>
 
@@ -646,128 +644,143 @@ onUnmounted(() => {
   box-sizing: border-box;
 }
 
-/* === 顶部 Hero 区（左右分栏） === */
-.seckill-hero {
-  display: flex;
-  gap: 20px;
-  align-items: stretch;
-  margin-bottom: 20px;
-}
-
-/* 左侧：标题+倒计时（渐变背景，限制宽度） */
-.hero-left {
-  width: 320px;
-  flex-shrink: 0;
-  background: linear-gradient(135deg, #FF4B2B, #FF416C);
-  border-radius: 12px;
-  padding: 20px 24px;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 16px;
-  box-shadow: 0 4px 16px rgba(255, 75, 43, 0.25);
-  box-sizing: border-box;
-}
-
-.hero-title-wrap {
+/* === 顶部标题行（无背景） === */
+.seckill-top-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-.hero-icon {
-  width: 28px;
-  height: 28px;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+.top-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.hero-title {
-  font-size: 24px;
+.top-icon {
+  width: 24px;
+  height: 24px;
+  color: #FF4B2B;
+}
+
+.top-title {
+  font-size: 22px;
   font-weight: 800;
+  color: var(--color-text-primary, #1a1a1a);
   margin: 0;
   letter-spacing: 0.02em;
-  line-height: 1.2;
 }
 
-.hero-countdown {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.hero-countdown-static {
-  gap: 0;
-}
-
-.hero-cd-label {
-  font-size: 13px;
-  opacity: 0.9;
-  margin-right: 8px;
-  font-weight: 500;
-}
-
-.hero-cd-block {
-  min-width: 32px;
-  height: 32px;
+.top-rules {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 6px;
-  font-size: 16px;
-  font-weight: 700;
-  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
-  font-variant-numeric: tabular-nums;
-  padding: 0 4px;
-  box-sizing: border-box;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-text-muted, #9ca3af);
 }
 
-.hero-cd-sep {
-  font-size: 16px;
-  font-weight: 700;
+.top-rules-label {
+  font-weight: 600;
+  color: var(--color-text-secondary, #6b7280);
+  white-space: nowrap;
 }
 
-/* 右侧：场次标签横向滚动 */
-.hero-tabs {
+.top-rules-text {
+  white-space: nowrap;
+}
+
+/* === 场次标签行 + 倒计时 === */
+.seckill-sessions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  background: #fff;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.sessions-tabs {
   flex: 1;
   display: flex;
   gap: 10px;
   overflow-x: auto;
-  padding: 4px;
   align-items: center;
   min-width: 0;
 }
 
-.hero-tabs-empty {
+.sessions-tabs-empty {
+  flex: 1;
   justify-content: center;
-  background: #fff;
-  border-radius: 12px;
-  border: 1px dashed var(--color-border, #e5e7eb);
-  padding: 24px;
 }
 
 .tabs-placeholder {
-  color: var(--color-text-muted, #9CA3AF);
-  font-size: 14px;
+  font-size: 13px;
+  color: var(--color-text-muted, #9ca3af);
 }
 
 /* 自定义滚动条 */
-.hero-tabs::-webkit-scrollbar {
+.sessions-tabs::-webkit-scrollbar {
   height: 6px;
 }
 
-.hero-tabs::-webkit-scrollbar-track {
+.sessions-tabs::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.hero-tabs::-webkit-scrollbar-thumb {
+.sessions-tabs::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.1);
   border-radius: 99px;
 }
 
-.hero-tabs::-webkit-scrollbar-thumb:hover {
+.sessions-tabs::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.2);
+}
+
+/* 倒计时 */
+.session-countdown {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.session-cd-label {
+  font-size: 12px;
+  color: var(--color-text-secondary, #6b7280);
+  margin-right: 6px;
+  font-weight: 500;
+}
+
+.session-cd-block {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 4px;
+  background: #1a1a1a;
+  color: #fff;
+  border-radius: 6px;
+  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.session-cd-sep {
+  color: #1a1a1a;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.session-cd-static .session-cd-label {
+  color: var(--color-text-muted, #9ca3af);
 }
 
 .session-tab {
@@ -1161,29 +1174,6 @@ onUnmounted(() => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
-/* === Hero内秒杀规则 === */
-.hero-rules {
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.hero-rules-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  letter-spacing: 0.02em;
-}
-
-.hero-rules-text {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.65);
-  line-height: 1.5;
-  letter-spacing: 0.01em;
-}
 
 /* === 响应式 === */
 /* 5列: <=1200px */
@@ -1195,17 +1185,16 @@ onUnmounted(() => {
   }
 }
 
-/* 4列: <=900px, Hero 改纵向布局 */
+/* 4列: <=900px, 场次行改纵向布局 */
 @media (max-width: 900px) {
-  .seckill-hero {
+  .seckill-sessions {
     flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
   }
 
-  .hero-left {
-    width: 100%;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
+  .top-rules-text {
+    white-space: normal;
   }
 
   .skeleton-grid,
@@ -1219,12 +1208,6 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .seckill-zone-page {
     padding: 16px 16px 24px;
-  }
-
-  .hero-left {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
   }
 
   .skeleton-grid,

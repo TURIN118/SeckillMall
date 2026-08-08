@@ -4,6 +4,10 @@ target/
 *.log
 application-local.yml
 
+# 文档内容
+docs/
+.trae/
+
 # Tool metadata
 .arts/
 *.merkle-snapshot.json

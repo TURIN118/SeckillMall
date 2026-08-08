@@ -476,7 +476,7 @@
                 <div class="aside-param">
                   <span class="label">分类</span>
                   <span class="value">{{categoryPath.map(c => c.categoryName).join(' > ') || product.categoryName
-                    }}</span>
+                  }}</span>
                 </div>
                 <div class="aside-param">
                   <span class="label">价格</span>

@@ -158,6 +158,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public SeckillOrderVO getOrderDetail(Long userId, Long orderId) {
         SeckillOrder order = loadAndCheckOwnership(userId, orderId);
+        // 超时检查：UNPAID 且已过支付截止时间，自动更新为 TIMEOUT
+        checkAndHandleSeckillOrderTimeout(order);
         // B4 修复：返回 VO 而非 Entity
         return seckillOrderConverter.toVO(order);
     }
@@ -838,6 +840,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public NormalOrderDetailVO getNormalOrderDetail(Long userId, Long orderId) {
         NormalOrder order = loadAndCheckNormalOrderOwnership(userId, orderId);
+        // 超时检查：UNPAID 且已过支付截止时间，自动更新为 TIMEOUT
+        checkAndHandleNormalOrderTimeout(order);
         List<NormalOrderItem> items = normalOrderItemMapper.selectList(
                 new LambdaQueryWrapper<NormalOrderItem>()
                         .eq(NormalOrderItem::getOrderId, orderId)
@@ -1235,6 +1239,22 @@ public class OrderServiceImpl implements OrderService {
         NormalOrderDetailVO vo = new NormalOrderDetailVO();
         vo.setOrder(order);
         vo.setItems(items);
+        // 查询收货地址
+        if (order.getAddressId() != null) {
+            try {
+                UserAddress address = userAddressMapper.selectById(order.getAddressId());
+                if (address != null) {
+                    vo.setReceiverName(address.getReceiverName());
+                    vo.setReceiverPhone(address.getReceiverPhone());
+                    vo.setProvince(address.getProvince());
+                    vo.setCity(address.getCity());
+                    vo.setDistrict(address.getDistrict());
+                    vo.setDetailAddress(address.getDetailAddress());
+                }
+            } catch (Exception e) {
+                log.warn("查询订单收货地址失败, orderId={}, addressId={}", order.getId(), order.getAddressId(), e);
+            }
+        }
         return vo;
     }
 
@@ -1243,6 +1263,52 @@ public class OrderServiceImpl implements OrderService {
      */
     private String generateNormalOrderNo() {
         return "NO" + LocalDateTime.now().format(ORDER_NO_FORMATTER) + randomDigits(6);
+    }
+
+    /**
+     * 检查普通订单超时：如果状态为UNPAID且已过支付截止时间，更新为TIMEOUT。
+     * 兜底RabbitMQ延迟消息可能丢失的场景。
+     */
+    private void checkAndHandleNormalOrderTimeout(NormalOrder order) {
+        if (order.getStatus() == OrderStatus.UNPAID
+                && order.getPayExpireTime() != null
+                && LocalDateTime.now().isAfter(order.getPayExpireTime())) {
+            int rows = normalOrderMapper.update(null, new LambdaUpdateWrapper<NormalOrder>()
+                    .eq(NormalOrder::getId, order.getId())
+                    .eq(NormalOrder::getStatus, OrderStatus.UNPAID)
+                    .set(NormalOrder::getStatus, OrderStatus.TIMEOUT)
+                    .set(NormalOrder::getCancelTime, LocalDateTime.now())
+                    .set(NormalOrder::getCancelReason, "支付超时自动取消"));
+            if (rows > 0) {
+                order.setStatus(OrderStatus.TIMEOUT);
+                order.setCancelTime(LocalDateTime.now());
+                order.setCancelReason("支付超时自动取消");
+                log.info("普通订单超时自动关闭, orderId={}", order.getId());
+            }
+        }
+    }
+
+    /**
+     * 检查秒杀订单超时：如果状态为UNPAID且已过支付截止时间，更新为TIMEOUT。
+     * 兜底RabbitMQ延迟消息可能丢失的场景。
+     */
+    private void checkAndHandleSeckillOrderTimeout(SeckillOrder order) {
+        if (order.getStatus() == OrderStatus.UNPAID
+                && order.getPayExpireTime() != null
+                && LocalDateTime.now().isAfter(order.getPayExpireTime())) {
+            int rows = seckillOrderMapper.update(null, new LambdaUpdateWrapper<SeckillOrder>()
+                    .eq(SeckillOrder::getId, order.getId())
+                    .eq(SeckillOrder::getStatus, OrderStatus.UNPAID)
+                    .set(SeckillOrder::getStatus, OrderStatus.TIMEOUT)
+                    .set(SeckillOrder::getCancelTime, LocalDateTime.now())
+                    .set(SeckillOrder::getCancelReason, "支付超时自动取消"));
+            if (rows > 0) {
+                order.setStatus(OrderStatus.TIMEOUT);
+                order.setCancelTime(LocalDateTime.now());
+                order.setCancelReason("支付超时自动取消");
+                log.info("秒杀订单超时自动关闭, orderId={}", order.getId());
+            }
+        }
     }
 
     // ==================== 统一订单列表（需求1 合并秒杀+普通） ====================

@@ -28,4 +28,17 @@ public class NormalOrderDetailVO {
 
     /** 订单明细列表 */
     private List<NormalOrderItem> items;
+
+    /** 收货地址-收件人 */
+    private String receiverName;
+    /** 收货地址-手机号 */
+    private String receiverPhone;
+    /** 收货地址-省 */
+    private String province;
+    /** 收货地址-市 */
+    private String city;
+    /** 收货地址-区 */
+    private String district;
+    /** 收货地址-详细地址 */
+    private String detailAddress;
 }

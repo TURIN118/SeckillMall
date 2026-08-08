@@ -97,9 +97,9 @@
 
                   <!-- 操作按钮 -->
                   <div class="card-action">
-                    <button v-if="item.status === 'ACTIVE' && item.availableCount > 0" class="btn-seckill"
+                    <button v-if="item.status === 'ACTIVE' && Number(item.availableCount) > 0" class="btn-seckill"
                       @click.stop="goDetail(item)">立即抢购</button>
-                    <button v-else-if="item.status === 'ACTIVE' && item.availableCount === 0"
+                    <button v-else-if="item.status === 'ACTIVE' && (!item.availableCount || Number(item.availableCount) <= 0)"
                       class="btn-seckill btn-ended" disabled>已抢完</button>
                     <button v-else-if="item.status === 'PENDING'" class="btn-seckill btn-pending"
                       @click.stop="goDetail(item)">即将开始</button>
@@ -170,9 +170,9 @@
                   <div class="stock-text ended-stock">已结束</div>
                 </template>
                 <div class="card-action">
-                  <button v-if="item.status === 'ACTIVE' && item.availableCount > 0" class="btn-seckill"
+                  <button v-if="item.status === 'ACTIVE' && Number(item.availableCount) > 0" class="btn-seckill"
                     @click.stop="goDetail(item)">立即抢购</button>
-                  <button v-else-if="item.status === 'ACTIVE' && item.availableCount === 0"
+                  <button v-else-if="item.status === 'ACTIVE' && (!item.availableCount || Number(item.availableCount) <= 0)"
                     class="btn-seckill btn-ended" disabled>已抢完</button>
                   <button v-else-if="item.status === 'PENDING'" class="btn-seckill btn-pending"
                     @click.stop="goDetail(item)">即将开始</button>
@@ -297,8 +297,18 @@ async function fetchActivities(silent = false): Promise<void> {
 
 /* === H-F3 修复: 旧版秒杀商品前端过滤 (按分类名称匹配) === */
 const filteredLegacyGoods = computed<SeckillGoodsVO[]>(() => {
-  if (!selectedCategoryName.value) return legacySeckillList.value
-  return legacySeckillList.value.filter((g) => g.productName?.includes(selectedCategoryName.value!))
+  let result = legacySeckillList.value
+  if (selectedCategoryName.value) {
+    result = legacySeckillList.value.filter((g) => g.productName?.includes(selectedCategoryName.value!))
+  }
+  // 库存优先排序: 有库存的在前，无库存的在后（保持原相对顺序）
+  return [...result].sort((a, b) => {
+    const aStock = Number(a.availableCount) || 0
+    const bStock = Number(b.availableCount) || 0
+    if (aStock > 0 && bStock <= 0) return -1
+    if (aStock <= 0 && bStock > 0) return 1
+    return 0 // 都有库存或都无库存时保持原顺序
+  })
 })
 
 /* === 异步获取原价（并发，失败忽略） === */
@@ -347,8 +357,18 @@ const sortedActivities = computed<SeckillActivityVO[]>(() => {
 /* === 前端过滤场次下商品（按分类名称匹配 productName） === */
 function filteredGoods(activity: SeckillActivityVO): SeckillGoodsVO[] {
   const goods = activity.goodsList || []
-  if (!selectedCategoryName.value) return goods
-  return goods.filter((g) => g.productName?.includes(selectedCategoryName.value!))
+  let result = goods
+  if (selectedCategoryName.value) {
+    result = goods.filter((g) => g.productName?.includes(selectedCategoryName.value!))
+  }
+  // 库存优先排序: 有库存的在前，无库存的在后（保持原相对顺序）
+  return [...result].sort((a, b) => {
+    const aStock = Number(a.availableCount) || 0
+    const bStock = Number(b.availableCount) || 0
+    if (aStock > 0 && bStock <= 0) return -1
+    if (aStock <= 0 && bStock > 0) return 1
+    return 0 // 都有库存或都无库存时保持原顺序
+  })
 }
 
 /* === Bug 10 修复: 点击商品直接执行秒杀, 不跳转商品详情 === */
@@ -366,8 +386,8 @@ async function goDetail(item: SeckillGoodsVO): Promise<void> {
     return
   }
 
-  // 2.1 库存校验: 已抢完时阻止抢购
-  if (item.availableCount === 0 || item.availableCount === undefined) {
+  // 2.1 库存校验: 已抢完时阻止抢购 (增强校验: 处理 undefined/null/字符串"0" 等异常值)
+  if (!item.availableCount || Number(item.availableCount) <= 0) {
     ElMessage.warning('手慢了，商品已抢完')
     return
   }

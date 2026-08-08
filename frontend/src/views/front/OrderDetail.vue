@@ -1299,6 +1299,7 @@ onMounted(() => {
 
 /* === 响应式 === */
 @media (max-width: 900px) {
+
   /* 中等屏幕: 左右分栏改为上下堆叠 */
   .order-content {
     flex-direction: column;

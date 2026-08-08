@@ -9,8 +9,7 @@
           共 <span class="cart-count-num">{{ cartList.length }}</span> 件商品
         </div>
         <template v-if="!loading && cartList.length > 0">
-          <button class="btn-sm" type="button" :disabled="selectedCount === 0"
-            @click="handleBatchDelete">删除选中</button>
+          <button class="btn-sm" type="button" :disabled="selectedCount === 0" @click="handleBatchDelete">删除选中</button>
           <button class="btn-sm" type="button" @click="handleClear">清空购物车</button>
         </template>
       </div>
@@ -113,14 +112,8 @@
 
         <!-- 分页组件 (商品数量超过 pageSize 时显示) -->
         <div v-if="cartList.length > 10" class="cart-pagination">
-          <el-pagination
-            v-model:current-page="pageNum"
-            v-model:page-size="pageSize"
-            :total="cartList.length"
-            :page-sizes="[10, 20, 50]"
-            layout="total, sizes, prev, pager, next"
-            @change="handlePageChange"
-          />
+          <el-pagination v-model:current-page="pageNum" v-model:page-size="pageSize" :total="cartList.length"
+            :page-sizes="[10, 20, 50]" layout="total, sizes, prev, pager, next" @change="handlePageChange" />
         </div>
       </div>
 

@@ -144,7 +144,7 @@
                 <span class="info-card-label">分类</span>
                 <span class="info-card-value">{{categoryPath.map(c => c.categoryName).join(' > ') ||
                   product.categoryName
-                  }}</span>
+                }}</span>
               </div>
               <div class="info-card">
                 <span class="info-card-label">库存</span>
@@ -286,43 +286,43 @@
             <div v-if="activeTab === 'spec'" class="tab-content" :key="'spec'">
               <table class="spec-table">
                 <tbody>
-                <tr>
-                  <td class="spec-key">商品名称</td>
-                  <td class="spec-val">{{ product.productName }}</td>
-                </tr>
-                <tr>
-                  <td class="spec-key">分类</td>
-                  <td class="spec-val">{{categoryPath.map(c => c.categoryName).join(' > ') || product.categoryName}}
-                  </td>
-                </tr>
-                <tr v-if="hasSku">
-                  <td class="spec-key">价格区间</td>
-                  <td class="spec-val">
-                    ¥{{ formatPrice(product.minPrice) }} ~ ¥{{ formatPrice(product.maxPrice) }}
-                  </td>
-                </tr>
-                <tr>
-                  <td class="spec-key">库存</td>
-                  <td class="spec-val">{{ hasSku ? (product.totalStock || 0) : product.stock }} 件</td>
-                </tr>
-                <tr>
-                  <td class="spec-key">销量</td>
-                  <td class="spec-val">{{ product.salesCount }} 件</td>
-                </tr>
-                <template v-if="hasSku && currentSku">
                   <tr>
-                    <td class="spec-key">当前规格</td>
-                    <td class="spec-val">{{ formatSkuAttributes(currentSku.attributes) }}</td>
+                    <td class="spec-key">商品名称</td>
+                    <td class="spec-val">{{ product.productName }}</td>
                   </tr>
                   <tr>
-                    <td class="spec-key">当前单价</td>
-                    <td class="spec-val">¥{{ formatPrice(currentSku.price) }}</td>
+                    <td class="spec-key">分类</td>
+                    <td class="spec-val">{{categoryPath.map(c => c.categoryName).join(' > ') || product.categoryName}}
+                    </td>
+                  </tr>
+                  <tr v-if="hasSku">
+                    <td class="spec-key">价格区间</td>
+                    <td class="spec-val">
+                      ¥{{ formatPrice(product.minPrice) }} ~ ¥{{ formatPrice(product.maxPrice) }}
+                    </td>
                   </tr>
                   <tr>
-                    <td class="spec-key">当前库存</td>
-                    <td class="spec-val">{{ currentSku.stock }} 件</td>
+                    <td class="spec-key">库存</td>
+                    <td class="spec-val">{{ hasSku ? (product.totalStock || 0) : product.stock }} 件</td>
                   </tr>
-                </template>
+                  <tr>
+                    <td class="spec-key">销量</td>
+                    <td class="spec-val">{{ product.salesCount }} 件</td>
+                  </tr>
+                  <template v-if="hasSku && currentSku">
+                    <tr>
+                      <td class="spec-key">当前规格</td>
+                      <td class="spec-val">{{ formatSkuAttributes(currentSku.attributes) }}</td>
+                    </tr>
+                    <tr>
+                      <td class="spec-key">当前单价</td>
+                      <td class="spec-val">¥{{ formatPrice(currentSku.price) }}</td>
+                    </tr>
+                    <tr>
+                      <td class="spec-key">当前库存</td>
+                      <td class="spec-val">{{ currentSku.stock }} 件</td>
+                    </tr>
+                  </template>
                 </tbody>
               </table>
             </div>

@@ -50,6 +50,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: '0.0.0.0',
       port: 5173,
+      allowedHosts: ['seckillmall.com'], // 允许访问的域名列表，避免被恶意访问
       open: false,
       proxy: {
         // API 接口代理：将 /api 开头的请求转发到后端

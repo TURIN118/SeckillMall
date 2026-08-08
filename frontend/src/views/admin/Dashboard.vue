@@ -184,8 +184,8 @@ import {
   type OrderStatusItemVO,
   type SeckillOverviewVO
 } from '@/api/stats'
-import { getOrderList } from '@/api/order'
-import type { SeckillOrder, OrderStatus } from '@/types'
+import { getAdminOrderList } from '@/api/order'
+import type { AdminOrderVO, OrderStatus } from '@/types'
 
 const router = useRouter()
 
@@ -524,15 +524,15 @@ function rankClass(idx: number): string {
 }
 
 /* === 最近订单前 5 条 === */
-const recentOrders = ref<SeckillOrder[]>([])
+const recentOrders = ref<AdminOrderVO[]>([])
 const orderLoading = ref(false)
 
 async function fetchRecentOrders(): Promise<void> {
   orderLoading.value = true
   try {
     // 请求较多条目后前端按创建时间倒序排列, 取前5条
-    // (getOrderList 不支持排序参数, 后端默认排序可能非时间倒序)
-    const res = await getOrderList({ pageNum: 1, pageSize: 50 })
+    // (getAdminOrderList 后端默认按 create_time desc 排序, 前端排序作为兜底)
+    const res = await getAdminOrderList({ pageNum: 1, pageSize: 50 })
     const list = res.data.list || []
     list.sort((a, b) => {
       const timeA = a.createTime ? new Date(a.createTime).getTime() : 0

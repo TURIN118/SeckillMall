@@ -92,9 +92,9 @@
                   </svg>
                 </div>
                 <div class="goods-name">{{ item.productName || '—' }}</div>
-                <div class="goods-price">¥{{ formatPrice(item.price) }}</div>
+                <div class="goods-price">¥{{ formatPrice(item.unitPrice) }}</div>
                 <div class="goods-qty">×{{ item.quantity }}</div>
-                <div class="goods-subtotal">¥{{ formatPrice(item.price * item.quantity) }}</div>
+                <div class="goods-subtotal">¥{{ formatPrice(item.unitPrice * item.quantity) }}</div>
               </div>
               <!-- 无商品占位 -->
               <div v-if="!order.items || order.items.length === 0" class="order-goods-empty">

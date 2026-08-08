@@ -22,6 +22,11 @@
         <div v-else class="hero-countdown hero-countdown-static">
           <span class="hero-cd-label">敬请期待</span>
         </div>
+        <!-- 秒杀规则（融入Hero卡片内部） -->
+        <div class="hero-rules">
+          <span class="hero-rules-label">秒杀规则</span>
+          <span class="hero-rules-text">数量有限先到先得 · 限购一件 · 15分钟内支付 · 不支持退换</span>
+        </div>
       </div>
 
       <!-- 右侧：场次标签横向滚动 -->
@@ -199,16 +204,7 @@
       </template>
     </div>
 
-    <!-- === 秒杀规则提示（紧凑横向条，不占满整行） === -->
-    <div v-if="!loading && (sortedActivities.length > 0 || legacySeckillList.length > 0)" class="seckill-rules">
-      <div class="rules-bar">
-        <span class="rules-label">
-          <svg class="rules-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-          秒杀规则
-        </span>
-        <span class="rules-text">数量有限先到先得 · 限购一件不可重复 · 15分钟内完成支付 · 不支持退换货</span>
-      </div>
-    </div>
+
   </div>
 </template>
 
@@ -1165,42 +1161,27 @@ onUnmounted(() => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
-/* === 秒杀规则紧凑横向条 === */
-.seckill-rules {
-  margin-top: 20px;
+/* === Hero内秒杀规则 === */
+.hero-rules {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
   display: flex;
-  justify-content: flex-end;
-}
-
-.rules-bar {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 20px;
-  background: rgba(255, 75, 43, 0.04);
-  border: 1px solid rgba(255, 75, 43, 0.15);
-  border-radius: 8px;
-  font-size: 12px;
-  color: var(--color-text-secondary, #6b7280);
-}
-
-.rules-label {
-  display: inline-flex;
-  align-items: center;
+  flex-direction: column;
   gap: 4px;
+}
+
+.hero-rules-label {
+  font-size: 11px;
   font-weight: 600;
-  color: #FF4B2B;
-  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.02em;
 }
 
-.rules-icon {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-}
-
-.rules-text {
-  white-space: nowrap;
+.hero-rules-text {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.5;
   letter-spacing: 0.01em;
 }
 
@@ -1255,15 +1236,6 @@ onUnmounted(() => {
     height: 240px;
   }
 
-  .rules-bar {
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .rules-text {
-    white-space: normal;
-    line-height: 1.6;
-  }
 }
 
 /* 2列: <=480px */

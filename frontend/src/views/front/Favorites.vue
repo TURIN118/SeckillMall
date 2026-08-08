@@ -1,107 +1,141 @@
 <template>
-  <!-- 收藏夹页面：参考京东 + 淘宝收藏夹设计 -->
+  <!-- 收藏夹页面：两列布局，参考 UserOrders.vue -->
   <div class="favorites-page">
-    <!-- 顶部工具栏 (参考淘宝) -->
-    <div class="fav-toolbar">
-      <!-- 左侧：标题 + 数量 -->
-      <div class="toolbar-left">
-        <h2 class="fav-title">我的收藏</h2>
-        <span class="fav-count">共 {{ filteredList.length }} 件商品</span>
-      </div>
-      <!-- 右侧：筛选标签 + 管理按钮 -->
-      <div class="toolbar-right">
-        <div class="filter-tabs">
-          <span class="filter-tab" :class="{ active: filterType === 'all' }" @click="filterType = 'all'">全部</span>
-          <span class="filter-tab" :class="{ active: filterType === 'ON_SALE' }"
-            @click="filterType = 'ON_SALE'">在售</span>
-          <span class="filter-tab" :class="{ active: filterType === 'OFF_SHELF' }"
-            @click="filterType = 'OFF_SHELF'">已下架</span>
+    <div class="fav-body">
+      <!-- 左侧 sidebar：标题 + 商品状态筛选 + 排序方式 + 管理按钮 -->
+      <aside class="fav-sidebar">
+        <div class="sidebar-title">我的收藏</div>
+        <nav class="sidebar-nav">
+          <!-- 商品状态筛选 -->
+          <div class="nav-group-title nav-group-title--first">商品状态</div>
+          <div class="nav-item" :class="{ active: filterType === 'all' }" @click="handleFilterChange('all')">
+            <span class="nav-label">全部</span>
+          </div>
+          <div class="nav-item" :class="{ active: filterType === 'ON_SALE' }" @click="handleFilterChange('ON_SALE')">
+            <span class="nav-label">在售</span>
+          </div>
+          <div class="nav-item" :class="{ active: filterType === 'OFF_SHELF' }" @click="handleFilterChange('OFF_SHELF')">
+            <span class="nav-label">已下架</span>
+          </div>
+
+          <!-- 排序方式 -->
+          <div class="nav-group-title">排序方式</div>
+          <div class="nav-item" :class="{ active: sortType === 'default' }" @click="handleSortChange('default')">
+            <span class="nav-label">综合排序</span>
+          </div>
+          <div class="nav-item" :class="{ active: sortType === 'priceAsc' }" @click="handleSortChange('priceAsc')">
+            <span class="nav-label">价格升序</span>
+          </div>
+          <div class="nav-item" :class="{ active: sortType === 'priceDesc' }" @click="handleSortChange('priceDesc')">
+            <span class="nav-label">价格降序</span>
+          </div>
+          <div class="nav-item" :class="{ active: sortType === 'sales' }" @click="handleSortChange('sales')">
+            <span class="nav-label">销量优先</span>
+          </div>
+        </nav>
+        <!-- sidebar 底部管理按钮 -->
+        <div class="sidebar-footer">
+          <button v-if="!manageMode && favoriteList.length > 0" class="btn-manage" type="button" @click="manageMode = true">
+            管理收藏
+          </button>
+          <button v-else-if="manageMode" class="btn-manage active" type="button" @click="exitManage">
+            退出管理
+          </button>
         </div>
-        <button v-if="!manageMode && favoriteList.length > 0" class="btn-manage" @click="manageMode = true">管理</button>
-        <button v-else-if="manageMode" class="btn-manage" @click="exitManage">退出管理</button>
-      </div>
-    </div>
+      </aside>
 
-    <!-- 加载中 -->
-    <div v-if="loading" class="loading-state">
-      <el-icon class="is-loading">
-        <Loading />
-      </el-icon>
-      <span class="loading-text">加载中...</span>
-    </div>
+      <!-- 右侧主区域 -->
+      <div class="fav-main">
+        <!-- 加载中 -->
+        <div v-if="loading" class="loading-state">
+          <el-icon class="is-loading">
+            <Loading />
+          </el-icon>
+          <span class="loading-text">加载中...</span>
+        </div>
 
-    <!-- 空状态 -->
-    <div v-else-if="favoriteList.length === 0" class="empty-state">
-      <el-empty description="还没有收藏任何商品，快去发现心仪好物吧！" :image-size="120" />
-      <button class="btn-sm primary" type="button" @click="router.push('/products')">去逛逛</button>
-    </div>
+        <!-- 空状态 -->
+        <div v-else-if="favoriteList.length === 0" class="empty-state">
+          <el-empty description="还没有收藏任何商品，快去发现心仪好物吧！" :image-size="120" />
+          <button class="btn-sm primary" type="button" @click="router.push('/products')">去逛逛</button>
+        </div>
 
-    <!-- 主体: 卡片网格 + 分页 + 批量操作栏 -->
-    <template v-else>
-      <div class="favorites-grid">
-        <div v-for="item in pagedList" :key="item.id" class="fav-card"
-          :class="{ disabled: item.productStatus !== 'ON_SALE', selected: selectedIds.includes(item.productId) }">
-          <!-- 图片区域 -->
-          <div class="fav-card-img" @click="!manageMode && goProductDetail(item.productId)">
-            <img v-if="item.mainImage" :src="formatImageUrl(item.mainImage)" :alt="item.productName"
-              class="fav-img-tag" loading="lazy" />
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-              class="fav-img-placeholder">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <path d="m21 15-5-5L5 21" />
-            </svg>
-            <!-- 管理模式复选框 -->
-            <div v-if="manageMode" class="fav-checkbox" @click.stop="toggleSelect(item.productId)">
-              <el-checkbox :model-value="selectedIds.includes(item.productId)" />
+        <!-- 主体: 商品数量提示 + 卡片网格 + 分页 + 批量操作栏 -->
+        <template v-else>
+          <div class="fav-count-bar">共 {{ filteredList.length }} 件商品</div>
+
+          <!-- 卡片网格 (4列) -->
+          <div class="favorites-grid">
+            <div v-for="item in pagedList" :key="item.id" class="fav-card"
+              :class="{ disabled: item.productStatus !== 'ON_SALE', selected: selectedIds.includes(item.productId) }">
+              <!-- 图片区域 -->
+              <div class="fav-card-img" @click="!manageMode && goProductDetail(item.productId)">
+                <img v-if="item.mainImage" :src="formatImageUrl(item.mainImage)" :alt="item.productName"
+                  class="fav-img-tag" loading="lazy" />
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                  class="fav-img-placeholder">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="m21 15-5-5L5 21" />
+                </svg>
+                <!-- 管理模式复选框 -->
+                <div v-if="manageMode" class="fav-checkbox" @click.stop="toggleSelect(item.productId)">
+                  <el-checkbox :model-value="selectedIds.includes(item.productId)" />
+                </div>
+                <!-- 下架遮罩 -->
+                <div v-if="item.productStatus !== 'ON_SALE'" class="off-shelf-mask">
+                  <span>已下架</span>
+                </div>
+                <!-- 非管理模式悬浮加入购物车按钮 -->
+                <div v-if="!manageMode && item.productStatus === 'ON_SALE'" class="fav-hover-actions">
+                  <button class="btn-cart" type="button" :disabled="addingId === item.productId"
+                    @click.stop="handleAddToCart(item)">
+                    {{ addingId === item.productId ? '加入中...' : '加入购物车' }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- 卡片内容 -->
+              <div class="fav-card-body">
+                <div class="fav-name" @click="!manageMode && goProductDetail(item.productId)" :title="item.productName">
+                  {{ item.productName }}
+                </div>
+                <div class="fav-meta">
+                  <span class="fav-price">¥{{ formatPrice(item.originalPrice) }}</span>
+                  <span class="fav-sales">已售 {{ item.salesCount || 0 }}</span>
+                </div>
+              </div>
             </div>
-            <!-- 下架遮罩 -->
-            <div v-if="item.productStatus !== 'ON_SALE'" class="off-shelf-mask">
-              <span>已下架</span>
+          </div>
+
+          <!-- 分页 -->
+          <div v-if="filteredList.length > pageSize" class="fav-pagination">
+            <PaginationWrapper :total="filteredList.length" :page-num="pageNum" :page-size="pageSize"
+              :page-sizes="[20, 40, 60]" @change="handlePageChange" />
+          </div>
+
+          <!-- 管理模式批量操作栏 -->
+          <div v-if="manageMode" class="batch-bar">
+            <div class="batch-left">
+              <el-checkbox :model-value="isAllSelected" :indeterminate="isIndeterminate" @change="handleToggleAll">
+                全选
+              </el-checkbox>
+              <span class="batch-count">已选 {{ selectedIds.length }} 件</span>
             </div>
-            <!-- 非管理模式悬浮加入购物车按钮 -->
-            <div v-if="!manageMode && item.productStatus === 'ON_SALE'" class="fav-hover-actions">
-              <button class="btn-cart" type="button" :disabled="addingId === item.productId"
-                @click.stop="handleAddToCart(item)">
-                {{ addingId === item.productId ? '加入中...' : '加入购物车' }}
+            <div class="batch-right">
+              <button class="btn-batch-cart" type="button" :disabled="selectedIds.length === 0 || batchAdding"
+                @click="handleBatchAddCart">
+                {{ batchAdding ? '加入中...' : '批量加入购物车' }}
+              </button>
+              <button class="btn-batch-remove" type="button" :disabled="selectedIds.length === 0 || batchRemoving"
+                @click="handleBatchRemove">
+                {{ batchRemoving ? '取消中...' : '批量取消收藏' }}
               </button>
             </div>
           </div>
-
-          <!-- 卡片内容 -->
-          <div class="fav-card-body">
-            <div class="fav-name" @click="!manageMode && goProductDetail(item.productId)" :title="item.productName">
-              {{ item.productName }}
-            </div>
-            <div class="fav-meta">
-              <span class="fav-price">¥{{ formatPrice(item.originalPrice) }}</span>
-              <span class="fav-sales">已售 {{ item.salesCount || 0 }}</span>
-            </div>
-          </div>
-        </div>
+        </template>
       </div>
-
-      <!-- 分页 -->
-      <div v-if="filteredList.length > 20" class="fav-pagination">
-        <PaginationWrapper :total="filteredList.length" :page-num="pageNum" :page-size="pageSize"
-          :page-sizes="[20, 40, 60]" @change="handlePageChange" />
-      </div>
-
-      <!-- 管理模式底部批量操作栏 (参考京东) -->
-      <div v-if="manageMode" class="batch-bar">
-        <div class="batch-left">
-          <el-checkbox :model-value="isAllSelected" :indeterminate="isIndeterminate"
-            @change="handleToggleAll">全选</el-checkbox>
-          <span class="batch-count">已选 {{ selectedIds.length }} 件</span>
-        </div>
-        <div class="batch-right">
-          <button class="btn-batch-remove" type="button" :disabled="selectedIds.length === 0 || batchRemoving"
-            @click="handleBatchRemove">
-            {{ batchRemoving ? '取消中...' : '取消收藏' }}
-          </button>
-        </div>
-      </div>
-    </template>
+    </div>
   </div>
 </template>
 
@@ -109,7 +143,7 @@
 /**
  * 收藏夹页面 (前台)
  * 对接后端 /api/v1/favorites 接口，无模拟数据。
- * 参考 京东 + 淘宝收藏夹设计：筛选 / 管理 / 批量取消 / 分页。
+ * 两列布局：左侧 sidebar(状态筛选+排序+管理) + 右侧卡片网格+批量操作。
  */
 defineOptions({ name: 'Favorites' })
 import { ref, computed, watch, onMounted, onActivated } from 'vue'
@@ -141,6 +175,9 @@ const removingId = ref<number | string | null>(null)
 /** 筛选类型: all-全部 / ON_SALE-在售 / OFF_SHELF-已下架 */
 const filterType = ref<'all' | 'ON_SALE' | 'OFF_SHELF'>('all')
 
+/** 排序类型: default-综合 / priceAsc-价格升序 / priceDesc-价格降序 / sales-销量优先 */
+const sortType = ref<'default' | 'priceAsc' | 'priceDesc' | 'sales'>('default')
+
 /** 管理模式 */
 const manageMode = ref<boolean>(false)
 
@@ -150,16 +187,39 @@ const selectedIds = ref<(number | string)[]>([])
 /** 批量取消中 */
 const batchRemoving = ref<boolean>(false)
 
+/** 批量加入购物车中 */
+const batchAdding = ref<boolean>(false)
+
 /** 分页参数 */
 const pageNum = ref<number>(1)
 const pageSize = ref<number>(20)
 
 /* === 计算属性 === */
 
-/** 筛选后的列表 */
+/** 筛选 + 排序后的列表 */
 const filteredList = computed<FavoriteItemVO[]>(() => {
-  if (filterType.value === 'all') return favoriteList.value
-  return favoriteList.value.filter(item => item.productStatus === filterType.value)
+  // 状态筛选
+  let list = favoriteList.value
+  if (filterType.value !== 'all') {
+    list = list.filter(item => item.productStatus === filterType.value)
+  }
+  // 排序
+  const sorted = [...list]
+  switch (sortType.value) {
+    case 'priceAsc':
+      sorted.sort((a, b) => (a.originalPrice || 0) - (b.originalPrice || 0))
+      break
+    case 'priceDesc':
+      sorted.sort((a, b) => (b.originalPrice || 0) - (a.originalPrice || 0))
+      break
+    case 'sales':
+      sorted.sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0))
+      break
+    case 'default':
+    default:
+      break
+  }
+  return sorted
 })
 
 /** 分页后的列表 (前端假分页) */
@@ -303,6 +363,51 @@ async function handleBatchRemove(): Promise<void> {
   }
 }
 
+/** 批量加入购物车 */
+async function handleBatchAddCart(): Promise<void> {
+  if (selectedIds.value.length === 0) return
+  batchAdding.value = true
+  let successCount = 0
+  let failCount = 0
+  try {
+    for (const productId of selectedIds.value) {
+      const item = favoriteList.value.find(f => f.productId === productId)
+      if (item && item.productStatus === 'ON_SALE') {
+        try {
+          await addCart({ productId, quantity: 1 })
+          successCount++
+        } catch {
+          failCount++
+        }
+      } else {
+        failCount++
+      }
+    }
+    if (successCount > 0) {
+      ElMessage.success(`已将 ${successCount} 件商品加入购物车${failCount > 0 ? `，${failCount} 件失败` : ''}`)
+      await cartStore.fetchCount()
+    } else if (failCount > 0) {
+      ElMessage.error('加入购物车失败')
+    }
+    selectedIds.value = []
+    manageMode.value = false
+  } finally {
+    batchAdding.value = false
+  }
+}
+
+/** 筛选变化处理 */
+function handleFilterChange(type: 'all' | 'ON_SALE' | 'OFF_SHELF'): void {
+  filterType.value = type
+  pageNum.value = 1
+}
+
+/** 排序变化处理 */
+function handleSortChange(type: 'default' | 'priceAsc' | 'priceDesc' | 'sales'): void {
+  sortType.value = type
+  pageNum.value = 1
+}
+
 /** 分页变化 */
 function handlePageChange(payload: { pageNum: number; pageSize: number }): void {
   pageNum.value = payload.pageNum
@@ -310,11 +415,6 @@ function handlePageChange(payload: { pageNum: number; pageSize: number }): void 
 }
 
 /* === 监听 === */
-
-// 筛选类型变化时重置页码
-watch(filterType, () => {
-  pageNum.value = 1
-})
 
 // 页面挂载时加载收藏夹列表
 onMounted(() => {
@@ -335,79 +435,100 @@ onActivated(() => {
   position: relative;
 }
 
-/* === 顶部工具栏 === */
-.fav-toolbar {
+/* === 两列布局主体 === */
+.fav-body {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
 }
 
-.toolbar-left {
+/* === 左侧 sidebar === */
+.fav-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 80px;
+  align-self: flex-start;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
   display: flex;
-  align-items: baseline;
-  gap: 12px;
+  flex-direction: column;
 }
 
-.fav-title {
-  font-size: 20px;
+.sidebar-title {
+  padding: 16px 20px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-text-primary);
-  margin: 0;
-}
-
-.fav-count {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-}
-
-.toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-/* 筛选标签 (胶囊样式) */
-.filter-tabs {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
   background: var(--color-bg-subtle);
-  border-radius: 20px;
-  padding: 4px;
+  border-bottom: 1px solid var(--color-border-light, var(--color-border));
 }
 
-.filter-tab {
-  padding: 6px 16px;
-  font-size: 13px;
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* 分组标题 */
+.nav-group-title {
+  padding: 12px 20px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+  border-top: 1px solid var(--color-border-light, var(--color-border));
+}
+
+/* 第一个分组标题紧挨 sidebar-title(已有 border-bottom), 去掉 border-top 避免双线 */
+.nav-group-title--first {
+  border-top: none;
+}
+
+/* 导航项 */
+.nav-item {
+  padding: 12px 20px;
+  font-size: 14px;
   color: var(--color-text-secondary);
-  border-radius: 20px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
+  border-bottom: 1px solid var(--color-border-light, var(--color-border));
   user-select: none;
-  white-space: nowrap;
 }
 
-.filter-tab:hover {
+.nav-item:hover {
+  background: var(--color-bg-subtle);
   color: var(--color-text-primary);
 }
 
-.filter-tab.active {
-  background: var(--color-primary);
-  color: #fff;
+.nav-item.active {
+  color: var(--color-primary);
   font-weight: 600;
+  background: var(--color-primary-light, rgba(229, 57, 53, 0.08));
+  border-left: 3px solid var(--color-primary);
+  padding-left: 17px;
 }
 
-/* 管理按钮 */
+.nav-label {
+  line-height: 1.4;
+}
+
+/* sidebar 底部管理按钮 */
+.sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-border);
+}
+
 .btn-manage {
-  padding: 6px 16px;
+  width: 100%;
+  padding: 8px 12px;
   font-size: 14px;
   color: var(--color-text-primary);
   background: #fff;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -415,6 +536,18 @@ onActivated(() => {
 .btn-manage:hover {
   color: var(--color-primary);
   border-color: var(--color-primary);
+}
+
+.btn-manage.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+/* === 右侧主区域 === */
+.fav-main {
+  flex: 1;
+  min-width: 0;
 }
 
 /* === 加载中状态 === */
@@ -426,6 +559,9 @@ onActivated(() => {
   padding: 80px 24px;
   color: var(--color-text-muted);
   gap: 12px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
 .loading-text {
@@ -442,13 +578,23 @@ onActivated(() => {
   padding: 60px 24px 40px;
   text-align: center;
   gap: 16px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
-/* === 收藏商品卡片网格 (大屏 5 列, 参考淘宝) === */
+/* === 商品数量提示 === */
+.fav-count-bar {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 16px;
+}
+
+/* === 收藏商品卡片网格 (4列) === */
 .favorites-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
 }
 
 /* === 收藏卡片 === */
@@ -584,15 +730,15 @@ onActivated(() => {
 
 /* === 卡片内容 === */
 .fav-card-body {
-  padding: 12px 14px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   flex: 1;
 }
 
 .fav-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-text-primary);
   cursor: pointer;
@@ -601,7 +747,7 @@ onActivated(() => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 39px;
+  min-height: 36px;
   word-break: break-all;
 }
 
@@ -617,7 +763,7 @@ onActivated(() => {
 }
 
 .fav-price {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-primary);
   font-family: 'DIN Alternate', 'Roboto', 'Arial', sans-serif;
@@ -631,24 +777,23 @@ onActivated(() => {
 
 /* === 分页 === */
 .fav-pagination {
-  margin-top: 16px;
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
 }
 
-/* === 管理模式底部批量操作栏 (参考京东, sticky) === */
+/* === 管理模式批量操作栏 === */
 .batch-bar {
-  position: sticky;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  margin-top: 16px;
+  padding: 16px 20px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 24px;
-  background: #fff;
-  border-top: 1px solid var(--color-border);
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.06);
-  z-index: 10;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .batch-left {
@@ -668,8 +813,32 @@ onActivated(() => {
   gap: 12px;
 }
 
+/* 批量加入购物车按钮 (次要) */
+.btn-batch-cart {
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: #fff;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.btn-batch-cart:hover:not(:disabled) {
+  background: var(--color-primary-light, rgba(229, 57, 53, 0.08));
+}
+
+.btn-batch-cart:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* 批量取消收藏按钮 (主要) */
 .btn-batch-remove {
-  padding: 8px 24px;
+  padding: 8px 20px;
   font-size: 14px;
   font-weight: 600;
   color: #fff;
@@ -688,8 +857,8 @@ onActivated(() => {
 .btn-batch-remove:disabled {
   cursor: not-allowed;
   opacity: 0.5;
-  background: var(--btn-disabled-bg);
-  color: var(--btn-disabled-fg);
+  background: var(--btn-disabled-bg, #ccc);
+  color: var(--btn-disabled-fg, #fff);
 }
 
 /* === 空状态去逛逛按钮 === */
@@ -728,36 +897,46 @@ onActivated(() => {
 /* === 响应式 === */
 @media (max-width: 1200px) {
   .favorites-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
 @media (max-width: 768px) {
+  .fav-body {
+    flex-direction: column;
+  }
+
+  .fav-sidebar {
+    width: 100%;
+    position: static;
+    align-self: stretch;
+  }
+
   .favorites-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
 
   .fav-price {
-    font-size: 16px;
-  }
-
-  .fav-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .toolbar-left,
-  .toolbar-right {
-    justify-content: space-between;
+    font-size: 14px;
   }
 
   .batch-bar {
     padding: 12px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
   }
 
+  .batch-left,
+  .batch-right {
+    justify-content: space-between;
+  }
+
+  .btn-batch-cart,
   .btn-batch-remove {
     padding: 8px 16px;
+    flex: 1;
   }
 }
 

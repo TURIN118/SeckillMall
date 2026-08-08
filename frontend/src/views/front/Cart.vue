@@ -112,7 +112,7 @@
         </div>
 
         <!-- 分页组件 (商品数量超过 pageSize 时显示) -->
-        <div v-if="cartList.length > pageSize" class="cart-pagination">
+        <div v-if="cartList.length > 10" class="cart-pagination">
           <el-pagination
             v-model:current-page="pageNum"
             v-model:page-size="pageSize"

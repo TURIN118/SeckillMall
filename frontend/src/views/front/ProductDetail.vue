@@ -252,27 +252,29 @@
         </div>
       </div>
 
-      <!-- Tab 区域：胶囊式 -->
+      <!-- Tab 区域：胶囊式 + 左右分栏（左栏Tab内容 / 右栏sticky侧边信息卡） -->
       <div class="tab-card">
-        <div class="tab-section">
-          <!-- Tab 头：胶囊式设计 -->
-          <div class="tab-header">
-            <div class="tab-item" :class="{ active: activeTab === 'detail' }" @click="activeTab = 'detail'">
-              商品详情
+        <div class="tab-layout">
+          <!-- 左栏: Tab头 + Tab内容 -->
+          <div class="tab-main">
+            <!-- Tab 头：胶囊式设计 -->
+            <div class="tab-header">
+              <div class="tab-item" :class="{ active: activeTab === 'detail' }" @click="activeTab = 'detail'">
+                商品详情
+              </div>
+              <div class="tab-item" :class="{ active: activeTab === 'spec' }" @click="activeTab = 'spec'">
+                规格参数
+              </div>
+              <div class="tab-item" :class="{ active: activeTab === 'review' }" @click="switchTab('review')">
+                用户评价 <span v-if="reviewTotal > 0" class="tab-badge">{{ reviewTotal }}</span>
+              </div>
+              <div class="tab-item" :class="{ active: activeTab === 'service' }" @click="activeTab = 'service'">
+                售后保障
+              </div>
             </div>
-            <div class="tab-item" :class="{ active: activeTab === 'spec' }" @click="activeTab = 'spec'">
-              规格参数
-            </div>
-            <div class="tab-item" :class="{ active: activeTab === 'review' }" @click="switchTab('review')">
-              用户评价 <span v-if="reviewTotal > 0" class="tab-badge">{{ reviewTotal }}</span>
-            </div>
-            <div class="tab-item" :class="{ active: activeTab === 'service' }" @click="activeTab = 'service'">
-              售后保障
-            </div>
-          </div>
 
-          <!-- Tab 内容：卡片容器 -->
-          <div class="tab-content-wrap">
+            <!-- Tab 内容：卡片容器 -->
+            <div class="tab-content-wrap">
             <!-- 商品详情 -->
             <div v-if="activeTab === 'detail'" class="tab-content" :key="'detail'">
               <div v-if="product.detailHtml" class="desc-content" v-html="safeDetailHtml"></div>
@@ -475,6 +477,104 @@
                   </div>
                 </li>
               </ul>
+            </div>
+            </div>
+          </div>
+
+          <!-- 右栏: sticky侧边信息卡 -->
+          <div class="tab-aside">
+            <!-- 参数速览卡 -->
+            <div class="aside-card">
+              <h4 class="aside-title">参数速览</h4>
+              <div class="aside-params">
+                <div class="aside-param">
+                  <span class="label">商品名称</span>
+                  <span class="value">{{ product.productName }}</span>
+                </div>
+                <div class="aside-param">
+                  <span class="label">分类</span>
+                  <span class="value">{{ categoryPath.map(c => c.categoryName).join(' > ') || product.categoryName }}</span>
+                </div>
+                <div class="aside-param">
+                  <span class="label">价格</span>
+                  <span class="value">¥{{ displayPrice }}</span>
+                </div>
+                <div class="aside-param">
+                  <span class="label">库存</span>
+                  <span class="value">{{ displayStock }} 件</span>
+                </div>
+                <div class="aside-param">
+                  <span class="label">销量</span>
+                  <span class="value">{{ product.salesCount }} 件</span>
+                </div>
+                <div class="aside-param">
+                  <span class="label">好评率</span>
+                  <span class="value">{{ reviewStats.goodRate }}%</span>
+                </div>
+                <div class="aside-param">
+                  <span class="label">上架时间</span>
+                  <span class="value">{{ formatDate(product.createTime) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 服务保障卡 -->
+            <div class="aside-card">
+              <h4 class="aside-title">服务保障</h4>
+              <div class="aside-services">
+                <div class="aside-service">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <div>
+                    <strong>正品保障</strong>
+                    <p>假一赔十</p>
+                  </div>
+                </div>
+                <div class="aside-service">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <div>
+                    <strong>7天无理由</strong>
+                    <p>无忧退换</p>
+                  </div>
+                </div>
+                <div class="aside-service">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <div>
+                    <strong>运费险</strong>
+                    <p>退换无忧</p>
+                  </div>
+                </div>
+                <div class="aside-service">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <div>
+                    <strong>极速退款</strong>
+                    <p>最快1小时</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 购买提示卡 -->
+            <div class="aside-card aside-card-highlight">
+              <h4 class="aside-title">购买提示</h4>
+              <ul class="aside-tips">
+                <li>已有 {{ product.salesCount }} 人购买</li>
+                <li>支持7天无理由退换货</li>
+                <li>正品保障·极速发货</li>
+              </ul>
+              <div class="aside-actions">
+                <button class="aside-btn" :class="{ favorited: isFavorited }" @click="handleFavorite">
+                  {{ isFavorited ? '已收藏' : '收藏' }}
+                </button>
+                <button class="aside-btn" @click="handleShare">分享</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1328,7 +1428,8 @@ onUnmounted(() => {
    页面基础
    ============================================================ */
 .product-detail-page {
-  padding: 16px 24px 24px;
+  /* 与首页 .page-home 一致：仅控制左右及底部留白，顶部由各子区域自行控制 */
+  padding: 0 24px 24px;
 }
 
 .loading-wrap {
@@ -2121,8 +2222,165 @@ onUnmounted(() => {
   margin-bottom: 24px;
 }
 
-.tab-section {
+/* Tab区域左右分栏布局 */
+.tab-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+}
+
+.tab-main {
+  min-width: 0;
+  /* 防止内容溢出 */
   animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+/* 右栏侧边信息卡 */
+.tab-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 24px;
+  align-self: start;
+}
+
+.aside-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.aside-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* 参数速览 */
+.aside-params {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.aside-param {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.aside-param .label {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.aside-param .value {
+  color: var(--color-text-primary);
+  font-weight: 500;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 服务保障 */
+.aside-services {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.aside-service {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.aside-service svg {
+  width: 18px;
+  height: 18px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.aside-service strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: block;
+}
+
+.aside-service p {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 2px 0 0;
+}
+
+/* 购买提示卡 */
+.aside-card-highlight {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+  border-color: var(--color-primary-light);
+}
+
+.aside-tips {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aside-tips li {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding-left: 16px;
+  position: relative;
+}
+
+.aside-tips li::before {
+  content: '•';
+  color: var(--color-primary);
+  position: absolute;
+  left: 0;
+  font-weight: bold;
+}
+
+.aside-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.aside-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.aside-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.aside-btn.favorited {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
 }
 
 .tab-header {
@@ -2933,6 +3191,21 @@ onUnmounted(() => {
   .carousel-main {
     height: 400px;
   }
+
+  .tab-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .tab-aside {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .tab-aside .aside-card {
+    flex: 1;
+    min-width: 280px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -3005,6 +3278,10 @@ onUnmounted(() => {
 
   .tab-content {
     padding: 16px;
+  }
+
+  .tab-aside {
+    flex-direction: column;
   }
 
   /* 移动端隐藏桌面端操作按钮 */

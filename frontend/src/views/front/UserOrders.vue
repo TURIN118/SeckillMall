@@ -1,32 +1,11 @@
 <template>
   <!-- 参考京东/淘宝订单页：顶部头部+标签页+订单卡片(头部+商品列表+汇总操作)+分页 -->
   <div class="order-page">
-    <!-- 页面头部：标题 + 搜索框 -->
-    <div class="order-header">
-      <div class="order-header-left">
-        <svg class="order-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-          <path d="M3 6h18" />
-          <path d="M16 10a4 4 0 0 1-8 0" />
-        </svg>
-        <h2 class="order-title">我的订单</h2>
-        <span class="order-subtitle">管理您的全部订单</span>
-      </div>
-      <div class="order-header-right">
-        <div class="order-search">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-          <input type="text" placeholder="搜索订单号或商品名称" class="search-input" />
-        </div>
-      </div>
-    </div>
 
     <!-- 状态标签页 -->
     <div class="order-tabs">
-      <div v-for="tab in tabs" :key="tab.name" class="order-tab"
-        :class="{ active: activeTab === tab.name }" @click="handleTabChange(tab.name)">
+      <div v-for="tab in tabs" :key="tab.name" class="order-tab" :class="{ active: activeTab === tab.name }"
+        @click="handleTabChange(tab.name)">
         {{ tab.label }}
       </div>
     </div>
@@ -126,8 +105,8 @@
 
       <!-- 分页 -->
       <div class="order-pagination" v-if="total > 0">
-        <PaginationWrapper :total="total" :page-num="pageNum" :page-size="pageSize"
-          :page-sizes="[10, 20, 50]" @change="handlePageChange" />
+        <PaginationWrapper :total="total" :page-num="pageNum" :page-size="pageSize" :page-sizes="[10, 20, 50]"
+          @change="handlePageChange" />
       </div>
     </div>
   </div>
@@ -309,91 +288,7 @@ onMounted(() => {
 /* ============ 页面容器 ============ */
 .order-page {
   padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
 
-/* ============ 页面头部 ============ */
-.order-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  padding: 20px 24px;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-}
-
-.order-header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.order-title-icon {
-  width: 24px;
-  height: 24px;
-  color: var(--color-primary);
-  flex-shrink: 0;
-}
-
-.order-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0;
-  letter-spacing: 0.02em;
-}
-
-.order-subtitle {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  margin-left: 4px;
-}
-
-.order-header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.order-search {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-icon {
-  position: absolute;
-  left: 12px;
-  width: 16px;
-  height: 16px;
-  color: var(--color-text-muted);
-  pointer-events: none;
-}
-
-.search-input {
-  width: 260px;
-  padding: 8px 12px 8px 36px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-subtle);
-  font-size: 13px;
-  color: var(--color-text-primary);
-  outline: none;
-  transition: all 0.2s;
-}
-
-.search-input:focus {
-  border-color: var(--color-primary);
-  background: #fff;
-  box-shadow: 0 0 0 2px rgba(245, 49, 49, 0.1);
-}
-
-.search-input::placeholder {
-  color: var(--color-text-muted);
 }
 
 /* ============ 状态标签页 ============ */
@@ -840,28 +735,6 @@ onMounted(() => {
     padding: 12px;
   }
 
-  .order-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-    padding: 16px;
-  }
-
-  .order-header-left {
-    justify-content: center;
-  }
-
-  .order-title {
-    font-size: 18px;
-  }
-
-  .order-subtitle {
-    display: none;
-  }
-
-  .search-input {
-    width: 100%;
-  }
 
   .order-tabs {
     overflow-x: auto;

@@ -285,6 +285,7 @@
             <!-- 规格参数 -->
             <div v-if="activeTab === 'spec'" class="tab-content" :key="'spec'">
               <table class="spec-table">
+                <tbody>
                 <tr>
                   <td class="spec-key">商品名称</td>
                   <td class="spec-val">{{ product.productName }}</td>
@@ -322,6 +323,7 @@
                     <td class="spec-val">{{ currentSku.stock }} 件</td>
                   </tr>
                 </template>
+                </tbody>
               </table>
             </div>
 

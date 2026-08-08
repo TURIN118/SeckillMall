@@ -25,6 +25,7 @@
             <span class="meta-item">订单号: {{ order.orderNo }}</span>
             <span class="meta-item">下单时间: {{ formatTime(order.createTime) }}</span>
           </div>
+          <span v-if="order.status === 'PAID'" class="waiting-hint">商家备货中</span>
         </div>
         <div class="banner-right">
           <!-- 状态相关操作按钮 -->
@@ -35,9 +36,6 @@
             <button class="btn-action primary" :disabled="payLoading" @click="handlePay">
               {{ payLoading ? '支付中...' : '立即支付' }}
             </button>
-          </template>
-          <template v-else-if="order.status === 'PAID'">
-            <span class="waiting-hint">商家备货中</span>
           </template>
           <template v-else-if="order.status === 'SHIPPED'">
             <button class="btn-action primary" :disabled="confirmLoading" @click="handleConfirm">

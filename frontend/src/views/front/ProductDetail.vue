@@ -16,22 +16,6 @@
 
     <!-- 商品详情内容 -->
     <template v-else-if="product">
-      <!-- 面包屑（独立于卡片外） -->
-      <nav class="breadcrumb">
-        <span class="breadcrumb-home" @click="router.push('/')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-            <polyline points="9,22 9,12 15,12 15,22" />
-          </svg>
-          首页
-        </span>
-        <template v-for="cat in categoryPath" :key="cat.id">
-          <span class="breadcrumb-sep">›</span>
-          <span class="breadcrumb-link" @click="goCategory(cat.id)">{{ cat.categoryName }}</span>
-        </template>
-        <span class="breadcrumb-sep">›</span>
-        <span class="breadcrumb-current">{{ product.productName }}</span>
-      </nav>
 
       <!-- 白色卡片：仅包裹详情主体 -->
       <div class="product-hero-card">
@@ -158,7 +142,7 @@
             <div class="info-cards fade-in-item stagger-4">
               <div class="info-card">
                 <span class="info-card-label">分类</span>
-                <span class="info-card-value">{{ product.categoryName }}</span>
+                <span class="info-card-value">{{ categoryPath.map(c => c.categoryName).join(' > ') || product.categoryName }}</span>
               </div>
               <div class="info-card">
                 <span class="info-card-label">库存</span>
@@ -170,7 +154,7 @@
               </div>
               <div class="info-card">
                 <span class="info-card-label">上架时间</span>
-                <span class="info-card-value">{{ formatTime(product.createTime) }}</span>
+                <span class="info-card-value">{{ formatDate(product.createTime) }}</span>
               </div>
             </div>
 
@@ -305,7 +289,7 @@
                 </tr>
                 <tr>
                   <td class="spec-key">分类</td>
-                  <td class="spec-val">{{ product.categoryName }}</td>
+                  <td class="spec-val">{{ categoryPath.map(c => c.categoryName).join(' > ') || product.categoryName }}</td>
                 </tr>
                 <tr v-if="hasSku">
                   <td class="spec-key">价格区间</td>
@@ -1053,6 +1037,12 @@ function formatPrice(price: number | undefined | null): string {
 function formatTime(time: string | null | undefined): string {
   if (!time) return '-'
   return dayjs(time).format('YYYY-MM-DD HH:mm:ss')
+}
+
+/** 格式化日期（仅年月日） */
+function formatDate(time: string | null | undefined): string {
+  if (!time) return '-'
+  return dayjs(time).format('YYYY-MM-DD')
 }
 
 /* === 数量选择器 === */

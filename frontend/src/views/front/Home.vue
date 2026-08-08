@@ -149,8 +149,16 @@
         <div class="recommend-title">猜你喜欢</div>
         <span class="recommend-refresh" @click="shuffleRecommend">换一换</span>
       </div>
+      <!-- 改进3: 热门分类快捷筛选标签 (取一级分类前8个) -->
+      <div class="recommend-tags">
+        <span class="recommend-tag" :class="{ active: recommendCategoryId === undefined }"
+          @click="handleRecommendCategoryClick(undefined)">全部</span>
+        <span v-for="cat in recommendCategories" :key="cat.id" class="recommend-tag"
+          :class="{ active: recommendCategoryId === cat.id }"
+          @click="handleRecommendCategoryClick(cat.id)">{{ cat.categoryName }}</span>
+      </div>
       <div v-loading="recommendLoading" class="recommend-grid">
-        <div v-for="item in recommendItems" :key="item.id" class="p-card" @click="goProductDetail(item.id)">
+        <div v-for="item in recommendItems" :key="item.id" class="p-card recommend-card" @click="goProductDetail(item.id)">
           <div class="p-card-img recommend-img">
             <img v-if="item.image" :src="formatImageUrl(item.image)" :alt="item.name" class="p-card-img-tag"
               loading="lazy" />
@@ -173,6 +181,14 @@
         <el-empty v-if="!recommendLoading && recommendItems.length === 0" description="暂无推荐商品" :image-size="100"
           class="grid-empty" />
       </div>
+      <!-- 改进5: 无限滚动哨兵元素 + 加载更多 / 没有更多了 提示 -->
+      <div v-if="recommendItems.length > 0 && recommendHasMore" ref="recommendSentinel" class="recommend-sentinel">
+        <el-icon v-if="recommendLoadingMore" class="is-loading"><Loading /></el-icon>
+        <span v-else>滚动加载更多...</span>
+      </div>
+      <div v-if="!recommendHasMore && recommendItems.length > 0" class="recommend-end">
+        <span>没有更多了</span>
+      </div>
     </div>
   </div>
 </template>
@@ -182,9 +198,10 @@
  * P01 首页 / 秒杀大厅
  * 严格对照 index.html 第766-1035行 page-home 结构 + 第240-294行 CSS
  */
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Loading } from '@element-plus/icons-vue'
 import { useSeckillStore } from '@/stores/seckill'
 import { useUserStore } from '@/stores/user'
 import { getActiveBanners } from '@/api/banner'
@@ -506,17 +523,37 @@ interface RecommendItem {
 const recommendItems = ref<RecommendItem[]>([])
 const recommendLoading = ref<boolean>(false)
 
-/** 从后端 API 获取推荐商品列表（按销量降序排列，取前 12 个） */
+/* 改进3: 分类筛选 - 当前选中的分类 id (undefined 表示全部) */
+const recommendCategoryId = ref<number | string | undefined>(undefined)
+/* 取前 8 个一级分类作为快捷标签 */
+const recommendCategories = computed<CategoryTreeNode[]>(() => (categoryTree.value || []).slice(0, 8))
+
+/* 改进5: 无限滚动分页状态 */
+const recommendPageNum = ref<number>(1)
+const recommendHasMore = ref<boolean>(true)
+const recommendLoadingMore = ref<boolean>(false)
+/* 哨兵元素引用，用于 IntersectionObserver 监听 */
+const recommendSentinel = ref<HTMLElement | null>(null)
+let recommendObserver: IntersectionObserver | null = null
+
+/** 改进1+3+5: 从后端 API 获取推荐商品列表（按销量降序，pageSize=30，支持分类筛选，重置分页） */
 async function fetchRecommendProducts(): Promise<void> {
   recommendLoading.value = true
+  // 重置分页状态（首次加载或切换分类时调用）
+  recommendPageNum.value = 1
+  recommendHasMore.value = true
   try {
-    const res = await getProductList({
+    const params: any = {
       pageNum: 1,
-      pageSize: 12,
+      pageSize: 30,
       status: 'ON_SALE',
       sortBy: 'salesCount',
       sortOrder: 'desc'
-    })
+    }
+    if (recommendCategoryId.value !== undefined) {
+      params.categoryId = recommendCategoryId.value
+    }
+    const res = await getProductList(params)
     const list = res.data.list || []
     recommendItems.value = list.map((p: ProductVO) => ({
       id: p.id,
@@ -525,20 +562,70 @@ async function fetchRecommendProducts(): Promise<void> {
       sold: p.salesCount || 0,
       image: p.images?.[0]
     }))
+    // 不足 30 个说明没有更多了
+    if (list.length < 30) recommendHasMore.value = false
   } catch {
     // 错误已由全局拦截器统一提示
     recommendItems.value = []
+    recommendHasMore.value = false
   } finally {
     recommendLoading.value = false
   }
 }
 
-/** 换一换：简单旋转数组 */
-function shuffleRecommend(): void {
-  if (recommendItems.value.length > 1) {
-    const first = recommendItems.value.shift()
-    if (first) recommendItems.value.push(first)
+/** 改进5: 滚动到底部加载更多 */
+async function loadMoreRecommend(): Promise<void> {
+  if (recommendLoadingMore.value || !recommendHasMore.value || recommendLoading.value) return
+  recommendLoadingMore.value = true
+  recommendPageNum.value++
+  try {
+    const params: any = {
+      pageNum: recommendPageNum.value,
+      pageSize: 30,
+      status: 'ON_SALE',
+      sortBy: 'salesCount',
+      sortOrder: 'desc'
+    }
+    if (recommendCategoryId.value !== undefined) params.categoryId = recommendCategoryId.value
+    const res = await getProductList(params)
+    const list = res.data.list || []
+    if (list.length === 0) {
+      recommendHasMore.value = false
+    } else {
+      const newItems = list.map((p: ProductVO) => ({
+        id: p.id,
+        name: p.productName,
+        price: p.originalPrice || 0,
+        sold: p.salesCount || 0,
+        image: p.images?.[0]
+      }))
+      recommendItems.value.push(...newItems)
+      if (list.length < 30) recommendHasMore.value = false
+    }
+  } catch {
+    // 失败时回退页码，下次可重试
+    recommendPageNum.value--
+  } finally {
+    recommendLoadingMore.value = false
   }
+}
+
+/** 改进3: 点击分类标签切换分类并重新拉取 */
+function handleRecommendCategoryClick(catId: number | string | undefined): void {
+  if (recommendCategoryId.value === catId) return
+  recommendCategoryId.value = catId
+  fetchRecommendProducts()
+}
+
+/** 改进2: 换一换 - Fisher-Yates 随机洗牌算法 */
+function shuffleRecommend(): void {
+  if (recommendItems.value.length <= 1) return
+  const arr = [...recommendItems.value]
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  recommendItems.value = arr
 }
 
 
@@ -585,6 +672,17 @@ onMounted(() => {
   seckillRefreshTimer = setInterval(() => {
     silentRefreshSeckill()
   }, 8000)
+  // 改进5: 初始化无限滚动 IntersectionObserver
+  // 哨兵元素带 v-if 条件，初始可能未渲染，使用 watch 监听其出现/消失动态 observe/unobserve
+  recommendObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && recommendItems.value.length > 0) {
+      loadMoreRecommend()
+    }
+  }, { rootMargin: '200px' })
+  watch(recommendSentinel, (el, oldEl) => {
+    if (oldEl && recommendObserver) recommendObserver.unobserve(oldEl)
+    if (el && recommendObserver) recommendObserver.observe(el)
+  })
 })
 
 onUnmounted(() => {
@@ -596,6 +694,11 @@ onUnmounted(() => {
   if (hoverEnterTimer) clearTimeout(hoverEnterTimer)
   if (hoverLeaveTimer) clearTimeout(hoverLeaveTimer)
   seckillStore.stopAllCountdowns()
+  // 改进5: 清理无限滚动 Observer
+  if (recommendObserver) {
+    recommendObserver.disconnect()
+    recommendObserver = null
+  }
 })
 </script>
 
@@ -1306,10 +1409,67 @@ onUnmounted(() => {
   color: #e53935;
 }
 
+/* 改进3: 分类筛选标签区域 */
+.recommend-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.recommend-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #4b5563;
+  background: #f3f4f6;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  border: 1px solid transparent;
+  user-select: none;
+}
+
+.recommend-tag:hover {
+  color: #e53935;
+  background: #fce8e8;
+}
+
+.recommend-tag.active {
+  color: #ffffff;
+  background: #e53935;
+  border-color: #e53935;
+}
+
+/* 改进4: 瀑布流多列布局 (CSS columns) */
 .recommend-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
+  column-count: 5;
+  column-gap: 12px;
+}
+
+/* 瀑布流中的卡片：避免被列分割，宽度占满单列 */
+.recommend-grid .recommend-card {
+  break-inside: avoid;
+  display: inline-block;
+  width: 100%;
+  margin-bottom: 12px;
+  /* 换一换时的淡入动画 */
+  animation: recommend-fade-in 0.3s ease;
+}
+
+@keyframes recommend-fade-in {
+  from {
+    opacity: 0.4;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 空状态在网格容器中占满整行居中显示 */
@@ -1318,9 +1478,9 @@ onUnmounted(() => {
   margin: 32px auto;
 }
 
-/* 猜你喜欢卡片图片高度 150px */
+/* 改进1: 猜你喜欢卡片图片高度 160px (瀑布流下仍保持图片高度一致) */
 .recommend-img {
-  height: 150px;
+  height: 160px;
 }
 
 /* 猜你喜欢价格用深色 */
@@ -1333,7 +1493,62 @@ onUnmounted(() => {
   font-size: 12px;
 }
 
+/* 改进5: 无限滚动哨兵元素 + 没有更多了 提示 */
+.recommend-sentinel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 0 8px;
+  font-size: 12px;
+  color: #9ca3af;
+  gap: 6px;
+}
+
+.recommend-sentinel .is-loading {
+  font-size: 14px;
+  color: #e53935;
+}
+
+.recommend-end {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 0 8px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.recommend-end span {
+  position: relative;
+  padding: 0 12px;
+}
+
+.recommend-end span::before,
+.recommend-end span::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40px;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.recommend-end span::before {
+  right: 100%;
+}
+
+.recommend-end span::after {
+  left: 100%;
+}
+
 /* === 响应式：秒杀网格在小屏下退化为 2 列，超小屏退化为 1 列 === */
+@media (max-width: 1024px) {
+  /* 改进4: 瀑布流在中等屏幕下 4 列 */
+  .recommend-grid {
+    column-count: 4;
+  }
+}
+
 @media (max-width: 768px) {
   .seckill-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1343,6 +1558,11 @@ onUnmounted(() => {
   .sk-card-img {
     width: 120px;
     height: 120px;
+  }
+
+  /* 改进4: 瀑布流在小屏下 3 列 */
+  .recommend-grid {
+    column-count: 3;
   }
 }
 
@@ -1355,6 +1575,11 @@ onUnmounted(() => {
   .sk-card-img {
     width: 120px;
     height: 120px;
+  }
+
+  /* 改进4: 瀑布流在超小屏下 2 列 */
+  .recommend-grid {
+    column-count: 2;
   }
 }
 </style>

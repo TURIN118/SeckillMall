@@ -5,7 +5,7 @@ target/
 application-local.yml
 
 # 文档内容
-docs/
+.docs/
 .trae/
 
 # Tool metadata

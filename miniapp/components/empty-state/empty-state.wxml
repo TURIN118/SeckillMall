@@ -1,0 +1,11 @@
+<!-- components/empty-state/empty-state.wxml -->
+<van-empty
+  wx:if="{{image}}"
+  image="{{image}}"
+  description="{{description}}"
+/>
+<van-empty
+  wx:else
+  image="{{imageType}}"
+  description="{{description}}"
+/>

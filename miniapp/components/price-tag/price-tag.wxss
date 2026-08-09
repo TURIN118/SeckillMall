@@ -1,0 +1,42 @@
+/* components/price-tag/price-tag.wxss */
+.price-tag {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4rpx;
+}
+
+.price-tag__symbol {
+  font-size: 22rpx;
+  color: #323233;
+}
+
+.price-tag__value {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #323233;
+}
+
+.price-tag__original {
+  font-size: 22rpx;
+  color: #969799;
+  text-decoration: line-through;
+  margin-left: 8rpx;
+}
+
+/* 高亮主色（秒杀价） */
+.price-tag__symbol--highlight {
+  color: #FF4444;
+}
+
+.price-tag__value--highlight {
+  color: #FF4444;
+}
+
+/* 尺寸变体 */
+.price-tag--sm .price-tag__symbol { font-size: 20rpx; }
+.price-tag--sm .price-tag__value { font-size: 26rpx; }
+.price-tag--sm .price-tag__original { font-size: 20rpx; }
+
+.price-tag--lg .price-tag__symbol { font-size: 26rpx; }
+.price-tag--lg .price-tag__value { font-size: 40rpx; }
+.price-tag--lg .price-tag__original { font-size: 26rpx; }

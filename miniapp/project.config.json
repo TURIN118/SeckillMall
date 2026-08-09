@@ -1,0 +1,23 @@
+{
+  "description": "秒杀商城微信小程序原生端 — infra 基础设施模块",
+  "appid": "touristappid",
+  "compileType": "miniprogram",
+  "libVersion": "3.0.0",
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "urlCheck": true,
+    "useApiHook": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "miniprogramRoot": "./",
+  "packOptions": {
+    "ignore": []
+  }
+}

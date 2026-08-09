@@ -1,0 +1,16 @@
+<!-- components/load-more/load-more.wxml -->
+<view class="load-more">
+  <!-- 加载中 -->
+  <view class="load-more__inner" wx:if="{{status === 'loading'}}">
+    <van-loading size="32rpx" color="#FF4444" />
+    <text class="load-more__text">{{loadingText}}</text>
+  </view>
+  <!-- 没有更多 -->
+  <view class="load-more__inner" wx:elif="{{status === 'nomore'}}">
+    <text class="load-more__text load-more__text--muted">{{nomoreText}}</text>
+  </view>
+  <!-- 加载失败，可点击重试 -->
+  <view class="load-more__inner load-more__inner--tap" wx:elif="{{status === 'error'}}" bindtap="onTapRetry">
+    <text class="load-more__text load-more__text--error">{{errorText}}</text>
+  </view>
+</view>

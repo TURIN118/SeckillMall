@@ -1,0 +1,11 @@
+/* styles/weui.wxss — WeUI 样式入口
+ *
+ * 说明：WeUI 小程序版样式按需引入。
+ * 当前 infra 阶段放置最小占位，后续业务模块需要使用 WeUI 组件
+ * （如 weui-form / weui-msg / weui-loadmore / weui-half-dialog 等）时，
+ * 将对应样式片段追加到本文件，或在此处 @import 单独的 weui-*.wxss 文件。
+ *
+ * WeUI 官方仓库：https://github.com/Tencent/weui-wxss
+ */
+
+/* 占位：后续按需引入 WeUI 组件样式 */

@@ -1,0 +1,2 @@
+/* components/empty-state/empty-state.wxss */
+/* 空状态组件：直接使用 van-empty 默认样式，按需扩展 */

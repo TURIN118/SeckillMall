@@ -1,0 +1,65 @@
+/* styles/variables.wxss — 设计令牌（对齐 Web 端主题色与主计划 4.5 节） */
+
+/* 主题色 */
+:root {
+  --color-primary: #FF4444;        /* 秒杀主色 */
+  --color-primary-dark: #E03030;
+  --color-primary-light: #FFECEC;
+  --color-success: #07C160;        /* 微信绿 */
+  --color-warning: #FF976A;
+  --color-danger: #EE0A24;
+  --color-info: #969799;
+
+  /* 文字色 */
+  --text-primary: #323233;
+  --text-secondary: #646566;
+  --text-disabled: #C8C9CC;
+  --text-white: #FFFFFF;
+
+  /* 背景色 */
+  --bg-page: #F7F8FA;
+  --bg-card: #FFFFFF;
+  --bg-mask: rgba(0, 0, 0, 0.7);
+
+  /* 边框色 */
+  --border-color: #ECEDEE;
+  --border-color-light: #F2F3F5;
+
+  /* 间距（rpx） */
+  --space-xs: 8rpx;
+  --space-sm: 16rpx;
+  --space-md: 24rpx;
+  --space-lg: 32rpx;
+  --space-xl: 48rpx;
+  --space-xxl: 64rpx;
+
+  /* 字号（rpx） */
+  --font-xs: 20rpx;
+  --font-sm: 24rpx;
+  --font-md: 28rpx;
+  --font-lg: 32rpx;
+  --font-xl: 40rpx;
+  --font-xxl: 48rpx;
+
+  /* 圆角 */
+  --radius-sm: 8rpx;
+  --radius-md: 16rpx;
+  --radius-lg: 24rpx;
+  --radius-pill: 999rpx;
+
+  /* 阴影 */
+  --shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+
+  /* 动画时长 */
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 350ms;
+
+  /* z-index 层级 */
+  --z-popup: 1000;
+  --z-dialog: 2000;
+  --z-toast: 3000;
+  --z-loading: 4000;
+}

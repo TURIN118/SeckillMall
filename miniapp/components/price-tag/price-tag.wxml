@@ -1,0 +1,6 @@
+<!-- components/price-tag/price-tag.wxml -->
+<view class="price-tag price-tag--{{size}}">
+  <text class="price-tag__symbol {{highlight ? 'price-tag__symbol--highlight' : ''}}">{{symbol}}</text>
+  <text class="price-tag__value {{highlight ? 'price-tag__value--highlight' : ''}}">{{formattedPrice}}</text>
+  <text class="price-tag__original" wx:if="{{formattedOriginal}}">{{symbol}}{{formattedOriginal}}</text>
+</view>

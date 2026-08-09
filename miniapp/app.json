@@ -1,0 +1,99 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/product-list/product-list",
+    "pages/product-detail/product-detail",
+    "pages/cart/cart",
+    "pages/seckill/seckill",
+    "pages/checkout/checkout",
+    "pages/orders/orders",
+    "pages/order-detail/order-detail",
+    "pages/favorites/favorites",
+    "pages/profile/profile",
+    "pages/coupons/coupons",
+    "pages/login/login",
+    "pages/register/register",
+    "pages/forgot-password/forgot-password"
+  ],
+  "subPackages": [
+    {
+      "root": "subpackages/user-center",
+      "pages": [
+        "address-list/address-list",
+        "address-edit/address-edit",
+        "wallet-detail/wallet-detail",
+        "profile-edit/profile-edit",
+        "change-password/change-password",
+        "review-submit/review-submit"
+      ]
+    }
+  ],
+  "tabBar": {
+    "custom": false,
+    "color": "#999999",
+    "selectedColor": "#FF4444",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/home/home", "text": "首页", "iconPath": "images/tabbar/home.png", "selectedIconPath": "images/tabbar/home-active.png" },
+      { "pagePath": "pages/cart/cart", "text": "购物车", "iconPath": "images/tabbar/cart.png", "selectedIconPath": "images/tabbar/cart-active.png" },
+      { "pagePath": "pages/seckill/seckill", "text": "秒杀", "iconPath": "images/tabbar/seckill.png", "selectedIconPath": "images/tabbar/seckill-active.png" },
+      { "pagePath": "pages/orders/orders", "text": "订单", "iconPath": "images/tabbar/orders.png", "selectedIconPath": "images/tabbar/orders-active.png" },
+      { "pagePath": "pages/profile/profile", "text": "我的", "iconPath": "images/tabbar/profile.png", "selectedIconPath": "images/tabbar/profile-active.png" }
+    ]
+  },
+  "window": {
+    "navigationBarBackgroundColor": "#FF4444",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "秒杀商城",
+    "backgroundColor": "#f7f8fa",
+    "backgroundTextStyle": "dark",
+    "enablePullDownRefresh": false
+  },
+  "usingComponents": {
+    "van-button": "@vant/weapp/button/index",
+    "van-cell": "@vant/weapp/cell/index",
+    "van-cell-group": "@vant/weapp/cell-group/index",
+    "van-toast": "@vant/weapp/toast/index",
+    "van-dialog": "@vant/weapp/dialog/index",
+    "van-loading": "@vant/weapp/loading/index",
+    "van-empty": "@vant/weapp/empty/index",
+    "van-image": "@vant/weapp/image/index",
+    "van-tab": "@vant/weapp/tab/index",
+    "van-tabs": "@vant/weapp/tabs/index",
+    "van-popup": "@vant/weapp/popup/index",
+    "van-field": "@vant/weapp/field/index",
+    "van-form": "@vant/weapp/form/index",
+    "van-checkbox": "@vant/weapp/checkbox/index",
+    "van-checkbox-group": "@vant/weapp/checkbox-group/index",
+    "van-radio": "@vant/weapp/radio/index",
+    "van-radio-group": "@vant/weapp/radio-group/index",
+    "van-stepper": "@vant/weapp/stepper/index",
+    "van-swipe-cell": "@vant/weapp/swipe-cell/index",
+    "van-submit-bar": "@vant/weapp/submit-bar/index",
+    "van-goods-action": "@vant/weapp/goods-action/index",
+    "van-goods-action-icon": "@vant/weapp/goods-action-icon/index",
+    "van-goods-action-button": "@vant/weapp/goods-action-button/index",
+    "van-card": "@vant/weapp/card/index",
+    "van-tag": "@vant/weapp/tag/index",
+    "van-badge": "@vant/weapp/badge/index",
+    "van-collapse": "@vant/weapp/collapse/index",
+    "van-collapse-item": "@vant/weapp/collapse-item/index",
+    "van-action-sheet": "@vant/weapp/action-sheet/index",
+    "van-dropdown-menu": "@vant/weapp/dropdown-menu/index",
+    "van-dropdown-item": "@vant/weapp/dropdown-item/index",
+    "van-skeleton": "@vant/weapp/skeleton/index",
+    "van-divider": "@vant/weapp/divider/index",
+    "van-sticky": "@vant/weapp/sticky/index",
+    "van-search": "@vant/weapp/search/index",
+    "van-notify": "@vant/weapp/notify/index",
+    "van-area": "@vant/weapp/area/index",
+    "van-datetime-picker": "@vant/weapp/datetime-picker/index",
+    "van-progress": "@vant/weapp/progress/index",
+    "van-tree-select": "@vant/weapp/tree-select/index",
+    "van-cascader": "@vant/weapp/cascader/index"
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents"
+}

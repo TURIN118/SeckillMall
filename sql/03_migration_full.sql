@@ -9,10 +9,11 @@
 --   seckill_goods_add_columns: t_seckill_goods 加 seckill_name/per_limit/images/description
 --   v7_sku: SKU 相关表新建；t_cart 加 sku_id；t_normal_order_item/t_product_review 加 sku_id/sku_attributes；t_product 加 min_price/max_price/total_stock
 --   seckill_activity_migration: t_seckill_activity 新建；t_seckill_goods 加 activity_id
+--   v8_coupon_scope_and_order_discount: t_coupon 加 scope_type/category_id/product_id；t_normal_order 加 user_coupon_id/discount_amount
 -- 幂等保护：每个变更用 IF NOT EXISTS / IF EXISTS / 存储过程保护，可重复执行
 -- 注意：本脚本用于已有环境的增量迁移。新环境直接执行 01_schema_full.sql 即可（已含最终态）
--- 变更条数：约 30 条 DDL 语句
--- 生成时间：2026-08-07
+-- 变更条数：约 36 条 DDL 语句
+-- 生成时间：2026-08-09
 -- ============================================================
 
 SET NAMES utf8mb4;
@@ -481,6 +482,24 @@ CALL add_index_if_not_exists('t_user_coupon', 'idx_user_status_create', '`user_i
 CALL add_index_if_not_exists('t_user_coupon', 'idx_order_id', '`order_id`');
 
 -- ============================================================
+-- V8 迁移：优惠券适用范围字段 & 普通订单优惠字段
+--   t_coupon 加 scope_type/category_id/product_id + idx_scope 索引
+--   t_normal_order 加 user_coupon_id/discount_amount + idx_user_coupon 索引
+-- 来源：Coupon.java / NormalOrder.java 实体类新增字段
+-- ============================================================
+
+-- t_coupon 加适用范围字段（scope_type/category_id/product_id）
+CALL add_column_if_not_exists('t_coupon', 'scope_type',  'VARCHAR(10) NOT NULL DEFAULT ''ALL'' COMMENT ''适用范围：ALL-全站/CATEGORY-分类/PRODUCT-商品'' AFTER `status`');
+CALL add_column_if_not_exists('t_coupon', 'category_id', 'BIGINT NULL DEFAULT NULL COMMENT ''适用分类ID（scope_type=CATEGORY时有效）'' AFTER `scope_type`');
+CALL add_column_if_not_exists('t_coupon', 'product_id',  'BIGINT NULL DEFAULT NULL COMMENT ''适用商品ID（scope_type=PRODUCT时有效）'' AFTER `category_id`');
+CALL add_index_if_not_exists('t_coupon', 'idx_scope', '`scope_type`, `category_id`, `product_id`');
+
+-- t_normal_order 加优惠券使用字段（user_coupon_id/discount_amount）
+CALL add_column_if_not_exists('t_normal_order', 'user_coupon_id',  'BIGINT NULL DEFAULT NULL COMMENT ''使用的用户优惠券ID'' AFTER `remark`');
+CALL add_column_if_not_exists('t_normal_order', 'discount_amount', 'DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT ''优惠金额（无券时为0）'' AFTER `user_coupon_id`');
+CALL add_index_if_not_exists('t_normal_order', 'idx_user_coupon', '`user_coupon_id`');
+
+-- ============================================================
 -- M-S5 修复：t_login_log 的 user_id 允许为 NULL（不存在用户登录失败时也能记录日志）
 -- ============================================================
 -- 注意：此变更需要 MODIFY COLUMN，无法用存储过程幂等保护，需手动执行
@@ -510,5 +529,6 @@ SET FOREIGN_KEY_CHECKS = 1;
 --   V7: 5 张新表 + 5 列 + 4 索引
 --   activity_migration: 1 张新表（t_seckill_activity）+ 1 列 + 1 索引
 --   M-K6: 3 索引
---   合计：15 张新表 + 约 20 列变更 + 约 12 索引变更
+--   V8: 5 列（t_coupon 3 列 + t_normal_order 2 列）+ 2 索引
+--   合计：15 张新表 + 约 25 列变更 + 约 14 索引变更
 -- ============================================================

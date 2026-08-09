@@ -1,0 +1,35 @@
+/* uni.scss 全局样式变量（对齐 plan.md 第 6.1 节） */
+
+/* uView Plus 主题变量 */
+$u-primary: #2979ff;
+$u-success: #19be6b;
+$u-warning: #ff9900;
+$u-error: #ff4d4f;
+$u-info: #909399;
+
+/* 业务自定义变量 */
+$brand-color: #ff4d4f;          /* 品牌色（秒杀红） */
+$brand-color-light: #fff1f0;    /* 品牌色浅 */
+$text-color-primary: #303133;   /* 主文本 */
+$text-color-regular: #606266;   /* 常规文本 */
+$text-color-secondary: #909399; /* 次要文本 */
+$border-color: #dcdfe6;         /* 边框色 */
+$bg-color: #f8f8f8;             /* 背景色 */
+$card-bg: #ffffff;              /* 卡片背景 */
+
+/* 间距 */
+$spacing-xs: 8rpx;
+$spacing-sm: 16rpx;
+$spacing-md: 24rpx;
+$spacing-lg: 32rpx;
+$spacing-xl: 48rpx;
+
+/* 圆角 */
+$radius-sm: 8rpx;
+$radius-md: 12rpx;
+$radius-lg: 16rpx;
+
+/* uni-app 内置变量 */
+$uni-bg-color: #f8f8f8;
+$uni-text-color: #303133;
+$uni-font-size-base: 28rpx;

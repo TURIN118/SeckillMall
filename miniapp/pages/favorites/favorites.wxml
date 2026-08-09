@@ -1,0 +1,44 @@
+<!-- pages/favorites/favorites.wxml -->
+<view class="favorites">
+
+  <!-- 加载中 -->
+  <view class="favorites__loading" wx:if="{{loading && list.length === 0}}">
+    <van-loading size="24px">加载中...</van-loading>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="favorites__empty" wx:if="{{!loading && isEmpty}}">
+    <van-empty description="暂无收藏" />
+    <van-button type="danger" round custom-class="favorites__empty-btn" bind:click="onGoShopping">
+      去逛逛
+    </van-button>
+  </view>
+
+  <!-- 2 列网格 -->
+  <view class="favorites__grid" wx:if="{{list.length > 0}}">
+    <view
+      class="favorites__grid-item"
+      wx:for="{{list}}"
+      wx:key="productId"
+      wx:for-item="item"
+      data-id="{{item.productId}}"
+      bindlongpress="onLongPressItem"
+    >
+      <product-card
+        product="{{item}}"
+        bind:tap="onTapProduct"
+      />
+      <view class="favorites__remove" data-id="{{item.productId}}" catchtap="onRemoveFavorite">
+        取消收藏
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载更多 -->
+  <load-more
+    wx:if="{{list.length > 0}}"
+    status="{{loadMoreStatus}}"
+    bind:retry="onTapRetry"
+  />
+
+</view>

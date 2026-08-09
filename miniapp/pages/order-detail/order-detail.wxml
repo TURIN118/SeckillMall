@@ -1,0 +1,110 @@
+<!-- pages/order-detail/order-detail.wxml -->
+<view class="order-detail">
+
+  <!-- 加载中 -->
+  <view class="order-detail__loading" wx:if="{{loading}}">
+    <van-loading size="24px">加载中...</van-loading>
+  </view>
+
+  <!-- 错误态 -->
+  <view class="order-detail__error" wx:if="{{!loading && loadError}}">
+    <van-empty description="加载失败" />
+    <van-button type="danger" round bind:click="onTapRetry">重新加载</van-button>
+  </view>
+
+  <!-- 详情内容 -->
+  <block wx:if="{{!loading && !loadError && order}}">
+    <!-- 状态条 -->
+    <view class="order-detail__status-bar">
+      <text class="order-detail__status-text">{{statusText}}</text>
+      <text class="order-detail__type-tag" wx:if="{{orderType === 'SECKILL'}}">秒杀订单</text>
+    </view>
+
+    <!-- 地址区 -->
+    <view class="order-detail__address" wx:if="{{order.address || order.userAddress}}">
+      <view class="order-detail__address-icon">📍</view>
+      <view class="order-detail__address-info">
+        <view class="order-detail__address-header">
+          <text class="order-detail__address-receiver">{{order.address.receiver || order.userAddress.receiver}}</text>
+          <text class="order-detail__address-phone">{{maskedPhone}}</text>
+        </view>
+        <view class="order-detail__address-detail">{{fullAddress}}</view>
+      </view>
+    </view>
+
+    <!-- 商品明细 -->
+    <view class="order-detail__section">
+      <view class="order-detail__section-title">商品明细</view>
+      <view class="order-detail__items">
+        <view class="order-detail__item" wx:for="{{items}}" wx:key="productId">
+          <view class="order-detail__item-image">
+            <van-image
+              width="160rpx"
+              height="160rpx"
+              src="{{item.productImage}}"
+              fit="cover"
+              lazy-load
+            />
+          </view>
+          <view class="order-detail__item-info">
+            <view class="order-detail__item-name">{{item.productName}}</view>
+            <view class="order-detail__item-sku" wx:if="{{item.skuName}}">{{item.skuName}}</view>
+            <view class="order-detail__item-bottom">
+              <view class="order-detail__item-price">
+                <text class="order-detail__item-price-symbol">¥</text>
+                <text class="order-detail__item-price-value">{{item.price}}</text>
+              </view>
+              <text class="order-detail__item-qty">x{{item.quantity}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 订单信息 -->
+    <view class="order-detail__section">
+      <view class="order-detail__section-title">订单信息</view>
+      <van-cell-group inset>
+        <van-cell title="订单编号" value="{{order.orderId}}" />
+        <van-cell title="下单时间" value="{{formattedTime}}" />
+        <van-cell title="订单类型" value="{{orderType === 'SECKILL' ? '秒杀' : '普通'}}" />
+        <van-cell wx:if="{{order.remark}}" title="备注" value="{{order.remark}}" />
+      </van-cell-group>
+    </view>
+
+    <!-- 金额 -->
+    <view class="order-detail__section">
+      <view class="order-detail__section-title">金额信息</view>
+      <van-cell-group inset>
+        <van-cell title="商品总额" value="¥{{formattedAmount}}" />
+        <van-cell title="实付款" value="¥{{formattedAmount}}" value-class="order-detail__amount-value" />
+      </van-cell-group>
+    </view>
+  </block>
+
+  <!-- 底部操作栏 -->
+  <van-goods-action wx:if="{{!loading && !loadError && order}}">
+    <van-goods-action-button
+      wx:if="{{canCancel}}"
+      type="warning"
+      text="取消订单"
+      loading="{{submitting}}"
+      bind:click="onCancel"
+    />
+    <van-goods-action-button
+      wx:if="{{canConfirm}}"
+      type="info"
+      text="确认收货"
+      loading="{{submitting}}"
+      bind:click="onConfirm"
+    />
+    <van-goods-action-button
+      wx:if="{{canPay}}"
+      type="danger"
+      text="去支付"
+      loading="{{submitting}}"
+      bind:click="onPay"
+    />
+  </van-goods-action>
+
+</view>

@@ -1,0 +1,144 @@
+/* components/order-card/order-card.wxss */
+.order-card {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.order-card--hover {
+  opacity: 0.85;
+}
+
+/* 头部 */
+.order-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid #f2f3f5;
+}
+
+.order-card__type {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.order-card__type-tag {
+  display: inline-block;
+  padding: 2rpx 10rpx;
+  background: #ffece8;
+  color: #FF4444;
+  font-size: 20rpx;
+  border-radius: 4rpx;
+}
+
+.order-card__type-text {
+  font-size: 26rpx;
+  color: #969799;
+}
+
+.order-card__status {
+  font-size: 26rpx;
+  color: #323233;
+  font-weight: 500;
+}
+
+.order-card__status--PENDING_PAY {
+  color: #FF4444;
+}
+
+.order-card__status--PENDING_RECEIVE {
+  color: #1989fa;
+}
+
+.order-card__status--COMPLETED {
+  color: #07c160;
+}
+
+.order-card__status--CANCELLED {
+  color: #969799;
+}
+
+/* 主体 */
+.order-card__body {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  gap: 16rpx;
+}
+
+.order-card__thumbs {
+  display: flex;
+  gap: 12rpx;
+  flex: 1;
+}
+
+.order-card__thumb-item {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 8rpx;
+  overflow: hidden;
+  background: #f7f8fa;
+}
+
+.order-card__summary {
+  flex: 1;
+}
+
+.order-card__summary-text {
+  font-size: 26rpx;
+  color: #323233;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.order-card__count {
+  font-size: 24rpx;
+  color: #969799;
+  flex-shrink: 0;
+}
+
+/* 底部 */
+.order-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #f2f3f5;
+}
+
+.order-card__time {
+  font-size: 24rpx;
+  color: #969799;
+}
+
+.order-card__amount {
+  display: flex;
+  align-items: baseline;
+  gap: 4rpx;
+}
+
+.order-card__amount-label {
+  font-size: 24rpx;
+  color: #969799;
+  margin-right: 8rpx;
+}
+
+.order-card__amount-symbol {
+  font-size: 24rpx;
+  color: #FF4444;
+}
+
+.order-card__amount-value {
+  font-size: 30rpx;
+  color: #FF4444;
+  font-weight: 600;
+}

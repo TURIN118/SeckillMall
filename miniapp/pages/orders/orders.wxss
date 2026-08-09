@@ -1,0 +1,29 @@
+/* pages/orders/orders.wxss */
+.orders {
+  min-height: 100vh;
+  background: #f7f8fa;
+}
+
+/* 列表 */
+.orders__list {
+  padding: 20rpx;
+}
+
+/* 删除按钮 */
+.orders__delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 130rpx;
+  height: 100%;
+  background: #FF4444;
+  color: #ffffff;
+  font-size: 28rpx;
+}
+
+/* 加载 */
+.orders__loading {
+  display: flex;
+  justify-content: center;
+  padding: 80rpx 0;
+}

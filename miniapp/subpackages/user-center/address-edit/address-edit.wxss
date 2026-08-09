@@ -1,0 +1,21 @@
+/* subpackages/user-center/address-edit/address-edit.wxss */
+.address-edit {
+  min-height: 100vh;
+  background: #f7f8fa;
+  padding-top: 20rpx;
+  padding-bottom: 140rpx;
+}
+
+/* 校验错误 cell 标题 */
+.address-edit__cell-error {
+  color: #ee0a24 !important;
+}
+
+/* 操作按钮 */
+.address-edit__actions {
+  position: fixed;
+  left: 20rpx;
+  right: 20rpx;
+  bottom: 20rpx;
+  padding: 0 20rpx;
+}

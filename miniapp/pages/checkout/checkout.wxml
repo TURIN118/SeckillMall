@@ -1,0 +1,106 @@
+<!-- pages/checkout/checkout.wxml -->
+<view class="checkout">
+
+  <!-- 加载中 -->
+  <view class="checkout__loading" wx:if="{{loading}}">
+    <van-loading size="24px">加载中...</van-loading>
+  </view>
+
+  <block wx:if="{{!loading}}">
+    <!-- 地址区 -->
+    <view class="checkout__address" bindtap="onTapAddress" hover-class="checkout__address--hover">
+      <block wx:if="{{address}}">
+        <view class="checkout__address-icon">📍</view>
+        <view class="checkout__address-info">
+          <view class="checkout__address-header">
+            <text class="checkout__address-receiver">{{address.receiver}}</text>
+            <text class="checkout__address-phone">{{address.phone}}</text>
+          </view>
+          <view class="checkout__address-detail">
+            {{address.province}}{{address.city}}{{address.district}}{{address.detailAddress}}
+          </view>
+        </view>
+      </block>
+      <block wx:else>
+        <view class="checkout__address-empty">
+          <text class="checkout__address-empty-text">请选择收货地址</text>
+        </view>
+      </block>
+      <view class="checkout__address-arrow">›</view>
+    </view>
+
+    <!-- 商品明细 -->
+    <view class="checkout__section">
+      <view class="checkout__section-title">商品明细</view>
+      <view class="checkout__items">
+        <view class="checkout__item" wx:for="{{items}}" wx:key="productId">
+          <view class="checkout__item-image">
+            <van-image
+              width="160rpx"
+              height="160rpx"
+              src="{{item.productImage}}"
+              fit="cover"
+              lazy-load
+            />
+          </view>
+          <view class="checkout__item-info">
+            <view class="checkout__item-name">{{item.productName}}</view>
+            <view class="checkout__item-sku" wx:if="{{item.skuName}}">{{item.skuName}}</view>
+            <view class="checkout__item-bottom">
+              <view class="checkout__item-price">
+                <text class="checkout__item-price-symbol">¥</text>
+                <text class="checkout__item-price-value">{{item.price}}</text>
+              </view>
+              <text class="checkout__item-qty">x{{item.quantity}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <!-- 合计 -->
+      <view class="checkout__total">
+        <text class="checkout__total-label">共{{totalQuantity}}件，合计</text>
+        <text class="checkout__total-symbol">¥</text>
+        <text class="checkout__total-value">{{formattedTotal}}</text>
+      </view>
+    </view>
+
+    <!-- 备注 -->
+    <view class="checkout__section">
+      <view class="checkout__section-title">订单备注</view>
+      <van-cell-group inset>
+        <van-field
+          value="{{remark}}"
+          placeholder="选填，给商家留言（最多 200 字）"
+          maxlength="200"
+          bind:change="onRemarkInput"
+        />
+      </van-cell-group>
+    </view>
+
+    <!-- 支付方式 -->
+    <view class="checkout__section">
+      <view class="checkout__section-title">支付方式</view>
+      <van-radio-group value="{{payMethod}}" bind:change="onPayMethodChange">
+        <van-cell-group inset>
+          <van-cell title="支付宝" clickable data-name="ALIPAY" bind:click="onSelectPayMethod">
+            <van-radio slot="right-icon" name="ALIPAY" />
+          </van-cell>
+          <van-cell title="钱包余额" clickable data-name="WALLET" bind:click="onSelectPayMethod">
+            <van-radio slot="right-icon" name="WALLET" />
+          </van-cell>
+        </van-cell-group>
+      </van-radio-group>
+    </view>
+  </block>
+
+  <!-- 底部提交栏 -->
+  <van-submit-bar
+    wx:if="{{!loading}}"
+    price="{{totalPrice * 100}}"
+    button-text="提交订单"
+    bind:submit="onSubmit"
+    disabled="{{!canSubmit}}"
+    loading="{{submitting}}"
+  />
+
+</view>

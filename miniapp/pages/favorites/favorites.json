@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "我的收藏",
+  "onReachBottomDistance": 50,
+  "usingComponents": {
+    "van-loading": "@vant/weapp/loading/index",
+    "van-empty": "@vant/weapp/empty/index",
+    "van-button": "@vant/weapp/button/index",
+    "product-card": "../../components/product-card/product-card",
+    "load-more": "../../components/load-more/load-more"
+  }
+}

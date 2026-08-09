@@ -1,0 +1,13 @@
+{
+  "navigationBarTitleText": "订单详情",
+  "usingComponents": {
+    "van-loading": "@vant/weapp/loading/index",
+    "van-empty": "@vant/weapp/empty/index",
+    "van-button": "@vant/weapp/button/index",
+    "van-image": "@vant/weapp/image/index",
+    "van-cell": "@vant/weapp/cell/index",
+    "van-cell-group": "@vant/weapp/cell-group/index",
+    "van-goods-action": "@vant/weapp/goods-action/index",
+    "van-goods-action-button": "@vant/weapp/goods-action-button/index"
+  }
+}

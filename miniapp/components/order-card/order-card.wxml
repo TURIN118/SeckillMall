@@ -1,0 +1,41 @@
+<!-- components/order-card/order-card.wxml -->
+<view class="order-card" bindtap="onTap" hover-class="order-card--hover" hover-stay-time="100">
+  <!-- 头部：订单类型 + 状态 -->
+  <view class="order-card__header">
+    <view class="order-card__type">
+      <text class="order-card__type-tag" wx:if="{{typeText}}">{{typeText}}</text>
+      <text class="order-card__type-text">订单</text>
+    </view>
+    <text class="order-card__status order-card__status--{{order.status}}">{{statusText}}</text>
+  </view>
+
+  <!-- 商品缩略区 -->
+  <view class="order-card__body">
+    <view class="order-card__thumbs" wx:if="{{thumbImages.length > 0}}">
+      <view class="order-card__thumb-item" wx:for="{{thumbImages}}" wx:key="*this">
+        <van-image
+          width="120rpx"
+          height="120rpx"
+          src="{{item}}"
+          fit="cover"
+          lazy-load
+          bind:error="onImageError"
+        />
+      </view>
+    </view>
+    <view class="order-card__summary" wx:else>
+      <text class="order-card__summary-text">{{itemSummary}}</text>
+    </view>
+    <view class="order-card__count" wx:if="{{itemCount > 0}}">共{{itemCount}}件</view>
+  </view>
+
+  <!-- 底部：下单时间 + 金额 -->
+  <view class="order-card__footer">
+    <text class="order-card__time">{{formattedTime}}</text>
+    <view class="order-card__amount">
+      <text class="order-card__amount-label">实付</text>
+      <text class="order-card__amount-symbol">¥</text>
+      <text class="order-card__amount-value">{{formattedAmount}}</text>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,85 @@
+<!-- subpackages/user-center/address-edit/address-edit.wxml -->
+<view class="address-edit">
+
+  <!-- 表单 -->
+  <van-cell-group inset>
+    <!-- 收货人 -->
+    <van-field
+      value="{{form.receiver}}"
+      label="收货人"
+      placeholder="请输入收货人姓名"
+      required
+      error="{{!!errors.receiver}}"
+      error-message="{{errors.receiver}}"
+      bind:change="onReceiverInput"
+    />
+    <!-- 手机号 -->
+    <van-field
+      value="{{form.phone}}"
+      label="手机号"
+      type="number"
+      maxlength="11"
+      placeholder="请输入手机号"
+      required
+      error="{{!!errors.phone}}"
+      error-message="{{errors.phone}}"
+      bind:change="onPhoneInput"
+    />
+    <!-- 省市区 -->
+    <van-cell
+      title="所在地区"
+      value="{{areaText || '请选择'}}"
+      is-link
+      required
+      title-class="{{errors.area ? 'address-edit__cell-error' : ''}}"
+      bind:click="onShowArea"
+    />
+    <!-- 详细地址 -->
+    <van-field
+      value="{{form.detailAddress}}"
+      label="详细地址"
+      type="textarea"
+      autosize
+      placeholder="请输入详细地址（楼栋/门牌号等）"
+      required
+      error="{{!!errors.detailAddress}}"
+      error-message="{{errors.detailAddress}}"
+      bind:change="onDetailInput"
+    />
+    <!-- 设默认 -->
+    <van-cell title="设为默认地址" center>
+      <van-switch
+        slot="right-icon"
+        checked="{{form.isDefault}}"
+        bind:change="onDefaultChange"
+      />
+    </van-cell>
+  </van-cell-group>
+
+  <!-- 操作按钮 -->
+  <view class="address-edit__actions">
+    <van-button
+      type="danger"
+      round
+      block
+      loading="{{submitting}}"
+      bind:click="onSave"
+    >保存</van-button>
+  </view>
+
+  <!-- 省市区选择弹层 -->
+  <van-popup
+    show="{{showArea}}"
+    position="bottom"
+    round
+    bind:close="onAreaCancel"
+  >
+    <van-area
+      title="选择地区"
+      area-list="{{areaList}}"
+      bind:confirm="onAreaConfirm"
+      bind:cancel="onAreaCancel"
+    />
+  </van-popup>
+
+</view>

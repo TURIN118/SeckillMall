@@ -1,0 +1,115 @@
+/* components/address-card/address-card.wxss */
+.address-card {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  gap: 16rpx;
+}
+
+.address-card--hover {
+  opacity: 0.85;
+}
+
+.address-card--selected {
+  border: 2rpx solid #FF4444;
+  padding: 22rpx;
+}
+
+/* 选中态指示器 */
+.address-card__check {
+  flex-shrink: 0;
+}
+
+.address-card__check-icon {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  border: 2rpx solid #c8c9cc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 24rpx;
+}
+
+.address-card__check-icon--on {
+  background: #FF4444;
+  border-color: #FF4444;
+}
+
+/* 主体 */
+.address-card__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  min-width: 0;
+}
+
+.address-card__header {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.address-card__receiver {
+  font-size: 30rpx;
+  color: #323233;
+  font-weight: 600;
+}
+
+.address-card__phone {
+  font-size: 26rpx;
+  color: #646566;
+}
+
+.address-card__default-tag {
+  display: inline-block;
+  padding: 2rpx 10rpx;
+  background: #FF4444;
+  color: #ffffff;
+  font-size: 20rpx;
+  border-radius: 4rpx;
+}
+
+.address-card__detail {
+  font-size: 26rpx;
+  color: #646566;
+  line-height: 1.5;
+  /* 2 行省略 */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-all;
+}
+
+/* 操作区 */
+.address-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex-shrink: 0;
+}
+
+.address-card__action {
+  font-size: 24rpx;
+  color: #1989fa;
+  padding: 8rpx 12rpx;
+}
+
+.address-card__action--edit {
+  color: #1989fa;
+}
+
+/* 右侧箭头 */
+.address-card__arrow {
+  flex-shrink: 0;
+  font-size: 36rpx;
+  color: #c8c9cc;
+}

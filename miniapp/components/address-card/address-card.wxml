@@ -1,0 +1,43 @@
+<!-- components/address-card/address-card.wxml -->
+<view
+  class="address-card {{selectable ? 'address-card--selectable' : ''}} {{selected ? 'address-card--selected' : ''}}"
+  bindtap="onTap"
+  hover-class="address-card--hover"
+  hover-stay-time="100"
+>
+  <!-- 选中态指示器（仅 selectable=true 时展示） -->
+  <view class="address-card__check" wx:if="{{selectable}}">
+    <view class="address-card__check-icon {{selected ? 'address-card__check-icon--on' : ''}}">
+      <text wx:if="{{selected}}">✓</text>
+    </view>
+  </view>
+
+  <!-- 主体 -->
+  <view class="address-card__main">
+    <view class="address-card__header">
+      <text class="address-card__receiver">{{address.receiver}}</text>
+      <text class="address-card__phone">{{maskedPhone}}</text>
+      <text class="address-card__default-tag" wx:if="{{address.isDefault}}">默认</text>
+    </view>
+    <view class="address-card__detail">{{fullAddress}}</view>
+  </view>
+
+  <!-- 操作区：catchtap 阻止冒泡到卡片 onTap -->
+  <view class="address-card__actions">
+    <view
+      class="address-card__action"
+      wx:if="{{showSetDefault && !address.isDefault}}"
+      catchtap="onSetDefault"
+    >
+      <text>设默认</text>
+    </view>
+    <view class="address-card__action address-card__action--edit" catchtap="onEdit">
+      <text>编辑</text>
+    </view>
+  </view>
+
+  <!-- 选择模式：右侧箭头 -->
+  <view class="address-card__arrow" wx:if="{{selectable}}">
+    <text>›</text>
+  </view>
+</view>

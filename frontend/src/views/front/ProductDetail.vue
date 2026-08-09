@@ -120,25 +120,45 @@
               </div>
             </div>
 
-            <!-- 信息卡片式布局 -->
-            <div class="info-cards fade-in-item stagger-4">
-              <div class="info-card">
-                <span class="info-card-label">分类</span>
-                <span class="info-card-value">{{categoryPath.map(c => c.categoryName).join(' > ') ||
-                  product.categoryName
-                }}</span>
-              </div>
-              <div class="info-card">
-                <span class="info-card-label">库存</span>
-                <span class="info-card-value">{{ displayStock }} 件</span>
-              </div>
-              <div class="info-card">
-                <span class="info-card-label">销量</span>
-                <span class="info-card-value">{{ product.salesCount }} 件</span>
-              </div>
-              <div class="info-card">
-                <span class="info-card-label">上架时间</span>
-                <span class="info-card-value">{{ formatDate(product.createTime) }}</span>
+            <!-- 信息条：分类/库存/销量/上架时间整合为一行横向排列 -->
+            <div class="info-bar fade-in-item stagger-4">
+              <span class="info-bar-item">分类：{{ categoryPath.map(c => c.categoryName).join(' > ') ||
+                product.categoryName
+              }}</span>
+              <span class="info-bar-divider">|</span>
+              <span class="info-bar-item">库存：{{ displayStock }} 件</span>
+              <span class="info-bar-divider">|</span>
+              <span class="info-bar-item">销量：{{ product.salesCount }} 件</span>
+              <span class="info-bar-divider">|</span>
+              <span class="info-bar-item">上架：{{ formatDate(product.createTime) }}</span>
+            </div>
+
+            <!-- 可用优惠券横向提示条 (无可用券时不显示) -->
+            <div v-if="availableCoupons.length > 0" class="coupon-area fade-in-item stagger-4">
+              <div class="coupon-area-title">🎫 可用优惠券</div>
+              <div class="coupon-mini-list">
+                <div v-for="coupon in availableCoupons.slice(0, 3)" :key="coupon.id" class="coupon-mini-card">
+                  <div class="coupon-mini-value">
+                    <template v-if="coupon.type === 'AMOUNT'">¥{{ formatCouponAmount(coupon.amount) }}</template>
+                    <template v-else>{{ formatCouponDiscount(coupon.amount) }}折</template>
+                  </div>
+                  <div class="coupon-mini-condition">
+                    {{ coupon.minAmount > 0 ? `满${formatCouponMoney(coupon.minAmount)}可用` : '无门槛' }}
+                  </div>
+                  <button
+                    class="coupon-mini-btn"
+                    :class="{ received: couponReceivedMap[coupon.id] }"
+                    :disabled="couponReceivedMap[coupon.id] || receivingCouponId === coupon.id"
+                    @click="handleReceiveCoupon(coupon)"
+                  >
+                    <template v-if="couponReceivedMap[coupon.id]">已领取</template>
+                    <template v-else-if="receivingCouponId === coupon.id">...</template>
+                    <template v-else>领取</template>
+                  </button>
+                </div>
+                <div v-if="availableCoupons.length > 3" class="coupon-more" @click="router.push('/coupons')">
+                  查看更多 >
+                </div>
               </div>
             </div>
 
@@ -660,6 +680,7 @@ import { getProductReviews, createReview } from '@/api/review'
 
 import { checkFavorite, addFavorite, removeFavorite } from '@/api/favorite'
 import { addCart } from '@/api/cart'
+import { getAvailableCoupons, receiveCoupon } from '@/api/coupon'
 import { getCategoryTree } from '@/api/category'
 import { useUserStore } from '@/stores/user'
 import { useCartStore } from '@/stores/cart'
@@ -668,7 +689,7 @@ import { ElImageViewer } from 'element-plus'
 import dayjs from 'dayjs'
 import { formatImageUrl } from '@/utils/image'
 import DOMPurify from 'dompurify'
-import type { ProductVO, ProductReviewVO, ProductAttributeVO, ProductSkuVO, CategoryTreeNode } from '@/types'
+import type { ProductVO, ProductReviewVO, ProductAttributeVO, ProductSkuVO, CategoryTreeNode, CouponVO } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -952,6 +973,10 @@ async function fetchDetail(): Promise<void> {
     })
     // 建议9：预处理静态可达性地图（基于所有启用 SKU）
     buildStaticAvailabilityMap()
+    // 拉取当前商品可用优惠券 (仅在商品详情加载成功后调用)
+    if (res.data?.id) {
+      fetchAvailableCoupons(res.data.id)
+    }
   } catch {
     error.value = true
   } finally {
@@ -1131,6 +1156,58 @@ function formatTime(time: string | null | undefined): string {
 function formatDate(time: string | null | undefined): string {
   if (!time) return '-'
   return dayjs(time).format('YYYY-MM-DD')
+}
+
+/* === 优惠券相关 === */
+/** 当前商品可用优惠券列表 */
+const availableCoupons = ref<CouponVO[]>([])
+/** 已领取标记 Map (key: couponId, value: true) */
+const couponReceivedMap = ref<Record<string, boolean>>({})
+/** 正在领取的优惠券 ID (按钮 loading 态) */
+const receivingCouponId = ref<number | string | null>(null)
+
+/** 格式化优惠券满减金额 (整数不带小数, 非整数保留两位) */
+function formatCouponAmount(value: number): string {
+  const n = Number(value || 0)
+  return Number.isInteger(n) ? String(n) : n.toFixed(2)
+}
+
+/** 格式化优惠券折扣率 (0.85 → 8.5) */
+function formatCouponDiscount(value: number): string {
+  const n = Number(value || 0) * 10
+  return n.toFixed(1).replace(/\.0$/, '')
+}
+
+/** 格式化优惠券金额 (保留两位小数) */
+function formatCouponMoney(value: number): string {
+  return Number(value || 0).toFixed(2)
+}
+
+/** 拉取当前商品可用优惠券 */
+async function fetchAvailableCoupons(productId: number | string): Promise<void> {
+  try {
+    const res = await getAvailableCoupons(productId)
+    availableCoupons.value = res.data ?? []
+  } catch {
+    availableCoupons.value = []
+  }
+}
+
+/** 领取优惠券 (商品详情页迷你卡片) */
+async function handleReceiveCoupon(coupon: CouponVO): Promise<void> {
+  if (couponReceivedMap.value[coupon.id]) return
+  receivingCouponId.value = coupon.id
+  try {
+    await receiveCoupon(coupon.id)
+    couponReceivedMap.value[coupon.id] = true
+    // 乐观更新剩余数量
+    coupon.receivedCount = (coupon.receivedCount || 0) + 1
+    ElMessage.success('优惠券领取成功')
+  } catch {
+    // 错误已由请求拦截器统一提示
+  } finally {
+    receivingCouponId.value = null
+  }
 }
 
 /* === 数量选择器 === */
@@ -1974,7 +2051,7 @@ onUnmounted(() => {
   gap: 4px;
 }
 
-/* 信息卡片式布局 */
+/* 信息卡片式布局 (保留以兼容其他位置, 但详情主体已改用 info-bar) */
 .info-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2006,6 +2083,124 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: 700;
   color: var(--color-text-primary);
+}
+
+/* 信息条: 分类/库存/销量/上架时间整合为一行横向排列 */
+.info-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.info-bar-item {
+  color: var(--color-text-secondary);
+}
+
+.info-bar-divider {
+  color: var(--color-border);
+  font-weight: 400;
+}
+
+/* === 可用优惠券横向提示条 === */
+.coupon-area {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: linear-gradient(90deg, var(--color-primary-light, rgba(229, 57, 53, 0.06)), rgba(255, 196, 0, 0.04));
+  border: 1px dashed var(--color-primary, #e53935);
+  border-radius: var(--radius-md);
+}
+
+.coupon-area-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary, #e53935);
+  margin-bottom: 8px;
+}
+
+.coupon-mini-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 迷你优惠券卡片 */
+.coupon-mini-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.coupon-mini-card:hover {
+  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.1);
+  transform: translateY(-1px);
+}
+
+.coupon-mini-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-primary, #e53935);
+  line-height: 1;
+}
+
+.coupon-mini-condition {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.coupon-mini-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-primary, #e53935);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.coupon-mini-btn:hover:not(:disabled) {
+  background: var(--btn-hover, #c62828);
+}
+
+.coupon-mini-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.coupon-mini-btn.received {
+  background: var(--color-bg-subtle, #f5f5f5);
+  color: var(--color-text-muted, #9ca3af);
+  border: 1px solid var(--color-border, #e5e7eb);
+  opacity: 1;
+}
+
+/* 查看更多链接 */
+.coupon-more {
+  font-size: 13px;
+  color: var(--color-primary, #e53935);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+
+.coupon-more:hover {
+  opacity: 0.75;
 }
 
 /* 服务保障：标签式设计 */

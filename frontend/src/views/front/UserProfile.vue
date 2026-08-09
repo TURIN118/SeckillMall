@@ -445,12 +445,17 @@
 
           <!-- Tab 5: 我的优惠券 -->
           <div v-else-if="activeTab === 'coupons'" class="coupons-tab">
-            <!-- 子Tab切换 -->
+            <!-- 子Tab切换 + 去领券中心按钮 -->
             <div class="coupon-tabs">
-              <div v-for="tab in couponSubTabs" :key="tab.value" class="coupon-tab"
-                :class="{ active: couponActiveSubTab === tab.value }" @click="switchCouponSubTab(tab.value)">
-                {{ tab.label }}
-                <span class="tab-count">({{ couponTabCountMap[tab.value] || 0 }})</span>
+              <div class="coupon-tabs-nav">
+                <div v-for="tab in couponSubTabs" :key="tab.value" class="coupon-tab"
+                  :class="{ active: couponActiveSubTab === tab.value }" @click="switchCouponSubTab(tab.value)">
+                  {{ tab.label }}
+                  <span class="tab-count">({{ couponTabCountMap[tab.value] || 0 }})</span>
+                </div>
+              </div>
+              <div class="coupon-header-actions">
+                <button class="go-coupon-center-btn" type="button" @click="router.push('/coupons')">去领券中心 ></button>
               </div>
             </div>
 
@@ -2309,12 +2314,45 @@ onUnmounted(() => {
 
 .coupon-tabs {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 0;
   border-bottom: 1px solid var(--color-border, #e5e7eb);
   margin-bottom: 20px;
   background: var(--color-bg-subtle, #fafafa);
   border-radius: 8px 8px 0 0;
   padding: 0 8px;
+}
+
+/* 子Tab导航 (左侧) */
+.coupon-tabs-nav {
+  display: flex;
+  gap: 0;
+}
+
+/* 去领券中心按钮容器 (右侧) */
+.coupon-header-actions {
+  display: flex;
+  align-items: center;
+  padding-right: 8px;
+}
+
+.go-coupon-center-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-primary, #e53935);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.go-coupon-center-btn:hover {
+  background: var(--btn-hover, #c62828);
 }
 
 .coupon-tab {

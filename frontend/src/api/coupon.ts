@@ -23,6 +23,18 @@ export function getMyCoupons(status?: UserCouponStatus): Promise<Result<UserCoup
     return get<UserCouponVO[]>('/api/v1/coupons/mine', params)
 }
 
+/** 查询可领取的优惠券列表（支持按商品筛选） */
+export function getAvailableCoupons(productId?: number | string): Promise<Result<CouponVO[]>> {
+    const params: Record<string, unknown> = {}
+    if (productId) params.productId = productId
+    return get<CouponVO[]>('/api/v1/coupons/available', params)
+}
+
+/** 领取优惠券 */
+export function receiveCoupon(id: number | string): Promise<Result<void>> {
+    return post<void>(`/api/v1/coupons/${id}/receive`)
+}
+
 /* ==================== 后台接口 (ADMIN) ==================== */
 
 /** 后台分页查询优惠券列表 */

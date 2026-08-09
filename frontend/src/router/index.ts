@@ -79,6 +79,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '秒杀专区' }
       },
       {
+        path: 'coupons',
+        name: 'CouponCenter',
+        component: () => import('@/views/front/CouponCenter.vue'),
+        meta: { title: '领券中心', requiresAuth: true }
+      },
+      {
         path: 'cart',
         name: 'Cart',
         component: () => import('@/views/front/Cart.vue'),

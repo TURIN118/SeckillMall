@@ -422,6 +422,10 @@ export interface NormalOrder {
   totalAmount: number
   freightAmount: number
   payAmount: number
+  /** 使用的用户优惠券 ID (未使用优惠券时为 null) */
+  userCouponId?: number | string | null
+  /** 优惠金额 (未使用优惠券时为 0) */
+  discountAmount?: number
   status: string
   payMethod?: string
   transactionId?: string
@@ -683,6 +687,9 @@ export type CouponType = 'AMOUNT' | 'DISCOUNT'
 /** 用户优惠券状态: UNUSED-未使用 / USED-已使用 / EXPIRED-已过期 */
 export type UserCouponStatus = 'UNUSED' | 'USED' | 'EXPIRED'
 
+/** 优惠券适用范围: ALL-全站通用 / CATEGORY-指定分类 / PRODUCT-指定商品 */
+export type CouponScopeType = 'ALL' | 'CATEGORY' | 'PRODUCT'
+
 /** 优惠券视图对象 (匹配后端 CouponVO) */
 export interface CouponVO {
   id: number | string
@@ -693,6 +700,14 @@ export interface CouponVO {
   amount: number
   /** 最低消费金额 */
   minAmount: number
+  /** 适用范围: ALL-全站 / CATEGORY-分类 / PRODUCT-商品 (默认 ALL) */
+  scopeType?: CouponScopeType
+  /** 适用分类 ID (scopeType=CATEGORY 时有效) */
+  categoryId?: number | string | null
+  /** 适用商品 ID (scopeType=PRODUCT 时有效) */
+  productId?: number | string | null
+  /** 适用范围展示标签 (后端拼接, 如 "仅限手机数码" / "仅限XX商品"; 通用券为空) */
+  scopeLabel?: string
   /** 发放总数 */
   totalCount: number
   /** 已领取数量 */

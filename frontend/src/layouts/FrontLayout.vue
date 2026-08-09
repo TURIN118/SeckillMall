@@ -12,10 +12,12 @@
         <button class="mock-search-btn" @click="handleSearch">搜索</button>
       </div>
 
-      <!-- 导航链接：秒杀专区 / 我的订单 / 购物车(带徽标) / 收藏夹 -->
+      <!-- 导航链接：秒杀专区 / 领券中心 / 我的订单 / 购物车(带徽标) / 收藏夹 -->
       <nav class="mock-nav-links">
         <a href="javascript:void(0)" :class="{ active: route.path === '/seckill' }"
           @click="router.push('/seckill')">秒杀专区</a>
+        <a href="javascript:void(0)" :class="{ active: route.path === '/coupons' }"
+          @click="goCoupons">领券中心</a>
         <a href="javascript:void(0)" :class="{ active: route.path.startsWith('/user/orders') }"
           @click="goOrders">我的订单</a>
         <!-- 购物车链接 + 数量徽标 -->
@@ -161,6 +163,15 @@ const roleLabel = computed<string>(() => {
 /** 跳转订单 */
 function goOrders(): void {
   router.push('/user/orders')
+}
+
+/** 跳转领券中心(未登录跳登录页) */
+function goCoupons(): void {
+  if (!userStore.isLoggedIn) {
+    router.push('/login?redirect=' + encodeURIComponent('/coupons'))
+    return
+  }
+  router.push('/coupons')
 }
 
 /** 跳转购物车(未登录跳登录页) */

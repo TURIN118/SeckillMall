@@ -67,7 +67,7 @@ export function cancelOrder(orderId: number | string): Promise<Result<SeckillOrd
 
 /**
  * 立即购买创建订单
- * POST /api/v1/orders  body: { productId, skuId?, quantity, addressId, remark? }
+ * POST /api/v1/orders  body: { productId, skuId?, quantity, addressId, remark?, userCouponId? }
  */
 export function createOrder(data: {
   productId: number | string
@@ -78,18 +78,22 @@ export function createOrder(data: {
   addressId?: number | string
   /** 备注（可选） */
   remark?: string
+  /** 用户优惠券 ID（可选，不传表示不使用优惠券） */
+  userCouponId?: number | string
 }): Promise<Result<NormalOrder>> {
   return post<NormalOrder>('/api/v1/orders', data)
 }
 
 /**
  * 从购物车创建订单
- * POST /api/v1/orders/from-cart  body: { addressId, cartIds, remark? }
+ * POST /api/v1/orders/from-cart  body: { addressId, cartIds, remark?, userCouponId? }
  */
 export function createOrderFromCart(data: {
   addressId: number | string
   cartIds: (number | string)[]
   remark?: string
+  /** 用户优惠券 ID（可选，不传表示不使用优惠券） */
+  userCouponId?: number | string
 }): Promise<Result<NormalOrder>> {
   return post<NormalOrder>('/api/v1/orders/from-cart', data)
 }

@@ -53,6 +53,46 @@
                 </div>
             </div>
 
+            <!-- 优惠券选择区 (仅普通订单显示, 秒杀订单不显示; 无可用券时不显示) -->
+            <div v-if="!isSeckillOrder && availableCoupons.length > 0" class="section-card coupon-section">
+                <div class="section-title">优惠券</div>
+                <div class="coupon-select-row">
+                    <el-select v-model="selectedUserCouponId" placeholder="选择优惠券" clearable
+                        class="coupon-select" @change="onCouponChange">
+                        <el-option :value="0" label="不使用优惠券" />
+                        <el-option v-for="coupon in availableCoupons" :key="coupon.id" :value="coupon.id"
+                            :label="formatCouponLabel(coupon)" :disabled="!isCouponUsable(coupon)">
+                            <div class="coupon-option">
+                                <span class="coupon-option-value">
+                                    <template v-if="coupon.coupon.type === 'AMOUNT'">¥{{ coupon.coupon.amount }}</template>
+                                    <template v-else>{{ (coupon.coupon.amount * 10).toFixed(1) }}折</template>
+                                </span>
+                                <span class="coupon-option-condition">
+                                    满{{ coupon.coupon.minAmount }}元可用
+                                    <span v-if="coupon.coupon.scopeLabel">（{{ coupon.coupon.scopeLabel }}）</span>
+                                </span>
+                                <span v-if="!isCouponUsable(coupon)" class="coupon-option-disabled">不满足条件</span>
+                            </div>
+                        </el-option>
+                    </el-select>
+                </div>
+                <!-- 金额汇总 -->
+                <div class="amount-summary">
+                    <div class="amount-row">
+                        <span class="amount-label">商品总额</span>
+                        <span class="amount-value">¥{{ formatPrice(totalAmount) }}</span>
+                    </div>
+                    <div v-if="discountAmount > 0" class="amount-row discount">
+                        <span class="amount-label">优惠金额</span>
+                        <span class="amount-value">-¥{{ formatPrice(discountAmount) }}</span>
+                    </div>
+                    <div class="amount-row pay">
+                        <span class="amount-label">实付金额</span>
+                        <span class="amount-value">¥{{ formatPrice(payAmount) }}</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- 2. [收货地址 | 支付方式] 两列排列 -->
             <div class="section-row">
                 <!-- 收货地址卡 -->
@@ -153,7 +193,7 @@
             <div class="checkout-footer">
                 <div class="footer-left">
                     <span class="footer-tip">应付总额：</span>
-                    <span class="footer-amount">¥{{ formatPrice(totalAmount) }}</span>
+                    <span class="footer-amount">¥{{ formatPrice(payAmount) }}</span>
                 </div>
                 <div class="footer-right">
                     <button class="btn-submit" type="button" :disabled="!canSubmit || submitting" @click="handleSubmit">
@@ -180,8 +220,9 @@ import { Loading } from '@element-plus/icons-vue'
 import { getAddressList } from '@/api/address'
 import { createOrder, createOrderFromCart, payNormalOrder } from '@/api/order'
 import { getWalletBalance } from '@/api/wallet'
+import { getMyCoupons } from '@/api/coupon'
 import { formatImageUrl } from '@/utils/image'
-import type { UserAddressVO } from '@/types'
+import type { UserAddressVO, UserCouponVO } from '@/types'
 
 const router = useRouter()
 const route = useRoute()
@@ -240,6 +281,20 @@ const buyNowParams = ref<{
     quantity: number
 } | null>(null)
 
+/* === 优惠券相关 === */
+
+/** 可用优惠券列表 (未使用状态) */
+const availableCoupons = ref<UserCouponVO[]>([])
+
+/** 选中的用户优惠券 ID (0=不使用优惠券) */
+const selectedUserCouponId = ref<number | string>(0)
+
+/** 优惠金额 */
+const discountAmount = ref<number>(0)
+
+/** 优惠券加载中 */
+const couponLoading = ref<boolean>(false)
+
 /* === 计算属性 === */
 
 /** 总件数 */
@@ -262,10 +317,110 @@ const currentAddress = computed<UserAddressVO | undefined>(() => {
     return addressList.value.find(a => a.id === selectedAddressId.value)
 })
 
+/**
+ * 是否秒杀订单 (本结算页仅处理普通订单, 秒杀订单走独立流程)
+ * 保留此计算属性以便未来扩展, 当前始终返回 false → 优惠券区始终对普通订单可见
+ */
+const isSeckillOrder = computed<boolean>(() => {
+    return false
+})
+
+/** 实付金额 = max(0, 商品总额 - 优惠金额) */
+const payAmount = computed<number>(() => {
+    return Math.max(0, totalAmount.value - discountAmount.value)
+})
+
 /** 钱包余额是否充足 */
 const walletEnough = computed<boolean>(() => {
-    return (walletBalance.value ?? 0) >= totalAmount.value
+    return (walletBalance.value ?? 0) >= payAmount.value
 })
+
+/* === 优惠券工具函数 === */
+
+/**
+ * 计算优惠券适用商品小计
+ * - 通用券(ALL): 订单总额
+ * - 分类券(CATEGORY): 前端无分类信息, 简化为订单总额 (后端会精确校验)
+ * - 商品券(PRODUCT): 订单中匹配商品的小计之和
+ */
+function couponApplicableSubtotal(coupon: UserCouponVO): number {
+    if (!coupon.coupon) return 0
+    const scopeType = coupon.coupon.scopeType ?? 'ALL'
+    if (scopeType === 'PRODUCT' && coupon.coupon.productId != null) {
+        // 找出订单中该商品的小计之和
+        return checkoutItems.value
+            .filter(item => String(item.productId) === String(coupon.coupon!.productId))
+            .reduce((sum, item) => sum + (item.subtotal || 0), 0)
+    }
+    // ALL / CATEGORY: 用订单总额 (CATEGORY 因前端无分类信息, 简化处理)
+    return totalAmount.value
+}
+
+/**
+ * 判断优惠券是否可用 (按 scope 筛选适用商品小计 + minAmount 门槛)
+ */
+function isCouponUsable(coupon: UserCouponVO): boolean {
+    if (!coupon.coupon) return false
+    const minAmount = coupon.coupon.minAmount || 0
+    const applicableSubtotal = couponApplicableSubtotal(coupon)
+    return applicableSubtotal >= minAmount
+}
+
+/**
+ * 优惠券选择变化时重新计算优惠金额
+ */
+function onCouponChange(): void {
+    const selId = selectedUserCouponId.value
+    if (selId === 0 || selId === '' || selId === null || selId === undefined) {
+        discountAmount.value = 0
+        return
+    }
+    const coupon = availableCoupons.value.find(c => c.id === selId)
+    if (!coupon || !coupon.coupon) {
+        discountAmount.value = 0
+        return
+    }
+    const applicableSubtotal = couponApplicableSubtotal(coupon)
+    if (coupon.coupon.type === 'AMOUNT') {
+        // 满减券: 优惠 = amount
+        discountAmount.value = coupon.coupon.amount
+    } else {
+        // 折扣券: 优惠 = 适用小计 × (1 - 折扣率), 折扣率 amount 为 0~1 小数
+        discountAmount.value = applicableSubtotal * (1 - coupon.coupon.amount)
+    }
+    // 优惠金额不能超过适用小计
+    if (discountAmount.value > applicableSubtotal) {
+        discountAmount.value = applicableSubtotal
+    }
+    // 保留两位小数, 避免浮点误差
+    discountAmount.value = Math.round(discountAmount.value * 100) / 100
+}
+
+/**
+ * 格式化优惠券下拉选项标签
+ */
+function formatCouponLabel(coupon: UserCouponVO): string {
+    if (!coupon.coupon) return ''
+    const typeLabel = coupon.coupon.type === 'AMOUNT'
+        ? `¥${coupon.coupon.amount}满减券`
+        : `${(coupon.coupon.amount * 10).toFixed(1)}折折扣券`
+    return `${typeLabel}（满${coupon.coupon.minAmount}可用）`
+}
+
+/**
+ * 加载可用优惠券列表 (未使用状态)
+ */
+async function loadAvailableCoupons(): Promise<void> {
+    couponLoading.value = true
+    try {
+        const res = await getMyCoupons('UNUSED')
+        availableCoupons.value = res.data ?? []
+    } catch {
+        availableCoupons.value = []
+    } finally {
+        couponLoading.value = false
+    }
+}
 
 /* === 工具函数 === */
 
@@ -333,7 +488,7 @@ async function handleSubmit(): Promise<void> {
         return
     }
     // 余额支付校验: 余额不足时提示去充值
-    if (payMethod.value === 'WALLET' && walletBalance.value !== null && walletBalance.value < totalAmount.value) {
+    if (payMethod.value === 'WALLET' && walletBalance.value !== null && walletBalance.value < payAmount.value) {
         ElMessageBox.confirm('余额不足，是否前往充值？', '提示', { type: 'warning' })
             .then(() => router.push('/user/wallet'))
             .catch(() => { })
@@ -342,6 +497,8 @@ async function handleSubmit(): Promise<void> {
     submitting.value = true
     try {
         // 1. 创建订单 (根据结算模式调用不同 API)
+        //    传入 userCouponId (0/空 表示不使用优惠券)
+        const userCouponId = selectedUserCouponId.value || undefined
         let order: { id: number | string } | undefined
         if (checkoutMode.value === 'buynow' && buyNowParams.value) {
             // 立即购买模式: 使用 createOrder
@@ -350,7 +507,8 @@ async function handleSubmit(): Promise<void> {
                 skuId: buyNowParams.value.skuId,
                 quantity: buyNowParams.value.quantity,
                 addressId: selectedAddressId.value,
-                remark: remark.value.trim() || undefined
+                remark: remark.value.trim() || undefined,
+                userCouponId
             })
             order = createRes.data
         } else {
@@ -359,7 +517,8 @@ async function handleSubmit(): Promise<void> {
             const createRes = await createOrderFromCart({
                 addressId: selectedAddressId.value,
                 cartIds,
-                remark: remark.value.trim() || undefined
+                remark: remark.value.trim() || undefined,
+                userCouponId
             })
             order = createRes.data
         }
@@ -409,6 +568,8 @@ onMounted(() => {
     loadCheckoutItems()
     loadAddressList()
     loadWalletBalance()
+    // 加载可用优惠券 (仅普通订单结算页需要, 秒杀订单不走此页)
+    loadAvailableCoupons()
 })
 </script>
 
@@ -702,6 +863,99 @@ onMounted(() => {
     font-weight: 800;
     color: var(--color-primary);
     margin-left: 4px;
+}
+
+/* === 优惠券选择区 === */
+.coupon-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.coupon-select-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.coupon-select {
+    flex: 1;
+    max-width: 480px;
+}
+
+/* el-select 下拉选项自定义内容 */
+.coupon-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.coupon-option-value {
+    color: var(--color-primary);
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.coupon-option-condition {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.coupon-option-disabled {
+    color: var(--color-text-muted);
+    font-size: 12px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* === 金额汇总 === */
+.amount-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 0 4px;
+    border-top: 1px solid var(--color-border-light);
+}
+
+.amount-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
+.amount-row .amount-label {
+    color: var(--color-text-secondary);
+}
+
+.amount-row .amount-value {
+    color: var(--color-text-primary);
+    font-weight: 600;
+}
+
+.amount-row.discount .amount-value {
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.amount-row.pay {
+    font-size: 15px;
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--color-border-light);
+}
+
+.amount-row.pay .amount-label {
+    color: var(--color-text-primary);
+    font-weight: 600;
+}
+
+.amount-row.pay .amount-value {
+    color: var(--color-primary);
+    font-size: 18px;
+    font-weight: 800;
 }
 
 /* === 支付方式 === */

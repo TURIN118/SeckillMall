@@ -1,6 +1,6 @@
 # 秒杀商城数据库脚本说明
 
-本目录包含秒杀商城项目的完整数据库初始化与迁移脚本，由散落在项目各处的 SQL 文件整合而成。
+本目录包含秒杀商城项目的完整数据库初始化脚本，由散落在项目各处的 SQL 文件整合而成。
 
 项目同时维护两个 SQL 目录，用途不同，需配合使用：
 
@@ -17,7 +17,7 @@
 |------|------|------|
 | `01_schema_full.sql` | 完整建表脚本 | 包含全部 **23 张表**的最终态定义，按依赖顺序排列，含环境护栏（`DELIMITER`/存储过程） |
 | `02_init_data_full.sql` | 完整初始化数据 | 包含 **190 条**种子数据（用户/分类/商品/秒杀活动/轮播图/充值卡），PII 已脱敏 |
-| `03_migration_full.sql` | 完整幂等迁移脚本 | 整合 V2~V8 所有增量变更，可重复执行，用于已有环境升级到最终态 |
+
 | `README.md` | 本说明文档 | — |
 
 ### `seckill-mall/src/main/resources/sql/` 目录（Docker 自动初始化，无护栏）
@@ -64,13 +64,6 @@ SOURCE sql/02_init_data_full.sql;
 ### 全新环境初始化（Docker，使用 `resources/sql/` 目录，自动）
 
 `docker-compose.yml` 已将 `seckill-mall/src/main/resources/sql/` 挂载到 MySQL 容器的 `/docker-entrypoint-initdb.d/`，容器首次启动时按文件名字母序自动执行 `schema.sql` → `data.sql`，无需人工干预，也无需设置护栏变量。
-
-### 已有环境增量迁移
-
-```sql
--- 仅执行迁移脚本即可（幂等，可重复执行）
-SOURCE sql/03_migration_full.sql;
-```
 
 ## 数据库表清单（23 张）
 
@@ -174,28 +167,15 @@ SOURCE sql/01_schema_full.sql;
 
 > **注意**：`seckill-mall/src/main/resources/sql/schema.sql` 不含此护栏（Docker 容器初始化时无法预先设置会话变量），因此仅适合在全新环境由容器首次启动时执行，禁止手动连到已有库执行。
 
-## 幂等性说明
-
-`03_migration_full.sql` 中的所有变更均通过存储过程实现幂等保护：
-
-- `add_column_if_not_exists` — 列不存在时才 ADD COLUMN
-- `add_index_if_not_exists` — 索引不存在时才 ADD INDEX
-- `add_unique_if_not_exists` — 唯一索引不存在时才 ADD UNIQUE KEY
-- `drop_index_if_exists` — 索引存在时才 DROP INDEX
-- `CREATE TABLE IF NOT EXISTS` — 表不存在时才建表
-
-因此该脚本可安全重复执行，不会因已存在的对象而报错。
 
 ## 注意事项
 
 1. **两个目录的表结构必须保持一致**：`sql/01_schema_full.sql`（有护栏）与 `seckill-mall/src/main/resources/sql/schema.sql`（无护栏）的 CREATE TABLE 部分应完全一致；`sql/02_init_data_full.sql` 与 `seckill-mall/src/main/resources/sql/data.sql` 应完全一致。修改时需同步更新。
 2. **一次性创建完整语句**：`schema.sql` 与 `01_schema_full.sql` 均为最终态完整建表脚本，不包含任何 `ALTER TABLE` 修改语句；所有迁移变更（V2~V8）已合并到表定义中。
-3. **新环境只需执行 01 + 02**：`01_schema_full.sql` 已包含所有最终态表结构，无需再执行迁移脚本。
-4. **已有环境只需执行 03**：迁移脚本会将旧版表结构升级到最终态。
-5. **M-S5 修复需手动执行**：`t_login_log.user_id` 改为 NULL 的变更涉及 `MODIFY COLUMN`，无法幂等保护，脚本中已注释，需手动取消注释执行。
-6. **字符集统一**：所有表使用 `utf8mb4` + `utf8mb4_general_ci`，不支持 `utf8mb4_0900_ai_ci`（MySQL 8.0 默认排序规则，但本项目使用 general_ci 以保持兼容性）。
-7. **外键检查**：脚本开头执行 `SET FOREIGN_KEY_CHECKS = 0`，结尾恢复为 1，确保按依赖顺序插入数据时不受外键约束影响。
-8. **Docker 初始化兼容性**：`resources/sql/` 下脚本不能包含 `DELIMITER`/存储过程（Docker `/docker-entrypoint-initdb.d/` 初始化时可能不兼容），仅保留纯 SQL 语句。
+3. **新环境只需执行 01 + 02**：`01_schema_full.sql` 已包含所有最终态表结构，无需任何迁移脚本。
+4. **字符集统一**：所有表使用 `utf8mb4` + `utf8mb4_general_ci`，不支持 `utf8mb4_0900_ai_ci`（MySQL 8.0 默认排序规则，但本项目使用 general_ci 以保持兼容性）。
+5. **外键检查**：脚本开头执行 `SET FOREIGN_KEY_CHECKS = 0`，结尾恢复为 1，确保按依赖顺序插入数据时不受外键约束影响。
+6. **Docker 初始化兼容性**：`resources/sql/` 下脚本不能包含 `DELIMITER`/存储过程（Docker `/docker-entrypoint-initdb.d/` 初始化时可能不兼容），仅保留纯 SQL 语句。
 
 ## 生成信息
 

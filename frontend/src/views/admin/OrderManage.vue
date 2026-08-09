@@ -67,7 +67,9 @@
                   <span class="shipping-company">{{ row.shippingCompany }}</span>
                   <span class="shipping-no" @click="copyShippingNo(row.shippingNo)">
                     {{ row.shippingNo }}
-                    <el-icon><CopyDocument /></el-icon>
+                    <el-icon>
+                      <CopyDocument />
+                    </el-icon>
                   </span>
                 </div>
               </template>
@@ -77,7 +79,8 @@
             <td>
               <div class="table-actions">
                 <button class="table-action-btn" @click="openDetail(row as AdminOrderVO)">详情</button>
-                <button v-if="row.status === 'PAID'" class="table-action-btn ship-btn" @click="openShipDialog(row as AdminOrderVO)">发货</button>
+                <button v-if="row.status === 'PAID'" class="table-action-btn ship-btn"
+                  @click="openShipDialog(row as AdminOrderVO)">发货</button>
               </div>
             </td>
           </tr>
@@ -104,10 +107,13 @@
     <el-dialog v-model="detailVisible" title="订单详情" width="600px">
       <div v-if="detailRow" class="detail-list">
         <div class="detail-row"><span class="detail-label">订单号</span><span class="detail-value">{{ detailRow.orderNo
+        }}</span></div>
+        <div class="detail-row"><span class="detail-label">用户</span><span class="detail-value">{{ detailRow.username ||
+          detailRow.userId
             }}</span></div>
-        <div class="detail-row"><span class="detail-label">用户</span><span class="detail-value">{{ detailRow.username || detailRow.userId
-            }}</span></div>
-        <div class="detail-row"><span class="detail-label">商品</span><span class="detail-value">{{ detailRow.productName || detailRow.productId
+        <div class="detail-row"><span class="detail-label">商品</span><span class="detail-value">{{ detailRow.productName
+          ||
+          detailRow.productId
             }}</span></div>
         <div class="detail-row"><span class="detail-label">秒杀价</span><span class="detail-value">{{
           detailRow.seckillPrice != null ? '¥' + formatPrice(detailRow.seckillPrice) : '—' }}</span></div>

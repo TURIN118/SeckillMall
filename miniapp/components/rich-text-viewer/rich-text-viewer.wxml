@@ -1,0 +1,5 @@
+<!-- components/rich-text-viewer/rich-text-viewer.wxml -->
+<view class="rich-text-viewer">
+  <rich-text nodes="{{safeHtml}}" wx:if="{{safeHtml}}"></rich-text>
+  <view class="rich-text-viewer__empty" wx:else>暂无详情</view>
+</view>

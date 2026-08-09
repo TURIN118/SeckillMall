@@ -1,0 +1,106 @@
+<!-- pages/product-list/product-list.wxml -->
+<view class="product-list">
+
+  <!-- 顶部筛选栏 -->
+  <view class="product-list__filter">
+    <!-- 分类 tabs -->
+    <van-tabs
+      active="{{activeCategoryIndex}}"
+      bind:change="onCategoryChange"
+      color="#FF4444"
+      title-active-color="#FF4444"
+      ellipsis="{{false}}"
+      sticky
+    >
+      <van-tab wx:for="{{categories}}" wx:key="id" title="{{item.categoryName}}"></van-tab>
+    </van-tabs>
+
+    <!-- 排序与价格筛选 -->
+    <view class="product-list__filter-bar">
+      <view class="product-list__filter-item" bindtap="onOpenSort">
+        <text>{{activeSortName}}</text>
+        <text class="product-list__filter-arrow">▾</text>
+      </view>
+      <view class="product-list__filter-item" bindtap="onOpenPriceFilter">
+        <text>价格</text>
+        <text class="product-list__filter-arrow">▾</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 商品网格 -->
+  <view class="product-list__content">
+    <!-- 首次加载 -->
+    <view wx:if="{{loading && products.length === 0}}" class="product-list__loading">
+      <van-loading size="24px">加载中...</van-loading>
+    </view>
+
+    <!-- 错误态 -->
+    <view wx:elif="{{loadError}}" class="product-list__error">
+      <van-empty description="加载失败" />
+      <van-button type="danger" size="small" bind:click="onTapRetry">重新加载</van-button>
+    </view>
+
+    <!-- 空状态 -->
+    <van-empty wx:elif="{{products.length === 0}}" description="暂无商品" />
+
+    <!-- 商品列表 -->
+    <block wx:else>
+      <view class="product-list__grid">
+        <product-card
+          wx:for="{{products}}"
+          wx:key="id"
+          product="{{item}}"
+          bind:tap="onTapProduct"
+        ></product-card>
+      </view>
+      <load-more
+        status="{{loadMoreStatus}}"
+        bind:retry="onTapRetry"
+      ></load-more>
+    </block>
+  </view>
+
+  <!-- 排序 action-sheet -->
+  <van-action-sheet
+    show="{{showSort}}"
+    actions="{{sortOptions}}"
+    bind:select="onSelectSort"
+    bind:close="onCloseSort"
+    close-on-click-action
+  />
+
+  <!-- 价格区间 popup -->
+  <van-popup
+    show="{{showPriceFilter}}"
+    position="bottom"
+    round
+    bind:close="onClosePriceFilter"
+  >
+    <view class="product-list__price-filter">
+      <view class="product-list__price-filter-title">价格区间</view>
+      <view class="product-list__price-filter-inputs">
+        <input
+          class="product-list__price-input"
+          type="digit"
+          placeholder="最低价"
+          value="{{tempMinPrice}}"
+          bindinput="onInputMinPrice"
+        />
+        <text class="product-list__price-dash">-</text>
+        <input
+          class="product-list__price-input"
+          type="digit"
+          placeholder="最高价"
+          value="{{tempMaxPrice}}"
+          bindinput="onInputMaxPrice"
+        />
+      </view>
+      <view class="product-list__price-filter-actions">
+        <van-button plain block bind:click="onResetPriceFilter">重置</van-button>
+        <van-button type="danger" block bind:click="onConfirmPriceFilter">确定</van-button>
+      </view>
+    </view>
+  </van-popup>
+
+</view>

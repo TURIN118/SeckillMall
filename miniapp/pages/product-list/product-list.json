@@ -1,0 +1,17 @@
+{
+  "navigationBarTitleText": "商品列表",
+  "onReachBottomDistance": 50,
+  "usingComponents": {
+    "van-tabs": "@vant/weapp/tabs/index",
+    "van-tab": "@vant/weapp/tab/index",
+    "van-action-sheet": "@vant/weapp/action-sheet/index",
+    "van-popup": "@vant/weapp/popup/index",
+    "van-button": "@vant/weapp/button/index",
+    "van-empty": "@vant/weapp/empty/index",
+    "van-loading": "@vant/weapp/loading/index",
+    "van-dropdown-menu": "@vant/weapp/dropdown-menu/index",
+    "van-dropdown-item": "@vant/weapp/dropdown-item/index",
+    "product-card": "../../components/product-card/product-card",
+    "load-more": "../../components/load-more/load-more"
+  }
+}

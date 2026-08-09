@@ -1,0 +1,88 @@
+<!-- pages/home/home.wxml -->
+<view class="home">
+
+  <!-- 顶部轮播图 -->
+  <swiper
+    wx:if="{{banners.length > 0}}"
+    class="home__banner"
+    autoplay
+    circular
+    interval="4000"
+    duration="500"
+    indicator-dots
+    indicator-color="rgba(255,255,255,0.6)"
+    indicator-active-color="#ffffff"
+  >
+    <swiper-item wx:for="{{banners}}" wx:key="id" wx:for-item="banner">
+      <view class="home__banner-item" data-link-url="{{banner.linkUrl}}" bindtap="onTapBanner">
+        <van-image
+          width="100%"
+          height="360rpx"
+          src="{{banner.imageUrl}}"
+          fit="cover"
+          lazy-load
+        />
+      </view>
+    </swiper-item>
+  </swiper>
+
+  <!-- 秒杀入口卡片 -->
+  <view class="home__seckill-entry" bindtap="onTapSeckill" hover-class="home__seckill-entry--hover">
+    <view class="home__seckill-icon">⚡</view>
+    <view class="home__seckill-text">
+      <view class="home__seckill-title">限时秒杀</view>
+      <view class="home__seckill-sub">超低价抢购，手慢无</view>
+    </view>
+    <view class="home__seckill-arrow">›</view>
+  </view>
+
+  <!-- 分类导航（横向滚动） -->
+  <view class="home__category" wx:if="{{categories.length > 0}}">
+    <view class="home__section-title">分类导航</view>
+    <scroll-view scroll-x class="home__category-scroll" enhanced show-scrollbar="{{false}}">
+      <view class="home__category-list">
+        <view
+          class="home__category-item"
+          wx:for="{{categories}}"
+          wx:key="id"
+          wx:for-item="cat"
+          data-id="{{cat.id}}"
+          data-name="{{cat.categoryName}}"
+          bindtap="onTapCategory"
+        >
+          <view class="home__category-icon">{{cat.categoryName}}</view>
+          <text class="home__category-name">{{cat.categoryName}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 猜你喜欢 -->
+  <view class="home__guess">
+    <view class="home__section-title">猜你喜欢</view>
+    <view class="home__product-grid" wx:if="{{products.length > 0}}">
+      <product-card
+        wx:for="{{products}}"
+        wx:key="id"
+        product="{{item}}"
+        bind:tap="onTapProduct"
+      ></product-card>
+    </view>
+
+    <!-- 空状态 -->
+    <van-empty wx:if="{{!loading && products.length === 0}}" description="暂无商品" />
+
+    <!-- 加载更多 -->
+    <load-more
+      wx:if="{{products.length > 0}}"
+      status="{{loadMoreStatus}}"
+      bind:retry="onTapRetry"
+    ></load-more>
+
+    <!-- 顶部首次加载 -->
+    <view wx:if="{{loading && products.length === 0}}" class="home__loading">
+      <van-loading size="24px">加载中...</van-loading>
+    </view>
+  </view>
+
+</view>

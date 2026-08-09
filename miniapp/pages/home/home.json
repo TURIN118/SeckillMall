@@ -1,0 +1,12 @@
+{
+  "navigationBarTitleText": "秒杀商城",
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 50,
+  "usingComponents": {
+    "van-image": "@vant/weapp/image/index",
+    "van-loading": "@vant/weapp/loading/index",
+    "van-empty": "@vant/weapp/empty/index",
+    "product-card": "../../components/product-card/product-card",
+    "load-more": "../../components/load-more/load-more"
+  }
+}

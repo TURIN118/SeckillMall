@@ -1,0 +1,102 @@
+/* pages/product-list/product-list.wxss */
+.product-list {
+  min-height: 100vh;
+  background: #f7f8fa;
+}
+
+/* 顶部筛选栏 */
+.product-list__filter {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #ffffff;
+}
+
+.product-list__filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 16rpx 0;
+  border-top: 1rpx solid #ebedf0;
+}
+
+.product-list__filter-item {
+  display: flex;
+  align-items: center;
+  font-size: 26rpx;
+  color: #323233;
+  padding: 8rpx 16rpx;
+}
+
+.product-list__filter-arrow {
+  margin-left: 6rpx;
+  font-size: 22rpx;
+  color: #969799;
+}
+
+/* 内容区 */
+.product-list__content {
+  padding: 24rpx 0;
+  min-height: 60vh;
+}
+
+.product-list__loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 80rpx 0;
+}
+
+.product-list__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60rpx 0;
+  gap: 24rpx;
+}
+
+.product-list__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+  padding: 0 24rpx;
+}
+
+/* 价格筛选 popup */
+.product-list__price-filter {
+  padding: 32rpx;
+}
+
+.product-list__price-filter-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 32rpx;
+}
+
+.product-list__price-filter-inputs {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 40rpx;
+}
+
+.product-list__price-input {
+  flex: 1;
+  height: 72rpx;
+  padding: 0 20rpx;
+  background: #f7f8fa;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  text-align: center;
+}
+
+.product-list__price-dash {
+  font-size: 32rpx;
+  color: #969799;
+}
+
+.product-list__price-filter-actions {
+  display: flex;
+  gap: 20rpx;
+}

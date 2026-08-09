@@ -1,0 +1,93 @@
+/* pages/product-detail/product-detail.wxss */
+.product-detail {
+  min-height: 100vh;
+  background: #f7f8fa;
+  padding-bottom: 0;
+}
+
+/* 图片轮播 */
+.product-detail__swiper {
+  width: 100%;
+  height: 750rpx;
+  background: #ffffff;
+}
+
+/* 商品信息 */
+.product-detail__info {
+  padding: 24rpx 32rpx;
+  background: #ffffff;
+  margin-bottom: 16rpx;
+}
+
+.product-detail__name {
+  font-size: 34rpx;
+  color: #323233;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: 16rpx;
+}
+
+.product-detail__price-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.product-detail__sales-stock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4rpx;
+}
+
+.product-detail__sales,
+.product-detail__stock {
+  font-size: 24rpx;
+  color: #969799;
+}
+
+/* SKU 入口 cell 默认带白色背景，无需额外样式 */
+
+/* 参数列表 */
+.product-detail__attrs {
+  margin-bottom: 16rpx;
+  background: #ffffff;
+}
+
+.product-detail__section-title {
+  padding: 24rpx 32rpx 16rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #323233;
+  background: #ffffff;
+}
+
+/* 富文本 */
+.product-detail__rich {
+  background: #ffffff;
+  padding-bottom: 32rpx;
+}
+
+/* 底部占位（避免被 goods-action 遮挡） */
+.product-detail__bottom-placeholder {
+  height: 100rpx;
+}
+
+/* 加载中 */
+.product-detail__loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* 错误态 */
+.product-detail__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 0 64rpx;
+  gap: 16rpx;
+}

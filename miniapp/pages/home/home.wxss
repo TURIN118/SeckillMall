@@ -1,0 +1,138 @@
+/* pages/home/home.wxss */
+.home {
+  min-height: 100vh;
+  background: #f7f8fa;
+  padding-bottom: 32rpx;
+}
+
+/* 轮播图 */
+.home__banner {
+  width: 100%;
+  height: 360rpx;
+}
+
+.home__banner-item {
+  width: 100%;
+  height: 100%;
+}
+
+/* 秒杀入口 */
+.home__seckill-entry {
+  display: flex;
+  align-items: center;
+  margin: 24rpx 24rpx 0;
+  padding: 28rpx 32rpx;
+  background: linear-gradient(135deg, #FF4444 0%, #FF7777 100%);
+  border-radius: 16rpx;
+  color: #ffffff;
+}
+
+.home__seckill-entry--hover {
+  opacity: 0.9;
+}
+
+.home__seckill-icon {
+  font-size: 48rpx;
+  margin-right: 24rpx;
+}
+
+.home__seckill-text {
+  flex: 1;
+}
+
+.home__seckill-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-bottom: 4rpx;
+}
+
+.home__seckill-sub {
+  font-size: 24rpx;
+  opacity: 0.9;
+}
+
+.home__seckill-arrow {
+  font-size: 40rpx;
+  opacity: 0.8;
+}
+
+/* 分类导航 */
+.home__category {
+  margin: 24rpx 0 0;
+  padding: 24rpx 0;
+  background: #ffffff;
+}
+
+.home__section-title {
+  padding: 0 32rpx 16rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #323233;
+}
+
+.home__category-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.home__category-list {
+  display: inline-flex;
+  padding: 0 24rpx;
+  gap: 24rpx;
+}
+
+.home__category-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  width: 120rpx;
+}
+
+.home__category-icon {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  background: #fff1f0;
+  color: #FF4444;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.2;
+  padding: 4rpx;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.home__category-name {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #646566;
+  max-width: 120rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 猜你喜欢 */
+.home__guess {
+  margin: 24rpx 0 0;
+  padding: 24rpx 0;
+  background: #ffffff;
+  min-height: 400rpx;
+}
+
+.home__product-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+  padding: 0 24rpx;
+}
+
+.home__loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60rpx 0;
+}

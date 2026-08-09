@@ -1,0 +1,15 @@
+/* components/rich-text-viewer/rich-text-viewer.wxss */
+.rich-text-viewer {
+  width: 100%;
+  font-size: 28rpx;
+  color: #323233;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+.rich-text-viewer__empty {
+  padding: 40rpx 0;
+  text-align: center;
+  color: #c8c9cc;
+  font-size: 26rpx;
+}

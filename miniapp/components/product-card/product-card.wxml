@@ -1,0 +1,24 @@
+<!-- components/product-card/product-card.wxml -->
+<view class="product-card" bindtap="onTap" hover-class="product-card--hover" hover-stay-time="100">
+  <view class="product-card__image-wrap">
+    <van-image
+      wx:if="{{coverImage}}"
+      width="100%"
+      height="340rpx"
+      src="{{coverImage}}"
+      lazy-load
+      fit="cover"
+      bind:error="onImageError"
+    />
+    <view wx:else class="product-card__image-placeholder">
+      <text class="product-card__placeholder-text">暂无图片</text>
+    </view>
+  </view>
+  <view class="product-card__body">
+    <view class="product-card__name">{{product.productName}}</view>
+    <view class="product-card__bottom">
+      <price-tag price="{{displayPrice}}" original-price="{{displayOriginal}}" size="md" highlight="{{true}}"></price-tag>
+      <view class="product-card__sales" wx:if="{{product.salesCount}}">已售{{product.salesCount}}</view>
+    </view>
+  </view>
+</view>

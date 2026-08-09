@@ -1,0 +1,49 @@
+<!-- components/sku-selector/sku-selector.wxml -->
+<van-popup
+  show="{{show}}"
+  position="bottom"
+  round
+  closeable
+  bind:close="onClose"
+  custom-style="max-height: 80vh;"
+>
+  <view class="sku-selector" catchtap="noop">
+    <!-- 头部：当前选中 SKU 信息 -->
+    <view class="sku-selector__header">
+      <view class="sku-selector__price-row" wx:if="{{matchedSku}}">
+        <price-tag price="{{matchedSku.price}}" size="lg" highlight="{{true}}"></price-tag>
+        <view class="sku-selector__stock">库存 {{matchedSku.stock}} 件</view>
+      </view>
+      <view class="sku-selector__tip">{{tipText}}</view>
+    </view>
+
+    <!-- 规格矩阵 -->
+    <scroll-view scroll-y class="sku-selector__body">
+      <view class="sku-selector__attr" wx:for="{{attrMatrix}}" wx:key="name" wx:for-item="attr">
+        <view class="sku-selector__attr-name">{{attr.name}}</view>
+        <view class="sku-selector__value-list">
+          <view
+            class="sku-selector__value {{selected[attr.name] === value ? 'sku-selector__value--active' : ''}}"
+            wx:for="{{attr.values}}"
+            wx:key="*this"
+            wx:for-item="value"
+            data-name="{{attr.name}}"
+            data-value="{{value}}"
+            bindtap="onTapValue"
+          >{{value}}</view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 底部按钮 -->
+    <view class="sku-selector__footer">
+      <van-button
+        type="danger"
+        block
+        round
+        disabled="{{!matchedSku || matchedSku.stock <= 0}}"
+        bind:click="onConfirm"
+      >确定</van-button>
+    </view>
+  </view>
+</van-popup>

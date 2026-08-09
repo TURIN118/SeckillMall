@@ -116,6 +116,23 @@
           <el-date-picker v-model="formData.endTime" type="datetime" placeholder="选择结束时间" format="YYYY-MM-DD HH:mm:ss"
             value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
         </el-form-item>
+        <el-form-item label="适用范围" prop="scopeType">
+          <el-select v-model="formData.scopeType" placeholder="选择适用范围" style="width: 100%">
+            <el-option label="全站通用" value="ALL" />
+            <el-option label="指定分类" value="CATEGORY" />
+            <el-option label="指定商品" value="PRODUCT" />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="formData.scopeType === 'CATEGORY'" label="适用分类" prop="categoryId">
+          <el-cascader v-model="cascaderValue" :options="categoryOptions" :props="cascaderProps" placeholder="选择分类"
+            style="width: 100%" filterable clearable @change="handleCategoryChange" />
+        </el-form-item>
+        <el-form-item v-if="formData.scopeType === 'PRODUCT'" label="适用商品" prop="productId">
+          <el-select v-model="formData.productId" filterable remote :remote-method="searchProducts"
+            :loading="productLoading" placeholder="输入商品名称搜索" style="width: 100%" clearable>
+            <el-option v-for="p in productOptions" :key="p.id" :label="p.productName" :value="p.id" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="formData.status">
             <el-radio :value="1">启用</el-radio>
@@ -227,7 +244,18 @@ import {
   adminGetCouponRecords
 } from '@/api/coupon'
 import { getUserList } from '@/api/admin'
-import type { CouponVO, CouponType, CouponRequest, AdminCouponRecordVO, UserVO } from '@/types'
+import { getCategoryTree } from '@/api/category'
+import { getProductList } from '@/api/product'
+import type {
+  CouponVO,
+  CouponType,
+  CouponScopeType,
+  CouponRequest,
+  AdminCouponRecordVO,
+  UserVO,
+  CategoryTreeNode,
+  ProductVO
+} from '@/types'
 
 /* === 列表数据 === */
 const loading = ref<boolean>(false)
@@ -296,6 +324,9 @@ interface CouponFormData {
   type: CouponType
   amount: number
   minAmount: number
+  scopeType: CouponScopeType
+  categoryId: number | string | null
+  productId: number | string | null
   totalCount: number
   startTime: string
   endTime: string
@@ -307,6 +338,9 @@ const formData = reactive<CouponFormData>({
   type: 'AMOUNT',
   amount: 10,
   minAmount: 100,
+  scopeType: 'ALL',
+  categoryId: null,
+  productId: null,
   totalCount: 100,
   startTime: '',
   endTime: '',
@@ -319,7 +353,111 @@ const formRules: FormRules = {
   amount: [{ required: true, message: '请输入面额', trigger: 'blur' }],
   totalCount: [{ required: true, message: '请输入发放总数', trigger: 'blur' }],
   startTime: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
-  endTime: [{ required: true, message: '请选择结束时间', trigger: 'change' }]
+  endTime: [{ required: true, message: '请选择结束时间', trigger: 'change' }],
+  scopeType: [{ required: true, message: '请选择适用范围', trigger: 'change' }],
+  categoryId: [{
+    validator: (_rule, value, callback) => {
+      if (formData.scopeType === 'CATEGORY' && (value === null || value === undefined || value === '')) {
+        callback(new Error('请选择适用分类'))
+      } else {
+        callback()
+      }
+    },
+    trigger: 'change'
+  }],
+  productId: [{
+    validator: (_rule, value, callback) => {
+      if (formData.scopeType === 'PRODUCT' && (value === null || value === undefined || value === '')) {
+        callback(new Error('请选择适用商品'))
+      } else {
+        callback()
+      }
+    },
+    trigger: 'change'
+  }]
+}
+
+/* === 适用范围: 分类级联选择器 === */
+interface CascaderOption {
+  value: number | string
+  label: string
+  children?: CascaderOption[]
+}
+
+const categoryOptions = ref<CascaderOption[]>([])
+// checkStrictly: 允许选择任意层级（一级或二级）
+// emitPath: false: 只返回选中节点 value，不返回路径数组
+const cascaderProps = {
+  checkStrictly: true,
+  expandTrigger: 'hover' as const,
+  emitPath: false,
+  value: 'value',
+  label: 'label',
+  children: 'children'
+}
+// cascaderValue 与 formData.categoryId 同步
+const cascaderValue = ref<number | string | undefined>(undefined)
+
+function handleCategoryChange(value: unknown): void {
+  // emitPath=false 时 value 为单值(number | string | null | undefined)
+  if (value == null) {
+    formData.categoryId = null
+    return
+  }
+  if (Array.isArray(value)) {
+    const last = value[value.length - 1]
+    formData.categoryId = last
+  } else {
+    formData.categoryId = value as number | string
+  }
+}
+
+/* === 将后端分类树转换为 el-cascader 所需格式 === */
+function buildCascaderOptions(tree: CategoryTreeNode[]): CascaderOption[] {
+  const walk = (nodes: CategoryTreeNode[]): CascaderOption[] => {
+    return nodes.map((node) => {
+      const opt: CascaderOption = {
+        value: node.id,
+        label: node.categoryName
+      }
+      if (node.children && node.children.length > 0) {
+        opt.children = walk(node.children)
+      }
+      return opt
+    })
+  }
+  return walk(tree)
+}
+
+/* === 拉取分类树 === */
+async function loadCategoryTree(): Promise<void> {
+  try {
+    const res = await getCategoryTree()
+    const tree = res.data as unknown as CategoryTreeNode[]
+    categoryOptions.value = buildCascaderOptions(tree || [])
+  } catch {
+    // 错误已由全局拦截器提示
+  }
+}
+
+/* === 适用范围: 商品远程搜索 === */
+const productOptions = ref<ProductVO[]>([])
+const productLoading = ref<boolean>(false)
+
+async function searchProducts(query: string): Promise<void> {
+  if (!query || !query.trim()) {
+    productOptions.value = []
+    return
+  }
+  productLoading.value = true
+  try {
+    const res = await getProductList({ keyword: query.trim(), pageNum: 1, pageSize: 20 })
+    productOptions.value = res.data?.list || []
+  } catch {
+    // 错误已由全局拦截器提示
+  } finally {
+    productLoading.value = false
+  }
 }
 
 function openCreateDialog(): void {
@@ -330,11 +468,16 @@ function openCreateDialog(): void {
     type: 'AMOUNT',
     amount: 10,
     minAmount: 100,
+    scopeType: 'ALL',
+    categoryId: null,
+    productId: null,
     totalCount: 100,
     startTime: '',
     endTime: '',
     status: 1
   })
+  cascaderValue.value = undefined
+  productOptions.value = []
   dialogVisible.value = true
 }
 
@@ -346,11 +489,22 @@ function openEditDialog(row: CouponVO): void {
     type: row.type,
     amount: row.amount,
     minAmount: row.minAmount,
+    scopeType: row.scopeType || 'ALL',
+    categoryId: row.categoryId ?? null,
+    productId: row.productId ?? null,
     totalCount: row.totalCount,
     startTime: row.startTime,
     endTime: row.endTime,
     status: row.status
   })
+  cascaderValue.value = row.categoryId ?? undefined
+  // 编辑时若为指定商品且已有 productId，预加载该商品到选项中以便显示名称
+  if (formData.scopeType === 'PRODUCT' && formData.productId != null) {
+    productOptions.value = []
+    // 商品名称需要用户主动搜索；保留 productId 即可提交，select 组件会显示 ID
+  } else {
+    productOptions.value = []
+  }
   dialogVisible.value = true
 }
 
@@ -361,11 +515,16 @@ function resetForm(): void {
     type: 'AMOUNT',
     amount: 10,
     minAmount: 100,
+    scopeType: 'ALL',
+    categoryId: null,
+    productId: null,
     totalCount: 100,
     startTime: '',
     endTime: '',
     status: 1
   })
+  cascaderValue.value = undefined
+  productOptions.value = []
   editingId.value = null
 }
 
@@ -385,11 +544,18 @@ async function handleSubmit(): Promise<void> {
   }
   submitting.value = true
   try {
+    // 根据适用范围清理无关字段: ALL 时 categoryId/productId 置空
+    const scopeType = formData.scopeType
+    const categoryId = scopeType === 'CATEGORY' ? formData.categoryId : null
+    const productId = scopeType === 'PRODUCT' ? formData.productId : null
     const payload: CouponRequest = {
       name: formData.name.trim(),
       type: formData.type,
       amount: formData.amount,
       minAmount: formData.minAmount,
+      scopeType,
+      categoryId,
+      productId,
       totalCount: formData.totalCount,
       startTime: formData.startTime,
       endTime: formData.endTime,
@@ -596,6 +762,7 @@ function resetRecords(): void {
 
 onMounted(() => {
   fetchCouponList()
+  loadCategoryTree()
 })
 </script>
 

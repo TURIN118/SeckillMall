@@ -625,16 +625,31 @@
                 placeholder="请分享您的使用体验，帮助其他买家做出选择（10-500字）"></textarea>
               <div class="review-form__count"><span>{{ reviewContentCount }}</span>/500</div>
             </div>
-            <!-- 图片上传占位 -->
+            <!-- 图片上传 -->
             <div class="review-form__group">
               <label class="review-form__label">晒图（可选）</label>
               <div class="review-form__images">
-                <div class="review-form__upload-btn">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <!-- 已上传图片预览 -->
+                <div v-for="(img, idx) in reviewForm.images" :key="idx" class="review-form__image-item">
+                  <img :src="formatImageUrl(img)" alt="评论图片" />
+                  <button type="button" class="review-form__image-remove" @click="removeReviewImage(idx)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <!-- 上传按钮（最多5张） -->
+                <div v-if="reviewForm.images.length < 5" class="review-form__upload-btn"
+                  :class="{ 'is-loading': reviewImageUploading }"
+                  @click="triggerReviewImageUpload">
+                  <svg v-if="!reviewImageUploading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
                   </svg>
-                  <span>添加图片</span>
+                  <span>{{ reviewImageUploading ? '上传中...' : '添加图片' }}</span>
                 </div>
+                <!-- 隐藏的 file input -->
+                <input ref="reviewImageInputRef" type="file" accept="image/*" multiple
+                  style="display: none" @change="handleReviewImageChange" />
               </div>
               <div class="review-form__tip">最多可上传5张图片，每张不超过5MB</div>
             </div>
@@ -676,6 +691,7 @@ import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getProductDetail } from '@/api/product'
 import { getProductReviews, createReview } from '@/api/review'
+import { uploadImage } from '@/api/upload'
 
 
 import { checkFavorite, addFavorite, removeFavorite } from '@/api/favorite'
@@ -751,10 +767,19 @@ const reviewTotal = ref<number>(0)
 const reviewPageNum = ref<number>(1)
 const reviewPageSize = ref<number>(10)
 const reviewSubmitting = ref<boolean>(false)
-const reviewForm = reactive({
+const reviewForm = reactive<{
+  rating: number
+  content: string
+  images: string[]
+}>({
   rating: 5,
-  content: ''
+  content: '',
+  images: []
 })
+/** 评论图片上传中状态 */
+const reviewImageUploading = ref<boolean>(false)
+/** 评论图片上传隐藏 file input 引用 */
+const reviewImageInputRef = ref<HTMLInputElement | null>(null)
 
 /* === 数量选择器 === */
 const quantity = ref<number>(1)
@@ -1097,11 +1122,14 @@ async function submitReview(): Promise<void> {
       // 7.4.2 发表评论携带 skuId（多规格商品选中 SKU 时带入，无规格商品传 null）
       skuId: currentSku.value?.id || null,
       content: reviewForm.content.trim(),
-      rating: reviewForm.rating
+      rating: reviewForm.rating,
+      // 评论图片 URL 数组序列化为 JSON 字符串（后端 images 字段为 String）
+      images: reviewForm.images.length > 0 ? JSON.stringify(reviewForm.images) : undefined
     })
     ElMessage.success('评价发表成功')
     reviewForm.content = ''
     reviewForm.rating = 5
+    reviewForm.images = []
     reviewPageNum.value = 1
     await fetchReviews()
   } catch {
@@ -1122,6 +1150,7 @@ function openReviewModal(): void {
   // 重置表单状态
   reviewForm.rating = 5
   reviewForm.content = ''
+  reviewForm.images = []
   reviewHoverRating.value = 0
   showReviewModal.value = true
 }
@@ -1130,6 +1159,66 @@ function openReviewModal(): void {
 function closeReviewModal(): void {
   showReviewModal.value = false
   reviewHoverRating.value = 0
+  // 关闭弹窗时清空图片，避免下次打开仍保留
+  reviewForm.images = []
+}
+
+/** 触发隐藏 file input 点击 */
+function triggerReviewImageUpload(): void {
+  if (reviewImageUploading.value) return
+  reviewImageInputRef.value?.click()
+}
+
+/** 处理图片选择：校验数量/大小/类型后逐张上传 */
+async function handleReviewImageChange(e: Event): Promise<void> {
+  const target = e.target as HTMLInputElement
+  const files = target.files
+  if (!files || files.length === 0) return
+
+  // 校验数量上限
+  const remain = 5 - reviewForm.images.length
+  if (remain <= 0) {
+    ElMessage.warning('最多上传 5 张图片')
+    target.value = ''
+    return
+  }
+
+  const fileList = Array.from(files).slice(0, remain)
+  // 校验文件类型与大小
+  const MAX_SIZE = 5 * 1024 * 1024 // 5MB
+  for (const file of fileList) {
+    if (!file.type.startsWith('image/')) {
+      ElMessage.warning(`文件 ${file.name} 不是图片，已跳过`)
+      target.value = ''
+      return
+    }
+    if (file.size > MAX_SIZE) {
+      ElMessage.warning(`图片 ${file.name} 超过 5MB，已跳过`)
+      target.value = ''
+      return
+    }
+  }
+
+  reviewImageUploading.value = true
+  try {
+    for (const file of fileList) {
+      const res = await uploadImage(file, 'review')
+      if (res && res.data && res.data.url) {
+        reviewForm.images.push(res.data.url)
+      }
+    }
+  } catch {
+    // 错误已由全局拦截器提示
+  } finally {
+    reviewImageUploading.value = false
+    // 重置 input value，允许重复选择同一文件
+    target.value = ''
+  }
+}
+
+/** 删除已上传的评论图片 */
+function removeReviewImage(idx: number): void {
+  reviewForm.images.splice(idx, 1)
 }
 
 /** 弹窗内提交评价：复用已有 submitReview 逻辑，提交成功后关闭弹窗 */
@@ -3159,6 +3248,55 @@ onUnmounted(() => {
 .review-form__upload-btn:hover {
   border-color: #e53935;
   color: #e53935;
+}
+
+.review-form__upload-btn.is-loading {
+  cursor: not-allowed;
+  color: #d9d9d9;
+  border-color: #d9d9d9;
+}
+
+.review-form__image-item {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #f0f0f0;
+}
+
+.review-form__image-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.review-form__image-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.2s;
+}
+
+.review-form__image-remove:hover {
+  background: rgba(229, 57, 53, 0.9);
+}
+
+.review-form__image-remove svg {
+  width: 12px;
+  height: 12px;
 }
 
 .review-form__tip {

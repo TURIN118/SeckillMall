@@ -751,6 +751,12 @@ export interface CouponRequest {
   type: CouponType
   amount: number
   minAmount: number
+  /** 适用范围: ALL-全站 / CATEGORY-分类 / PRODUCT-商品 (默认 ALL) */
+  scopeType?: CouponScopeType
+  /** 适用分类 ID (scopeType=CATEGORY 时有效) */
+  categoryId?: number | string | null
+  /** 适用商品 ID (scopeType=PRODUCT 时有效) */
+  productId?: number | string | null
   totalCount: number
   startTime: string
   endTime: string

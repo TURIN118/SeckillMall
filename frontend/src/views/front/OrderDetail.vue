@@ -95,7 +95,7 @@
             <div class="goods-table-body">
               <div v-for="item in order.items" :key="item.productId" class="goods-table-row">
                 <div class="col-product">
-                  <div class="goods-img">
+                  <div class="goods-img" @click="goToProduct(item.productId)" style="cursor: pointer">
                     <img v-if="item.productImage" :src="formatImageUrl(item.productImage)" :alt="item.productName"
                       loading="lazy" />
                     <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -105,7 +105,9 @@
                     </svg>
                   </div>
                   <div class="goods-info">
-                    <div class="goods-name">{{ item.productName }}</div>
+                    <div class="goods-name" @click="goToProduct(item.productId)" style="cursor: pointer">{{
+                      item.productName
+                      }}</div>
                     <div v-if="item.skuAttributes" class="goods-sku">{{ item.skuAttributes }}</div>
                   </div>
                 </div>
@@ -594,6 +596,11 @@ function formatTimeShort(time: string | undefined | null): string {
 /** 格式化价格 */
 function formatPrice(price: number): string {
   return Number(price || 0).toFixed(2)
+}
+
+/** 跳转到商品详情页 */
+function goToProduct(productId: number | string): void {
+  router.push(`/products/${productId}`)
 }
 
 /** 复制订单号 */
@@ -1116,6 +1123,14 @@ onMounted(() => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.goods-name:hover {
+  color: var(--color-primary);
+}
+
+.goods-img:hover img {
+  opacity: 0.8;
 }
 
 .goods-sku {

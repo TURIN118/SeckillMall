@@ -14,6 +14,7 @@ import com.seckill.mall.entity.NormalOrder;
 import com.seckill.mall.entity.NormalOrderItem;
 import com.seckill.mall.entity.ProductReview;
 import com.seckill.mall.entity.ProductSku;
+import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.User;
 import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.mapper.NormalOrderItemMapper;
@@ -21,6 +22,7 @@ import com.seckill.mall.mapper.NormalOrderMapper;
 import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.ProductReviewMapper;
 import com.seckill.mall.mapper.ProductSkuMapper;
+import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.service.ProductReviewService;
 import com.seckill.mall.vo.ProductReviewVO;
@@ -53,6 +55,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     private final ProductSkuMapper productSkuMapper;
     private final NormalOrderItemMapper normalOrderItemMapper;
     private final NormalOrderMapper normalOrderMapper;
+    private final SeckillOrderMapper seckillOrderMapper;
 
     @Override
     public PageResult<ProductReviewVO> listByProductId(Long productId, int pageNum, int pageSize) {
@@ -145,7 +148,8 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     /**
      * 5.7.4 建议13：校验用户是否购买了该 SKU
      * <p>
-     * 查询 t_normal_order_item 关联 t_normal_order，确认存在已完成 / 已发货订单。
+     * 查询 t_normal_order_item 关联 t_normal_order，确认存在已支付 / 已发货 / 已完成订单。
+     * 同时查询 t_seckill_order（秒杀订单），允许秒杀购买的商品也能评论。
      * skuId = 0 时不校验 SKU 维度，仅校验商品维度。
      *
      * @param userId     用户 ID
@@ -154,25 +158,34 @@ public class ProductReviewServiceImpl implements ProductReviewService {
      * @return true=已购买
      */
     private boolean checkUserPurchasedSku(Long userId, Long productId, Long skuId) {
-        // 查询该用户对该商品的订单明细，关联订单表确认状态
+        // 1. 查普通订单：查询该用户对该商品的订单明细，关联订单表确认状态
         List<NormalOrderItem> items = normalOrderItemMapper.selectList(
                 new LambdaQueryWrapper<NormalOrderItem>()
                         .eq(NormalOrderItem::getProductId, productId)
                         .eq(skuId != 0L, NormalOrderItem::getSkuId, skuId));
-        if (items.isEmpty()) {
-            return false;
+        if (!items.isEmpty()) {
+            // 收集订单 ID，查询订单状态是否为 PAID / SHIPPED / COMPLETED
+            List<Long> orderIds = items.stream()
+                    .map(NormalOrderItem::getOrderId)
+                    .distinct()
+                    .collect(Collectors.toList());
+            List<NormalOrder> orders = normalOrderMapper.selectList(
+                    new LambdaQueryWrapper<NormalOrder>()
+                            .eq(NormalOrder::getUserId, userId)
+                            .in(NormalOrder::getId, orderIds)
+                            .in(NormalOrder::getStatus, OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED));
+            if (!orders.isEmpty()) {
+                return true;
+            }
         }
-        // 收集订单 ID，查询订单状态是否为 COMPLETED / SHIPPED
-        List<Long> orderIds = items.stream()
-                .map(NormalOrderItem::getOrderId)
-                .distinct()
-                .collect(Collectors.toList());
-        List<NormalOrder> orders = normalOrderMapper.selectList(
-                new LambdaQueryWrapper<NormalOrder>()
-                        .eq(NormalOrder::getUserId, userId)
-                        .in(NormalOrder::getId, orderIds)
-                        .in(NormalOrder::getStatus, OrderStatus.COMPLETED, OrderStatus.SHIPPED));
-        return !orders.isEmpty();
+
+        // 2. 查秒杀订单（秒杀订单没有 SKU 维度，只校验商品维度）
+        List<SeckillOrder> seckillOrders = seckillOrderMapper.selectList(
+                new LambdaQueryWrapper<SeckillOrder>()
+                        .eq(SeckillOrder::getUserId, userId)
+                        .eq(SeckillOrder::getProductId, productId)
+                        .in(SeckillOrder::getStatus, OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED));
+        return !seckillOrders.isEmpty();
     }
 
     /**

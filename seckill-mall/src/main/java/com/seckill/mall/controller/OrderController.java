@@ -93,7 +93,8 @@ public class OrderController {
     public Result<NormalOrderDetailVO> createByBuyNow(@Valid @RequestBody BuyNowRequest req) {
         Long userId = securityUtils.getCurrentUserId();
         NormalOrderDetailVO vo = orderService.createNormalOrder(
-                userId, req.getProductId(), req.getSkuId(), req.getQuantity(), req.getAddressId(), req.getRemark());
+                userId, req.getProductId(), req.getSkuId(), req.getQuantity(),
+                req.getAddressId(), req.getRemark(), req.getUserCouponId());
         return Result.success("下单成功", vo);
     }
 
@@ -103,7 +104,7 @@ public class OrderController {
     public Result<NormalOrderDetailVO> createFromCart(@Valid @RequestBody CartCheckoutRequest req) {
         Long userId = securityUtils.getCurrentUserId();
         NormalOrderDetailVO vo = orderService.createOrderFromCart(
-                userId, req.getAddressId(), req.getCartIds(), req.getRemark());
+                userId, req.getAddressId(), req.getCartIds(), req.getRemark(), req.getUserCouponId());
         return Result.success("下单成功", vo);
     }
 

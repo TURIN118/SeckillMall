@@ -88,6 +88,12 @@ public class NormalOrder {
     /** 备注（用户下单时填写，可选） */
     private String remark;
 
+    /** 使用的用户优惠券ID */
+    private Long userCouponId;
+
+    /** 优惠金额 */
+    private BigDecimal discountAmount;
+
     @TableLogic
     private Integer isDeleted;
 

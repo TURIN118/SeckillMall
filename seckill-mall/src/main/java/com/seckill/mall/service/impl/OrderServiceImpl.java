@@ -34,6 +34,7 @@ import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.mapper.UserAddressMapper;
 import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.mq.message.OrderDelayMessage;
+import com.seckill.mall.service.CouponService;
 import com.seckill.mall.service.EmailService;
 import com.seckill.mall.service.OrderService;
 import com.seckill.mall.service.ProductSkuService;
@@ -102,6 +103,8 @@ public class OrderServiceImpl implements OrderService {
     private final ObjectMapper objectMapper;
     // 问题4修复：使用 MapStruct Converter 替代手工 SeckillOrderVO.from()，统一转换逻辑
     private final SeckillOrderConverter seckillOrderConverter;
+    // 优惠券服务：普通订单创建/支付/取消时接入优惠券核销与回退
+    private final CouponService couponService;
 
     @Value("${seckill.pay-timeout-minutes:15}")
     private long payTimeoutMinutes;
@@ -385,6 +388,15 @@ public class OrderServiceImpl implements OrderService {
                 .set(NormalOrder::getCancelTime, LocalDateTime.now())
                 .set(NormalOrder::getCancelReason, CANCEL_REASON_TIMEOUT));
 
+        // 优惠券回退：超时取消时，若订单使用了优惠券则回退（USED → UNUSED，幂等）
+        if (order.getUserCouponId() != null) {
+            try {
+                couponService.revertCoupon(order.getUserCouponId(), order.getUserId());
+            } catch (Exception e) {
+                log.error("超时取消订单后优惠券回退失败，orderId={}, userCouponId={}", orderId, order.getUserCouponId(), e);
+            }
+        }
+
         log.info("普通订单超时取消成功，orderNo={}, orderId={}", order.getOrderNo(), orderId);
 
         // 超时取消邮件：异步发送，失败不影响主流程
@@ -611,7 +623,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public NormalOrderDetailVO createNormalOrder(Long userId, Long productId, Long skuId, Integer quantity,
-                                                 Long addressId, String remark) {
+                                                 Long addressId, String remark, Long userCouponId) {
         if (quantity == null || quantity <= 0) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "购买数量必须大于0");
         }
@@ -657,6 +669,8 @@ public class OrderServiceImpl implements OrderService {
         // 3. 建普通订单 + 明细
         BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
         NormalOrder order = buildNormalOrder(userId, addressId, remark, subtotal);
+        // 优惠券：计算优惠金额并抵扣实付金额
+        applyCouponToOrder(order, userCouponId, userId, subtotal, List.of(productId));
         normalOrderMapper.insert(order);
 
         NormalOrderItem item = buildOrderItem(order.getId(), product, unitPrice, quantity);
@@ -664,8 +678,8 @@ public class OrderServiceImpl implements OrderService {
         item.setSkuAttributes(skuAttributes);
         normalOrderItemMapper.insert(item);
 
-        log.info("立即购买创建普通订单成功，orderNo={}, userId={}, productId={}, skuId={}, quantity={}",
-                order.getOrderNo(), userId, productId, effectiveSkuId, quantity);
+        log.info("立即购买创建普通订单成功，orderNo={}, userId={}, productId={}, skuId={}, quantity={}, userCouponId={}, discount={}",
+                order.getOrderNo(), userId, productId, effectiveSkuId, quantity, userCouponId, order.getDiscountAmount());
         // Bug1修复：创建普通订单后发送延迟消息，超时自动取消
         sendNormalOrderDelayMessage(order);
         return assembleDetail(order, List.of(item));
@@ -674,7 +688,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public NormalOrderDetailVO createOrderFromCart(Long userId, Long addressId,
-                                                   List<Long> cartIds, String remark) {
+                                                   List<Long> cartIds, String remark, Long userCouponId) {
         if (cartIds == null || cartIds.isEmpty()) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "待结算购物车项不能为空");
         }
@@ -763,6 +777,9 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalAmount(totalAmount);
         order.setFreightAmount(DEFAULT_FREIGHT);
         order.setPayAmount(totalAmount.add(DEFAULT_FREIGHT));
+        // 优惠券：计算优惠金额并抵扣实付金额
+        List<Long> orderProductIds = carts.stream().map(Cart::getProductId).distinct().collect(Collectors.toList());
+        applyCouponToOrder(order, userCouponId, userId, totalAmount, orderProductIds);
         normalOrderMapper.updateById(order);
 
         // 6. 扣库存（5.7.3：按 SKU 或商品聚合后乐观锁扣减）
@@ -796,8 +813,8 @@ public class OrderServiceImpl implements OrderService {
         // 7. 删除已结算购物车项（逻辑删除）
         cartMapper.delete(new LambdaQueryWrapper<Cart>().in(Cart::getId, cartIds));
 
-        log.info("购物车结算创建普通订单成功，orderNo={}, userId={}, cartIds={}, itemCount={}",
-                order.getOrderNo(), userId, cartIds, carts.size());
+        log.info("购物车结算创建普通订单成功，orderNo={}, userId={}, cartIds={}, itemCount={}, userCouponId={}, discount={}",
+                order.getOrderNo(), userId, cartIds, carts.size(), userCouponId, order.getDiscountAmount());
         // Bug1修复：创建普通订单后发送延迟消息，超时自动取消
         sendNormalOrderDelayMessage(order);
         return assembleDetail(order, items);
@@ -902,6 +919,16 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ErrorCode.ORDER_STATUS_ERROR);
         }
 
+        // 优惠券核销：支付成功后，若订单使用了优惠券则核销（UNUSED → USED）
+        if (order.getUserCouponId() != null) {
+            try {
+                couponService.useCoupon(order.getUserCouponId(), userId, orderId);
+            } catch (Exception e) {
+                // 核销失败不阻断支付主流程（支付已完成），仅记录日志由对账任务兜底
+                log.error("支付成功后优惠券核销失败，orderId={}, userCouponId={}", orderId, order.getUserCouponId(), e);
+            }
+        }
+
         // 邮件通知（异步，失败不影响主流程）
         String email = getUserEmail(userId);
         if (email != null) {
@@ -961,6 +988,18 @@ public class OrderServiceImpl implements OrderService {
                 .set(NormalOrder::getStatus, OrderStatus.CANCELLED)
                 .set(NormalOrder::getCancelTime, LocalDateTime.now())
                 .set(NormalOrder::getCancelReason, CANCEL_REASON_USER));
+
+        // 优惠券回退：取消订单时，若订单使用了优惠券则回退（USED → UNUSED）
+        // 注意：未支付订单的优惠券尚未核销（useCoupon 在支付成功时才调用），
+        // 此处回退是兜底处理，revertCoupon 内部会校验状态，非 USED 时幂等返回。
+        if (order.getUserCouponId() != null) {
+            try {
+                couponService.revertCoupon(order.getUserCouponId(), userId);
+            } catch (Exception e) {
+                // 回退失败不阻断取消主流程，仅记录日志由对账任务兜底
+                log.error("取消订单后优惠券回退失败，orderId={}, userCouponId={}", orderId, order.getUserCouponId(), e);
+            }
+        }
 
         log.info("普通订单取消成功，orderNo={}, userId={}, itemIdCount={}",
                 order.getOrderNo(), userId, items.size());
@@ -1202,7 +1241,47 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.UNPAID);
         order.setPayExpireTime(LocalDateTime.now().plusMinutes(payTimeoutMinutes));
         order.setRemark(remark);
+        // 优惠券默认值：未使用
+        order.setDiscountAmount(BigDecimal.ZERO);
         return order;
+    }
+
+    /**
+     * 优惠券抵扣：计算优惠金额并更新订单的 userCouponId / discountAmount / payAmount。
+     * <p>
+     * 若 userCouponId 为空，discountAmount 置 0，payAmount 不变。
+     * 若 userCouponId 非空，调用 {@code couponService.calculateDiscount} 计算优惠金额，
+     * 实付金额 = 商品总额 + 运费 - 优惠金额。
+     * <p>
+     * 当前简化处理：传入的 orderAmount 为适用商品小计（前端按 scope 预计算），
+     * 对于立即购买场景即为商品小计，对于购物车结算场景为订单总额。
+     *
+     * @param order        普通订单（已设置 totalAmount / freightAmount / payAmount）
+     * @param userCouponId 用户优惠券ID（可空）
+     * @param userId       用户ID
+     * @param orderAmount  适用商品小计（参与优惠的金额）
+     * @param productIds   订单商品ID列表（预留）
+     */
+    private void applyCouponToOrder(NormalOrder order, Long userCouponId, Long userId,
+                                    BigDecimal orderAmount, List<Long> productIds) {
+        if (userCouponId == null) {
+            order.setUserCouponId(null);
+            order.setDiscountAmount(BigDecimal.ZERO);
+            // payAmount 已在 buildNormalOrder 中设置为 totalAmount + freight
+            return;
+        }
+        BigDecimal discount = couponService.calculateDiscount(userCouponId, userId, orderAmount, productIds);
+        order.setUserCouponId(userCouponId);
+        order.setDiscountAmount(discount);
+        // 实付金额 = 商品总额 + 运费 - 优惠金额
+        BigDecimal payAmount = order.getTotalAmount()
+                .add(order.getFreightAmount() == null ? BigDecimal.ZERO : order.getFreightAmount())
+                .subtract(discount);
+        // 实付金额不能为负
+        if (payAmount.compareTo(BigDecimal.ZERO) < 0) {
+            payAmount = BigDecimal.ZERO;
+        }
+        order.setPayAmount(payAmount);
     }
 
     /**

@@ -83,32 +83,39 @@ public interface OrderService {
      * {@code productSkuService.deductStock(skuId, quantity)} 扣减 SKU 库存（乐观锁）；
      * 价格取 SKU 价格；SKU 属性快照由 SKU 的 attributes JSON 转可读字符串。
      * 若 skuId 为空，按原逻辑扣减 t_product.stock，价格取 t_product.original_price。
+     * <p>
+     * 优惠券：若 userCouponId 非空，调用 {@code couponService.calculateDiscount} 计算优惠金额，
+     * 实付金额 = 商品总额 - 优惠金额，订单记录 userCouponId 与 discountAmount。
      *
-     * @param userId    用户 ID
-     * @param productId 商品 ID
-     * @param skuId     SKU ID（可选，null 表示无规格商品）
-     * @param quantity  购买数量
-     * @param addressId 收货地址 ID
-     * @param remark    备注（可空）
+     * @param userId       用户 ID
+     * @param productId    商品 ID
+     * @param skuId        SKU ID（可选，null 表示无规格商品）
+     * @param quantity     购买数量
+     * @param addressId    收货地址 ID
+     * @param remark       备注（可空）
+     * @param userCouponId 用户优惠券ID（可选，null 表示不使用优惠券）
      * @return 普通订单（含明细）
      */
     NormalOrderDetailVO createNormalOrder(Long userId, Long productId, Long skuId, Integer quantity,
-                                          Long addressId, String remark);
+                                          Long addressId, String remark, Long userCouponId);
 
     /**
      * 从购物车结算创建普通订单（需求13）。
      * <p>
      * 校验地址归属 → 校验购物车项归属 + 商品在售 + 库存 → 计算总额 →
      * 建普通订单与多个明细（事务）→ 扣库存 → 删除已结算购物车项 → 返回订单。
+     * <p>
+     * 优惠券：若 userCouponId 非空，计算优惠金额并抵扣实付金额。
      *
-     * @param userId   用户 ID
-     * @param addressId 收货地址 ID
-     * @param cartIds  待结算购物车项 ID 列表
-     * @param remark   备注（可空）
+     * @param userId       用户 ID
+     * @param addressId    收货地址 ID
+     * @param cartIds      待结算购物车项 ID 列表
+     * @param remark       备注（可空）
+     * @param userCouponId 用户优惠券ID（可选，null 表示不使用优惠券）
      * @return 普通订单（含明细）
      */
     NormalOrderDetailVO createOrderFromCart(Long userId, Long addressId,
-                                            List<Long> cartIds, String remark);
+                                            List<Long> cartIds, String remark, Long userCouponId);
 
     /**
      * 查询普通订单详情（含明细列表）。

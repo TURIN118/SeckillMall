@@ -29,4 +29,7 @@ public class CartCheckoutRequest {
 
     /** 备注（可选） */
     private String remark;
+
+    /** 使用的用户优惠券ID（可选，不传表示不使用） */
+    private Long userCouponId;
 }

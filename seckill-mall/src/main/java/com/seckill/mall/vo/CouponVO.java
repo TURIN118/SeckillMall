@@ -54,6 +54,18 @@ public class CouponVO {
     /** 状态：1-启用 / 0-停用 */
     private Integer status;
 
+    /** 适用范围：ALL-全站 / CATEGORY-分类 / PRODUCT-商品 */
+    private String scopeType;
+
+    /** 适用分类ID（scopeType=CATEGORY时有效） */
+    private Long categoryId;
+
+    /** 适用商品ID（scopeType=PRODUCT时有效） */
+    private Long productId;
+
+    /** 适用范围描述（如"仅限手机数码"），通用券为 null */
+    private String scopeLabel;
+
     /** 创建时间 */
     private LocalDateTime createTime;
 

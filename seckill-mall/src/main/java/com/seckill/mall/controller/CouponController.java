@@ -38,10 +38,10 @@ public class CouponController {
     private final CouponService couponService;
     private final SecurityUtils securityUtils;
 
-    @Operation(summary = "可领取的优惠券列表")
+    @Operation(summary = "可领取的优惠券列表（支持按商品筛选）")
     @GetMapping("/available")
-    public Result<List<CouponVO>> available() {
-        return Result.success(couponService.listAvailable());
+    public Result<List<CouponVO>> available(@RequestParam(required = false) Long productId) {
+        return Result.success(couponService.listAvailable(productId));
     }
 
     @Operation(summary = "领取优惠券")

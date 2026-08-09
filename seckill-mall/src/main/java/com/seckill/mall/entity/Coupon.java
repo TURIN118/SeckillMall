@@ -65,6 +65,15 @@ public class Coupon {
     /** 状态：1-启用 / 0-停用 */
     private Integer status;
 
+    /** 适用范围：ALL-全站 / CATEGORY-分类 / PRODUCT-商品 */
+    private String scopeType;
+
+    /** 适用分类ID（scopeType=CATEGORY时有效） */
+    private Long categoryId;
+
+    /** 适用商品ID（scopeType=PRODUCT时有效） */
+    private Long productId;
+
     /** 逻辑删除：0-正常 / 1-已删除 */
     @TableLogic
     private Integer isDeleted;

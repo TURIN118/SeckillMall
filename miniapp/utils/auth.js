@@ -66,6 +66,32 @@ function clearToken() {
   storage.remove(USER_INFO_KEY)
 }
 
+// ========== 登录态查询与登录引导 ==========
+
+/**
+ * 判断当前是否已登录
+ * 依据本地是否存在 access_token
+ * 对齐 spec 5.5.1 规则 1：登录态判定规则
+ * @returns {boolean}
+ */
+function isLoggedIn() {
+  return !!getAccessToken()
+}
+
+/**
+ * 跳转登录页（携带 redirect 参数）
+ * 对齐 spec 5.5.1 规则 2：未登录访问受保护页 → 跳登录页 + redirect=原页面
+ * @param {string} [redirect] 登录后回跳目标页路径（带 query）
+ */
+function navigateToLogin(redirect) {
+  let url = '/pages/login/login'
+  if (redirect && typeof redirect === 'string') {
+    // 对 redirect 做 encodeURIComponent，避免 query 中 & 污染登录页 onLoad options
+    url += '?redirect=' + encodeURIComponent(redirect)
+  }
+  wx.navigateTo({ url })
+}
+
 // ========== 用户信息存取 ==========
 
 /**
@@ -137,6 +163,9 @@ module.exports = {
   // 用户信息
   getUserInfo,
   setUserInfo,
+  // 登录态查询与登录引导
+  isLoggedIn,
+  navigateToLogin,
   // 刷新锁
   isRefreshing,
   setRefreshing,

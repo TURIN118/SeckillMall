@@ -1,0 +1,65 @@
+/* pages/register/register.wxss — 注册页样式 */
+
+.register-page {
+  min-height: 100vh;
+  background-color: #f7f8fa;
+  padding: 0 0 60rpx;
+  box-sizing: border-box;
+}
+
+.register-page__header {
+  padding: 80rpx 40rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.register-page__title {
+  font-size: 48rpx;
+  font-weight: 600;
+  color: #323233;
+  line-height: 1.4;
+}
+
+.register-page__subtitle {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: #969799;
+}
+
+.register-page__captcha {
+  display: flex;
+  align-items: center;
+}
+
+.register-page__agreement {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 48rpx 0;
+  font-size: 26rpx;
+  color: #646566;
+}
+
+.register-page__agreement-link {
+  color: #1989fa;
+  margin-left: 8rpx;
+}
+
+.register-page__submit {
+  padding: 40rpx 32rpx 0;
+}
+
+.register-page__footer {
+  display: flex;
+  justify-content: center;
+  padding: 40rpx 48rpx 0;
+}
+
+.register-page__link {
+  font-size: 28rpx;
+  color: #1989fa;
+}
+
+.register-page__link:active {
+  opacity: 0.7;
+}

@@ -1,0 +1,76 @@
+<!-- pages/register/register.wxml — 注册页 -->
+<!-- 对齐 spec 5.2：用户名/密码/手机号/图形验证码 + 协议同意 -->
+<view class="register-page">
+  <view class="register-page__header">
+    <text class="register-page__title">欢迎注册</text>
+    <text class="register-page__subtitle">创建你的秒杀商城账号</text>
+  </view>
+
+  <van-form bind:submit="handleRegister">
+    <van-cell-group inset>
+      <van-field
+        value="{{ username }}"
+        label="用户名"
+        placeholder="4-20 个字符"
+        required
+        clearable
+        bind:input="onUsernameInput"
+      ></van-field>
+      <van-field
+        value="{{ password }}"
+        label="密码"
+        placeholder="6-20 个字符"
+        password
+        required
+        clearable
+        bind:input="onPasswordInput"
+      ></van-field>
+      <van-field
+        value="{{ phone }}"
+        label="手机号"
+        type="number"
+        placeholder="请输入手机号"
+        required
+        clearable
+        bind:input="onPhoneInput"
+      ></van-field>
+      <van-field
+        value="{{ captchaCode }}"
+        label="验证码"
+        placeholder="请输入图形验证码"
+        required
+        clearable
+        bind:input="onCaptchaCodeInput"
+      >
+        <view slot="right-icon" class="register-page__captcha">
+          <captcha-image
+            image="{{ captchaImage }}"
+            captcha-key="{{ captchaKey }}"
+            bind:update="onCaptchaUpdate"
+          ></captcha-image>
+        </view>
+      </van-field>
+    </van-cell-group>
+
+    <view class="register-page__agreement">
+      <van-checkbox-group value="{{ agreed ? [1] : [] }}" bind:change="onAgreedChange">
+        <van-checkbox name="{{1}}">我已阅读并同意</van-checkbox>
+      </van-checkbox-group>
+      <navigator url="/pages/agreement/agreement" hover-class="none" class="register-page__agreement-link">
+        《用户协议与隐私政策》
+      </navigator>
+    </view>
+
+    <view class="register-page__submit">
+      <van-button type="primary" block round form-type="submit" loading="{{ submitting }}">
+        注册
+      </van-button>
+    </view>
+  </van-form>
+
+  <view class="register-page__footer">
+    <navigator url="/pages/login/login" hover-class="none" class="register-page__link">
+      已有账号？去登录
+    </navigator>
+  </view>
+</view>

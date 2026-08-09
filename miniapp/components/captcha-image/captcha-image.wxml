@@ -1,0 +1,14 @@
+<!-- components/captcha-image/captcha-image.wxml — 图形验证码组件 -->
+<!-- 点击图片刷新验证码，渲染 base64 图片 -->
+<view class="captcha-image">
+  <image
+    class="captcha-image__img"
+    src="{{image}}"
+    mode="aspectFit"
+    bindtap="refresh"
+    lazy-load="{{false}}"
+  ></image>
+  <view wx:if="{{!image}}" class="captcha-image__placeholder" bindtap="refresh">
+    点击加载验证码
+  </view>
+</view>

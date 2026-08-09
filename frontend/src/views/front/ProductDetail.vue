@@ -156,7 +156,7 @@
                     <template v-else>领取</template>
                   </button>
                 </div>
-                <div v-if="availableCoupons.length > 3" class="coupon-more" @click="router.push('/coupons')">
+                <div v-if="availableCoupons.length > 3" class="coupon-more" @click="router.push('/user/profile?tab=couponCenter')">
                   查看更多 >
                 </div>
               </div>

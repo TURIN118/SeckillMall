@@ -16,7 +16,7 @@
       <nav class="mock-nav-links">
         <a href="javascript:void(0)" :class="{ active: route.path === '/seckill' }"
           @click="router.push('/seckill')">秒杀专区</a>
-        <a href="javascript:void(0)" :class="{ active: route.path === '/coupons' }"
+        <a href="javascript:void(0)" :class="{ active: route.path === '/user/profile' && route.query.tab === 'couponCenter' }"
           @click="goCoupons">领券中心</a>
         <a href="javascript:void(0)" :class="{ active: route.path.startsWith('/user/orders') }"
           @click="goOrders">我的订单</a>
@@ -165,13 +165,13 @@ function goOrders(): void {
   router.push('/user/orders')
 }
 
-/** 跳转领券中心(未登录跳登录页) */
+/** 跳转领券中心(未登录跳登录页) — 融合到个人中心 couponCenter Tab */
 function goCoupons(): void {
   if (!userStore.isLoggedIn) {
-    router.push('/login?redirect=' + encodeURIComponent('/coupons'))
+    router.push('/login?redirect=' + encodeURIComponent('/user/profile?tab=couponCenter'))
     return
   }
-  router.push('/coupons')
+  router.push('/user/profile?tab=couponCenter')
 }
 
 /** 跳转购物车(未登录跳登录页) */

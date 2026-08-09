@@ -49,6 +49,16 @@
             </el-icon>
             <span class="nav-text">我的优惠券</span>
           </div>
+          <div class="nav-item" :class="{ active: activeTab === 'couponCenter' }" @click="activeTab = 'couponCenter'">
+            <svg class="nav-icon svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="8" width="18" height="4" rx="1" />
+              <path d="M12 8v13" />
+              <path d="M5 12v9h14v-9" />
+              <path d="M12 8S10 2 7.5 2 5 4 7 8" />
+              <path d="M12 8s2-6 4.5-6S19 4 17 8" />
+            </svg>
+            <span class="nav-text">领券中心</span>
+          </div>
           <div class="nav-item nav-item-link" @click="goTo('/user/orders')">
             <el-icon class="nav-icon">
               <List />
@@ -71,6 +81,7 @@
             <span v-else-if="activeTab === 'wallet'">我的钱包</span>
             <span v-else-if="activeTab === 'address'">收货地址</span>
             <span v-else-if="activeTab === 'coupons'">我的优惠券</span>
+            <span v-else-if="activeTab === 'couponCenter'">领券中心</span>
           </h2>
         </div>
 
@@ -455,7 +466,7 @@
                 </div>
               </div>
               <div class="coupon-header-actions">
-                <button class="go-coupon-center-btn" type="button" @click="router.push('/coupons')">去领券中心 ></button>
+                <button class="go-coupon-center-btn" type="button" @click="activeTab = 'couponCenter'">去领券中心 ></button>
               </div>
             </div>
 
@@ -527,6 +538,91 @@
               </el-col>
             </el-row>
           </div>
+
+          <!-- Tab 6: 领券中心 -->
+          <div v-else-if="activeTab === 'couponCenter'" class="coupon-center-tab">
+            <!-- 顶部提示 -->
+            <div class="cc-header">
+              <p class="cc-subtitle">领取优惠券，下单更划算</p>
+            </div>
+
+            <!-- 加载中 -->
+            <div v-if="availableCouponLoading" class="cc-loading-state">
+              <el-icon class="is-loading">
+                <Loading />
+              </el-icon>
+              <span class="cc-loading-text">加载中...</span>
+            </div>
+
+            <!-- 空状态 -->
+            <div v-else-if="availableCouponList.length === 0" class="cc-empty-state">
+              <el-empty description="暂无可领取的优惠券" :image-size="120" />
+              <button class="btn-sm primary" type="button" @click="goTo('/products')">去逛逛</button>
+            </div>
+
+            <!-- 优惠券网格 (4列) -->
+            <template v-else>
+              <div class="cc-count-bar">共 {{ availableCouponList.length }} 张可领取优惠券</div>
+
+              <el-row :gutter="16" class="cc-grid">
+                <el-col v-for="coupon in availableCouponList" :key="coupon.id" :xs="24" :sm="12" :md="8" :lg="6" :xl="6"
+                  class="cc-col">
+                  <div class="cc-card">
+                    <!-- 顶部面额区 -->
+                    <div class="cc-card-top">
+                      <div class="cc-value">
+                        <template v-if="coupon.type === 'AMOUNT'">
+                          <span class="cc-value-unit">¥</span>
+                          <span class="cc-value-num">{{ formatCouponAmount(coupon.amount) }}</span>
+                        </template>
+                        <template v-else>
+                          <span class="cc-value-num discount">{{ formatCouponDiscount(coupon.amount) }}</span>
+                          <span class="cc-value-unit">折</span>
+                        </template>
+                      </div>
+                      <div class="cc-type-tag">
+                        {{ coupon.type === 'AMOUNT' ? '满减券' : '折扣券' }}
+                      </div>
+                    </div>
+
+                    <!-- 中部信息区 -->
+                    <div class="cc-card-body">
+                      <!-- 使用门槛 -->
+                      <div class="cc-condition">
+                        <template v-if="coupon.minAmount > 0">满 {{ formatCouponMoney(coupon.minAmount) }} 元可用</template>
+                        <template v-else>无门槛</template>
+                      </div>
+
+                      <!-- 适用范围标签 (通用券不显示) -->
+                      <div v-if="coupon.scopeLabel" class="cc-scope-tag">{{ coupon.scopeLabel }}</div>
+
+                      <!-- 有效期 -->
+                      <div class="cc-time">
+                        {{ formatCouponDate(coupon.startTime) }} ~ {{ formatCouponDate(coupon.endTime) }}
+                      </div>
+
+                      <!-- 剩余数量 -->
+                      <div class="cc-remain" :class="{ low: ccRemainCount(coupon) <= 10 }">
+                        <template v-if="ccRemainCount(coupon) <= 10">仅剩 {{ ccRemainCount(coupon) }} 张</template>
+                        <template v-else>剩余 {{ ccRemainCount(coupon) }} 张</template>
+                      </div>
+                    </div>
+
+                    <!-- 底部领取按钮 -->
+                    <div class="cc-card-footer">
+                      <button class="cc-btn-receive" :class="{ received: isCouponReceived(coupon) }"
+                        :disabled="isCouponReceived(coupon) || receivingCouponId === coupon.id"
+                        @click="handleReceiveCoupon(coupon)">
+                        <template v-if="isCouponReceived(coupon)">已领取 ✓</template>
+                        <template v-else-if="receivingCouponId === coupon.id">领取中...</template>
+                        <template v-else>立即领取</template>
+                      </button>
+                    </div>
+                  </div>
+                </el-col>
+              </el-row>
+            </template>
+          </div>
         </div>
       </main>
     </div>
@@ -564,14 +660,15 @@ import {
   deleteAddress,
   setDefaultAddress
 } from '@/api/address'
-import { getMyCoupons } from '@/api/coupon'
+import { getMyCoupons, getAvailableCoupons, receiveCoupon } from '@/api/coupon'
 import { useUserStore } from '@/stores/user'
 import type {
   WalletRecordVO,
   UserAddressVO,
   UserAddressRequest,
   UserCouponVO,
-  UserCouponStatus
+  UserCouponStatus,
+  CouponVO
 } from '@/types'
 import dayjs from 'dayjs'
 
@@ -1151,6 +1248,10 @@ watch(activeTab, (tab) => {
     couponsLoaded.value = true
     initCoupons()
   }
+  if (tab === 'couponCenter' && !availableCouponLoaded.value) {
+    availableCouponLoaded.value = true
+    loadAvailableCoupons()
+  }
 })
 
 /* === 收货地址 Tab: 列表 + 新增/编辑弹窗 === */
@@ -1412,6 +1513,58 @@ function couponCardClass(item: UserCouponVO): string {
   return ''
 }
 
+/* === 领券中心 Tab: 可领取优惠券列表 === */
+const availableCouponList = ref<CouponVO[]>([])
+const availableCouponLoading = ref<boolean>(false)
+/** 领券中心数据是否已加载 (避免重复加载) */
+const availableCouponLoaded = ref<boolean>(false)
+/** 正在领取的优惠券 ID (按钮 loading 态) */
+const receivingCouponId = ref<number | string | null>(null)
+/** 已领取优惠券 ID 集合 */
+const receivedCouponIds = ref<Set<number | string>>(new Set())
+
+/** 加载可领取优惠券列表 */
+async function loadAvailableCoupons(): Promise<void> {
+  availableCouponLoading.value = true
+  try {
+    const res = await getAvailableCoupons()
+    availableCouponList.value = res.data ?? []
+  } catch {
+    // 错误已由全局拦截器提示
+    availableCouponList.value = []
+  } finally {
+    availableCouponLoading.value = false
+  }
+}
+
+/** 领取优惠券 */
+async function handleReceiveCoupon(coupon: CouponVO): Promise<void> {
+  if (isCouponReceived(coupon)) return
+  receivingCouponId.value = coupon.id
+  try {
+    await receiveCoupon(coupon.id)
+    // 标记为已领取 (按钮变灰色态)
+    receivedCouponIds.value.add(coupon.id)
+    // 乐观更新剩余数量
+    coupon.receivedCount = (coupon.receivedCount || 0) + 1
+    ElMessage.success('优惠券领取成功')
+  } catch {
+    // 错误已由请求拦截器统一提示
+  } finally {
+    receivingCouponId.value = null
+  }
+}
+
+/** 判断优惠券是否已领取 */
+function isCouponReceived(coupon: CouponVO): boolean {
+  return receivedCouponIds.value.has(coupon.id)
+}
+
+/** 计算优惠券剩余数量 */
+function ccRemainCount(coupon: CouponVO): number {
+  return Math.max(0, (coupon.totalCount || 0) - (coupon.receivedCount || 0))
+}
+
 /* === 拉取用户信息 === */
 async function fetchUserInfo(): Promise<void> {
   loading.value = true
@@ -1425,7 +1578,7 @@ async function fetchUserInfo(): Promise<void> {
 }
 
 /* === 根据路由 query.tab 切换标签页 (支持 /user/wallet /user/coupons /user/address 重定向) === */
-const VALID_TABS = ['info', 'password', 'wallet', 'address', 'coupons'] as const
+const VALID_TABS = ['info', 'password', 'wallet', 'address', 'coupons', 'couponCenter'] as const
 function applyTabFromQuery(): void {
   const tab = route.query.tab
   if (typeof tab === 'string' && VALID_TABS.includes(tab as typeof VALID_TABS[number])) {
@@ -2549,6 +2702,199 @@ onUnmounted(() => {
   background: rgba(0, 0, 0, 0.5);
 }
 
+/* ==================== 领券中心 Tab 样式 ==================== */
+.coupon-center-tab {
+  /* 不限制 max-width，让领券卡片网格更饱满 */
+}
+
+.cc-header {
+  margin-bottom: 16px;
+}
+
+.cc-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.cc-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  color: var(--color-text-muted, #9ca3af);
+  gap: 12px;
+}
+
+.cc-loading-text {
+  font-size: 13px;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.cc-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px 32px;
+  text-align: center;
+  gap: 16px;
+}
+
+.cc-count-bar {
+  font-size: 13px;
+  color: var(--color-text-secondary, #6b7280);
+  margin-bottom: 16px;
+}
+
+.cc-grid {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.cc-col {
+  margin-bottom: 16px;
+}
+
+/* 领券中心优惠券卡片 (纵向布局: 顶部面额 + 中部信息 + 底部按钮) */
+.cc-card {
+  background: var(--color-bg-card, #fff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s, transform 0.2s;
+  height: 100%;
+}
+
+.cc-card:hover {
+  box-shadow: 0 8px 24px rgba(229, 57, 53, 0.12);
+  transform: translateY(-4px);
+}
+
+/* 顶部面额区 (红色渐变背景) */
+.cc-card-top {
+  background: linear-gradient(135deg, var(--color-primary, #e53935), #d32f2f);
+  color: #fff;
+  padding: 16px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.cc-value {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  line-height: 1;
+}
+
+.cc-value-unit {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cc-value-num {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.cc-value-num.discount {
+  font-size: 36px;
+}
+
+.cc-type-tag {
+  font-size: 12px;
+  opacity: 0.9;
+  letter-spacing: 0.04em;
+  padding: 2px 10px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+/* 中部信息区 */
+.cc-card-body {
+  padding: 12px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.cc-condition {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1f2937);
+}
+
+/* 适用范围标签 (红色小标签) */
+.cc-scope-tag {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-primary, #e53935);
+  background: rgba(229, 57, 53, 0.08);
+  border-radius: 4px;
+  padding: 2px 6px;
+  line-height: 1.4;
+}
+
+.cc-time {
+  font-size: 12px;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.cc-remain {
+  font-size: 12px;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.cc-remain.low {
+  color: var(--color-primary, #e53935);
+  font-weight: 600;
+}
+
+/* 底部领取按钮 */
+.cc-card-footer {
+  padding: 8px 12px 12px;
+}
+
+.cc-btn-receive {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-primary, #e53935);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.cc-btn-receive:hover:not(:disabled) {
+  background: var(--btn-hover, #c62828);
+}
+
+.cc-btn-receive:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* 已领取按钮: 灰色禁用态 */
+.cc-btn-receive.received {
+  background: var(--color-bg-subtle, #f5f5f5);
+  color: var(--color-text-muted, #9ca3af);
+  border: 1px solid var(--color-border, #e5e7eb);
+  opacity: 1;
+}
+
 /* ==================== 响应式 ==================== */
 @media (max-width: 768px) {
   .profile-page {
@@ -2671,6 +3017,19 @@ onUnmounted(() => {
 
   .value-num {
     font-size: 28px;
+  }
+
+  /* 领券中心 */
+  .cc-col {
+    margin-bottom: 12px;
+  }
+
+  .cc-value-num {
+    font-size: 28px;
+  }
+
+  .cc-value-num.discount {
+    font-size: 32px;
   }
 }
 </style>

@@ -5,6 +5,7 @@
     "pages/product-detail/product-detail",
     "pages/cart/cart",
     "pages/seckill/seckill",
+    "pages/seckill-detail/seckill-detail",
     "pages/checkout/checkout",
     "pages/orders/orders",
     "pages/order-detail/order-detail",
@@ -24,6 +25,7 @@
         "wallet-detail/wallet-detail",
         "profile-edit/profile-edit",
         "change-password/change-password",
+        "change-contact/change-contact",
         "review-submit/review-submit"
       ]
     }
@@ -91,7 +93,8 @@
     "van-datetime-picker": "@vant/weapp/datetime-picker/index",
     "van-progress": "@vant/weapp/progress/index",
     "van-tree-select": "@vant/weapp/tree-select/index",
-    "van-cascader": "@vant/weapp/cascader/index"
+    "van-cascader": "@vant/weapp/cascader/index",
+    "seckill-countdown": "/components/seckill-countdown/seckill-countdown"
   },
   "sitemapLocation": "sitemap.json",
   "style": "v2",

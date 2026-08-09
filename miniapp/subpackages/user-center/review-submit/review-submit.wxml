@@ -1,0 +1,92 @@
+<!-- subpackages/user-center/review-submit/review-submit.wxml -->
+<view class="review-submit">
+
+  <!-- 商品信息 -->
+  <view class="review-submit__product" wx:if="{{productInfo}}">
+    <van-image
+      width="120rpx"
+      height="120rpx"
+      src="{{productInfo.mainImage || productInfo.image || ''}}"
+      fit="cover"
+      radius="8rpx"
+    />
+    <view class="review-submit__product-info">
+      <text class="review-submit__product-name">{{productInfo.name || productInfo.title || ''}}</text>
+      <text class="review-submit__product-price">¥{{productInfo.price}}</text>
+    </view>
+  </view>
+  <view class="review-submit__product-loading" wx:if="{{productLoading}}">
+    <van-loading size="20px">商品加载中...</van-loading>
+  </view>
+
+  <!-- 评分 -->
+  <view class="review-submit__section">
+    <view class="review-submit__section-label">评分</view>
+    <van-rate
+      value="{{rating}}"
+      size="28"
+      color="#FF4444"
+      void-color="#eee"
+      bind:change="onRatingChange"
+    />
+  </view>
+
+  <!-- 评论内容 -->
+  <view class="review-submit__section">
+    <view class="review-submit__section-label">评论内容</view>
+    <van-field
+      type="textarea"
+      value="{{content}}"
+      placeholder="说说你对这件商品的看法吧～"
+      maxlength="{{maxContent}}"
+      show-word-limit
+      autosize="{{ {minHeight: 120} }}"
+      bind:change="onContentInput"
+    />
+  </view>
+
+  <!-- 图片选择 -->
+  <view class="review-submit__section">
+    <view class="review-submit__section-label">上传图片（最多 {{maxImages}} 张）</view>
+    <view class="review-submit__images">
+      <view
+        class="review-submit__image-item"
+        wx:for="{{imageList}}"
+        wx:key="localPath"
+        wx:for-item="img"
+        wx:for-index="idx"
+      >
+        <van-image
+          width="160rpx"
+          height="160rpx"
+          src="{{img.localPath}}"
+          fit="cover"
+          radius="8rpx"
+          data-src="{{img.localPath}}"
+          bind:tap="onPreviewImage"
+        />
+        <view
+          class="review-submit__image-remove"
+          data-index="{{idx}}"
+          catchtap="onRemoveImage"
+        >×</view>
+      </view>
+      <view
+        class="review-submit__image-add"
+        wx:if="{{imageList.length < maxImages}}"
+        bindtap="onChooseImage"
+      >+</view>
+    </view>
+  </view>
+
+  <!-- 提交按钮 -->
+  <view class="review-submit__submit">
+    <van-button
+      block
+      type="danger"
+      loading="{{submitting}}"
+      bind:tap="onSubmit"
+    >发表评价</van-button>
+  </view>
+
+</view>

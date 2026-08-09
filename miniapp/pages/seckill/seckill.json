@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "秒杀专区",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "van-image": "@vant/weapp/image/index",
+    "van-loading": "@vant/weapp/loading/index",
+    "van-empty": "@vant/weapp/empty/index",
+    "van-button": "@vant/weapp/button/index",
+    "seckill-countdown": "../../components/seckill-countdown/seckill-countdown"
+  }
+}

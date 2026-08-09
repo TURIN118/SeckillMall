@@ -1,0 +1,111 @@
+<!-- pages/profile/profile.wxml -->
+<view class="profile">
+
+  <!-- 用户信息卡 -->
+  <view class="profile__user-card" bindtap="onTapUserCard" hover-class="profile__user-card--hover" hover-stay-time="100">
+    <van-image
+      class="profile__avatar"
+      width="120rpx"
+      height="120rpx"
+      round
+      src="{{userInfo.avatar || ''}}"
+      fit="cover"
+    >
+      <view slot="error" class="profile__avatar-fallback">👤</view>
+      <view slot="loading" class="profile__avatar-fallback">👤</view>
+    </van-image>
+    <view class="profile__user-info">
+      <view class="profile__nickname">{{isLoggedIn ? (userInfo.nickname || '未设置昵称') : '请登录'}}</view>
+      <view class="profile__phone" wx:if="{{isLoggedIn && phoneMasked}}">{{phoneMasked}}</view>
+      <view class="profile__phone profile__phone--muted" wx:if="{{isLoggedIn && !phoneMasked}}">未绑定手机号</view>
+      <view class="profile__phone profile__phone--muted" wx:if="{{!isLoggedIn}}">点击登录享受更多服务</view>
+    </view>
+    <view class="profile__arrow">›</view>
+  </view>
+
+  <!-- 订单状态宫格 -->
+  <view class="profile__section">
+    <view class="profile__section-header">
+      <text class="profile__section-title">我的订单</text>
+      <text class="profile__section-more" bindtap="onTapOrderStatus" data-status="">全部 ›</text>
+    </view>
+    <van-grid column-num="4" border="{{false}}" gutter="{{0}}">
+      <van-grid-item
+        wx:for="{{orderStatusGrid}}"
+        wx:key="key"
+        wx:for-item="item"
+        data-status="{{item.key}}"
+        bind:click="onTapOrderStatus"
+      >
+        <view class="profile__order-status">
+          <text class="profile__order-icon">{{item.icon}}</text>
+          <text class="profile__order-name">{{item.name}}</text>
+        </view>
+      </van-grid-item>
+    </van-grid>
+  </view>
+
+  <!-- 功能入口列表 -->
+  <view class="profile__section">
+    <view class="profile__section-header">
+      <text class="profile__section-title">常用功能</text>
+    </view>
+    <van-cell-group inset>
+      <van-cell
+        title="我的优惠券"
+        is-link
+        data-url="/pages/coupons/coupons"
+        data-need-login="{{true}}"
+        bind:tap="onTapFeature"
+      />
+      <van-cell
+        title="我的钱包"
+        is-link
+        data-url="/subpackages/user-center/wallet-detail/wallet-detail"
+        data-need-login="{{true}}"
+        bind:tap="onTapFeature"
+      />
+      <van-cell
+        title="收货地址"
+        is-link
+        data-url="/subpackages/user-center/address-list/address-list"
+        data-need-login="{{true}}"
+        bind:tap="onTapFeature"
+      />
+      <van-cell
+        title="个人资料"
+        is-link
+        data-url="/subpackages/user-center/profile-edit/profile-edit"
+        data-need-login="{{true}}"
+        bind:tap="onTapFeature"
+      />
+      <van-cell
+        title="修改密码"
+        is-link
+        data-url="/subpackages/user-center/change-password/change-password"
+        data-need-login="{{true}}"
+        bind:tap="onTapFeature"
+      />
+      <van-cell
+        title="修改手机号"
+        is-link
+        data-url="/subpackages/user-center/change-contact/change-contact?type=phone"
+        data-need-login="{{true}}"
+        bind:tap="onTapFeature"
+      />
+      <van-cell
+        title="修改邮箱"
+        is-link
+        data-url="/subpackages/user-center/change-contact/change-contact?type=email"
+        data-need-login="{{true}}"
+        bind:tap="onTapFeature"
+      />
+    </van-cell-group>
+  </view>
+
+  <!-- 退出登录 -->
+  <view class="profile__logout" wx:if="{{isLoggedIn}}">
+    <van-button block type="danger" plain bind:tap="onLogout">退出登录</van-button>
+  </view>
+
+</view>

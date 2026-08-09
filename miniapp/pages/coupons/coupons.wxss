@@ -1,0 +1,139 @@
+/* pages/coupons/coupons.wxss */
+
+.coupons {
+  min-height: 100vh;
+  background-color: #f7f8fa;
+}
+
+.coupons__panel {
+  padding: 24rpx 24rpx 40rpx;
+}
+
+.coupons__loading {
+  display: flex;
+  justify-content: center;
+  padding: 60rpx 0;
+}
+
+.coupons__list {
+  /* 列表容器 */
+}
+
+/* 优惠券卡片 */
+.coupon-card {
+  display: flex;
+  align-items: stretch;
+  margin-bottom: 24rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  background-color: #fff;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+}
+
+.coupon-card__left {
+  flex-shrink: 0;
+  width: 220rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx 0;
+  background: linear-gradient(135deg, #FF4444 0%, #FF6B6B 100%);
+  color: #fff;
+}
+
+.coupon-card__amount {
+  display: flex;
+  align-items: baseline;
+}
+
+.coupon-card__symbol {
+  font-size: 28rpx;
+}
+
+.coupon-card__value {
+  font-size: 56rpx;
+  font-weight: 600;
+  margin-left: 4rpx;
+}
+
+.coupon-card__threshold {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.coupon-card__right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 24rpx 28rpx;
+  min-width: 0;
+}
+
+.coupon-card__title {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #323233;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coupon-card__valid {
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #969799;
+}
+
+.coupon-card__btn {
+  margin-top: 16rpx;
+  align-self: flex-end;
+}
+
+/* 已使用/已过期样式 */
+.coupon-card--used .coupon-card__left,
+.coupon-card--expired .coupon-card__left {
+  background: linear-gradient(135deg, #c8c9cc 0%, #d8d9dc 100%);
+}
+
+.coupon-card--used .coupon-card__title,
+.coupon-card--expired .coupon-card__title {
+  color: #969799;
+}
+
+/* 我的状态筛选 tab */
+.coupons__mine-tabs {
+  display: flex;
+  background-color: #fff;
+  border-radius: 12rpx;
+  margin-bottom: 24rpx;
+  overflow: hidden;
+}
+
+.coupons__mine-tab {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx 0;
+  font-size: 28rpx;
+  color: #646566;
+  position: relative;
+}
+
+.coupons__mine-tab--active {
+  color: #FF4444;
+  font-weight: 600;
+}
+
+.coupons__mine-tab--active::after {
+  content: '';
+  position: absolute;
+  bottom: 4rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48rpx;
+  height: 4rpx;
+  border-radius: 2rpx;
+  background-color: #FF4444;
+}

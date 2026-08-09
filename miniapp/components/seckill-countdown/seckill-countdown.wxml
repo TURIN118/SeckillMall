@@ -1,0 +1,21 @@
+<!-- components/seckill-countdown/seckill-countdown.wxml -->
+<view class="seckill-countdown seckill-countdown--{{status}}">
+  <text class="seckill-countdown__prefix">{{prefixText}}</text>
+  <view class="seckill-countdown__time" wx:if="{{status !== 'ENDED'}}">
+    <view class="seckill-countdown__block" wx:if="{{showDays}}">
+      <text class="seckill-countdown__num">{{remain.days}}</text>
+      <text class="seckill-countdown__unit">天</text>
+    </view>
+    <view class="seckill-countdown__block">
+      <text class="seckill-countdown__num">{{remain.hours}}</text>
+    </view>
+    <text class="seckill-countdown__sep">:</text>
+    <view class="seckill-countdown__block">
+      <text class="seckill-countdown__num">{{remain.minutes}}</text>
+    </view>
+    <text class="seckill-countdown__sep">:</text>
+    <view class="seckill-countdown__block">
+      <text class="seckill-countdown__num">{{remain.seconds}}</text>
+    </view>
+  </view>
+</view>

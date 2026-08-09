@@ -1,0 +1,110 @@
+<!-- pages/seckill/seckill.wxml -->
+<view class="seckill-page">
+
+  <!-- 加载中 -->
+  <view class="seckill-page__loading" wx:if="{{loading && goodsList.length === 0}}">
+    <van-loading size="32px">加载中...</van-loading>
+  </view>
+
+  <!-- 错误态 -->
+  <view class="seckill-page__error" wx:if="{{!loading && loadError}}">
+    <van-empty description="加载失败，请下拉刷新" />
+    <van-button type="danger" bind:click="onTapRetry">重新加载</van-button>
+  </view>
+
+  <!-- 正常态 -->
+  <block wx:if="{{!loadError}}">
+
+    <!-- 场次 tab（横向滚动） -->
+    <scroll-view
+      wx:if="{{!fallbackMode && activities.length > 0}}"
+      class="seckill-page__tabs"
+      scroll-x
+      enable-flex
+      scroll-with-animation
+    >
+      <view
+        wx:for="{{activities}}"
+        wx:key="id"
+        class="seckill-page__tab {{index === currentActivityIndex ? 'seckill-page__tab--active' : ''}}"
+        data-index="{{index}}"
+        bindtap="onActivityTap"
+      >
+        <text class="seckill-page__tab-name">{{item.name || item.title || ('场次' + (index + 1))}}</text>
+        <text class="seckill-page__tab-time" wx:if="{{item.startTimeText}}">{{item.startTimeText}}</text>
+      </view>
+    </scroll-view>
+
+    <!-- 商品列表 -->
+    <view class="seckill-page__list" wx:if="{{goodsList.length > 0}}">
+      <view
+        wx:for="{{goodsList}}"
+        wx:key="seckillId"
+        class="seckill-card"
+        data-seckill-id="{{item.seckillId}}"
+        bindtap="onGoodsTap"
+        hover-class="seckill-card--hover"
+        hover-stay-time="100"
+      >
+        <!-- 商品图 -->
+        <view class="seckill-card__thumb-wrap">
+          <van-image
+            wx:if="{{item.coverImage}}"
+            width="200rpx"
+            height="200rpx"
+            src="{{item.coverImage}}"
+            fit="cover"
+            lazy-load
+          />
+          <view wx:else class="seckill-card__thumb-placeholder">
+            <text class="seckill-card__placeholder-text">暂无图片</text>
+          </view>
+          <!-- 秒杀角标 -->
+          <view class="seckill-card__badge">
+            <text class="seckill-card__badge-text">秒杀</text>
+          </view>
+        </view>
+
+        <!-- 商品信息 -->
+        <view class="seckill-card__body">
+          <view class="seckill-card__name">{{item.productName}}</view>
+          <view class="seckill-card__price-row">
+            <view class="seckill-card__seckill-price">
+              <text class="seckill-card__symbol">¥</text>
+              <text class="seckill-card__amount">{{item.seckillPrice}}</text>
+            </view>
+            <view class="seckill-card__original-price" wx:if="{{item.originalPrice > item.seckillPrice}}">
+              <text>¥{{item.originalPrice}}</text>
+            </view>
+          </view>
+          <view class="seckill-card__stock">库存 {{item.stock}}</view>
+
+          <!-- 倒计时 + 抢购按钮 -->
+          <view class="seckill-card__bottom">
+            <seckill-countdown
+              class="seckill-card__countdown"
+              start-time="{{item.startTime}}"
+              end-time="{{item.endTime}}"
+              data-index="{{index}}"
+              bind:statuschange="onCountdownStatusChange"
+            />
+            <view
+              class="seckill-card__btn {{item._btnDisabled ? 'seckill-card__btn--disabled' : ''}} {{item._status === 'RUNNING' ? 'seckill-card__btn--danger' : ''}}"
+              data-seckill-id="{{item.seckillId}}"
+              catchtap="onBuyTap"
+            >
+              <text>{{item._btnText}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空态 -->
+    <view class="seckill-page__empty" wx:if="{{!loading && !loadError && goodsList.length === 0}}">
+      <van-empty description="暂无秒杀商品" />
+    </view>
+
+  </block>
+
+</view>

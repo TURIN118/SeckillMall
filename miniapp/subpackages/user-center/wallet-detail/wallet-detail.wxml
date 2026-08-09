@@ -1,0 +1,86 @@
+<!-- subpackages/user-center/wallet-detail/wallet-detail.wxml -->
+<view class="wallet">
+
+  <!-- 余额卡片 -->
+  <view class="wallet__balance-card">
+    <view class="wallet__balance-label">账户余额（元）</view>
+    <view class="wallet__balance-value">
+      <text wx:if="{{!balanceLoading}}">{{balance}}</text>
+      <van-loading wx:if="{{balanceLoading}}" size="24px" color="#fff" />
+    </view>
+    <van-button
+      class="wallet__recharge-btn"
+      type="primary"
+      size="small"
+      round
+      bind:tap="onOpenRecharge"
+    >充值</van-button>
+  </view>
+
+  <!-- 交易记录 -->
+  <view class="wallet__section">
+    <view class="wallet__section-header">
+      <text class="wallet__section-title">交易记录</text>
+    </view>
+
+    <view class="wallet__loading" wx:if="{{recordsLoading}}">
+      <van-loading size="24px">加载中...</van-loading>
+    </view>
+
+    <van-empty wx:if="{{!recordsLoading && recordsEmpty}}" description="暂无交易记录" />
+
+    <view class="wallet__records" wx:if="{{!recordsLoading && records.length > 0}}">
+      <view class="wallet__record-item" wx:for="{{records}}" wx:key="id" wx:for-item="item">
+        <view class="wallet__record-left">
+          <text class="wallet__record-type">{{item._typeText}}</text>
+          <text class="wallet__record-time">{{item._time}}</text>
+        </view>
+        <view class="wallet__record-amount wallet__record-amount--{{item.type}}">
+          {{item.type === 'CONSUME' || item.type === 'WITHDRAW' ? '-' : '+'}}{{item._amount}}
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 充值弹窗 -->
+  <van-popup
+    show="{{rechargeVisible}}"
+    position="bottom"
+    round
+    bind:close="onCloseRecharge"
+  >
+    <view class="recharge-popup">
+      <view class="recharge-popup__title">充值卡充值</view>
+      <van-cell-group>
+        <van-field
+          value="{{cardNo}}"
+          label="卡号"
+          placeholder="请输入充值卡号"
+          bind:change="onCardNoInput"
+        />
+        <van-field
+          value="{{cardPassword}}"
+          type="password"
+          label="卡密"
+          placeholder="请输入充值卡密码"
+          bind:change="onCardPasswordInput"
+        />
+      </van-cell-group>
+      <view class="recharge-popup__actions">
+        <van-button
+          block
+          type="default"
+          disabled="{{recharging}}"
+          bind:tap="onCloseRecharge"
+        >取消</van-button>
+        <van-button
+          block
+          type="danger"
+          loading="{{recharging}}"
+          bind:tap="onConfirmRecharge"
+        >确认充值</van-button>
+      </view>
+    </view>
+  </van-popup>
+
+</view>

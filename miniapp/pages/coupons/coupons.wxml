@@ -1,0 +1,108 @@
+<!-- pages/coupons/coupons.wxml -->
+<view class="coupons">
+
+  <!-- 顶部 tab：可领取 / 我的 -->
+  <van-tabs
+    active="{{activeTab}}"
+    color="#FF4444"
+    title-active-color="#FF4444"
+    bind:change="onTabChange"
+    sticky
+  >
+    <van-tab title="可领取"></van-tab>
+    <van-tab title="我的优惠券"></van-tab>
+  </van-tabs>
+
+  <!-- 可领取 tab -->
+  <view class="coupons__panel" wx:if="{{activeTab === 0}}">
+    <!-- 加载中 -->
+    <view class="coupons__loading" wx:if="{{availableLoading}}">
+      <van-loading size="24px">加载中...</van-loading>
+    </view>
+    <!-- 空状态 -->
+    <van-empty wx:if="{{!availableLoading && availableEmpty}}" description="暂无可领取的优惠券" />
+    <!-- 列表 -->
+    <view class="coupons__list" wx:if="{{!availableLoading && availableList.length > 0}}">
+      <view class="coupon-card coupon-card--available" wx:for="{{availableList}}" wx:key="id" wx:for-item="item">
+        <view class="coupon-card__left">
+          <view class="coupon-card__amount">
+            <text class="coupon-card__symbol">¥</text>
+            <text class="coupon-card__value">{{item._faceValue}}</text>
+          </view>
+          <text class="coupon-card__threshold">满{{item._minSpend}}可用</text>
+        </view>
+        <view class="coupon-card__right">
+          <view class="coupon-card__title">{{item.title || '优惠券'}}</view>
+          <view class="coupon-card__valid">{{item._validStart}} ~ {{item._validEnd}}</view>
+          <van-button
+            class="coupon-card__btn"
+            type="danger"
+            size="small"
+            round
+            data-id="{{item.id}}"
+            bind:tap="onReceive"
+          >领取</van-button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 我的 tab -->
+  <view class="coupons__panel" wx:if="{{activeTab === 1}}">
+    <!-- 状态筛选 -->
+    <view class="coupons__mine-tabs">
+      <view
+        class="coupons__mine-tab {{mineStatusActive === index ? 'coupons__mine-tab--active' : ''}}"
+        wx:for="{{mineStatusTabs}}"
+        wx:key="value"
+        wx:for-item="tab"
+        wx:for-index="index"
+        data-index="{{index}}"
+        bindtap="onMineStatusChange"
+      >{{tab.name}}</view>
+    </view>
+    <!-- 加载中 -->
+    <view class="coupons__loading" wx:if="{{mineLoading}}">
+      <van-loading size="24px">加载中...</van-loading>
+    </view>
+    <!-- 空状态 -->
+    <van-empty wx:if="{{!mineLoading && mineEmpty}}" description="暂无优惠券" />
+    <!-- 列表 -->
+    <view class="coupons__list" wx:if="{{!mineLoading && mineList.length > 0}}">
+      <view
+        class="coupon-card {{item.status === 'USED' ? 'coupon-card--used' : (item.status === 'EXPIRED' ? 'coupon-card--expired' : 'coupon-card--unused')}}"
+        wx:for="{{mineList}}"
+        wx:key="id"
+        wx:for-item="item"
+      >
+        <view class="coupon-card__left">
+          <view class="coupon-card__amount">
+            <text class="coupon-card__symbol">¥</text>
+            <text class="coupon-card__value">{{item._faceValue}}</text>
+          </view>
+          <text class="coupon-card__threshold">满{{item._minSpend}}可用</text>
+        </view>
+        <view class="coupon-card__right">
+          <view class="coupon-card__title">{{item.title || '优惠券'}}</view>
+          <view class="coupon-card__valid">{{item._validStart}} ~ {{item._validEnd}}</view>
+          <van-tag
+            wx:if="{{item.status === 'UNUSED'}}"
+            type="danger"
+            round
+          >未使用</van-tag>
+          <van-tag
+            wx:if="{{item.status === 'USED'}}"
+            type="default"
+            round
+          >已使用</van-tag>
+          <van-tag
+            wx:if="{{item.status === 'EXPIRED'}}"
+            type="default"
+            round
+          >已过期</van-tag>
+        </view>
+      </view>
+    </view>
+  </view>
+
+</view>

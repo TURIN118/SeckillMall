@@ -1,0 +1,41 @@
+<!-- subpackages/user-center/change-contact/change-contact.wxml -->
+<view class="change-contact">
+
+  <view class="change-contact__title">修改{{typeText}}</view>
+
+  <van-cell-group inset>
+    <van-field
+      value="{{value}}"
+      label="{{typeText}}"
+      placeholder="{{type === 'phone' ? '请输入新手机号' : '请输入新邮箱'}}"
+      bind:change="onValueInput"
+    />
+    <van-field
+      value="{{code}}"
+      label="验证码"
+      placeholder="请输入验证码"
+      bind:change="onCodeInput"
+    >
+      <view slot="button" class="change-contact__code-btn">
+        <van-button
+          size="small"
+          type="danger"
+          plain
+          disabled="{{countdown > 0 || sendingCode}}"
+          loading="{{sendingCode}}"
+          bind:tap="onSendCode"
+        >{{countdown > 0 ? countdown + 's' : '发送验证码'}}</van-button>
+      </view>
+    </van-field>
+  </van-cell-group>
+
+  <view class="change-contact__submit">
+    <van-button
+      block
+      type="danger"
+      loading="{{submitting}}"
+      bind:tap="onSubmit"
+    >确认修改</van-button>
+  </view>
+
+</view>

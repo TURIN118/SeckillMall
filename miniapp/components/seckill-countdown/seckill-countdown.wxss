@@ -1,0 +1,73 @@
+/* components/seckill-countdown/seckill-countdown.wxss */
+.seckill-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  line-height: 1;
+}
+
+.seckill-countdown__prefix {
+  font-size: 24rpx;
+  color: #323233;
+  margin-right: 8rpx;
+}
+
+.seckill-countdown__time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.seckill-countdown__block {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36rpx;
+  height: 36rpx;
+  padding: 0 6rpx;
+  background: #323233;
+  border-radius: 6rpx;
+  color: #ffffff;
+}
+
+.seckill-countdown__num {
+  font-size: 24rpx;
+  color: #ffffff;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.seckill-countdown__unit {
+  font-size: 22rpx;
+  color: #ffffff;
+  margin-left: 2rpx;
+}
+
+.seckill-countdown__sep {
+  font-size: 24rpx;
+  color: #323233;
+  font-weight: 600;
+}
+
+/* 进行中：高亮红色 */
+.seckill-countdown--RUNNING .seckill-countdown__prefix {
+  color: #FF4444;
+}
+
+.seckill-countdown--RUNNING .seckill-countdown__block {
+  background: #FF4444;
+}
+
+.seckill-countdown--RUNNING .seckill-countdown__sep {
+  color: #FF4444;
+}
+
+/* 已结束：置灰 */
+.seckill-countdown--ENDED .seckill-countdown__prefix {
+  color: #c8c9cc;
+}
+
+.seckill-countdown--ENDED .seckill-countdown__block {
+  background: #c8c9cc;
+}

@@ -1,0 +1,66 @@
+/* subpackages/user-center/profile-edit/profile-edit.wxss */
+
+.profile-edit {
+  min-height: 100vh;
+  background-color: #f7f8fa;
+  padding-top: 20rpx;
+  padding-bottom: 40rpx;
+}
+
+/* 头像行 */
+.profile-edit__avatar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 32rpx;
+  background-color: #fff;
+}
+
+.profile-edit__row--hover {
+  background-color: #f2f3f5;
+}
+
+.profile-edit__row-label {
+  font-size: 30rpx;
+  color: #323233;
+}
+
+.profile-edit__avatar-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.profile-edit__avatar-fallback {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background-color: #f7f8fa;
+  color: #ccc;
+  font-size: 50rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-edit__arrow {
+  font-size: 36rpx;
+  color: #c8c9cc;
+  margin-left: 12rpx;
+}
+
+/* 昵称 section */
+.profile-edit__section {
+  margin-top: 20rpx;
+  background-color: #fff;
+}
+
+.profile-edit__field-label {
+  padding: 24rpx 32rpx 8rpx;
+  font-size: 26rpx;
+  color: #969799;
+}
+
+/* 保存按钮 */
+.profile-edit__save {
+  margin: 60rpx 32rpx 0;
+}

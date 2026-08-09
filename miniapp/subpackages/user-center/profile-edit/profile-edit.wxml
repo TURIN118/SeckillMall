@@ -1,0 +1,59 @@
+<!-- subpackages/user-center/profile-edit/profile-edit.wxml -->
+<view class="profile-edit">
+
+  <!-- 头像 -->
+  <view class="profile-edit__avatar-row" bindtap="onChooseAvatar" hover-class="profile-edit__row--hover" hover-stay-time="100">
+    <text class="profile-edit__row-label">头像</text>
+    <view class="profile-edit__avatar-wrap">
+      <van-image
+        width="100rpx"
+        height="100rpx"
+        round
+        src="{{avatarUrl}}"
+        fit="cover"
+      >
+        <view slot="error" class="profile-edit__avatar-fallback">👤</view>
+        <view slot="loading" class="profile-edit__avatar-fallback">👤</view>
+      </van-image>
+      <text class="profile-edit__arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 昵称 -->
+  <view class="profile-edit__section">
+    <view class="profile-edit__field-label">昵称</view>
+    <van-field
+      value="{{nickname}}"
+      placeholder="请输入昵称"
+      maxlength="32"
+      bind:change="onNicknameInput"
+    />
+  </view>
+
+  <!-- 手机号（只读，点击跳修改） -->
+  <van-cell-group inset>
+    <van-cell
+      title="手机号"
+      value="{{phoneMasked || '未绑定'}}"
+      is-link
+      bind:tap="onTapPhone"
+    />
+    <van-cell
+      title="邮箱"
+      value="{{email || '未绑定'}}"
+      is-link
+      bind:tap="onTapEmail"
+    />
+  </van-cell-group>
+
+  <!-- 保存按钮 -->
+  <view class="profile-edit__save">
+    <van-button
+      block
+      type="danger"
+      loading="{{saving}}"
+      bind:tap="onSave"
+    >保存</van-button>
+  </view>
+
+</view>

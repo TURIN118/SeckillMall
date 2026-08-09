@@ -1,0 +1,208 @@
+/* pages/seckill/seckill.wxss */
+.seckill-page {
+  min-height: 100vh;
+  background: #f7f8fa;
+  padding-bottom: 32rpx;
+}
+
+/* 加载/错误/空态 */
+.seckill-page__loading,
+.seckill-page__error,
+.seckill-page__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 32rpx;
+  gap: 24rpx;
+}
+
+/* 场次 tab */
+.seckill-page__tabs {
+  display: flex;
+  white-space: nowrap;
+  background: #ffffff;
+  padding: 16rpx 24rpx;
+  border-bottom: 2rpx solid #f2f3f5;
+}
+
+.seckill-page__tab {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12rpx 32rpx;
+  margin-right: 16rpx;
+  border-radius: 12rpx;
+  background: #f7f8fa;
+  transition: all 0.2s;
+}
+
+.seckill-page__tab--active {
+  background: #FF4444;
+}
+
+.seckill-page__tab-name {
+  font-size: 28rpx;
+  color: #323233;
+  font-weight: 500;
+}
+
+.seckill-page__tab--active .seckill-page__tab-name {
+  color: #ffffff;
+}
+
+.seckill-page__tab-time {
+  font-size: 22rpx;
+  color: #969799;
+  margin-top: 4rpx;
+}
+
+.seckill-page__tab--active .seckill-page__tab-time {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* 商品列表 */
+.seckill-page__list {
+  padding: 16rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+/* 秒杀卡片 */
+.seckill-card {
+  display: flex;
+  background: #ffffff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.seckill-card--hover {
+  opacity: 0.9;
+}
+
+.seckill-card__thumb-wrap {
+  position: relative;
+  width: 200rpx;
+  height: 200rpx;
+  flex-shrink: 0;
+  background: #f7f8fa;
+}
+
+.seckill-card__thumb-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seckill-card__placeholder-text {
+  font-size: 22rpx;
+  color: #c8c9cc;
+}
+
+.seckill-card__badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: #FF4444;
+  padding: 4rpx 12rpx;
+  border-bottom-right-radius: 12rpx;
+}
+
+.seckill-card__badge-text {
+  font-size: 20rpx;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.seckill-card__body {
+  flex: 1;
+  padding: 16rpx 20rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  min-width: 0;
+}
+
+.seckill-card__name {
+  font-size: 28rpx;
+  color: #323233;
+  line-height: 1.4;
+  /* 2 行省略 */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-all;
+}
+
+.seckill-card__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+}
+
+.seckill-card__seckill-price {
+  display: inline-flex;
+  align-items: baseline;
+  color: #FF4444;
+}
+
+.seckill-card__symbol {
+  font-size: 22rpx;
+  color: #FF4444;
+}
+
+.seckill-card__amount {
+  font-size: 36rpx;
+  color: #FF4444;
+  font-weight: 700;
+}
+
+.seckill-card__original-price {
+  font-size: 22rpx;
+  color: #969799;
+  text-decoration: line-through;
+}
+
+.seckill-card__stock {
+  font-size: 22rpx;
+  color: #969799;
+}
+
+.seckill-card__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  margin-top: 4rpx;
+}
+
+.seckill-card__countdown {
+  flex: 1;
+  min-width: 0;
+}
+
+.seckill-card__btn {
+  flex-shrink: 0;
+  padding: 12rpx 28rpx;
+  border-radius: 999rpx;
+  background: #FF4444;
+  color: #ffffff;
+  font-size: 26rpx;
+  font-weight: 500;
+  text-align: center;
+}
+
+.seckill-card__btn--danger {
+  background: #FF4444;
+}
+
+.seckill-card__btn--disabled {
+  background: #c8c9cc;
+  color: #ffffff;
+}

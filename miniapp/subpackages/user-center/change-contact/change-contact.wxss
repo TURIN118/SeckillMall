@@ -1,0 +1,23 @@
+/* subpackages/user-center/change-contact/change-contact.wxss */
+
+.change-contact {
+  min-height: 100vh;
+  background-color: #f7f8fa;
+  padding-top: 20rpx;
+  padding-bottom: 40rpx;
+}
+
+.change-contact__title {
+  padding: 24rpx 32rpx 12rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #323233;
+}
+
+.change-contact__code-btn {
+  /* 验证码按钮容器 */
+}
+
+.change-contact__submit {
+  margin: 60rpx 32rpx 0;
+}

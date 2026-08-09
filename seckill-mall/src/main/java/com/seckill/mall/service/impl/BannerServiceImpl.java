@@ -146,9 +146,9 @@ public class BannerServiceImpl implements BannerService {
     }
 
     /**
-     * H-S1 修复：URL 字段 XSS 清洗 + 协议白名单（仅允许 http/https）。
+     * H-S1 修复：URL 字段 XSS 清洗 + 协议白名单（允许 http/https 或站内相对路径以/开头）。
      * - null/空字符串直接返回（可选字段）
-     * - 清洗后若不含 "://" 或不以 http(s):// 开头，拒绝（防 javascript:、data: 等危险协议）
+     * - 清洗后若不以 http(s):// 或 / 开头，拒绝（防 javascript:、data: 等危险协议）
      */
     private String sanitizeUrl(String url) {
         if (!StringUtils.hasText(url)) {
@@ -156,9 +156,10 @@ public class BannerServiceImpl implements BannerService {
         }
         String cleaned = XssCleanUtil.clean(url);
         String lower = cleaned.toLowerCase();
-        if (!lower.startsWith("http://") && !lower.startsWith("https://")) {
+        // 允许 http://、https:// 绝对URL，或以 / 开头的站内相对路径
+        if (!lower.startsWith("http://") && !lower.startsWith("https://") && !cleaned.startsWith("/")) {
             throw new BusinessException(ErrorCode.PARAM_ERROR,
-                    "URL 必须以 http:// 或 https:// 开头");
+                    "URL 必须以 http://、https:// 或 / 开头");
         }
         return cleaned;
     }

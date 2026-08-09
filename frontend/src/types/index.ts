@@ -742,7 +742,7 @@ export interface CouponVO {
   updateTime?: string
 }
 
-/** 用户优惠券视图对象 (匹配后端 UserCouponVO) */
+/** 用户优惠券视图对象 (匹配后端 UserCouponVO 扁平结构) */
 export interface UserCouponVO {
   id: number | string
   /** 用户 ID */
@@ -758,8 +758,26 @@ export interface UserCouponVO {
   useTime: string | null
   /** 关联订单 ID (使用后才有值) */
   orderId: number | string | null
-  /** 优惠券详情 */
-  coupon: CouponVO
+  /** 优惠券名称（关联字段, 后端 couponName） */
+  couponName: string
+  /** 优惠券类型: AMOUNT-满减 / DISCOUNT-折扣（关联字段, 后端 couponType） */
+  couponType: CouponType
+  /** 满减金额或折扣值（关联字段, 后端 couponAmount） */
+  couponAmount: number
+  /** 最低消费金额（关联字段, 后端 minAmount） */
+  minAmount: number
+  /** 有效期开始（关联字段, 后端 couponStartTime） */
+  couponStartTime: string
+  /** 有效期结束（关联字段, 后端 couponEndTime） */
+  couponEndTime: string
+  /** 适用范围: ALL-全站 / CATEGORY-分类 / PRODUCT-商品 (后端暂未返回, 可选) */
+  scopeType?: CouponScopeType
+  /** 适用范围展示标签 (后端暂未返回, 可选) */
+  scopeLabel?: string
+  /** 适用分类 ID (后端暂未返回, 可选) */
+  categoryId?: number | string | null
+  /** 适用商品 ID (后端暂未返回, 可选) */
+  productId?: number | string | null
   createTime?: string
 }
 

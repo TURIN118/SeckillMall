@@ -42,15 +42,11 @@
             <!-- 商品规格区域：模板驱动 + 自定义扩展 -->
             <el-form-item label="商品规格" class="form-item-full">
               <div class="sku-attribute-area">
-                <el-alert
-                  v-if="templateAttributes.length > 0"
-                  type="info"
-                  :closable="false"
-                  title="以下属性来自分类规格模板，可在此基础上增删"
-                  style="margin-bottom: 8px"
-                />
+                <el-alert v-if="templateAttributes.length > 0" type="info" :closable="false"
+                  title="以下属性来自分类规格模板，可在此基础上增删" style="margin-bottom: 8px" />
                 <el-button type="primary" plain size="small" @click="addAttribute">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="margin-right: 2px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"
+                    style="margin-right: 2px">
                     <path d="M12 5v14M5 12h14" />
                   </svg>
                   添加自定义属性
@@ -64,34 +60,17 @@
                     <el-option label="文字型" value="TEXT" />
                   </el-select>
                   <div class="attribute-values">
-                    <el-tag
-                      v-for="(val, vIdx) in attr.values"
-                      :key="vIdx"
-                      closable
-                      @close="removeAttrValue(idx, vIdx)"
-                    >
+                    <el-tag v-for="(val, vIdx) in attr.values" :key="vIdx" closable @close="removeAttrValue(idx, vIdx)">
                       {{ val.value }}
                     </el-tag>
-                    <el-input
-                      v-if="attr.valueInputVisible"
-                      v-model="attr.valueInput"
-                      size="small"
-                      style="width: 100px"
-                      @keyup.enter="confirmAttrValue(idx)"
-                      @blur="confirmAttrValue(idx)"
-                    />
+                    <el-input v-if="attr.valueInputVisible" v-model="attr.valueInput" size="small" style="width: 100px"
+                      @keyup.enter="confirmAttrValue(idx)" @blur="confirmAttrValue(idx)" />
                     <el-button v-else size="small" @click="showAttrValueInput(idx)">+ 添加值</el-button>
                   </div>
                   <el-button type="danger" plain size="small" @click="removeAttribute(idx)">删除属性</el-button>
                 </div>
-                <el-button
-                  v-if="formData.attributes.length > 0"
-                  type="success"
-                  plain
-                  size="small"
-                  :loading="generatingSkus"
-                  @click="generateSkus"
-                >
+                <el-button v-if="formData.attributes.length > 0" type="success" plain size="small"
+                  :loading="generatingSkus" @click="generateSkus">
                   生成 SKU 组合
                 </el-button>
               </div>
@@ -133,23 +112,12 @@
               </el-table-column>
               <el-table-column label="价格" width="120">
                 <template #default="{ row }">
-                  <el-input-number
-                    v-model="row.price"
-                    :min="0.01"
-                    :precision="2"
-                    :controls="false"
-                    size="small"
-                  />
+                  <el-input-number v-model="row.price" :min="0.01" :precision="2" :controls="false" size="small" />
                 </template>
               </el-table-column>
               <el-table-column label="库存" width="100">
                 <template #default="{ row }">
-                  <el-input-number
-                    v-model="row.stock"
-                    :min="0"
-                    :controls="false"
-                    size="small"
-                  />
+                  <el-input-number v-model="row.stock" :min="0" :controls="false" size="small" />
                 </template>
               </el-table-column>
               <el-table-column label="主图" width="120">
@@ -173,14 +141,9 @@
                 </template>
               </el-table-column>
             </el-table>
-            <el-pagination
-              v-if="formData.skus.length > 20"
-              v-model:current-page="skuCurrentPage"
-              :page-size="20"
-              :total="formData.skus.length"
-              layout="prev, pager, next, total"
-              style="margin-top: 12px; justify-content: flex-end"
-            />
+            <el-pagination v-if="formData.skus.length > 20" v-model:current-page="skuCurrentPage" :page-size="20"
+              :total="formData.skus.length" layout="prev, pager, next, total"
+              style="margin-top: 12px; justify-content: flex-end" />
           </div>
         </el-form-item>
 
@@ -598,18 +561,18 @@ async function fetchProductDetail(id: number | string): Promise<void> {
     //  后端返回的 type 实际为 'IMAGE' | 'TEXT'，运行时安全
     formData.attributes = p.attributes
       ? (p.attributes.map((a) => ({
-          ...a,
-          values: a.values.map((v) => ({ ...v })),
-          valueInputVisible: false,
-          valueInput: ''
-        })) as unknown as ProductAttributeDTO[])
+        ...a,
+        values: a.values.map((v) => ({ ...v })),
+        valueInputVisible: false,
+        valueInput: ''
+      })) as unknown as ProductAttributeDTO[])
       : []
     //  ProductSkuVO.skuCode 为可选，ProductSkuDTO.skuCode 为必选；后端总会返回 skuCode
     formData.skus = p.skus
       ? (p.skus.map((s) => ({
-          ...s,
-          mainImageList: s.mainImage ? [s.mainImage] : []
-        })) as unknown as ProductSkuDTO[])
+        ...s,
+        mainImageList: s.mainImage ? [s.mainImage] : []
+      })) as unknown as ProductSkuDTO[])
       : []
     // 同步 cascader 选中值
     cascaderValue.value = p.categoryId
@@ -667,29 +630,29 @@ async function handleSubmit(): Promise<void> {
       // 新增：仅当有属性时才提交 SKU 数据
       attributes: formData.attributes.length > 0
         ? formData.attributes.map((a) => ({
-            categoryAttributeId: a.categoryAttributeId || null,  // 关联模板
-            name: a.name,
-            type: a.type,
-            sortOrder: a.sortOrder,
-            values: a.values.map((v) => ({
-              value: v.value,
-              imageUrl: v.imageUrl,
-              sortOrder: v.sortOrder
-            }))
+          categoryAttributeId: a.categoryAttributeId || null,  // 关联模板
+          name: a.name,
+          type: a.type,
+          sortOrder: a.sortOrder,
+          values: a.values.map((v) => ({
+            value: v.value,
+            imageUrl: v.imageUrl,
+            sortOrder: v.sortOrder
           }))
+        }))
         : undefined,
       skus: formData.skus.length > 0
         ? formData.skus.map((s) => ({
-            skuCode: s.skuCode,
-            price: s.price,
-            stock: s.stock,
-            mainImage:
-              s.mainImageList && s.mainImageList.length > 0
-                ? s.mainImageList[0]
-                : null,
-            attributes: s.attributes,
-            status: s.status
-          }))
+          skuCode: s.skuCode,
+          price: s.price,
+          stock: s.stock,
+          mainImage:
+            s.mainImageList && s.mainImageList.length > 0
+              ? s.mainImageList[0]
+              : null,
+          attributes: s.attributes,
+          status: s.status
+        }))
         : undefined
     }
     if (isEdit.value && editingId.value !== null) {

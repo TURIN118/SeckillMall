@@ -64,12 +64,12 @@
                             :label="formatCouponLabel(coupon)" :disabled="!isCouponUsable(coupon)">
                             <div class="coupon-option">
                                 <span class="coupon-option-value">
-                                    <template v-if="coupon.coupon.type === 'AMOUNT'">¥{{ coupon.coupon.amount }}</template>
-                                    <template v-else>{{ (coupon.coupon.amount * 10).toFixed(1) }}折</template>
+                                    <template v-if="coupon.couponType === 'AMOUNT'">¥{{ coupon.couponAmount }}</template>
+                                    <template v-else>{{ (coupon.couponAmount * 10).toFixed(1) }}折</template>
                                 </span>
                                 <span class="coupon-option-condition">
-                                    满{{ coupon.coupon.minAmount }}元可用
-                                    <span v-if="coupon.coupon.scopeLabel">（{{ coupon.coupon.scopeLabel }}）</span>
+                                    满{{ coupon.minAmount }}元可用
+                                    <span v-if="coupon.scopeLabel">（{{ coupon.scopeLabel }}）</span>
                                 </span>
                                 <span v-if="!isCouponUsable(coupon)" class="coupon-option-disabled">不满足条件</span>
                             </div>
@@ -344,12 +344,11 @@ const walletEnough = computed<boolean>(() => {
  * - 商品券(PRODUCT): 订单中匹配商品的小计之和
  */
 function couponApplicableSubtotal(coupon: UserCouponVO): number {
-    if (!coupon.coupon) return 0
-    const scopeType = coupon.coupon.scopeType ?? 'ALL'
-    if (scopeType === 'PRODUCT' && coupon.coupon.productId != null) {
+    const scopeType = coupon.scopeType ?? 'ALL'
+    if (scopeType === 'PRODUCT' && coupon.productId != null) {
         // 找出订单中该商品的小计之和
         return checkoutItems.value
-            .filter(item => String(item.productId) === String(coupon.coupon!.productId))
+            .filter(item => String(item.productId) === String(coupon.productId))
             .reduce((sum, item) => sum + (item.subtotal || 0), 0)
     }
     // ALL / CATEGORY: 用订单总额 (CATEGORY 因前端无分类信息, 简化处理)
@@ -360,8 +359,7 @@ function couponApplicableSubtotal(coupon: UserCouponVO): number {
  * 判断优惠券是否可用 (按 scope 筛选适用商品小计 + minAmount 门槛)
  */
 function isCouponUsable(coupon: UserCouponVO): boolean {
-    if (!coupon.coupon) return false
-    const minAmount = coupon.coupon.minAmount || 0
+    const minAmount = coupon.minAmount || 0
     const applicableSubtotal = couponApplicableSubtotal(coupon)
     return applicableSubtotal >= minAmount
 }
@@ -376,17 +374,17 @@ function onCouponChange(): void {
         return
     }
     const coupon = availableCoupons.value.find(c => c.id === selId)
-    if (!coupon || !coupon.coupon) {
+    if (!coupon) {
         discountAmount.value = 0
         return
     }
     const applicableSubtotal = couponApplicableSubtotal(coupon)
-    if (coupon.coupon.type === 'AMOUNT') {
+    if (coupon.couponType === 'AMOUNT') {
         // 满减券: 优惠 = amount
-        discountAmount.value = coupon.coupon.amount
+        discountAmount.value = coupon.couponAmount
     } else {
         // 折扣券: 优惠 = 适用小计 × (1 - 折扣率), 折扣率 amount 为 0~1 小数
-        discountAmount.value = applicableSubtotal * (1 - coupon.coupon.amount)
+        discountAmount.value = applicableSubtotal * (1 - coupon.couponAmount)
     }
     // 优惠金额不能超过适用小计
     if (discountAmount.value > applicableSubtotal) {
@@ -400,11 +398,10 @@ function onCouponChange(): void {
  * 格式化优惠券下拉选项标签
  */
 function formatCouponLabel(coupon: UserCouponVO): string {
-    if (!coupon.coupon) return ''
-    const typeLabel = coupon.coupon.type === 'AMOUNT'
-        ? `¥${coupon.coupon.amount}满减券`
-        : `${(coupon.coupon.amount * 10).toFixed(1)}折折扣券`
-    return `${typeLabel}（满${coupon.coupon.minAmount}可用）`
+    const typeLabel = coupon.couponType === 'AMOUNT'
+        ? `¥${coupon.couponAmount}满减券`
+        : `${(coupon.couponAmount * 10).toFixed(1)}折折扣券`
+    return `${typeLabel}（满${coupon.minAmount}可用）`
 }
 
 /**

@@ -18,38 +18,38 @@
 
         <!-- 导航菜单 -->
         <nav class="sidebar-nav">
-          <div class="nav-item" :class="{ active: activeTab === 'info' }" @click="activeTab = 'info'">
+          <div class="nav-item" :class="{ active: activeTab === 'info' }" @click="switchTab('info')">
             <el-icon class="nav-icon">
               <InfoFilled />
             </el-icon>
             <span class="nav-text">基本信息</span>
           </div>
-          <div class="nav-item" :class="{ active: activeTab === 'password' }" @click="activeTab = 'password'">
+          <div class="nav-item" :class="{ active: activeTab === 'password' }" @click="switchTab('password')">
             <svg class="nav-icon svg-icon" viewBox="0 0 1024 1024" fill="currentColor">
               <path
                 d="M832 464h-68V320c0-70.7-57.3-128-128-128H384c-70.7 0-128 57.3-128 128v144h-68c-17.7 0-32 14.3-32 32v368c0 17.7 14.3 32 32 32h640c17.7 0 32-14.3 32-32V496c0-17.7-14.3-32-32-32zM332 320c0-35.3 28.7-64 64-64h272c35.3 0 64 28.7 64 64v144H332V320zm436 224c0 17.7-14.3 32-32 32s-32-14.3-32-32 14.3-32 32-32 32 14.3 32 32z" />
             </svg>
             <span class="nav-text">修改密码</span>
           </div>
-          <div class="nav-item" :class="{ active: activeTab === 'wallet' }" @click="activeTab = 'wallet'">
+          <div class="nav-item" :class="{ active: activeTab === 'wallet' }" @click="switchTab('wallet')">
             <el-icon class="nav-icon">
               <Wallet />
             </el-icon>
             <span class="nav-text">我的钱包</span>
           </div>
-          <div class="nav-item" :class="{ active: activeTab === 'address' }" @click="activeTab = 'address'">
+          <div class="nav-item" :class="{ active: activeTab === 'address' }" @click="switchTab('address')">
             <el-icon class="nav-icon">
               <Location />
             </el-icon>
             <span class="nav-text">收货地址</span>
           </div>
-          <div class="nav-item" :class="{ active: activeTab === 'coupons' }" @click="activeTab = 'coupons'">
+          <div class="nav-item" :class="{ active: activeTab === 'coupons' }" @click="switchTab('coupons')">
             <el-icon class="nav-icon">
               <Ticket />
             </el-icon>
             <span class="nav-text">我的优惠券</span>
           </div>
-          <div class="nav-item" :class="{ active: activeTab === 'couponCenter' }" @click="activeTab = 'couponCenter'">
+          <div class="nav-item" :class="{ active: activeTab === 'couponCenter' }" @click="switchTab('couponCenter')">
             <svg class="nav-icon svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="8" width="18" height="4" rx="1" />
               <path d="M12 8v13" />
@@ -466,7 +466,7 @@
                 </div>
               </div>
               <div class="coupon-header-actions">
-                <button class="go-coupon-center-btn" type="button" @click="activeTab = 'couponCenter'">去领券中心 ></button>
+                <button class="go-coupon-center-btn" type="button" @click="switchTab('couponCenter')">去领券中心 ></button>
               </div>
             </div>
 
@@ -490,16 +490,16 @@
                 <div class="coupon-card" :class="couponCardClass(item)">
                   <!-- 左侧面额区 -->
                   <div class="coupon-left">
-                    <template v-if="item.coupon.type === 'AMOUNT'">
+                    <template v-if="item.couponType === 'AMOUNT'">
                       <div class="coupon-value">
                         <span class="value-unit">¥</span>
-                        <span class="value-num">{{ formatCouponAmount(item.coupon.amount) }}</span>
+                        <span class="value-num">{{ formatCouponAmount(item.couponAmount) }}</span>
                       </div>
                       <div class="coupon-type-label">满减券</div>
                     </template>
                     <template v-else>
                       <div class="coupon-value">
-                        <span class="value-num discount">{{ formatCouponDiscount(item.coupon.amount) }}</span>
+                        <span class="value-num discount">{{ formatCouponDiscount(item.couponAmount) }}</span>
                         <span class="value-unit">折</span>
                       </div>
                       <div class="coupon-type-label">折扣券</div>
@@ -508,20 +508,20 @@
 
                   <!-- 右侧信息区 -->
                   <div class="coupon-right">
-                    <div class="coupon-name">{{ item.coupon.name }}</div>
+                    <div class="coupon-name">{{ item.couponName }}</div>
                     <div class="coupon-condition">
-                      <template v-if="item.coupon.type === 'AMOUNT'">
-                        满 {{ formatCouponMoney(item.coupon.minAmount) }} 元可用
+                      <template v-if="item.couponType === 'AMOUNT'">
+                        满 {{ formatCouponMoney(item.minAmount) }} 元可用
                       </template>
                       <template v-else>
-                        <span v-if="item.coupon.minAmount > 0">
-                          满 {{ formatCouponMoney(item.coupon.minAmount) }} 元可用
+                        <span v-if="item.minAmount > 0">
+                          满 {{ formatCouponMoney(item.minAmount) }} 元可用
                         </span>
                         <span v-else>无门槛</span>
                       </template>
                     </div>
                     <div class="coupon-time">
-                      {{ formatCouponDate(item.coupon.startTime) }} ~ {{ formatCouponDate(item.coupon.endTime) }}
+                      {{ formatCouponDate(item.couponStartTime) }} ~ {{ formatCouponDate(item.couponEndTime) }}
                     </div>
                     <div class="coupon-status">
                       <el-tag :type="couponStatusTagType(item.status)" size="small" effect="dark">
@@ -560,7 +560,7 @@
               <button class="btn-sm primary" type="button" @click="goTo('/products')">去逛逛</button>
             </div>
 
-            <!-- 优惠券网格 (4列) -->
+            <!-- 优惠券网格 (横向卡片: 左侧面额 + 右侧信息/按钮) -->
             <template v-else>
               <div class="cc-count-bar">共 {{ availableCouponList.length }} 张可领取优惠券</div>
 
@@ -568,8 +568,8 @@
                 <el-col v-for="coupon in availableCouponList" :key="coupon.id" :xs="24" :sm="12" :md="8" :lg="6" :xl="6"
                   class="cc-col">
                   <div class="cc-card">
-                    <!-- 顶部面额区 -->
-                    <div class="cc-card-top">
+                    <!-- 左侧面额区 (红色背景, 大字体突出) -->
+                    <div class="cc-card-left">
                       <div class="cc-value">
                         <template v-if="coupon.type === 'AMOUNT'">
                           <span class="cc-value-unit">¥</span>
@@ -585,8 +585,8 @@
                       </div>
                     </div>
 
-                    <!-- 中部信息区 -->
-                    <div class="cc-card-body">
+                    <!-- 右侧信息区 -->
+                    <div class="cc-card-right">
                       <!-- 使用门槛 -->
                       <div class="cc-condition">
                         <template v-if="coupon.minAmount > 0">满 {{ formatCouponMoney(coupon.minAmount) }} 元可用</template>
@@ -596,20 +596,10 @@
                       <!-- 适用范围标签 (通用券不显示) -->
                       <div v-if="coupon.scopeLabel" class="cc-scope-tag">{{ coupon.scopeLabel }}</div>
 
-                      <!-- 有效期 -->
-                      <div class="cc-time">
-                        {{ formatCouponDate(coupon.startTime) }} ~ {{ formatCouponDate(coupon.endTime) }}
-                      </div>
+                      <!-- 有效期 (简洁显示, 仅展示到期日) -->
+                      <div class="cc-expire">有效期至 {{ formatCouponDate(coupon.endTime) }}</div>
 
-                      <!-- 剩余数量 -->
-                      <div class="cc-remain" :class="{ low: ccRemainCount(coupon) <= 10 }">
-                        <template v-if="ccRemainCount(coupon) <= 10">仅剩 {{ ccRemainCount(coupon) }} 张</template>
-                        <template v-else>剩余 {{ ccRemainCount(coupon) }} 张</template>
-                      </div>
-                    </div>
-
-                    <!-- 底部领取按钮 -->
-                    <div class="cc-card-footer">
+                      <!-- 领取按钮 -->
                       <button class="cc-btn-receive" :class="{ received: isCouponReceived(coupon) }"
                         :disabled="isCouponReceived(coupon) || receivingCouponId === coupon.id"
                         @click="handleReceiveCoupon(coupon)">
@@ -684,6 +674,18 @@ function goTo(path: string): void {
 const loading = ref<boolean>(false)
 const activeTab = ref<string>('info')
 const pwdLoading = ref<boolean>(false)
+
+/**
+ * 切换标签页并同步浏览器 URL query
+ * - 直接更新 activeTab 以获得即时 UI 反馈
+ * - 使用 router.replace 更新 URL (replace 避免历史记录堆积)
+ * - 路由 query 变化会触发下方 watch(route.query.tab) 回调, 但因值相同不会重复触发 watch(activeTab)
+ */
+function switchTab(tab: string): void {
+  if (activeTab.value === tab) return
+  activeTab.value = tab
+  router.replace({ query: { tab } })
+}
 
 const pwdForm = reactive({
   oldPassword: '',
@@ -1560,10 +1562,6 @@ function isCouponReceived(coupon: CouponVO): boolean {
   return receivedCouponIds.value.has(coupon.id)
 }
 
-/** 计算优惠券剩余数量 */
-function ccRemainCount(coupon: CouponVO): number {
-  return Math.max(0, (coupon.totalCount || 0) - (coupon.receivedCount || 0))
-}
 
 /* === 拉取用户信息 === */
 async function fetchUserInfo(): Promise<void> {
@@ -2757,16 +2755,17 @@ onUnmounted(() => {
   margin-bottom: 16px;
 }
 
-/* 领券中心优惠券卡片 (纵向布局: 顶部面额 + 中部信息 + 底部按钮) */
+/* 领券中心优惠券卡片 (横向布局: 左侧面额 + 右侧信息/按钮) */
 .cc-card {
   background: var(--color-bg-card, #fff);
   border: 1px solid var(--color-border, #e5e7eb);
   border-radius: 8px;
   overflow: hidden;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   transition: box-shadow 0.2s, transform 0.2s;
   height: 100%;
+  min-height: 120px;
 }
 
 .cc-card:hover {
@@ -2774,15 +2773,18 @@ onUnmounted(() => {
   transform: translateY(-4px);
 }
 
-/* 顶部面额区 (红色渐变背景) */
-.cc-card-top {
+/* 左侧面额区 (红色渐变背景, 大字体突出) */
+.cc-card-left {
   background: linear-gradient(135deg, var(--color-primary, #e53935), #d32f2f);
   color: #fff;
-  padding: 16px 12px 12px;
+  padding: 16px 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  flex-shrink: 0;
+  width: 96px;
 }
 
 .cc-value {
@@ -2816,13 +2818,14 @@ onUnmounted(() => {
   border-radius: 10px;
 }
 
-/* 中部信息区 */
-.cc-card-body {
-  padding: 12px 12px 8px;
+/* 右侧信息区 */
+.cc-card-right {
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   flex: 1;
+  justify-content: space-between;
 }
 
 .cc-condition {
@@ -2844,26 +2847,13 @@ onUnmounted(() => {
   line-height: 1.4;
 }
 
-.cc-time {
+/* 有效期 (简洁显示, 仅到期日) */
+.cc-expire {
   font-size: 12px;
   color: var(--color-text-muted, #9ca3af);
 }
 
-.cc-remain {
-  font-size: 12px;
-  color: var(--color-text-secondary, #6b7280);
-}
-
-.cc-remain.low {
-  color: var(--color-primary, #e53935);
-  font-weight: 600;
-}
-
-/* 底部领取按钮 */
-.cc-card-footer {
-  padding: 8px 12px 12px;
-}
-
+/* 领取按钮 */
 .cc-btn-receive {
   width: 100%;
   padding: 8px 12px;
@@ -2876,6 +2866,7 @@ onUnmounted(() => {
   cursor: pointer;
   transition: background 0.15s;
   letter-spacing: 0.02em;
+  margin-top: 4px;
 }
 
 .cc-btn-receive:hover:not(:disabled) {

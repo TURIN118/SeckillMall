@@ -107,14 +107,14 @@
     <el-dialog v-model="detailVisible" title="订单详情" width="600px">
       <div v-if="detailRow" class="detail-list">
         <div class="detail-row"><span class="detail-label">订单号</span><span class="detail-value">{{ detailRow.orderNo
-        }}</span></div>
+            }}</span></div>
         <div class="detail-row"><span class="detail-label">用户</span><span class="detail-value">{{ detailRow.username ||
           detailRow.userId
-            }}</span></div>
+        }}</span></div>
         <div class="detail-row"><span class="detail-label">商品</span><span class="detail-value">{{ detailRow.productName
           ||
           detailRow.productId
-            }}</span></div>
+        }}</span></div>
         <div class="detail-row"><span class="detail-label">秒杀价</span><span class="detail-value">{{
           detailRow.seckillPrice != null ? '¥' + formatPrice(detailRow.seckillPrice) : '—' }}</span></div>
         <div class="detail-row"><span class="detail-label">总金额</span><span class="detail-value">¥{{
@@ -162,16 +162,8 @@
       </div>
       <el-form :model="exportForm" ref="exportFormRef" label-width="90px" class="export-form">
         <el-form-item label="时间范围">
-          <el-date-picker
-            v-model="exportForm.dateRange"
-            type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            value-format="YYYY-MM-DD"
-            style="width: 100%"
-            :clearable="true"
-          />
+          <el-date-picker v-model="exportForm.dateRange" type="daterange" range-separator="至" start-placeholder="开始日期"
+            end-placeholder="结束日期" value-format="YYYY-MM-DD" style="width: 100%" :clearable="true" />
         </el-form-item>
         <el-form-item label="订单类型">
           <el-select v-model="exportForm.orderType" placeholder="全部" clearable style="width: 100%">
@@ -192,35 +184,19 @@
           </el-select>
         </el-form-item>
         <el-form-item label="用户ID">
-          <el-input
-            v-model="exportForm.userId"
-            placeholder="请输入用户ID"
-            clearable
-            @input="(v: string) => exportForm.userId = v.replace(/[^\d]/g, '')"
-          />
+          <el-input v-model="exportForm.userId" placeholder="请输入用户ID" clearable
+            @input="(v: string) => exportForm.userId = v.replace(/[^\d]/g, '')" />
         </el-form-item>
         <el-form-item label="订单号">
           <el-input v-model="exportForm.orderNo" placeholder="请输入订单号" clearable />
         </el-form-item>
         <el-form-item label="金额范围">
           <div class="amount-range">
-            <el-input-number
-              v-model="exportForm.minAmount"
-              :min="0"
-              :precision="2"
-              :controls="false"
-              placeholder="最小金额"
-              style="flex: 1"
-            />
+            <el-input-number v-model="exportForm.minAmount" :min="0" :precision="2" :controls="false" placeholder="最小金额"
+              style="flex: 1" />
             <span class="amount-separator">—</span>
-            <el-input-number
-              v-model="exportForm.maxAmount"
-              :min="0"
-              :precision="2"
-              :controls="false"
-              placeholder="最大金额"
-              style="flex: 1"
-            />
+            <el-input-number v-model="exportForm.maxAmount" :min="0" :precision="2" :controls="false" placeholder="最大金额"
+              style="flex: 1" />
           </div>
         </el-form-item>
       </el-form>
@@ -412,9 +388,11 @@ async function handleExport(): Promise<void> {
   }
 
   // 组装导出查询参数：所有参数可选，空值不传
+  // 任务#59: 后端 AdminOrderQueryRequest.pageSize 有 @Max(100) 校验,
+  //          不能再传 pageSize=10000, 改为分批查询每次 100 条循环查完所有数据合并后导出
   const exportParams: AdminOrderQueryRequest = {
     pageNum: 1,
-    pageSize: 10000
+    pageSize: 100
   }
   if (exportForm.orderNo) exportParams.orderNo = exportForm.orderNo
   if (exportForm.status) exportParams.status = exportForm.status
@@ -435,17 +413,37 @@ async function handleExport(): Promise<void> {
     // 动态导入 xlsx 库 (约 600KB+), 仅在用户点击导出时才加载, 避免污染 OrderManage chunk
     const XLSX = await import('xlsx')
 
-    // 1. 查询弹窗所选条件下所有订单（传大 pageSize 获取全量）
+    // 1. 分批查询弹窗所选条件下所有订单
     //    后端搜索：orderNo / status / orderType / userId / startDate/endDate / minAmount/maxAmount
     //    均由后端 SQL 过滤，避免前端仅过滤当前页的 BUG-005
-    //    M-F3 修复: 一次性拉 10000 条会撞 10s 全局超时, 该请求单独放宽 timeout 至 60s
-    const res = await getAdminOrderList(exportParams, { timeout: 60000 })
-    const orders: AdminOrderVO[] = res.data.list || []
+    //    任务#59: 后端 @Max(100) 限制单页大小, 这里循环每批 100 条直到查完所有数据
+    //    每批单独放宽 timeout 至 60s 兜底慢查询; 循环上限 1000 页 (10 万条) 防止内存溢出
+    const allOrders: AdminOrderVO[] = []
+    let pageNum = 1
+    const pageSize = 100
+    let total = 0
+    do {
+      // 循环上限保护: 超过 1000 页 (10 万条) 视为异常, 避免无限循环 / 内存溢出
+      if (pageNum > 1000) {
+        ElMessage.warning('数据量过大，请缩小筛选范围')
+        return
+      }
+      const res = await getAdminOrderList(
+        { ...exportParams, pageNum, pageSize },
+        { timeout: 60000 }
+      )
+      const batch: AdminOrderVO[] = res.data.list || []
+      allOrders.push(...batch)
+      total = res.data.total
+      pageNum++
+    } while (allOrders.length < total)
 
-    if (orders.length === 0) {
+    if (allOrders.length === 0) {
       ElMessage.warning('没有可导出的订单数据')
       return
     }
+
+    const orders: AdminOrderVO[] = allOrders
 
     // 2. 创建工作簿
     const wb = XLSX.utils.book_new()
@@ -517,7 +515,7 @@ async function handleExport(): Promise<void> {
     // 3. 生成文件并下载
     const fileName = `订单数据_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
     XLSX.writeFile(wb, fileName)
-    ElMessage.success(`导出成功，共 ${orderCount} 条订单`)
+    ElMessage.success(`导出成功，共 ${allOrders.length} 条订单`)
     // 任务#54: 导出成功后关闭弹窗
     exportDialogVisible.value = false
   } catch {

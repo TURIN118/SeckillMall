@@ -46,16 +46,16 @@
         <div class="coupon-card" :class="couponCardClass(item)">
           <!-- 左侧面额区 -->
           <div class="coupon-left">
-            <template v-if="item.coupon.type === 'AMOUNT'">
+            <template v-if="item.couponType === 'AMOUNT'">
               <div class="coupon-value">
                 <span class="value-unit">¥</span>
-                <span class="value-num">{{ formatAmount(item.coupon.amount) }}</span>
+                <span class="value-num">{{ formatAmount(item.couponAmount) }}</span>
               </div>
               <div class="coupon-type-label">满减券</div>
             </template>
             <template v-else>
               <div class="coupon-value">
-                <span class="value-num discount">{{ formatDiscount(item.coupon.amount) }}</span>
+                <span class="value-num discount">{{ formatDiscount(item.couponAmount) }}</span>
                 <span class="value-unit">折</span>
               </div>
               <div class="coupon-type-label">折扣券</div>
@@ -64,20 +64,20 @@
 
           <!-- 右侧信息区 -->
           <div class="coupon-right">
-            <div class="coupon-name">{{ item.coupon.name }}</div>
+            <div class="coupon-name">{{ item.couponName }}</div>
             <div class="coupon-condition">
-              <template v-if="item.coupon.type === 'AMOUNT'">
-                满 {{ formatMoney(item.coupon.minAmount) }} 元可用
+              <template v-if="item.couponType === 'AMOUNT'">
+                满 {{ formatMoney(item.minAmount) }} 元可用
               </template>
               <template v-else>
-                <span v-if="item.coupon.minAmount > 0">
-                  满 {{ formatMoney(item.coupon.minAmount) }} 元可用
+                <span v-if="item.minAmount > 0">
+                  满 {{ formatMoney(item.minAmount) }} 元可用
                 </span>
                 <span v-else>无门槛</span>
               </template>
             </div>
             <div class="coupon-time">
-              {{ formatDate(item.coupon.startTime) }} ~ {{ formatDate(item.coupon.endTime) }}
+              {{ formatDate(item.couponStartTime) }} ~ {{ formatDate(item.couponEndTime) }}
             </div>
             <div class="coupon-status">
               <el-tag :type="statusTagType(item.status)" size="small" effect="dark">

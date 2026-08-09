@@ -2,6 +2,7 @@ package com.seckill.mall.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.seckill.mall.entity.ProductSku;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -35,4 +36,18 @@ public interface ProductSkuMapper extends BaseMapper<ProductSku> {
     @Deprecated
     ProductSku selectByAttributes(@Param("productId") Long productId,
                                   @Param("attributesJson") String attributesJson);
+
+    /**
+     * 物理删除指定商品的所有 SKU（绕过 MyBatis-Plus 逻辑删除）。
+     * <p>
+     * 用于编辑商品保存 SKU 前清理旧 SKU：
+     * 唯一索引 uk_product_sku_code(product_id, sku_code) 不包含 is_deleted 字段，
+     * 若使用逻辑删除，属性组合不变时 sku_code 重复会导致唯一键冲突。
+     * 编辑商品时 SKU 重新生成，旧 SKU 不需要保留，故使用物理删除。
+     *
+     * @param productId 商品 ID
+     * @return 受影响行数
+     */
+    @Delete("DELETE FROM t_product_sku WHERE product_id = #{productId}")
+    int physicalDeleteByProductId(@Param("productId") Long productId);
 }

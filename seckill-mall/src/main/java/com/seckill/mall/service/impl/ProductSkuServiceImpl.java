@@ -27,9 +27,10 @@ import java.util.stream.Collectors;
  * <p>
  * 实现要点：
  * <ul>
- *   <li>saveSkus：事务内先 deleteByProductId 逻辑删除旧 SKU，再遍历插入新 SKU。
+ *   <li>saveSkus：事务内先 deleteByProductId 物理删除旧 SKU，再遍历插入新 SKU。
  *       skuCode 为空时调用 generateSkuCode 可靠生成（基于 productId + SHA-256 摘要，
- *       避免 hashCode 碰撞风险）</li>
+ *       避免 hashCode 碰撞风险）。物理删除避免编辑商品时 sku_code 唯一键冲突
+ *       （uk_product_sku_code 不包含 is_deleted，逻辑删除后旧记录仍占用唯一键）</li>
  *   <li>deductStock：使用 MyBatis-Plus 乐观锁 + 参数绑定防 SQL 注入。
  *       setSql("stock = stock - {0}", quantity) 中 {0} 为参数占位符，MyBatis 预编译参数化</li>
  *   <li>restoreStock：同样使用参数绑定 stock = stock + {0}，防注入</li>
@@ -101,8 +102,12 @@ public class ProductSkuServiceImpl implements ProductSkuService {
         if (productId == null) {
             return;
         }
-        skuMapper.delete(new LambdaUpdateWrapper<ProductSku>()
-                .eq(ProductSku::getProductId, productId));
+        // 物理删除：避免 sku_code 唯一键冲突
+        // 唯一索引 uk_product_sku_code(product_id, sku_code) 不包含 is_deleted 字段，
+        // 逻辑删除后旧记录仍占用唯一键；编辑商品时 SKU 重新生成，
+        // 若属性组合不变则 sku_code 重复，插入会触发 DuplicateKeyException。
+        // 编辑场景下旧 SKU 不需要保留，故使用物理删除。
+        skuMapper.physicalDeleteByProductId(productId);
     }
 
     @Override

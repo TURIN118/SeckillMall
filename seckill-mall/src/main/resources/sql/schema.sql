@@ -8,7 +8,7 @@
 --       仅包含 CREATE TABLE IF NOT EXISTS 语句，不包含任何 INSERT 数据。
 --       所有表按依赖顺序排列，包含所有索引。
 -- 表数量：23 张
--- 生成时间：2026-08-07
+-- 生成时间：2026-08-09
 -- ============================================================
 
 
@@ -333,6 +333,7 @@ CREATE TABLE `t_user_address` (
 -- 与t_seckill_order独立：有address_id字段，无seckill_id字段
 -- 拆分total_amount/freight_amount/pay_amount，含remark字段
 -- 包含SHIPPED状态及物流字段（shipping_company/shipping_no/ship_time/confirm_time）
+-- 包含优惠券字段（user_coupon_id/discount_amount，V8迁移新增）
 -- ------------------------------------------------------------
 DROP TABLE IF EXISTS `t_normal_order`;
 CREATE TABLE `t_normal_order` (
@@ -342,7 +343,7 @@ CREATE TABLE `t_normal_order` (
     `address_id`       BIGINT        NOT NULL            COMMENT '收货地址ID',
     `total_amount`     DECIMAL(10,2) NOT NULL            COMMENT '商品总金额（明细小计之和）',
     `freight_amount`   DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT '运费',
-    `pay_amount`       DECIMAL(10,2) NOT NULL            COMMENT '实付金额 = total_amount + freight_amount',
+    `pay_amount`       DECIMAL(10,2) NOT NULL            COMMENT '实付金额 = total_amount + freight_amount - discount_amount',
     `status`           ENUM('UNPAID','PAID','SHIPPED','CANCELLED','TIMEOUT','COMPLETED')
                                      NOT NULL DEFAULT 'UNPAID' COMMENT 'UNPAID-待支付/PAID-已支付/SHIPPED-已发货/CANCELLED-已取消/TIMEOUT-超时/COMPLETED-已完成',
     `shipping_company` VARCHAR(50)   NULL     DEFAULT NULL COMMENT '物流公司',
@@ -356,6 +357,8 @@ CREATE TABLE `t_normal_order` (
     `cancel_time`      DATETIME      NULL     DEFAULT NULL COMMENT '取消时间',
     `cancel_reason`    VARCHAR(255)  NULL     DEFAULT NULL COMMENT '取消原因',
     `remark`           VARCHAR(255)  NULL     DEFAULT NULL COMMENT '用户下单备注',
+    `user_coupon_id`   BIGINT        NULL     DEFAULT NULL COMMENT '使用的用户优惠券ID（V8迁移新增）',
+    `discount_amount`  DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT '优惠金额（V8迁移新增，无券时为0）',
     `is_deleted`       TINYINT       NOT NULL DEFAULT 0   COMMENT '逻辑删除：0-正常/1-已删除',
     `create_time`      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP                COMMENT '创建时间（下单时间）',
     `update_time`      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -363,7 +366,8 @@ CREATE TABLE `t_normal_order` (
     UNIQUE KEY `uk_order_no` (`order_no`),
     INDEX `idx_user_status` (`user_id`, `status`),
     INDEX `idx_user_create` (`user_id`, `create_time`),
-    INDEX `idx_shipping_no` (`shipping_no`)
+    INDEX `idx_shipping_no` (`shipping_no`),
+    INDEX `idx_user_coupon` (`user_coupon_id`) COMMENT '加速按优惠券查询订单（V8迁移新增）'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='普通订单表（立即购买/购物车结算）';
 
 -- ------------------------------------------------------------
@@ -463,6 +467,7 @@ CREATE TABLE `t_product_review` (
 -- ------------------------------------------------------------
 -- 18. t_coupon — 优惠券表
 -- 支持满减券(AMOUNT)和折扣券(DISCOUNT)两种类型
+-- 支持适用范围（ALL-全站/CATEGORY-分类/PRODUCT-商品），V8迁移新增 scope_type/category_id/product_id
 -- ------------------------------------------------------------
 DROP TABLE IF EXISTS `t_coupon`;
 CREATE TABLE `t_coupon` (
@@ -477,11 +482,15 @@ CREATE TABLE `t_coupon` (
     `start_time`      DATETIME      NOT NULL               COMMENT '有效期开始',
     `end_time`        DATETIME      NOT NULL               COMMENT '有效期结束',
     `status`          TINYINT       NOT NULL DEFAULT 1     COMMENT '状态：1-启用/0-停用',
+    `scope_type`      VARCHAR(10)   NOT NULL DEFAULT 'ALL' COMMENT '适用范围：ALL-全站/CATEGORY-分类/PRODUCT-商品',
+    `category_id`     BIGINT        NULL     DEFAULT NULL  COMMENT '适用分类ID（scope_type=CATEGORY时有效）',
+    `product_id`      BIGINT        NULL     DEFAULT NULL  COMMENT '适用商品ID（scope_type=PRODUCT时有效）',
     `is_deleted`      TINYINT       NOT NULL DEFAULT 0     COMMENT '逻辑删除：0-正常/1-已删除',
     `create_time`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP                COMMENT '创建时间',
     `update_time`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
-    INDEX `idx_status` (`status`)
+    INDEX `idx_status` (`status`),
+    INDEX `idx_scope` (`scope_type`, `category_id`, `product_id`) COMMENT '加速按适用范围查询优惠券（V8迁移新增）'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='优惠券表';
 
 -- ------------------------------------------------------------

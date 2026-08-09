@@ -7,6 +7,8 @@ application-local.yml
 # 文档内容
 .docs/
 .trae/
+# docs/ 目录：内部技术文档（含 PII / 设计方案 / 流程图），不对外公开，禁止入库
+docs/
 
 # Tool metadata
 .arts/
@@ -46,3 +48,10 @@ sql/03_migration.sql
 # 日志/堆栈转储
 *.dump
 *.hprof
+
+# ============================================================
+# 商品图片资源：seckill-mall/images/ 含 116+ 商品图片子目录（products/、product-detail/、review/），
+# 体积大且可由初始化数据脚本或对象存储重建，禁止入库
+# 注意：仅忽略 images/ 目录，不影响 seckill-mall/ 下其他目录
+# ============================================================
+seckill-mall/images/

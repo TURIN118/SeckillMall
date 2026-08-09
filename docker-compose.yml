@@ -112,10 +112,33 @@ services:
     # B1 修复：RSA 私钥运行时挂载（只读），不烘焙进镜像
     volumes:
       - ${JWT_KEYS_DIR:-./keys}:/app/keys:ro
+    # 端口绑回环：不对外暴露 8080，前端通过内部网络经 Nginx 反向代理访问
+    # 调试时可直连 127.0.0.1:8080，但不监听 0.0.0.0
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     networks:
       - seckill-net
+
+  # ---------- 前端 (Nginx + Vue SPA) ----------
+  # 多阶段构建：Stage1 Node 构建 Vue 产物，Stage2 Nginx 托管 + 反向代理到 app:8080
+  # 浏览器访问 http://$FRONTEND_PORT -> Nginx -> /api/ 反向代理到 app:8080
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # 前端 API 基础路径，由 Nginx 反向代理 /api/ -> app:8080/ 处理
+        VITE_API_BASE_URL: /api
+    container_name: seckill-frontend
+    depends_on:
+      app:
+        condition: service_started
+    # 对外暴露前端端口（默认 80），这是用户浏览器访问的入口
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    networks:
+      - seckill-net
+    restart: unless-stopped
 
 volumes:
   mysql_data:

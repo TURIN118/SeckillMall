@@ -1,0 +1,14 @@
+# 构建上下文排除文件, 减小上下文体积 + 加速 COPY
+node_modules
+dist
+.git
+.gitignore
+*.md
+*.log
+.env.development
+.env.local
+.env.*.local
+.vscode
+.idea
+.merkle-snapshot.json
+knip.json

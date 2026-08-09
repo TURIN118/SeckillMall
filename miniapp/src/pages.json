@@ -123,6 +123,14 @@
         {
           "path": "pages/address-edit/address-edit",
           "style": { "navigationBarTitleText": "编辑地址" }
+        },
+        {
+          "path": "pages/wallet/wallet",
+          "style": { "navigationBarTitleText": "我的钱包" }
+        },
+        {
+          "path": "pages/edit-password/edit-password",
+          "style": { "navigationBarTitleText": "修改密码" }
         }
       ]
     }

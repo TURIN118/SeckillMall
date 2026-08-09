@@ -254,13 +254,7 @@ function goPay(order: OrderListItemVO): void {
 }
 
 function goDetail(order: OrderListItemVO): void {
-  // M4 修复: 秒杀订单跳转到普通商品详情页（场次化重构后不再有独立秒杀详情页），
-  // 通过订单快照 items[0].productId 获取商品 ID
-  if (order.orderType === 'SECKILL' && order.items && order.items.length > 0) {
-    router.push(`/products/${order.items[0].productId}`)
-  } else {
-    router.push(`/user/orders/${order.id}?type=${order.orderType}`)
-  }
+  router.push(`/user/orders/${order.id}?type=${order.orderType}`)
 }
 
 /** 取消订单：根据 orderType 调用不同取消接口（BUG-002 修复） */

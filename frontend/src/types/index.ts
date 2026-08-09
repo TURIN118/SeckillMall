@@ -357,18 +357,21 @@ export interface SeckillOrder {
 /**
  * 后台订单 VO - 对应后端 com.seckill.mall.vo.AdminOrderVO
  * 关联 t_user.username / t_product.name（productName / seckillName）
+ * 任务#49: 新增 orderType 字段（SECKILL/NORMAL），合并秒杀订单与普通订单
  */
 export interface AdminOrderVO {
   id: number | string
   orderNo: string
+  /** 订单类型：SECKILL-秒杀订单 / NORMAL-普通订单 */
+  orderType?: 'SECKILL' | 'NORMAL' | string
   userId: number | string
   username: string
-  seckillId: number | string
-  seckillName: string
-  productId: number | string
-  productName: string
-  seckillPrice: number
-  quantity: number
+  seckillId: number | string | null
+  seckillName: string | null
+  productId: number | string | null
+  productName: string | null
+  seckillPrice: number | null
+  quantity: number | null
   totalAmount: number
   status: OrderStatus
   payTime: string
@@ -387,12 +390,15 @@ export interface AdminOrderVO {
 
 /**
  * 后台订单查询请求 - 对应后端 com.seckill.mall.dto.AdminOrderQueryRequest
- * 仅包含前端使用的字段（orderNo / date / status + 分页）
+ * 仅包含前端使用的字段（orderNo / date / status / orderType + 分页）
+ * 任务#49: 新增 orderType 筛选字段（NORMAL/SECKILL，为空表示同时查询两种订单）
  */
 export interface AdminOrderQueryRequest {
   orderNo?: string
   date?: string
   status?: OrderStatus
+  /** 订单类型筛选：NORMAL-普通订单 / SECKILL-秒杀订单，为空表示全部 */
+  orderType?: 'NORMAL' | 'SECKILL' | ''
   pageNum?: number
   pageSize?: number
 }

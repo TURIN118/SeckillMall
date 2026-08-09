@@ -215,8 +215,8 @@
         <div class="pagination">
           <div class="page-btn" :class="{ disabled: recordsPageNum <= 1 }"
             @click="handleRecordsPageChange(recordsPageNum - 1)">&lt;</div>
-          <div v-for="p in recordsDisplayPages" :key="p" class="page-btn"
-            :class="{ active: p === recordsPageNum }" @click="handleRecordsPageChange(p)">{{ p }}</div>
+          <div v-for="p in recordsDisplayPages" :key="p" class="page-btn" :class="{ active: p === recordsPageNum }"
+            @click="handleRecordsPageChange(p)">{{ p }}</div>
           <div class="page-btn" :class="{ disabled: recordsPageNum >= recordsTotalPages }"
             @click="handleRecordsPageChange(recordsPageNum + 1)">&gt;</div>
         </div>

@@ -18,6 +18,11 @@ public class AdminOrderVO {
 
     private String orderNo;
 
+    /**
+     * 订单类型：SECKILL-秒杀订单 / NORMAL-普通订单（任务#49）
+     */
+    private String orderType;
+
     private Long userId;
 
     /**

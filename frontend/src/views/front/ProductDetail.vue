@@ -122,7 +122,7 @@
 
             <!-- 信息条：分类/库存/销量/上架时间整合为一行横向排列 -->
             <div class="info-bar fade-in-item stagger-4">
-              <span class="info-bar-item">分类：{{ categoryPath.map(c => c.categoryName).join(' > ') ||
+              <span class="info-bar-item">分类：{{categoryPath.map(c => c.categoryName).join(' > ') ||
                 product.categoryName
               }}</span>
               <span class="info-bar-divider">|</span>
@@ -145,18 +145,16 @@
                   <div class="coupon-mini-condition">
                     {{ coupon.minAmount > 0 ? `满${formatCouponMoney(coupon.minAmount)}可用` : '无门槛' }}
                   </div>
-                  <button
-                    class="coupon-mini-btn"
-                    :class="{ received: couponReceivedMap[coupon.id] }"
+                  <button class="coupon-mini-btn" :class="{ received: couponReceivedMap[coupon.id] }"
                     :disabled="couponReceivedMap[coupon.id] || receivingCouponId === coupon.id"
-                    @click="handleReceiveCoupon(coupon)"
-                  >
+                    @click="handleReceiveCoupon(coupon)">
                     <template v-if="couponReceivedMap[coupon.id]">已领取</template>
                     <template v-else-if="receivingCouponId === coupon.id">...</template>
                     <template v-else>领取</template>
                   </button>
                 </div>
-                <div v-if="availableCoupons.length > 3" class="coupon-more" @click="router.push('/user/profile?tab=couponCenter')">
+                <div v-if="availableCoupons.length > 3" class="coupon-more"
+                  @click="router.push('/user/profile?tab=couponCenter')">
                   查看更多 >
                 </div>
               </div>
@@ -401,7 +399,8 @@
                     <div class="review-item__content">{{ review.content }}</div>
                     <div v-if="review.images && review.images.length > 0" class="review-item__images">
                       <el-image v-for="(img, idx) in review.images" :key="idx" :src="formatImageUrl(img)" fit="cover"
-                        class="review-item__img" lazy />
+                        :preview-src-list="review.images.map(i => formatImageUrl(i))" :initial-index="idx"
+                        preview-teleported class="review-item__img" lazy />
                     </div>
                     <div class="review-item__meta">
                       <span>{{ formatTime(review.createTime) }}</span>
@@ -640,16 +639,16 @@
                 </div>
                 <!-- 上传按钮（最多5张） -->
                 <div v-if="reviewForm.images.length < 5" class="review-form__upload-btn"
-                  :class="{ 'is-loading': reviewImageUploading }"
-                  @click="triggerReviewImageUpload">
-                  <svg v-if="!reviewImageUploading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  :class="{ 'is-loading': reviewImageUploading }" @click="triggerReviewImageUpload">
+                  <svg v-if="!reviewImageUploading" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
                     <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
                   </svg>
                   <span>{{ reviewImageUploading ? '上传中...' : '添加图片' }}</span>
                 </div>
                 <!-- 隐藏的 file input -->
-                <input ref="reviewImageInputRef" type="file" accept="image/*" multiple
-                  style="display: none" @change="handleReviewImageChange" />
+                <input ref="reviewImageInputRef" type="file" accept="image/*" multiple style="display: none"
+                  @change="handleReviewImageChange" />
               </div>
               <div class="review-form__tip">最多可上传5张图片，每张不超过5MB</div>
             </div>

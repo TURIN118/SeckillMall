@@ -76,83 +76,126 @@
         GROUP BY status
     </select>
 
-    <!-- 后台订单高级筛选分页：关联 t_user/t_product/t_seckill_goods
-         注意：t_seckill_goods 表无 name 字段，seckillName 用关联商品名 productName 代替 -->
+    <!-- 后台订单高级筛选分页：合并 t_seckill_order + t_normal_order（任务#49）
+         使用 UNION ALL 合并两套订单，外层包装筛选/排序/分页（MyBatis-Plus 在最外层追加 LIMIT）
+         普通订单无 seckillId/productId/seckillPrice/quantity 字段，用 NULL 或子查询填充
+         普通订单 productName 取第一个明细商品名（按 id 升序），quantity 取明细数量之和 -->
     <select id="selectAdminOrderPage" resultType="com.seckill.mall.vo.AdminOrderVO">
-        SELECT o.id,
-               o.order_no,
-               o.user_id,
-               u.username,
-               o.seckill_id,
-               p.name AS seckill_name,
-               o.product_id,
-               p.name AS product_name,
-               o.seckill_price,
-               o.quantity,
-               o.total_amount,
-               o.status,
-               o.shipping_company,
-               o.shipping_no,
-               o.ship_time,
-               o.confirm_time,
-               o.pay_time,
-               o.pay_expire_time,
-               o.transaction_id,
-               o.pay_method,
-               o.cancel_time,
-               o.cancel_reason,
-               o.create_time,
-               o.update_time
-        FROM t_seckill_order o
-        INNER JOIN t_user u ON u.id = o.user_id AND u.is_deleted = 0
-        INNER JOIN t_product p ON p.id = o.product_id AND p.is_deleted = 0
-        LEFT JOIN t_seckill_goods sg ON sg.id = o.seckill_id AND sg.is_deleted = 0
+        SELECT * FROM (
+            /* ====== 秒杀订单 ====== */
+            SELECT o.id,
+                   'SECKILL' AS order_type,
+                   o.order_no,
+                   o.user_id,
+                   u.username,
+                   o.seckill_id,
+                   p.name AS seckill_name,
+                   o.product_id,
+                   p.name AS product_name,
+                   o.seckill_price,
+                   o.quantity,
+                   o.total_amount,
+                   o.status,
+                   o.shipping_company,
+                   o.shipping_no,
+                   o.ship_time,
+                   o.confirm_time,
+                   o.pay_time,
+                   o.pay_expire_time,
+                   o.transaction_id,
+                   o.pay_method,
+                   o.cancel_time,
+                   o.cancel_reason,
+                   o.create_time,
+                   o.update_time
+            FROM t_seckill_order o
+            INNER JOIN t_user u ON u.id = o.user_id AND u.is_deleted = 0
+            INNER JOIN t_product p ON p.id = o.product_id AND p.is_deleted = 0
+            WHERE o.is_deleted = 0
+
+            UNION ALL
+
+            /* ====== 普通订单 ====== */
+            SELECT o.id,
+                   'NORMAL' AS order_type,
+                   o.order_no,
+                   o.user_id,
+                   u.username,
+                   NULL AS seckill_id,
+                   NULL AS seckill_name,
+                   NULL AS product_id,
+                   (SELECT noi.product_name FROM t_normal_order_item noi
+                     WHERE noi.order_id = o.id AND noi.is_deleted = 0
+                     ORDER BY noi.id LIMIT 1) AS product_name,
+                   NULL AS seckill_price,
+                   (SELECT IFNULL(SUM(noi.quantity), 0) FROM t_normal_order_item noi
+                     WHERE noi.order_id = o.id AND noi.is_deleted = 0) AS quantity,
+                   o.total_amount,
+                   o.status,
+                   o.shipping_company,
+                   o.shipping_no,
+                   o.ship_time,
+                   o.confirm_time,
+                   o.pay_time,
+                   o.pay_expire_time,
+                   o.transaction_id,
+                   o.pay_method,
+                   o.cancel_time,
+                   o.cancel_reason,
+                   o.create_time,
+                   o.update_time
+            FROM t_normal_order o
+            INNER JOIN t_user u ON u.id = o.user_id AND u.is_deleted = 0
+            WHERE o.is_deleted = 0
+        ) t
         <where>
-            o.is_deleted = 0
+            <if test="req.orderType != null and req.orderType != ''">
+                AND t.order_type = #{req.orderType}
+            </if>
             <if test="req.orderNo != null and req.orderNo != ''">
-                AND o.order_no LIKE CONCAT('%', #{req.orderNo}, '%')
+                AND t.order_no LIKE CONCAT('%', #{req.orderNo}, '%')
             </if>
             <if test="req.date != null and req.date != ''">
-                <!-- M35 优化：原 DATE(o.create_time) = #{req.date} 会让 create_time 索引失效，
+                <!-- M35 优化：原 DATE(t.create_time) = #{req.date} 会让 create_time 索引失效，
                      改为范围查询 [date 00:00:00, date+1 00:00:00)，可走索引。
                      req.startLdt/req.endLdt 已由 Service 层根据 date 归一化填充。
                      当 date 非空时，下方 startLdt/endLdt 独立条件不再生效，避免重复与 <= / < 冲突 -->
-                AND o.create_time &gt;= #{req.startLdt}
-                AND o.create_time &lt; #{req.endLdt}
+                AND t.create_time &gt;= #{req.startLdt}
+                AND t.create_time &lt; #{req.endLdt}
             </if>
             <if test="req.status != null and req.status != ''">
-                AND o.status = #{req.status}
+                AND t.status = #{req.status}
             </if>
             <if test="req.userId != null">
-                AND o.user_id = #{req.userId}
+                AND t.user_id = #{req.userId}
             </if>
             <if test="req.productId != null">
-                AND o.product_id = #{req.productId}
+                AND t.product_id = #{req.productId}
             </if>
             <if test="req.seckillId != null">
-                AND o.seckill_id = #{req.seckillId}
+                AND t.seckill_id = #{req.seckillId}
             </if>
             <if test="(req.date == null or req.date == '') and req.startLdt != null">
-                AND o.create_time &gt;= #{req.startLdt}
+                AND t.create_time &gt;= #{req.startLdt}
             </if>
             <if test="(req.date == null or req.date == '') and req.endLdt != null">
-                AND o.create_time &lt;= #{req.endLdt}
+                AND t.create_time &lt;= #{req.endLdt}
             </if>
             <if test="req.payStartLdt != null">
-                AND o.pay_time &gt;= #{req.payStartLdt}
+                AND t.pay_time &gt;= #{req.payStartLdt}
             </if>
             <if test="req.payEndLdt != null">
-                AND o.pay_time &lt;= #{req.payEndLdt}
+                AND t.pay_time &lt;= #{req.payEndLdt}
             </if>
         </where>
         <!-- 安全修复(C5)：使用 MyBatis choose 白名单映射替代 ${} 拼接，杜绝 SQL 注入 -->
         ORDER BY
         <choose>
-            <when test="req.sortByColumn == 'create_time'">create_time</when>
-            <when test="req.sortByColumn == 'pay_time'">pay_time</when>
-            <when test="req.sortByColumn == 'total_amount'">total_amount</when>
-            <when test="req.sortByColumn == 'order_no'">order_no</when>
-            <otherwise>create_time</otherwise>
+            <when test="req.sortByColumn == 'create_time'">t.create_time</when>
+            <when test="req.sortByColumn == 'pay_time'">t.pay_time</when>
+            <when test="req.sortByColumn == 'total_amount'">t.total_amount</when>
+            <when test="req.sortByColumn == 'order_no'">t.order_no</when>
+            <otherwise>t.create_time</otherwise>
         </choose>
         <choose>
             <when test="req.sortOrder == 'asc'">ASC</when>

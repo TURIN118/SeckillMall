@@ -42,10 +42,17 @@ public class AdminOrderQueryRequest {
     private String date;
 
     /**
-     * 订单状态：UNPAID/PAID/CANCELLED/TIMEOUT/COMPLETED
+     * 订单状态：UNPAID/PAID/SHIPPED/CANCELLED/TIMEOUT/COMPLETED
      */
-    @Pattern(regexp = "^(UNPAID|PAID|CANCELLED|TIMEOUT|COMPLETED)$", message = "订单状态非法")
+    @Pattern(regexp = "^(UNPAID|PAID|SHIPPED|CANCELLED|TIMEOUT|COMPLETED)$", message = "订单状态非法")
     private String status;
+
+    /**
+     * 订单类型筛选：NORMAL-普通订单 / SECKILL-秒杀订单
+     * 为空时同时查询普通订单和秒杀订单（任务#49）
+     */
+    @Pattern(regexp = "^(NORMAL|SECKILL)$", message = "订单类型非法，仅支持 NORMAL 或 SECKILL")
+    private String orderType;
 
     /**
      * 用户ID

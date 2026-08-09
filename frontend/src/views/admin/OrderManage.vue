@@ -16,6 +16,11 @@
             <option value="TIMEOUT">已超时</option>
             <option value="COMPLETED">已完成</option>
           </select>
+          <select v-model="orderTypeFilter" class="admin-filter-select" @change="handleQuery">
+            <option value="">全部类型</option>
+            <option value="NORMAL">普通订单</option>
+            <option value="SECKILL">秒杀订单</option>
+          </select>
           <input v-model="dateSingle" type="date" class="admin-search-input date-input" />
           <button class="btn-sm" @click="handleQuery">查询</button>
           <button class="btn-sm" @click="handleReset">重置</button>
@@ -34,6 +39,7 @@
             <th>商品</th>
             <th>金额</th>
             <th>状态</th>
+            <th>订单类型</th>
             <th>物流信息</th>
             <th>下单时间</th>
             <th>操作</th>
@@ -48,6 +54,11 @@
             <td>
               <span class="status-tag" :class="getStatusTagClass(row.status)">
                 {{ getStatusLabel(row.status) }}
+              </span>
+            </td>
+            <td>
+              <span class="order-type-tag" :class="getOrderTypeTagClass(row.orderType)">
+                {{ getOrderTypeLabel(row.orderType) }}
               </span>
             </td>
             <td>
@@ -71,7 +82,7 @@
             </td>
           </tr>
           <tr v-if="orderList.length === 0 && !loading">
-            <td colspan="8" class="empty-cell">暂无订单数据</td>
+            <td colspan="9" class="empty-cell">暂无订单数据</td>
           </tr>
         </tbody>
       </table>
@@ -98,12 +109,14 @@
             }}</span></div>
         <div class="detail-row"><span class="detail-label">商品</span><span class="detail-value">{{ detailRow.productName || detailRow.productId
             }}</span></div>
-        <div class="detail-row"><span class="detail-label">秒杀价</span><span class="detail-value">¥{{
-          formatPrice(detailRow.seckillPrice) }}</span></div>
+        <div class="detail-row"><span class="detail-label">秒杀价</span><span class="detail-value">{{
+          detailRow.seckillPrice != null ? '¥' + formatPrice(detailRow.seckillPrice) : '—' }}</span></div>
         <div class="detail-row"><span class="detail-label">总金额</span><span class="detail-value">¥{{
           formatPrice(detailRow.totalAmount) }}</span></div>
         <div class="detail-row"><span class="detail-label">状态</span><span class="detail-value">{{
           getStatusLabel(detailRow.status) }}</span></div>
+        <div class="detail-row"><span class="detail-label">订单类型</span><span class="detail-value">{{
+          getOrderTypeLabel(detailRow.orderType) }}</span></div>
         <div class="detail-row"><span class="detail-label">创建时间</span><span class="detail-value">{{
           formatDateTime(detailRow.createTime) }}</span></div>
         <div class="detail-row"><span class="detail-label">支付时间</span><span class="detail-value">{{ detailRow.payTime ?
@@ -163,6 +176,7 @@ const pageSize = ref(10)
 /* === 筛选条件 === */
 const orderNo = ref('')
 const statusFilter = ref<OrderStatus | ''>('')
+const orderTypeFilter = ref<'NORMAL' | 'SECKILL' | ''>('')
 const dateSingle = ref('')
 
 /* === 总页数 === */
@@ -218,6 +232,19 @@ function getStatusTagClass(status: OrderStatus): string {
   return map[status] || 'cancelled'
 }
 
+/* === 订单类型映射（任务#49） === */
+function getOrderTypeLabel(orderType?: string): string {
+  if (orderType === 'SECKILL') return '秒杀'
+  if (orderType === 'NORMAL') return '普通'
+  return '—'
+}
+/* === 订单类型 tag class：普通订单用蓝色标签，秒杀订单用红色标签 === */
+function getOrderTypeTagClass(orderType?: string): string {
+  if (orderType === 'SECKILL') return 'seckill'
+  if (orderType === 'NORMAL') return 'normal'
+  return 'normal'
+}
+
 /* === 拉取订单列表 === */
 async function fetchOrderList(): Promise<void> {
   loading.value = true
@@ -226,6 +253,7 @@ async function fetchOrderList(): Promise<void> {
     // 后端在 SQL 中进行模糊查询和按天筛选，避免前端仅过滤当前页 10 条的 BUG-005
     const res = await getAdminOrderList({
       status: statusFilter.value || undefined,
+      orderType: orderTypeFilter.value || undefined,
       orderNo: orderNo.value || undefined,
       date: dateSingle.value || undefined,
       pageNum: pageNum.value,
@@ -250,6 +278,7 @@ function handleQuery(): void {
 function handleReset(): void {
   orderNo.value = ''
   statusFilter.value = ''
+  orderTypeFilter.value = ''
   dateSingle.value = ''
   pageNum.value = 1
   fetchOrderList()
@@ -282,6 +311,7 @@ async function handleExport(): Promise<void> {
     //    M-F3 修复: 一次性拉 10000 条会撞 10s 全局超时, 该请求单独放宽 timeout 至 60s
     const res = await getAdminOrderList({
       status: statusFilter.value || undefined,
+      orderType: orderTypeFilter.value || undefined,
       orderNo: orderNo.value || undefined,
       date: dateSingle.value || undefined,
       pageNum: 1,
@@ -302,6 +332,7 @@ async function handleExport(): Promise<void> {
       订单号: o.orderNo,
       用户: o.username || o.userId,
       商品: o.productName || o.productId,
+      订单类型: getOrderTypeLabel(o.orderType),
       秒杀价: o.seckillPrice || 0,
       购买数量: o.quantity || 0,
       金额: o.totalAmount || 0,
@@ -313,6 +344,7 @@ async function handleExport(): Promise<void> {
       { wch: 25 }, // 订单号
       { wch: 14 }, // 用户
       { wch: 14 }, // 商品
+      { wch: 10 }, // 订单类型
       { wch: 12 }, // 秒杀价
       { wch: 10 }, // 购买数量
       { wch: 12 }, // 金额
@@ -781,5 +813,28 @@ onMounted(() => {
 .status-tag.shipped {
   background: #e6f4ff;
   color: #1677ff;
+}
+
+/* === 订单类型标签（任务#49） === */
+/* 基础样式复用 status-tag 的 display/padding/border-radius/font 等 */
+.order-type-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* 普通订单：蓝色标签 */
+.order-type-tag.normal {
+  background: #e6f4ff;
+  color: #1677ff;
+}
+
+/* 秒杀订单：红色标签 */
+.order-type-tag.seckill {
+  background: #fff1f0;
+  color: #cf1322;
 }
 </style>

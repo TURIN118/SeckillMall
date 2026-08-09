@@ -112,6 +112,20 @@ const categoryTree = ref<CategoryTreeNode[]>([])
 /* === 展开状态 === */
 const expandedSet = ref<Set<number | string>>(new Set())
 
+/**
+ * 判定是否为一级分类（根分类）。
+ *
+ * 后端 JacksonConfig 将 Long 全局序列化为 String（防 JS 精度丢失），故 parentId 经序列化后
+ * 可能是数字 0 或字符串 "0"；数据库初始数据 parent_id 可能为 NULL，归一化前可能为 null/undefined。
+ * 统一兼容：parentId 为 0 / "0" / null / undefined 均视为一级分类。
+ *
+ * 任务#61 修复：原判定仅含 `parentId === 0`，导致字符串 "0" 的根分类被 rootCategories 过滤掉，
+ * 父分类下拉框不显示一级分类。
+ */
+function isRootCategory(parentId: number | string | null | undefined): boolean {
+  return parentId === 0 || parentId === '0' || parentId === null || parentId === undefined
+}
+
 /* === 构建树结构 === */
 function buildTree(list: CategoryVO[]): CategoryTreeNode[] {
   const map = new Map<number | string, CategoryTreeNode>()
@@ -121,12 +135,18 @@ function buildTree(list: CategoryVO[]): CategoryTreeNode[] {
   })
   list.forEach((item) => {
     const node = map.get(item.id)!
-    // 一级分类判定：parentId 为 0/null/undefined，或其 parentId 不在当前列表中（孤儿节点）
-    if (item.parentId === 0 || item.parentId === null || item.parentId === undefined || !map.has(item.parentId)) {
+    if (isRootCategory(item.parentId)) {
+      // 一级分类：parentId 为 0/"0"/null/undefined
       roots.push(node)
     } else {
-      const parent = map.get(item.parentId)!
-      parent.children!.push(node)
+      // 此处 parentId 一定不是 0/"0"/null/undefined，是有效父 id（类型收窄为 number | string）
+      const parent = map.get(item.parentId as number | string)
+      if (parent) {
+        parent.children!.push(node)
+      } else {
+        // 孤儿节点：parentId 不在当前列表中，作为根节点兜底处理
+        roots.push(node)
+      }
     }
   })
   const sortNodes = (nodes: CategoryTreeNode[]): void => {
@@ -207,11 +227,12 @@ async function fetchCategoryList(): Promise<void> {
 }
 
 /* === 根分类 (用于父分类选择) === */
-// 兼容 parentId 为 0/null/undefined 的一级分类：
-// - 后端归一化后一级分类 parentId=0
+// 兼容 parentId 为 0/"0"/null/undefined 的一级分类：
+// - 后端归一化后一级分类 parentId=0L，经 JacksonConfig Long→String 序列化后为 "0"
 // - 防御性兼容 null/undefined（数据库初始数据 parent_id 可能为 NULL）
+// 任务#61 修复：原判定遗漏字符串 "0"，导致下拉框不显示一级分类
 const rootCategories = computed<CategoryVO[]>(() =>
-  categoryList.value.filter((c) => c.parentId === 0 || c.parentId === null || c.parentId === undefined)
+  categoryList.value.filter((c) => isRootCategory(c.parentId))
 )
 
 /* === 弹窗 === */
@@ -262,8 +283,10 @@ function openEditDialog(row: CategoryVO): void {
   dialogTitle.value = '编辑分类'
   Object.assign(formData, {
     categoryName: row.categoryName,
-    // parentId 归一化：null/undefined 视为一级分类(0)，确保表单 select 能匹配"作为一级分类"选项
-    parentId: row.parentId === null || row.parentId === undefined ? 0 : row.parentId,
+    // parentId 归一化：一级分类(0/"0"/null/undefined)统一回填 0，确保表单 select 能匹配"作为一级分类"选项(:value=0)；
+    // 否则保留原值(字符串 id，后端 Long→String 序列化)，与 el-option :value=cat.id 匹配。
+    // 任务#61 修复：原判定仅含 null/undefined，遗漏字符串 "0"，导致编辑一级分类时下拉框无法选中"作为一级分类"。
+    parentId: isRootCategory(row.parentId) ? 0 : row.parentId,
     sortOrder: row.sortOrder,
     status: row.status
   })

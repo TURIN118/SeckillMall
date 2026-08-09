@@ -26,15 +26,15 @@ public class BannerCreateRequest {
     @Size(max = 100, message = "轮播图标题最长 100 字符")
     private String title;
 
-    /** 图片URL（H-S1：协议白名单 http/https） */
+    /** 图片URL（H-S1：协议白名单 http/https，或站内相对路径以 / 开头） */
     @NotBlank(message = "图片URL不能为空")
     @Size(max = 500, message = "图片URL最长 500 字符")
-    @Pattern(regexp = "^https?://.*", message = "图片URL必须以 http:// 或 https:// 开头")
+    @Pattern(regexp = "^(https?://|/).*", message = "图片URL必须以 http://、https:// 或 / 开头")
     private String imageUrl;
 
-    /** 点击跳转链接（可选，但若提供必须 http/https） */
+    /** 点击跳转链接（可选，但若提供必须 http/https 或站内相对路径以 / 开头） */
     @Size(max = 500, message = "跳转链接最长 500 字符")
-    @Pattern(regexp = "^$|^https?://.*", message = "跳转链接必须以 http:// 或 https:// 开头")
+    @Pattern(regexp = "^$|^(https?://|/).*", message = "跳转链接必须以 http://、https:// 或 / 开头")
     private String linkUrl;
 
     /** 排序权重（值越小越靠前），可选，默认 0 */

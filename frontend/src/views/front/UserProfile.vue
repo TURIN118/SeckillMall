@@ -1531,6 +1531,18 @@ async function loadAvailableCoupons(): Promise<void> {
   try {
     const res = await getAvailableCoupons()
     availableCouponList.value = res.data ?? []
+    // 加载用户已领取未使用的优惠券ID，预先标记已领取状态 (刷新页面后状态持久化)
+    try {
+      const myCouponsRes = await getMyCoupons('UNUSED')
+      const myCoupons = myCouponsRes.data ?? []
+      const next = new Set(receivedCouponIds.value)
+      myCoupons.forEach((uc) => {
+        next.add(uc.couponId)
+      })
+      receivedCouponIds.value = next
+    } catch {
+      // 获取已领取列表失败不影响主流程
+    }
   } catch {
     // 错误已由全局拦截器提示
     availableCouponList.value = []

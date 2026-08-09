@@ -57,14 +57,15 @@
             <div v-if="!isSeckillOrder && availableCoupons.length > 0" class="section-card coupon-section">
                 <div class="section-title">优惠券</div>
                 <div class="coupon-select-row">
-                    <el-select v-model="selectedUserCouponId" placeholder="选择优惠券" clearable
-                        class="coupon-select" @change="onCouponChange">
+                    <el-select v-model="selectedUserCouponId" placeholder="选择优惠券" clearable class="coupon-select"
+                        @change="onCouponChange">
                         <el-option :value="0" label="不使用优惠券" />
                         <el-option v-for="coupon in availableCoupons" :key="coupon.id" :value="coupon.id"
                             :label="formatCouponLabel(coupon)" :disabled="!isCouponUsable(coupon)">
                             <div class="coupon-option">
                                 <span class="coupon-option-value">
-                                    <template v-if="coupon.couponType === 'AMOUNT'">¥{{ coupon.couponAmount }}</template>
+                                    <template v-if="coupon.couponType === 'AMOUNT'">¥{{ coupon.couponAmount
+                                        }}</template>
                                     <template v-else>{{ (coupon.couponAmount * 10).toFixed(1) }}折</template>
                                 </span>
                                 <span class="coupon-option-condition">

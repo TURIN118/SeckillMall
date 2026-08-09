@@ -107,14 +107,14 @@
     <el-dialog v-model="detailVisible" title="订单详情" width="600px">
       <div v-if="detailRow" class="detail-list">
         <div class="detail-row"><span class="detail-label">订单号</span><span class="detail-value">{{ detailRow.orderNo
-            }}</span></div>
+        }}</span></div>
         <div class="detail-row"><span class="detail-label">用户</span><span class="detail-value">{{ detailRow.username ||
           detailRow.userId
-        }}</span></div>
+            }}</span></div>
         <div class="detail-row"><span class="detail-label">商品</span><span class="detail-value">{{ detailRow.productName
           ||
           detailRow.productId
-        }}</span></div>
+            }}</span></div>
         <div class="detail-row"><span class="detail-label">秒杀价</span><span class="detail-value">{{
           detailRow.seckillPrice != null ? '¥' + formatPrice(detailRow.seckillPrice) : '—' }}</span></div>
         <div class="detail-row"><span class="detail-label">总金额</span><span class="detail-value">¥{{

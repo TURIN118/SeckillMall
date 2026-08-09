@@ -8,13 +8,8 @@
 
     <!-- Tab 切换 -->
     <div class="coupon-tabs">
-      <div
-        v-for="tab in tabs"
-        :key="tab.value"
-        class="coupon-tab"
-        :class="{ active: activeTab === tab.value }"
-        @click="switchTab(tab.value)"
-      >
+      <div v-for="tab in tabs" :key="tab.value" class="coupon-tab" :class="{ active: activeTab === tab.value }"
+        @click="switchTab(tab.value)">
         {{ tab.label }}
         <span class="tab-count">({{ tabCountMap[tab.value] || 0 }})</span>
       </div>
@@ -22,7 +17,9 @@
 
     <!-- 加载中 -->
     <div v-if="loading" class="loading-state">
-      <el-icon class="is-loading"><Loading /></el-icon>
+      <el-icon class="is-loading">
+        <Loading />
+      </el-icon>
       <span class="loading-text">加载中...</span>
     </div>
 
@@ -33,16 +30,7 @@
 
     <!-- 优惠券卡片网格 -->
     <el-row v-else :gutter="16" class="coupon-grid">
-      <el-col
-        v-for="item in couponList"
-        :key="item.id"
-        :xs="24"
-        :sm="12"
-        :md="12"
-        :lg="8"
-        :xl="6"
-        class="coupon-col"
-      >
+      <el-col v-for="item in couponList" :key="item.id" :xs="24" :sm="12" :md="12" :lg="8" :xl="6" class="coupon-col">
         <div class="coupon-card" :class="couponCardClass(item)">
           <!-- 左侧面额区 -->
           <div class="coupon-left">

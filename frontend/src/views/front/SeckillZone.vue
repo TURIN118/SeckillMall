@@ -247,9 +247,9 @@ const originalPriceMap = reactive<Record<number | string, number>>({})
 const allCategories = ref<CategoryVO[]>([])
 const selectedFirstId = ref<number | string | null>(null)
 
-/* 一级分类：parentId === 0 */
+/* 一级分类：parentId === 0（兼容 null/undefined，数据库初始数据 parent_id 可能为 NULL） */
 const firstLevelCategories = computed<CategoryVO[]>(() =>
-  allCategories.value.filter((c) => c.parentId === 0)
+  allCategories.value.filter((c) => c.parentId === 0 || c.parentId === null || c.parentId === undefined)
 )
 
 /* 选中的分类名称（用于前端过滤，因 listSeckillActivities 不支持 categoryId 参数） */

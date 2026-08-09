@@ -82,6 +82,29 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             }
         }
 
+        // 任务#54：startDate/endDate 日期范围筛选（导出弹窗时间范围）
+        // 仅当 date 为空时生效（date 单日筛选优先级更高，避免覆盖冲突）
+        // 注意：date 为空时 Mapper 对 endLdt 使用 <= (闭区间)，故 endDate 解析为当天 23:59:59
+        if ((req.getDate() == null || req.getDate().isBlank())
+                && (req.getStartDate() != null || req.getEndDate() != null)) {
+            try {
+                if (req.getStartDate() != null && !req.getStartDate().isBlank()) {
+                    LocalDate startLd = LocalDate.parse(req.getStartDate(),
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                    req.setStartLdt(startLd.atStartOfDay());
+                }
+                if (req.getEndDate() != null && !req.getEndDate().isBlank()) {
+                    LocalDate endLd = LocalDate.parse(req.getEndDate(),
+                            DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                    // endDate 含当天，date 为空时 Mapper 用 <= 闭区间，故设为当天 23:59:59
+                    req.setEndLdt(endLd.atTime(23, 59, 59));
+                }
+            } catch (Exception e) {
+                log.warn("startDate/endDate 解析失败，忽略该筛选条件: startDate={}, endDate={}, err={}",
+                        req.getStartDate(), req.getEndDate(), e.getMessage());
+            }
+        }
+
         Page<AdminOrderVO> page = new Page<>(pageNum, pageSize);
         IPage<AdminOrderVO> result = seckillOrderMapper.selectAdminOrderPage(page, req);
         List<AdminOrderVO> list = result.getRecords() == null

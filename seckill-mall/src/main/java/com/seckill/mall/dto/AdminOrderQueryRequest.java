@@ -1,10 +1,12 @@
 package com.seckill.mall.dto;
 
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -78,6 +80,32 @@ public class AdminOrderQueryRequest {
      * 创建时间结束，格式 yyyy-MM-dd HH:mm:ss
      */
     private String endTime;
+
+    /**
+     * 创建日期起始，格式 yyyy-MM-dd（任务#54 导出弹窗时间范围起始）
+     * Service 层解析为当天 00:00:00 填充 startLdt，与 date 单日筛选互斥（date 优先）
+     */
+    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "起始日期格式必须为 yyyy-MM-dd")
+    private String startDate;
+
+    /**
+     * 创建日期结束，格式 yyyy-MM-dd（任务#54 导出弹窗时间范围结束）
+     * Service 层解析为次日 00:00:00 填充 endLdt，与 date 单日筛选互斥（date 优先）
+     */
+    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "结束日期格式必须为 yyyy-MM-dd")
+    private String endDate;
+
+    /**
+     * 最小金额（含），筛选 total_amount &gt;= minAmount（任务#54 导出弹窗金额范围）
+     */
+    @DecimalMin(value = "0", message = "最小金额不能小于 0")
+    private BigDecimal minAmount;
+
+    /**
+     * 最大金额（含），筛选 total_amount &lt;= maxAmount（任务#54 导出弹窗金额范围）
+     */
+    @DecimalMin(value = "0", message = "最大金额不能小于 0")
+    private BigDecimal maxAmount;
 
     /**
      * 支付时间起始，格式 yyyy-MM-dd HH:mm:ss

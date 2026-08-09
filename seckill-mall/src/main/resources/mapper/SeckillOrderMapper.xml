@@ -187,6 +187,13 @@
             <if test="req.payEndLdt != null">
                 AND t.pay_time &lt;= #{req.payEndLdt}
             </if>
+            <!-- 任务#54：金额范围筛选（导出弹窗 minAmount/maxAmount，闭区间） -->
+            <if test="req.minAmount != null">
+                AND t.total_amount &gt;= #{req.minAmount}
+            </if>
+            <if test="req.maxAmount != null">
+                AND t.total_amount &lt;= #{req.maxAmount}
+            </if>
         </where>
         <!-- 安全修复(C5)：使用 MyBatis choose 白名单映射替代 ${} 拼接，杜绝 SQL 注入 -->
         ORDER BY

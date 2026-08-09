@@ -121,7 +121,8 @@ function buildTree(list: CategoryVO[]): CategoryTreeNode[] {
   })
   list.forEach((item) => {
     const node = map.get(item.id)!
-    if (item.parentId === 0 || !map.has(item.parentId)) {
+    // 一级分类判定：parentId 为 0/null/undefined，或其 parentId 不在当前列表中（孤儿节点）
+    if (item.parentId === 0 || item.parentId === null || item.parentId === undefined || !map.has(item.parentId)) {
       roots.push(node)
     } else {
       const parent = map.get(item.parentId)!
@@ -206,8 +207,11 @@ async function fetchCategoryList(): Promise<void> {
 }
 
 /* === 根分类 (用于父分类选择) === */
+// 兼容 parentId 为 0/null/undefined 的一级分类：
+// - 后端归一化后一级分类 parentId=0
+// - 防御性兼容 null/undefined（数据库初始数据 parent_id 可能为 NULL）
 const rootCategories = computed<CategoryVO[]>(() =>
-  categoryList.value.filter((c) => c.parentId === 0)
+  categoryList.value.filter((c) => c.parentId === 0 || c.parentId === null || c.parentId === undefined)
 )
 
 /* === 弹窗 === */
@@ -258,7 +262,8 @@ function openEditDialog(row: CategoryVO): void {
   dialogTitle.value = '编辑分类'
   Object.assign(formData, {
     categoryName: row.categoryName,
-    parentId: row.parentId,
+    // parentId 归一化：null/undefined 视为一级分类(0)，确保表单 select 能匹配"作为一级分类"选项
+    parentId: row.parentId === null || row.parentId === undefined ? 0 : row.parentId,
     sortOrder: row.sortOrder,
     status: row.status
   })

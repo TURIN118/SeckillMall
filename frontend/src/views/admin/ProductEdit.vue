@@ -222,6 +222,7 @@ import {
 import { getCategoryTree } from '@/api/category'
 import { getCategoryAttributes } from '@/api/categoryAttribute'
 import { generateSkuCombinations } from '@/api/sku'
+import { uploadImage } from '@/api/upload'
 import type {
   ProductVO,
   CategoryVO,
@@ -539,7 +540,27 @@ function removeSku(idx: number): void {
 // 使用 shallowRef 避免对编辑器实例做递归响应式化（官方推荐）
 // M41 修复: 使用 IDomEditor 类型替代 any，保证类型安全
 const editorRef = shallowRef<IDomEditor | null>(null)
-const editorConfig = { placeholder: '请输入商品详情内容...' }
+// 配置图片自定义上传：调用后端 /api/v1/upload/image 接口，避免 base64 嵌入导致大图失败
+const editorConfig = {
+  placeholder: '请输入商品详情内容...',
+  MENU_CONF: {
+    uploadImage: {
+      // customUpload(file, insertFn): 自定义上传，上传完成后调用 insertFn(url, alt, href) 将图片插入编辑器
+      async customUpload(
+        file: File,
+        insertFn: (url: string, alt?: string, href?: string) => void
+      ): Promise<void> {
+        try {
+          const res = await uploadImage(file, 'product-detail')
+          // res 为 Result<UploadResultVO>，res.data.url 即后端返回的完整可访问 URL
+          insertFn(res.data.url, file.name, res.data.url)
+        } catch {
+          ElMessage.error('图片上传失败')
+        }
+      }
+    }
+  }
+}
 const mode = 'default'
 
 onBeforeUnmount(() => {

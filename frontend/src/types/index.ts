@@ -137,7 +137,8 @@ export interface ProductVO {
 /** 分类视图对象 */
 export interface CategoryVO {
   id: number | string
-  parentId: number | string
+  /** 父分类 ID，一级分类为 0（后端归一化）；兼容 null（数据库初始数据 parent_id 可能为 NULL） */
+  parentId: number | string | null
   categoryName: string
   sortOrder: number
   status: number
@@ -392,6 +393,7 @@ export interface AdminOrderVO {
  * 后台订单查询请求 - 对应后端 com.seckill.mall.dto.AdminOrderQueryRequest
  * 仅包含前端使用的字段（orderNo / date / status / orderType + 分页）
  * 任务#49: 新增 orderType 筛选字段（NORMAL/SECKILL，为空表示同时查询两种订单）
+ * 任务#54: 新增 userId / startDate / endDate / minAmount / maxAmount（导出弹窗参数）
  */
 export interface AdminOrderQueryRequest {
   orderNo?: string
@@ -399,6 +401,16 @@ export interface AdminOrderQueryRequest {
   status?: OrderStatus
   /** 订单类型筛选：NORMAL-普通订单 / SECKILL-秒杀订单，为空表示全部 */
   orderType?: 'NORMAL' | 'SECKILL' | ''
+  /** 用户ID（导出弹窗用户筛选） */
+  userId?: number | string
+  /** 创建日期起始，格式 yyyy-MM-dd（导出弹窗时间范围起始，与 date 单日筛选互斥） */
+  startDate?: string
+  /** 创建日期结束，格式 yyyy-MM-dd（导出弹窗时间范围结束，与 date 单日筛选互斥） */
+  endDate?: string
+  /** 最小金额（含），导出弹窗金额范围下限 */
+  minAmount?: number
+  /** 最大金额（含），导出弹窗金额范围上限 */
+  maxAmount?: number
   pageNum?: number
   pageSize?: number
 }

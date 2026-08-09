@@ -304,7 +304,9 @@ public class CategoryServiceImpl implements CategoryService {
     private CategoryVO toCategoryVO(Category category, Map<Long, Integer> directCountMap) {
         CategoryVO vo = new CategoryVO();
         vo.setId(category.getId());
-        vo.setParentId(category.getParentId());
+        // 归一化 parentId：数据库中一级分类 parent_id 可能为 NULL（初始数据约定）或 0（新创建约定），
+        // 统一返回 0L，避免前端因 null/0 不一致而过滤不到一级分类。
+        vo.setParentId(normalizeParentId(category.getParentId()));
         vo.setCategoryName(category.getName());
         vo.setSortOrder(category.getSortOrder());
         vo.setStatus(category.getStatus());
@@ -319,11 +321,23 @@ public class CategoryServiceImpl implements CategoryService {
     private CategoryVO toCategoryVO(Category category) {
         CategoryVO vo = new CategoryVO();
         vo.setId(category.getId());
-        vo.setParentId(category.getParentId());
+        // 归一化 parentId：与 toCategoryVO(Category, Map) 保持一致，null → 0L
+        vo.setParentId(normalizeParentId(category.getParentId()));
         vo.setCategoryName(category.getName());
         vo.setSortOrder(category.getSortOrder());
         vo.setStatus(category.getStatus());
         return vo;
+    }
+
+    /**
+     * 归一化 parentId：数据库初始数据一级分类 parent_id=NULL，新创建一级分类 parent_id=0，
+     * 统一归一化为 0L（ROOT_PARENT_ID），确保前端接收到的 parentId 始终为数字。
+     *
+     * @param parentId 数据库中的原始 parentId 值
+     * @return 归一化后的 parentId，null 返回 0L，否则返回原值
+     */
+    private Long normalizeParentId(Long parentId) {
+        return parentId == null ? ROOT_PARENT_ID : parentId;
     }
 
     private List<CategoryVO> deserialize(String json) {

@@ -246,6 +246,9 @@ async function handleUserCommand(command: string): Promise<void> {
   flex-shrink: 0;
   transition: width 0.25s ease;
   overflow-y: auto;
+  position: sticky;  /* 固定侧边栏，不随内容区域滚动 */
+  top: 0;
+  height: 100vh;     /* 撑满视口高度 */
 }
 
 .admin-sidebar.collapsed {

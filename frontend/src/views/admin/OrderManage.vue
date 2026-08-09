@@ -24,7 +24,7 @@
           <input v-model="dateSingle" type="date" class="admin-search-input date-input" />
           <button class="btn-sm" @click="handleQuery">查询</button>
           <button class="btn-sm" @click="handleReset">重置</button>
-          <button class="btn-sm primary" :disabled="exportLoading" @click="handleExport">
+          <button class="btn-sm primary" :disabled="exportLoading" @click="openExportDialog">
             {{ exportLoading ? '导出中...' : '导出Excel' }}
           </button>
         </div>
@@ -154,6 +154,81 @@
         <el-button type="primary" :loading="shipLoading" @click="handleShip">确认发货</el-button>
       </template>
     </el-dialog>
+
+    <!-- 导出参数对话框（任务#54） -->
+    <el-dialog v-model="exportDialogVisible" title="导出订单参数" width="560px" :close-on-click-modal="false">
+      <div class="export-tip">
+        请选择需要导出的订单范围，所有参数均为可选，不选则导出全部。
+      </div>
+      <el-form :model="exportForm" ref="exportFormRef" label-width="90px" class="export-form">
+        <el-form-item label="时间范围">
+          <el-date-picker
+            v-model="exportForm.dateRange"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            value-format="YYYY-MM-DD"
+            style="width: 100%"
+            :clearable="true"
+          />
+        </el-form-item>
+        <el-form-item label="订单类型">
+          <el-select v-model="exportForm.orderType" placeholder="全部" clearable style="width: 100%">
+            <el-option label="全部" value="" />
+            <el-option label="普通订单" value="NORMAL" />
+            <el-option label="秒杀订单" value="SECKILL" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="订单状态">
+          <el-select v-model="exportForm.status" placeholder="全部" clearable style="width: 100%">
+            <el-option label="全部" value="" />
+            <el-option label="待支付" value="UNPAID" />
+            <el-option label="已支付" value="PAID" />
+            <el-option label="已发货" value="SHIPPED" />
+            <el-option label="已取消" value="CANCELLED" />
+            <el-option label="已超时" value="TIMEOUT" />
+            <el-option label="已完成" value="COMPLETED" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="用户ID">
+          <el-input
+            v-model="exportForm.userId"
+            placeholder="请输入用户ID"
+            clearable
+            @input="(v: string) => exportForm.userId = v.replace(/[^\d]/g, '')"
+          />
+        </el-form-item>
+        <el-form-item label="订单号">
+          <el-input v-model="exportForm.orderNo" placeholder="请输入订单号" clearable />
+        </el-form-item>
+        <el-form-item label="金额范围">
+          <div class="amount-range">
+            <el-input-number
+              v-model="exportForm.minAmount"
+              :min="0"
+              :precision="2"
+              :controls="false"
+              placeholder="最小金额"
+              style="flex: 1"
+            />
+            <span class="amount-separator">—</span>
+            <el-input-number
+              v-model="exportForm.maxAmount"
+              :min="0"
+              :precision="2"
+              :controls="false"
+              placeholder="最大金额"
+              style="flex: 1"
+            />
+          </div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="exportDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="exportLoading" @click="handleExport">确认导出</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -164,10 +239,10 @@
  */
 import { ref, computed, reactive, onMounted } from 'vue'
 import dayjs from 'dayjs'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { CopyDocument } from '@element-plus/icons-vue'
 import { getAdminOrderList, shipOrder, shipNormalOrder } from '@/api/order'
-import type { AdminOrderVO, OrderStatus } from '@/types'
+import type { AdminOrderVO, AdminOrderQueryRequest, OrderStatus } from '@/types'
 // 注意: xlsx 库 (约 600KB+) 已改为动态导入, 见 handleExport 中的 `await import('xlsx')`.
 // 避免静态导入导致 OrderManage chunk 过大, 用户仅查看订单时不需下载 xlsx.
 
@@ -290,39 +365,81 @@ function handleReset(): void {
   fetchOrderList()
 }
 
+/* === 导出参数弹窗（任务#54） === */
+const exportDialogVisible = ref(false)
+const exportFormRef = ref()
+const exportForm = reactive({
+  /** 时间范围 [startDate, endDate]，格式 yyyy-MM-dd */
+  dateRange: [] as string[],
+  /** 订单类型：'' 全部 / NORMAL / SECKILL */
+  orderType: '' as 'NORMAL' | 'SECKILL' | '',
+  /** 订单状态：'' 全部 / UNPAID... */
+  status: '' as OrderStatus | '',
+  /** 用户ID（数字字符串） */
+  userId: '',
+  /** 订单号 */
+  orderNo: '',
+  /** 最小金额（含） */
+  minAmount: undefined as number | undefined,
+  /** 最大金额（含） */
+  maxAmount: undefined as number | undefined
+})
+
+/** 打开导出参数弹窗：点击"导出Excel"按钮触发 */
+function openExportDialog(): void {
+  // 预填当前筛选栏条件，方便用户在已有筛选基础上微调后导出
+  exportForm.orderNo = orderNo.value
+  exportForm.status = statusFilter.value
+  exportForm.orderType = orderTypeFilter.value
+  // 当前筛选栏只有单日 dateSingle，映射为时间范围起始=结束
+  exportForm.dateRange = dateSingle.value ? [dateSingle.value, dateSingle.value] : []
+  exportForm.userId = ''
+  exportForm.minAmount = undefined
+  exportForm.maxAmount = undefined
+  exportDialogVisible.value = true
+}
+
 /* === 导出 Excel（多 Sheet） === */
 async function handleExport(): Promise<void> {
-  // BUG-009: 未选择日期范围时硬编码 pageSize=10000 可能导致导出不全或内存溢出
-  // 强制提示用户先选择日期范围，未选择时需用户二次确认才继续
-  if (!dateSingle.value) {
-    try {
-      await ElMessageBox.confirm(
-        '未选择日期范围，仅导出最近10000条订单，建议先选择日期范围后再导出。是否继续？',
-        '导出提示',
-        { confirmButtonText: '继续导出', cancelButtonText: '取消', type: 'warning' }
-      )
-    } catch {
-      // 用户取消导出
-      return
-    }
+  // 任务#54: 金额范围校验（minAmount 不能大于 maxAmount）
+  if (
+    exportForm.minAmount != null &&
+    exportForm.maxAmount != null &&
+    exportForm.minAmount > exportForm.maxAmount
+  ) {
+    ElMessage.warning('最小金额不能大于最大金额')
+    return
   }
+
+  // 组装导出查询参数：所有参数可选，空值不传
+  const exportParams: AdminOrderQueryRequest = {
+    pageNum: 1,
+    pageSize: 10000
+  }
+  if (exportForm.orderNo) exportParams.orderNo = exportForm.orderNo
+  if (exportForm.status) exportParams.status = exportForm.status
+  if (exportForm.orderType) exportParams.orderType = exportForm.orderType
+  if (exportForm.userId) {
+    const uid = Number(exportForm.userId)
+    if (!Number.isNaN(uid) && uid > 0) exportParams.userId = uid
+  }
+  if (exportForm.dateRange && exportForm.dateRange.length === 2) {
+    exportParams.startDate = exportForm.dateRange[0]
+    exportParams.endDate = exportForm.dateRange[1]
+  }
+  if (exportForm.minAmount != null) exportParams.minAmount = exportForm.minAmount
+  if (exportForm.maxAmount != null) exportParams.maxAmount = exportForm.maxAmount
 
   exportLoading.value = true
   try {
     // 动态导入 xlsx 库 (约 600KB+), 仅在用户点击导出时才加载, 避免污染 OrderManage chunk
     const XLSX = await import('xlsx')
 
-    // 1. 查询当前筛选条件下所有订单（传大 pageSize 获取全量）
-    //    后端搜索：orderNo / date / status 由后端 SQL 过滤，避免前端仅过滤当前页的 BUG-005
+    // 1. 查询弹窗所选条件下所有订单（传大 pageSize 获取全量）
+    //    后端搜索：orderNo / status / orderType / userId / startDate/endDate / minAmount/maxAmount
+    //    均由后端 SQL 过滤，避免前端仅过滤当前页的 BUG-005
     //    M-F3 修复: 一次性拉 10000 条会撞 10s 全局超时, 该请求单独放宽 timeout 至 60s
-    const res = await getAdminOrderList({
-      status: statusFilter.value || undefined,
-      orderType: orderTypeFilter.value || undefined,
-      orderNo: orderNo.value || undefined,
-      date: dateSingle.value || undefined,
-      pageNum: 1,
-      pageSize: 10000
-    }, { timeout: 60000 })
+    const res = await getAdminOrderList(exportParams, { timeout: 60000 })
     const orders: AdminOrderVO[] = res.data.list || []
 
     if (orders.length === 0) {
@@ -401,6 +518,8 @@ async function handleExport(): Promise<void> {
     const fileName = `订单数据_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`
     XLSX.writeFile(wb, fileName)
     ElMessage.success(`导出成功，共 ${orderCount} 条订单`)
+    // 任务#54: 导出成功后关闭弹窗
+    exportDialogVisible.value = false
   } catch {
     ElMessage.error('导出失败')
   } finally {
@@ -842,5 +961,33 @@ onMounted(() => {
 .order-type-tag.seckill {
   background: #fff1f0;
   color: #cf1322;
+}
+
+/* === 导出参数弹窗（任务#54） === */
+.export-tip {
+  background: var(--color-bg-subtle, #f5f7fa);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  color: var(--color-text-secondary, #909399);
+  line-height: 1.6;
+}
+
+.export-form {
+  /* el-form 默认 label-width 已在模板设置 */
+}
+
+.export-form .amount-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.export-form .amount-separator {
+  color: var(--color-text-secondary, #909399);
+  font-size: 13px;
+  flex-shrink: 0;
 }
 </style>

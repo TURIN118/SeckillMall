@@ -22,6 +22,7 @@
       wx:for-item="item"
       wx:for-index="index"
       right-width="{{ 65 }}"
+      custom-class="cart__swipe-cell"
     >
       <view class="cart__item">
         <!-- 选中框 -->
@@ -72,17 +73,21 @@
   </view>
 
   <!-- 底部结算栏 -->
-  <van-submit-bar
-    wx:if="{{items.length > 0}}"
-    price="{{totalPrice * 100}}"
-    button-text="结算({{selectedCount}})"
-    bind:submit="onCheckout"
-    custom-class="cart__submit-bar"
-  >
-    <van-checkbox
-      value="{{allSelected}}"
-      bind:change="onToggleAll"
-    >全选</van-checkbox>
-  </van-submit-bar>
+  <view class="cart__submit-bar" wx:if="{{items.length > 0}}">
+    <view class="cart__submit-bar-check">
+      <van-checkbox
+        value="{{allSelected}}"
+        bind:change="onToggleAll"
+      >全选</van-checkbox>
+    </view>
+    <view class="cart__submit-bar-total">
+      <text class="cart__submit-bar-total-label">合计：</text>
+      <text class="cart__submit-bar-total-symbol">¥</text>
+      <text class="cart__submit-bar-total-value">{{formattedTotal}}</text>
+    </view>
+    <view class="cart__submit-bar-btn {{selectedCount === 0 ? 'is-disabled' : ''}}" bindtap="onCheckout">
+      结算({{selectedCount}})
+    </view>
+  </view>
 
 </view>

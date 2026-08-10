@@ -2,7 +2,7 @@
 .cart {
   min-height: 100vh;
   background: #f7f8fa;
-  padding-bottom: 120rpx;
+  padding-bottom: calc(100rpx + env(safe-area-inset-bottom));
 }
 
 /* 加载 */
@@ -30,6 +30,11 @@
   padding: 20rpx;
 }
 
+/* van-swipe-cell 间距（通过 custom-class 注入） */
+.cart__swipe-cell {
+  margin-bottom: 16rpx;
+}
+
 /* 单项 */
 .cart__item {
   display: flex;
@@ -42,6 +47,18 @@
 
 .cart__item-check {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40rpx;
+}
+
+.cart__item-product {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  min-width: 0;
 }
 
 .cart__item-image {
@@ -59,6 +76,8 @@
   flex-direction: column;
   gap: 8rpx;
   min-width: 0;
+  /* 固定高度区，使各项对齐：图片 160rpx，信息区与图片等高 */
+  height: 160rpx;
 }
 
 .cart__item-name {
@@ -80,13 +99,18 @@
   padding: 4rpx 12rpx;
   border-radius: 4rpx;
   align-self: flex-start;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cart__item-bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 8rpx;
+  /* 固定在信息区底部 */
+  margin-top: auto;
 }
 
 .cart__item-price {
@@ -118,7 +142,65 @@
   font-size: 28rpx;
 }
 
-/* 底部结算栏 */
+/* 底部结算栏（自定义固定） */
 .cart__submit-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
   bottom: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  height: 100rpx;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: #ffffff;
+  box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.06);
+}
+
+.cart__submit-bar-check {
+  display: flex;
+  align-items: center;
+  padding-left: 24rpx;
+  flex-shrink: 0;
+}
+
+.cart__submit-bar-total {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  padding-left: 24rpx;
+}
+
+.cart__submit-bar-total-label {
+  font-size: 28rpx;
+  color: #323233;
+}
+
+.cart__submit-bar-total-symbol {
+  font-size: 24rpx;
+  color: #FF4444;
+  font-weight: 600;
+}
+
+.cart__submit-bar-total-value {
+  font-size: 36rpx;
+  color: #FF4444;
+  font-weight: 600;
+}
+
+.cart__submit-bar-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 220rpx;
+  height: 100%;
+  background: linear-gradient(135deg, #ff4444, #ee0a24);
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 500;
+}
+
+.cart__submit-bar-btn.is-disabled {
+  opacity: 0.5;
 }

@@ -25,7 +25,7 @@ const API = {
     REMOVE: '/api/v1/favorites/',      // DELETE /{productId} 取消收藏
     CHECK: '/api/v1/favorites/check/', // GET /check/{productId} 检查
     COUNT: '/api/v1/favorites/count',  // GET 数量
-    TOGGLE: '/api/v1/favorites'        // POST 切换收藏状态（兼容 product 模块）
+    TOGGLE: '/api/v1/favorites/add'    // POST 切换收藏状态（兼容 product 模块，对齐后端 POST /api/v1/favorites/add）
 }
 
 /**

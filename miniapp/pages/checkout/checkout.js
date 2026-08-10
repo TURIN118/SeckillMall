@@ -170,8 +170,8 @@ Page({
                         cartId: String(it.id),
                         productId: String(it.productId),
                         productName: it.productName,
-                        productImage: formatImageUrl(it.productImage),
-                        price: it.price,
+                        productImage: formatImageUrl(it.skuMainImage || it.mainImage),
+                        price: it.originalPrice,
                         quantity: parseInt(it.quantity, 10) || 1,
                         skuName: it.skuName || ''
                     }))
@@ -204,8 +204,8 @@ Page({
                 // 取 SKU 价格（若有 skuId），否则取 originalPrice
                 let price = product.originalPrice || 0
                 let skuName = ''
-                if (skuId && Array.isArray(product.skuList)) {
-                    const sku = product.skuList.find((s) => String(s.id) === String(skuId))
+                if (skuId && Array.isArray(product.skus)) {
+                    const sku = product.skus.find((s) => String(s.id) === String(skuId))
                     if (sku) {
                         price = sku.price || price
                         skuName = sku.skuName || ''

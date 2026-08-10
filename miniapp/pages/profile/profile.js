@@ -155,7 +155,7 @@ Page({
             confirmText: '拨打',
             success: (res) => {
                 if (res.confirm) {
-                    wx.makePhoneCall({ phoneNumber: '4008888888' }).catch(() => {})
+                    wx.makePhoneCall({ phoneNumber: '4008888888' }).catch(() => { })
                 }
             }
         })

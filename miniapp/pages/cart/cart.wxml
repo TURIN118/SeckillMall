@@ -32,32 +32,35 @@
             bind:change="onItemSelect"
           />
         </view>
-        <!-- 商品图 -->
-        <view class="cart__item-image">
-          <van-image
-            width="160rpx"
-            height="160rpx"
-            src="{{item.productImage}}"
-            fit="cover"
-            lazy-load
-          />
-        </view>
-        <!-- 商品信息 -->
-        <view class="cart__item-info">
-          <view class="cart__item-name">{{item.productName}}</view>
-          <view class="cart__item-sku" wx:if="{{item.skuName}}">{{item.skuName}}</view>
-          <view class="cart__item-bottom">
-            <view class="cart__item-price">
-              <text class="cart__item-price-symbol">¥</text>
-              <text class="cart__item-price-value">{{item.price}}</text>
-            </view>
-            <van-stepper
-              value="{{item.quantity}}"
-              min="1"
-              integer
-              data-index="{{index}}"
-              bind:change="onStepperChange"
+        <!-- 商品图 + 信息（点击跳详情） -->
+        <view class="cart__item-product" bindtap="onTapProduct" data-product-id="{{item.productId}}">
+          <!-- 商品图 -->
+          <view class="cart__item-image">
+            <van-image
+              width="160rpx"
+              height="160rpx"
+              src="{{item._image}}"
+              fit="cover"
+              lazy-load
             />
+          </view>
+          <!-- 商品信息 -->
+          <view class="cart__item-info">
+            <view class="cart__item-name">{{item.productName}}</view>
+            <view class="cart__item-sku" wx:if="{{item.skuName}}">{{item.skuName}}</view>
+            <view class="cart__item-bottom">
+              <view class="cart__item-price">
+                <text class="cart__item-price-symbol">¥</text>
+                <text class="cart__item-price-value">{{item.originalPrice}}</text>
+              </view>
+              <van-stepper
+                value="{{item.quantity}}"
+                min="1"
+                integer
+                data-index="{{index}}"
+                catch:change="onStepperChange"
+              />
+            </view>
           </view>
         </view>
       </view>

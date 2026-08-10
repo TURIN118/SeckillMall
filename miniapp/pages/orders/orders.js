@@ -16,12 +16,12 @@
 const { getUnifiedOrders, deleteOrder } = require('../../api/order')
 const { isLoggedIn, navigateToLogin } = require('../../utils/auth')
 
-// 状态 tab 配置
+// 状态 tab 配置（对齐后端枚举：UNPAID/PAID/SHIPPED/COMPLETED）
 const STATUS_TABS = [
     { name: '全部', value: '' },
-    { name: '待付款', value: 'PENDING_PAY' },
-    { name: '待发货', value: 'PENDING_SHIP' },
-    { name: '待收货', value: 'PENDING_RECEIVE' },
+    { name: '待付款', value: 'UNPAID' },
+    { name: '待发货', value: 'PAID' },
+    { name: '待收货', value: 'SHIPPED' },
     { name: '已完成', value: 'COMPLETED' }
 ]
 
@@ -186,7 +186,7 @@ Page({
                     isEmpty: newOrders.length === 0
                 })
 
-                deleteOrder(order.orderId).catch(() => {
+                deleteOrder(order.id).catch(() => {
                     // 失败回滚：重新加载
                     this._loadOrders(true)
                 })

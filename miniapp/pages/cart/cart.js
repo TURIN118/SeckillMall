@@ -67,8 +67,10 @@ Page({
             .then((res) => {
                 const list = (res && res.data) || []
                 const rawItems = Array.isArray(list) ? list : []
-                // 拼接后端 BASE_URL（productImage 为相对路径）
-                const items = rawItems.map((it) => Object.assign({}, it, { productImage: formatImageUrl(it.productImage) }))
+                // 拼接后端 BASE_URL
+                // 后端 CartItemVO 字段：mainImage（商品主图）、skuMainImage（SKU主图）、originalPrice（单价）
+                // 处理后的 URL 存到 _image 字段供 wxml 使用
+                const items = rawItems.map((it) => Object.assign({}, it, { _image: formatImageUrl(it.skuMainImage || it.mainImage) }))
                 this._hydrate(items)
             })
             .catch(() => {
@@ -87,7 +89,7 @@ Page({
         const allSelected = items.length > 0 && selectedItems.length === items.length
         let totalPrice = 0
         selectedItems.forEach((it) => {
-            const price = Number(it.price) || 0
+            const price = Number(it.originalPrice) || 0
             const qty = parseInt(it.quantity, 10) || 0
             totalPrice += price * qty
         })
@@ -227,6 +229,17 @@ Page({
         wx.switchTab({ url: '/pages/home/home' })
     },
 
+    /**
+     * 点击商品图/信息：跳商品详情
+     */
+    onTapProduct(e) {
+        const { productId } = e.currentTarget.dataset
+        if (!productId) return
+        wx.navigateTo({
+            url: '/pages/product-detail/product-detail?id=' + encodeURIComponent(String(productId))
+        })
+    },
+
     // ========== 工具方法 ==========
 
     /**
@@ -248,7 +261,7 @@ Page({
         const allSelected = items.length > 0 && selectedItems.length === items.length
         let totalPrice = 0
         selectedItems.forEach((it) => {
-            const price = Number(it.price) || 0
+            const price = Number(it.originalPrice) || 0
             const qty = parseInt(it.quantity, 10) || 0
             totalPrice += price * qty
         })

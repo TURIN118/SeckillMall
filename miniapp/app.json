@@ -44,22 +44,16 @@
                 "selectedIconPath": "images/tabbar/home-active.png"
             },
             {
-                "pagePath": "pages/cart/cart",
-                "text": "购物车",
-                "iconPath": "images/tabbar/cart.png",
-                "selectedIconPath": "images/tabbar/cart-active.png"
-            },
-            {
                 "pagePath": "pages/seckill/seckill",
                 "text": "秒杀",
                 "iconPath": "images/tabbar/seckill.png",
                 "selectedIconPath": "images/tabbar/seckill-active.png"
             },
             {
-                "pagePath": "pages/orders/orders",
-                "text": "订单",
-                "iconPath": "images/tabbar/orders.png",
-                "selectedIconPath": "images/tabbar/orders-active.png"
+                "pagePath": "pages/cart/cart",
+                "text": "购物车",
+                "iconPath": "images/tabbar/cart.png",
+                "selectedIconPath": "images/tabbar/cart-active.png"
             },
             {
                 "pagePath": "pages/profile/profile",

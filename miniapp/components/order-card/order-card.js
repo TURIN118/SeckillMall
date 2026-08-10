@@ -9,13 +9,15 @@
 const { formatPrice, formatDate } = require('../../utils/format')
 const { formatImageUrl } = require('../../utils/image')
 
-// 订单状态文案映射
+// 订单状态文案映射（对齐后端枚举：UNPAID/PAID/SHIPPED/COMPLETED/CANCELLED/TIMEOUT/CANCELLING）
 const STATUS_TEXT = {
-    PENDING_PAY: '待付款',
-    PENDING_SHIP: '待发货',
-    PENDING_RECEIVE: '待收货',
+    UNPAID: '待付款',
+    PAID: '待发货',
+    SHIPPED: '待收货',
     COMPLETED: '已完成',
-    CANCELLED: '已取消'
+    CANCELLED: '已取消',
+    TIMEOUT: '已超时',
+    CANCELLING: '取消中'
 }
 
 // 订单类型文案映射
@@ -95,9 +97,10 @@ Component({
         /** 点击卡片：triggerEvent('tap', { orderId, orderType })，由父页面处理跳转 */
         onTap() {
             const order = this.data.order
-            if (!order || order.orderId == null) return
+            // 后端 OrderListItemVO 字段为 id（非 orderId）
+            if (!order || order.id == null) return
             this.triggerEvent('tap', {
-                orderId: String(order.orderId),
+                orderId: String(order.id),
                 orderType: order.orderType || 'NORMAL'
             })
         },

@@ -90,13 +90,20 @@
   color: #969799;
 }
 
-/* 订单状态宫格 */
-.profile__order-status {
+/* 订单状态宫格（自定义 flex 布局，完全控制高度，不依赖 van-grid） */
+.profile__order-grid {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 16rpx 0 24rpx;
+}
+
+.profile__order-grid-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 16rpx 0;
+  flex: 1;
+  padding: 8rpx 0;
 }
 
 .profile__order-icon {

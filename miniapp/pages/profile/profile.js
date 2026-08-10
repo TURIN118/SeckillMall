@@ -18,11 +18,11 @@ const { isLoggedIn, navigateToLogin, clearToken, getUserInfo, setUserInfo } = re
 const { maskPhone } = require('../../utils/format')
 const { formatImageUrl } = require('../../utils/image')
 
-// 订单状态宫格配置
+// 订单状态宫格配置（对齐后端枚举：UNPAID/PAID/SHIPPED/COMPLETED）
 const ORDER_STATUS_GRID = [
-    { key: 'PENDING_PAY', name: '待付款', icon: '💰' },
-    { key: 'PENDING_SHIP', name: '待发货', icon: '📦' },
-    { key: 'PENDING_RECEIVE', name: '待收货', icon: '🚚' },
+    { key: 'UNPAID', name: '待付款', icon: '💰' },
+    { key: 'PAID', name: '待发货', icon: '📦' },
+    { key: 'SHIPPED', name: '待收货', icon: '🚚' },
     { key: 'COMPLETED', name: '已完成', icon: '✅' }
 ]
 

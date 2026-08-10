@@ -95,10 +95,13 @@ Page({
                 })
             })
             .catch(() => {
+                // request 拦截器已 toast 错误信息，这里补充友好提示
                 this.setData({
+                    availableList: [],
                     availableLoading: false,
                     availableEmpty: true
                 })
+                wx.showToast({ title: '加载失败，请稍后重试', icon: 'none' })
             })
     },
 
@@ -119,11 +122,14 @@ Page({
                 })
             })
             .catch(() => {
+                // request 拦截器已 toast 错误信息，这里补充友好提示
                 this.setData({
+                    mineList: [],
                     mineLoading: false,
                     mineEmpty: true,
                     mineLoaded: true
                 })
+                wx.showToast({ title: '加载失败，请稍后重试', icon: 'none' })
             })
     },
 

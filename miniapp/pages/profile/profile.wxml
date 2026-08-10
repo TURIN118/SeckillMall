@@ -23,26 +23,25 @@
     <view class="profile__arrow">›</view>
   </view>
 
-  <!-- 订单状态宫格 -->
+  <!-- 订单状态宫格（自定义 flex 布局，避免 van-grid-item 默认高度过高） -->
   <view class="profile__section">
     <view class="profile__section-header">
       <text class="profile__section-title">我的订单</text>
       <text class="profile__section-more" bindtap="onTapOrderStatus" data-status="">全部 ›</text>
     </view>
-    <van-grid column-num="4" border="{{false}}" gutter="{{0}}">
-      <van-grid-item
+    <view class="profile__order-grid">
+      <view
+        class="profile__order-grid-item"
         wx:for="{{orderStatusGrid}}"
         wx:key="key"
         wx:for-item="item"
         data-status="{{item.key}}"
-        bind:click="onTapOrderStatus"
+        bindtap="onTapOrderStatus"
       >
-        <view class="profile__order-status">
-          <text class="profile__order-icon">{{item.icon}}</text>
-          <text class="profile__order-name">{{item.name}}</text>
-        </view>
-      </van-grid-item>
-    </van-grid>
+        <text class="profile__order-icon">{{item.icon}}</text>
+        <text class="profile__order-name">{{item.name}}</text>
+      </view>
+    </view>
   </view>
 
   <!-- 功能入口列表 -->

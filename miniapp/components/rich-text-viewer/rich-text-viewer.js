@@ -11,6 +11,7 @@
 //   - tasks.md P3
 
 const { sanitize } = require('../../utils/rich-text')
+const { formatImageUrl } = require('../../utils/image')
 
 Component({
     properties: {
@@ -41,7 +42,23 @@ Component({
          */
         _render(html) {
             const safe = sanitize(html || '')
-            this.setData({ safeHtml: safe })
+            // 拼接富文本中 <img src> 的相对路径 BASE_URL
+            const rewritten = this._rewriteImgSrc(safe)
+            this.setData({ safeHtml: rewritten })
+        },
+        /**
+         * 重写富文本中所有 <img> 的 src：相对路径拼接 BASE_URL
+         * @param {string} html
+         * @returns {string}
+         */
+        _rewriteImgSrc(html) {
+            if (!html || typeof html !== 'string') return ''
+            return html.replace(/<img\b[^>]*>/gi, (imgTag) => {
+                return imgTag.replace(/\bsrc\s*=\s*("([^"]*)"|'([^']*)')/i, (m, quoted, dq, sq) => {
+                    const raw = dq != null ? dq : (sq != null ? sq : '')
+                    return 'src="' + formatImageUrl(raw) + '"'
+                })
+            })
         }
     }
 })

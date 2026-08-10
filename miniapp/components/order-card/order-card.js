@@ -7,6 +7,7 @@
 //   - tasks.md TR2
 
 const { formatPrice, formatDate } = require('../../utils/format')
+const { formatImageUrl } = require('../../utils/image')
 
 // 订单状态文案映射
 const STATUS_TEXT = {
@@ -66,7 +67,7 @@ Component({
 
             // 缩略图取每个商品 productImage，最多 3 张
             const thumbImages = items
-                .map((it) => it.productImage || it.image || '')
+                .map((it) => formatImageUrl(it.productImage || it.image || ''))
                 .filter((url) => !!url)
                 .slice(0, 3)
 

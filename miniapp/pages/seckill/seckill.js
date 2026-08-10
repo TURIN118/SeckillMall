@@ -18,6 +18,7 @@ const {
     listActivities,
     getSeckillList
 } = require('../../api/seckill')
+const { formatImageUrl } = require('../../utils/image')
 
 // 倒计时状态 → 按钮文案
 const BTN_TEXT_MAP = {
@@ -179,7 +180,8 @@ Page({
         if (!Array.isArray(list)) return []
         return list.map((item) => {
             const images = Array.isArray(item.images) ? item.images : []
-            const cover = images.length > 0 ? images[0] : (item.coverImage || item.thumb || '')
+            const coverRaw = images.length > 0 ? images[0] : (item.coverImage || item.thumb || '')
+            const cover = formatImageUrl(coverRaw)
             // 场次时间优先；商品自带 startTime/endTime 次之
             const startTime = activity && activity.startTime != null
                 ? activity.startTime

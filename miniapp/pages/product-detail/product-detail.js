@@ -18,6 +18,7 @@ const { getProductDetail } = require('../../api/product')
 const { addCart } = require('../../api/cart')
 const { toggleFavorite } = require('../../api/favorite')
 const { isLoggedIn, navigateToLogin } = require('../../utils/auth')
+const { formatImageUrl } = require('../../utils/image')
 
 Page({
     data: {
@@ -80,11 +81,15 @@ Page({
         this.setData({ loading: true, loadError: false })
         getProductDetail(id)
             .then((res) => {
-                const product = (res && res.data) || null
+                let product = (res && res.data) || null
                 if (!product) {
                     this.setData({ loading: false, loadError: true })
                     return
                 }
+                // 拼接图片 BASE_URL（images 为相对路径数组）
+                product = Object.assign({}, product, {
+                    images: Array.isArray(product.images) ? product.images.map(formatImageUrl) : []
+                })
                 const hasSku = !!product.hasSku
                 const originalPrice = product.originalPrice != null ? product.originalPrice : 0
                 const stock = product.totalStock != null ? product.totalStock : (product.stock || 0)

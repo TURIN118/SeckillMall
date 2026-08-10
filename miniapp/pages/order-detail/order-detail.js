@@ -26,6 +26,7 @@ const {
 } = require('../../api/order')
 const { isLoggedIn, navigateToLogin } = require('../../utils/auth')
 const { formatPrice, formatDate, maskPhone } = require('../../utils/format')
+const { formatImageUrl } = require('../../utils/image')
 
 // 状态文案
 const STATUS_TEXT = {
@@ -121,7 +122,9 @@ Page({
      */
     _hydrate(order) {
         const status = order.status || ''
-        const items = Array.isArray(order.items) ? order.items : []
+        const rawItems = Array.isArray(order.items) ? order.items : []
+        // 拼接后端 BASE_URL（productImage 为相对路径）
+        const items = rawItems.map((it) => Object.assign({}, it, { productImage: formatImageUrl(it.productImage) }))
         const address = order.address || order.userAddress || null
 
         let fullAddress = ''

@@ -24,6 +24,7 @@ const {
 const { isLoggedIn, navigateToLogin } = require('../../utils/auth')
 const { formatPrice } = require('../../utils/format')
 const { equalId } = require('../../utils/id')
+const { formatImageUrl } = require('../../utils/image')
 
 Page({
     data: {
@@ -65,7 +66,9 @@ Page({
         getCartList()
             .then((res) => {
                 const list = (res && res.data) || []
-                const items = Array.isArray(list) ? list : []
+                const rawItems = Array.isArray(list) ? list : []
+                // 拼接后端 BASE_URL（productImage 为相对路径）
+                const items = rawItems.map((it) => Object.assign({}, it, { productImage: formatImageUrl(it.productImage) }))
                 this._hydrate(items)
             })
             .catch(() => {

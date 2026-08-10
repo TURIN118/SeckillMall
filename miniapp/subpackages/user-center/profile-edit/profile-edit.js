@@ -16,6 +16,7 @@
 const authApi = require('../../../api/auth')
 const { isLoggedIn, navigateToLogin, getUserInfo, setUserInfo } = require('../../../utils/auth')
 const { maskPhone } = require('../../../utils/format')
+const { formatImageUrl } = require('../../../utils/image')
 
 Page({
     data: {
@@ -72,7 +73,7 @@ Page({
         this.setData({
             userInfo: info,
             nickname: info.nickname || '',
-            avatarUrl: info.avatar || '',
+            avatarUrl: formatImageUrl(info.avatar || ''),
             phoneMasked: info.phone ? maskPhone(info.phone) : '',
             email: info.email || ''
         })
@@ -113,7 +114,7 @@ Page({
         authApi.uploadAvatar(filePath)
             .then((avatarUrl) => {
                 this.setData({
-                    avatarUrl: avatarUrl || this.data.avatarUrl,
+                    avatarUrl: formatImageUrl(avatarUrl || this.data.avatarUrl),
                     uploading: false
                 })
                 wx.showToast({ title: '头像已更新', icon: 'success' })

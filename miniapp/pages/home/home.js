@@ -15,6 +15,7 @@
 const { getActiveBanners } = require('../../api/banner')
 const { getCategoryTree } = require('../../api/category')
 const { getProductList } = require('../../api/product')
+const { formatImageUrl } = require('../../utils/image')
 
 Page({
     data: {
@@ -70,7 +71,10 @@ Page({
         return getActiveBanners()
             .then((res) => {
                 const list = (res && res.data) || []
-                this.setData({ banners: Array.isArray(list) ? list : [] })
+                const arr = Array.isArray(list) ? list : []
+                // 拼接后端 BASE_URL（imageUrl 为相对路径）
+                const banners = arr.map((b) => Object.assign({}, b, { imageUrl: formatImageUrl(b.imageUrl) }))
+                this.setData({ banners: banners })
             })
             .catch(() => {
                 // 轮播图加载失败：隐藏轮播区域，不阻塞其余内容

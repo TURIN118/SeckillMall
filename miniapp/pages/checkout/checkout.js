@@ -21,6 +21,7 @@ const { getAddressList } = require('../../api/address')
 const { buyNow, checkoutFromCart } = require('../../api/order')
 const { isLoggedIn, navigateToLogin } = require('../../utils/auth')
 const { formatPrice } = require('../../utils/format')
+const { formatImageUrl } = require('../../utils/image')
 
 // 全局事件通道：address-list 选择地址后通过 app.globalData 传递
 const ADDRESS_SELECT_KEY = '__checkoutSelectedAddress__'
@@ -169,7 +170,7 @@ Page({
                         cartId: String(it.id),
                         productId: String(it.productId),
                         productName: it.productName,
-                        productImage: it.productImage,
+                        productImage: formatImageUrl(it.productImage),
                         price: it.price,
                         quantity: parseInt(it.quantity, 10) || 1,
                         skuName: it.skuName || ''
@@ -215,7 +216,7 @@ Page({
                     cartId: '',
                     productId: String(product.id),
                     productName: product.productName,
-                    productImage: images[0] || '',
+                    productImage: formatImageUrl(images[0] || ''),
                     price: price,
                     quantity: quantity,
                     skuName: skuName

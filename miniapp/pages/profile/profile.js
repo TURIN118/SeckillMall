@@ -16,6 +16,7 @@
 const authApi = require('../../api/auth')
 const { isLoggedIn, navigateToLogin, clearToken, getUserInfo, setUserInfo } = require('../../utils/auth')
 const { maskPhone } = require('../../utils/format')
+const { formatImageUrl } = require('../../utils/image')
 
 // 订单状态宫格配置
 const ORDER_STATUS_GRID = [
@@ -82,9 +83,11 @@ Page({
      * @param {boolean} logged
      */
     _applyUserInfo(info, logged) {
+        // 拼接后端 BASE_URL（avatar 为相对路径）
+        const safeInfo = info ? Object.assign({}, info, { avatar: formatImageUrl(info.avatar) }) : null
         this.setData({
             isLoggedIn: !!logged,
-            userInfo: info || null,
+            userInfo: safeInfo,
             phoneMasked: info && info.phone ? maskPhone(info.phone) : ''
         })
     },

@@ -4,6 +4,9 @@
 // 对齐：
 //   - design.md 2.7 节 product-card
 //   - tasks.md P2
+
+const { formatImageUrl } = require('../../utils/image')
+
 Component({
     properties: {
         // 商品对象 ProductVO（含 id/productName/images/originalPrice/minPrice 等）
@@ -27,7 +30,7 @@ Component({
                 return
             }
             const images = Array.isArray(product.images) ? product.images : []
-            const cover = images.length > 0 ? images[0] : ''
+            const cover = images.length > 0 ? formatImageUrl(images[0]) : ''
             // 价格优先级：minPrice（区间最低价）> originalPrice
             const minPrice = product.minPrice != null ? product.minPrice : null
             const original = product.originalPrice != null ? product.originalPrice : null

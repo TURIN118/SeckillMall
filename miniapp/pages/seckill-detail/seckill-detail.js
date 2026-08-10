@@ -24,6 +24,7 @@ const {
 } = require('../../api/seckill')
 const { debounce } = require('../../utils/debounce')
 const { isLoggedIn, navigateToLogin } = require('../../utils/auth')
+const { formatImageUrl } = require('../../utils/image')
 
 // 倒计时状态 → 按钮文案
 const BTN_TEXT_MAP = {
@@ -133,7 +134,7 @@ Page({
                     return
                 }
 
-                const images = Array.isArray(detail.images) ? detail.images : []
+                const images = (Array.isArray(detail.images) ? detail.images : []).map(formatImageUrl)
                 const stock = stockRes && typeof stockRes.data === 'number'
                     ? stockRes.data
                     : (detail.stock != null ? detail.stock : (detail.totalStock || 0))

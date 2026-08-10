@@ -15,6 +15,7 @@
 
 const { getFavoriteList, removeFavorite } = require('../../api/favorite')
 const { isLoggedIn, navigateToLogin } = require('../../utils/auth')
+const { formatImageUrl } = require('../../utils/image')
 
 Page({
     data: {
@@ -77,7 +78,7 @@ Page({
                     id: it.productId,
                     productId: it.productId,
                     productName: it.productName,
-                    images: it.productImage ? [it.productImage] : [],
+                    images: it.productImage ? [formatImageUrl(it.productImage)] : [],
                     originalPrice: it.price,
                     minPrice: it.price,
                     favoriteTime: it.favoriteTime,

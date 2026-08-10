@@ -167,6 +167,15 @@ Page({
     },
 
     /**
+     * 跳转修改密码
+     */
+    onTapChangePassword() {
+        wx.navigateTo({
+            url: '/subpackages/user-center/change-password/change-password'
+        })
+    },
+
+    /**
      * 跳转修改手机号
      */
     onTapPhone() {

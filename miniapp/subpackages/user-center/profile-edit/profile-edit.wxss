@@ -48,6 +48,30 @@
   margin-left: 12rpx;
 }
 
+/* 区段标题 */
+.profile-edit__section-title {
+  padding: 32rpx 32rpx 16rpx;
+  font-size: 26rpx;
+  color: #969799;
+  font-weight: 500;
+}
+
+/* 昵称行 */
+.profile-edit__nickname-row {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 32rpx;
+  background-color: #fff;
+  gap: 24rpx;
+}
+
+.profile-edit__nickname-input {
+  flex: 1;
+  font-size: 30rpx;
+  color: #323233;
+  text-align: right;
+}
+
 /* 昵称 section */
 .profile-edit__section {
   margin-top: 20rpx;

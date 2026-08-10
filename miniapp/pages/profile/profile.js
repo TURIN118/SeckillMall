@@ -10,7 +10,7 @@
 //   1. onShow 检查登录态，已登录 auth.getMe 刷新 userInfo
 //   2. 用户卡：头像 + 昵称 + 手机号脱敏；未登录点击跳登录页
 //   3. 订单状态宫格：待付款/待发货/待收货/已完成 → orders?status=xxx
-//   4. 功能入口列表：优惠券/钱包/地址/资料/密码/手机号/邮箱
+//   4. 功能入口列表：优惠券/收藏/钱包/地址 + 客服/帮助/关于
 //   5. 退出登录：wx.showModal 确认 → auth.logout → reLaunch 登录页
 
 const authApi = require('../../api/auth')
@@ -143,6 +143,46 @@ Page({
             return
         }
         wx.navigateTo({ url })
+    },
+
+    /**
+     * 客服中心：拨打电话
+     */
+    onTapCustomerService() {
+        wx.showModal({
+            title: '客服热线',
+            content: '400-888-8888\n工作时间：9:00-22:00',
+            confirmText: '拨打',
+            success: (res) => {
+                if (res.confirm) {
+                    wx.makePhoneCall({ phoneNumber: '4008888888' }).catch(() => {})
+                }
+            }
+        })
+    },
+
+    /**
+     * 帮助中心
+     */
+    onTapHelp() {
+        wx.showModal({
+            title: '帮助中心',
+            content: '如需帮助，请拨打客服热线 400-888-8888\n或发送邮件至 support@example.com',
+            showCancel: false,
+            confirmText: '知道了'
+        })
+    },
+
+    /**
+     * 关于我们
+     */
+    onTapAbout() {
+        wx.showModal({
+            title: '关于我们',
+            content: '秒杀商城 v1.0.0\n\n基于 Spring Boot + 微信小程序原生开发\n\n© 2026 WNJ. All rights reserved.',
+            showCancel: false,
+            confirmText: '知道了'
+        })
     },
 
     /**

@@ -58,6 +58,13 @@
         bind:tap="onTapFeature"
       />
       <van-cell
+        title="我的收藏"
+        is-link
+        data-url="/pages/favorites/favorites"
+        data-need-login="{{true}}"
+        bind:tap="onTapFeature"
+      />
+      <van-cell
         title="我的钱包"
         is-link
         data-url="/subpackages/user-center/wallet-detail/wallet-detail"
@@ -71,33 +78,29 @@
         data-need-login="{{true}}"
         bind:tap="onTapFeature"
       />
+    </van-cell-group>
+  </view>
+
+  <!-- 其他服务 -->
+  <view class="profile__section">
+    <view class="profile__section-header">
+      <text class="profile__section-title">其他服务</text>
+    </view>
+    <van-cell-group inset>
       <van-cell
-        title="个人资料"
+        title="客服中心"
         is-link
-        data-url="/subpackages/user-center/profile-edit/profile-edit"
-        data-need-login="{{true}}"
-        bind:tap="onTapFeature"
+        bind:tap="onTapCustomerService"
       />
       <van-cell
-        title="修改密码"
+        title="帮助中心"
         is-link
-        data-url="/subpackages/user-center/change-password/change-password"
-        data-need-login="{{true}}"
-        bind:tap="onTapFeature"
+        bind:tap="onTapHelp"
       />
       <van-cell
-        title="修改手机号"
+        title="关于我们"
         is-link
-        data-url="/subpackages/user-center/change-contact/change-contact?type=phone"
-        data-need-login="{{true}}"
-        bind:tap="onTapFeature"
-      />
-      <van-cell
-        title="修改邮箱"
-        is-link
-        data-url="/subpackages/user-center/change-contact/change-contact?type=email"
-        data-need-login="{{true}}"
-        bind:tap="onTapFeature"
+        bind:tap="onTapAbout"
       />
     </van-cell-group>
   </view>

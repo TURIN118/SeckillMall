@@ -90,6 +90,16 @@ Page({
                 product = Object.assign({}, product, {
                     images: Array.isArray(product.images) ? product.images.map(formatImageUrl) : []
                 })
+                // 预处理商品属性：把 values 列表拼接成展示字符串
+                if (Array.isArray(product.attributes)) {
+                    product.attributes = product.attributes.map((attr) => {
+                        const displayValue = (Array.isArray(attr.values) ? attr.values : [])
+                            .map((v) => v.value || '')
+                            .filter(Boolean)
+                            .join(' / ')
+                        return Object.assign({}, attr, { _displayValue: displayValue })
+                    })
+                }
                 const hasSku = !!product.hasSku
                 const originalPrice = product.originalPrice != null ? product.originalPrice : 0
                 const stock = product.totalStock != null ? product.totalStock : (product.stock || 0)

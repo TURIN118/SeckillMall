@@ -1,5 +1,20 @@
 <!-- components/rich-text-viewer/rich-text-viewer.wxml -->
 <view class="rich-text-viewer">
+  <!-- 视频列表（微信原生 video 组件渲染） -->
+  <view class="rich-text-viewer__videos" wx:if="{{videos.length > 0}}">
+    <video
+      wx:for="{{videos}}"
+      wx:key="index"
+      class="rich-text-viewer__video"
+      src="{{item.src}}"
+      poster="{{item.poster}}"
+      controls
+      show-center-play-btn
+      show-play-btn
+      object-fit="contain"
+    ></video>
+  </view>
+  <!-- 富文本（已移除 video 标签） -->
   <rich-text nodes="{{safeHtml}}" wx:if="{{safeHtml}}"></rich-text>
-  <view class="rich-text-viewer__empty" wx:else>暂无详情</view>
+  <view class="rich-text-viewer__empty" wx:elif="{{!videos.length}}">暂无详情</view>
 </view>

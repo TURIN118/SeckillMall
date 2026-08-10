@@ -13,3 +13,15 @@
   color: #c8c9cc;
   font-size: 26rpx;
 }
+
+.rich-text-viewer__videos {
+  margin-bottom: 16rpx;
+}
+
+.rich-text-viewer__video {
+  width: 100%;
+  height: 400rpx;
+  margin-bottom: 16rpx;
+  border-radius: 8rpx;
+  background: #000000;
+}

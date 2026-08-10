@@ -23,7 +23,10 @@ Component({
     },
     data: {
         // 清洗后的 HTML 字符串，供 rich-text 渲染
-        safeHtml: ''
+        safeHtml: '',
+        // 从富文本中提取出的视频列表，用微信原生 <video> 组件渲染
+        // 微信 rich-text 不支持 <video> 标签，需单独提取
+        videos: []
     },
     observers: {
         'html': function (html) {
@@ -44,7 +47,44 @@ Component({
             const safe = sanitize(html || '')
             // 拼接富文本中 <img src> 的相对路径 BASE_URL
             const rewritten = this._rewriteImgSrc(safe)
-            this.setData({ safeHtml: rewritten })
+            // 提取 <video> 标签，单独用微信原生 <video> 组件渲染
+            // （微信 rich-text 不支持 video 标签，会直接丢弃）
+            const { html: htmlWithoutVideo, videos } = this._extractVideos(rewritten)
+            this.setData({ safeHtml: htmlWithoutVideo, videos: videos })
+        },
+        /**
+         * 提取 HTML 中的 <video> 标签
+         * 微信 rich-text 组件不支持 <video> 标签，需将其从 HTML 中剥离，
+         * 单独用微信原生 <video> 组件渲染。
+         * @param {string} html
+         * @returns {{html: string, videos: Array<{src: string, poster: string}>}}
+         */
+        _extractVideos(html) {
+            if (!html || typeof html !== 'string') return { html: '', videos: [] }
+            const videos = []
+            // 匹配 <video ...>...</video> 和 <video .../>
+            const videoRegex = /<video\b[^>]*>([\s\S]*?)<\/video>|<video\b[^>]*\/?>/gi
+            let result = html.replace(videoRegex, (match) => {
+                // 提取 src
+                const srcMatch = match.match(/\bsrc\s*=\s*("([^"]*)"|'([^']*)')/i)
+                const src = srcMatch ? (srcMatch[2] || srcMatch[3] || '') : ''
+                // 提取 poster
+                const posterMatch = match.match(/\bposter\s*=\s*("([^"]*)"|'([^']*)')/i)
+                const poster = posterMatch ? (posterMatch[2] || posterMatch[3] || '') : ''
+                // 也检查 <source src="xxx"> 子标签
+                if (!src) {
+                    const sourceMatch = match.match(/<source\b[^>]*\bsrc\s*=\s*("([^"]*)"|'([^']*)')/i)
+                    if (sourceMatch) {
+                        videos.push({ src: sourceMatch[2] || sourceMatch[3] || '', poster: '' })
+                        return ''
+                    }
+                }
+                if (src) {
+                    videos.push({ src: src, poster: poster })
+                }
+                return ''
+            })
+            return { html: result, videos: videos }
         },
         /**
          * 重写富文本中所有 <img> 的 src：相对路径拼接 BASE_URL

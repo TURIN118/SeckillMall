@@ -44,8 +44,8 @@
       <van-cell
         wx:for="{{product.attributes}}"
         wx:key="name"
-        title="{{item.name || item.attributeName}}"
-        value="{{item.value || item.attributeValue}}"
+        title="{{item.name}}"
+        value="{{item._displayValue}}"
       />
     </van-cell-group>
   </view>
@@ -60,25 +60,16 @@
   <view class="product-detail__bottom-placeholder"></view>
 
   <!-- 底部操作栏 -->
-  <van-goods-action>
-    <van-goods-action-icon
-      icon="star-o"
-      text="收藏"
-      bind:click="onToggleFavorite"
-    />
-    <van-goods-action-button
-      type="warning"
-      text="加入购物车"
-      disabled="{{!canBuy || submitting}}"
-      bind:click="onAddCart"
-    />
-    <van-goods-action-button
-      type="danger"
-      text="立即购买"
-      disabled="{{!canBuy || submitting}}"
-      bind:click="onBuyNow"
-    />
-  </van-goods-action>
+  <view class="action-bar">
+    <view class="action-bar__fav" bindtap="onToggleFavorite">
+      <view class="action-bar__fav-icon">★</view>
+      <text class="action-bar__fav-text">收藏</text>
+    </view>
+    <view class="action-bar__btns">
+      <view class="action-bar__btn action-bar__btn--cart {{(!canBuy || submitting) ? 'is-disabled' : ''}}" bindtap="onAddCart">加入购物车</view>
+      <view class="action-bar__btn action-bar__btn--buy {{(!canBuy || submitting) ? 'is-disabled' : ''}}" bindtap="onBuyNow">立即购买</view>
+    </view>
+  </view>
 
   <!-- SKU 选择面板 -->
   <sku-selector

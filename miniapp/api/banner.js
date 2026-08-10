@@ -11,7 +11,7 @@ const { get } = require('../utils/request')
 
 // ========== 接口端点常量 ==========
 const API = {
-  ACTIVE: '/api/v1/banners/active' // GET 启用轮播图
+    ACTIVE: '/api/v1/banners/active' // GET 启用轮播图
 }
 
 /**
@@ -21,9 +21,9 @@ const API = {
  * BannerVO: { id, title, imageUrl, linkUrl }
  */
 function getActiveBanners() {
-  return get(API.ACTIVE)
+    return get(API.ACTIVE)
 }
 
 module.exports = {
-  getActiveBanners
+    getActiveBanners
 }

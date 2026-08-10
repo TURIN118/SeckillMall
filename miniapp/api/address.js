@@ -16,11 +16,11 @@ const { buildUrl } = require('../utils/id')
 
 // ========== 接口端点常量 ==========
 const API = {
-  LIST: '/api/v1/addresses/list',     // GET 地址列表
-  CREATE: '/api/v1/addresses/create', // POST 新增
-  UPDATE: '/api/v1/addresses/',       // PUT /{id} 编辑
-  DELETE: '/api/v1/addresses/',       // DELETE /{id} 删除
-  SET_DEFAULT: '/api/v1/addresses/'   // PUT /{id}/default 设默认
+    LIST: '/api/v1/addresses/list',     // GET 地址列表
+    CREATE: '/api/v1/addresses/create', // POST 新增
+    UPDATE: '/api/v1/addresses/',       // PUT /{id} 编辑
+    DELETE: '/api/v1/addresses/',       // DELETE /{id} 删除
+    SET_DEFAULT: '/api/v1/addresses/'   // PUT /{id}/default 设默认
 }
 
 /**
@@ -28,7 +28,7 @@ const API = {
  * @returns {Promise<Result<Array<UserAddressVO>>>}
  */
 function getAddressList() {
-  return get(API.LIST)
+    return get(API.LIST)
 }
 
 /**
@@ -37,7 +37,7 @@ function getAddressList() {
  * @returns {Promise<Result<{id:string}>>}
  */
 function createAddress(data) {
-  return post(API.CREATE, data)
+    return post(API.CREATE, data)
 }
 
 /**
@@ -47,8 +47,8 @@ function createAddress(data) {
  * @returns {Promise<Result<void>>}
  */
 function updateAddress(id, data) {
-  const url = buildUrl(API.UPDATE, id)
-  return put(url, data)
+    const url = buildUrl(API.UPDATE, id)
+    return put(url, data)
 }
 
 /**
@@ -57,8 +57,8 @@ function updateAddress(id, data) {
  * @returns {Promise<Result<void>>}
  */
 function deleteAddress(id) {
-  const url = buildUrl(API.DELETE, id)
-  return del(url)
+    const url = buildUrl(API.DELETE, id)
+    return del(url)
 }
 
 /**
@@ -67,14 +67,14 @@ function deleteAddress(id) {
  * @returns {Promise<Result<void>>}
  */
 function setDefaultAddress(id) {
-  const url = buildUrl(API.SET_DEFAULT, id) + '/default'
-  return put(url)
+    const url = buildUrl(API.SET_DEFAULT, id) + '/default'
+    return put(url)
 }
 
 module.exports = {
-  getAddressList,
-  createAddress,
-  updateAddress,
-  deleteAddress,
-  setDefaultAddress
+    getAddressList,
+    createAddress,
+    updateAddress,
+    deleteAddress,
+    setDefaultAddress
 }

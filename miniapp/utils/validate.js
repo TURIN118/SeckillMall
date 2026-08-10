@@ -8,8 +8,8 @@
  * @returns {boolean}
  */
 function isPhone(s) {
-  if (!s) return false
-  return /^1[3-9]\d{9}$/.test(String(s))
+    if (!s) return false
+    return /^1[3-9]\d{9}$/.test(String(s))
 }
 
 /**
@@ -18,9 +18,9 @@ function isPhone(s) {
  * @returns {boolean}
  */
 function isEmail(s) {
-  if (!s) return false
-  // 标准 RFC 简化正则，覆盖常见邮箱格式
-  return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(String(s))
+    if (!s) return false
+    // 标准 RFC 简化正则，覆盖常见邮箱格式
+    return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(String(s))
 }
 
 /**
@@ -33,18 +33,18 @@ function isEmail(s) {
  *   - 必须包含字母和数字（允许特殊字符）
  */
 function isPassword(s) {
-  if (!s) return { valid: false, msg: '密码不能为空' }
-  const str = String(s)
-  if (str.length < 6 || str.length > 20) {
-    return { valid: false, msg: '密码长度为 6-20 位' }
-  }
-  if (!/[A-Za-z]/.test(str)) {
-    return { valid: false, msg: '密码必须包含字母' }
-  }
-  if (!/\d/.test(str)) {
-    return { valid: false, msg: '密码必须包含数字' }
-  }
-  return { valid: true, msg: '' }
+    if (!s) return { valid: false, msg: '密码不能为空' }
+    const str = String(s)
+    if (str.length < 6 || str.length > 20) {
+        return { valid: false, msg: '密码长度为 6-20 位' }
+    }
+    if (!/[A-Za-z]/.test(str)) {
+        return { valid: false, msg: '密码必须包含字母' }
+    }
+    if (!/\d/.test(str)) {
+        return { valid: false, msg: '密码必须包含数字' }
+    }
+    return { valid: true, msg: '' }
 }
 
 /**
@@ -53,10 +53,10 @@ function isPassword(s) {
  * @returns {boolean}
  */
 function isNotEmpty(v) {
-  if (v == null) return false
-  if (typeof v === 'string') return v.trim().length > 0
-  if (Array.isArray(v)) return v.length > 0
-  return true
+    if (v == null) return false
+    if (typeof v === 'string') return v.trim().length > 0
+    if (Array.isArray(v)) return v.length > 0
+    return true
 }
 
 /**
@@ -65,14 +65,14 @@ function isNotEmpty(v) {
  * @returns {boolean}
  */
 function isHttpUrl(s) {
-  if (!s) return false
-  return /^https?:\/\/.+/i.test(String(s))
+    if (!s) return false
+    return /^https?:\/\/.+/i.test(String(s))
 }
 
 module.exports = {
-  isPhone,
-  isEmail,
-  isPassword,
-  isNotEmpty,
-  isHttpUrl
+    isPhone,
+    isEmail,
+    isPassword,
+    isNotEmpty,
+    isHttpUrl
 }

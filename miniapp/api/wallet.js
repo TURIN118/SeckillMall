@@ -21,9 +21,9 @@ const { get, post } = require('../utils/request')
 
 // ========== 接口端点常量 ==========
 const API = {
-  BALANCE: '/api/v1/wallet/balance',  // GET 余额
-  RECHARGE: '/api/v1/wallet/recharge', // POST 充值
-  RECORDS: '/api/v1/wallet/records'   // GET 交易记录
+    BALANCE: '/api/v1/wallet/balance',  // GET 余额
+    RECHARGE: '/api/v1/wallet/recharge', // POST 充值
+    RECORDS: '/api/v1/wallet/records'   // GET 交易记录
 }
 
 /**
@@ -31,7 +31,7 @@ const API = {
  * @returns {Promise<Result<BigDecimal>>} res.data 为余额（number|string）
  */
 function getBalance() {
-  return get(API.BALANCE)
+    return get(API.BALANCE)
 }
 
 /**
@@ -41,7 +41,7 @@ function getBalance() {
  * @returns {Promise<Result<BigDecimal>>} res.data 为新余额
  */
 function recharge(cardNo, cardPassword) {
-  return post(API.RECHARGE, { cardNo: cardNo, cardPassword: cardPassword })
+    return post(API.RECHARGE, { cardNo: cardNo, cardPassword: cardPassword })
 }
 
 /**
@@ -49,11 +49,11 @@ function recharge(cardNo, cardPassword) {
  * @returns {Promise<Result<Array<WalletRecordVO>>>}
  */
 function listRecords() {
-  return get(API.RECORDS)
+    return get(API.RECORDS)
 }
 
 module.exports = {
-  getBalance,
-  recharge,
-  listRecords
+    getBalance,
+    recharge,
+    listRecords
 }

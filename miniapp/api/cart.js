@@ -17,14 +17,14 @@ const { buildUrl } = require('../utils/id')
 
 // ========== 接口端点常量 ==========
 const API = {
-  LIST: '/api/v1/cart/list',                 // GET 购物车列表
-  ADD: '/api/v1/cart/add',                   // POST 加入购物车
-  QUANTITY: '/api/v1/cart/',                 // PUT /{cartId}/quantity
-  REMOVE: '/api/v1/cart/',                   // DELETE /{cartId}
-  CLEAR: '/api/v1/cart/clear',               // DELETE 清空
-  SELECTED: '/api/v1/cart/',                 // PUT /{cartId}/selected
-  BATCH_SELECTED: '/api/v1/cart/batch-selected', // PUT 批量选中
-  COUNT: '/api/v1/cart/count'                // GET 数量
+    LIST: '/api/v1/cart/list',                 // GET 购物车列表
+    ADD: '/api/v1/cart/add',                   // POST 加入购物车
+    QUANTITY: '/api/v1/cart/',                 // PUT /{cartId}/quantity
+    REMOVE: '/api/v1/cart/',                   // DELETE /{cartId}
+    CLEAR: '/api/v1/cart/clear',               // DELETE 清空
+    SELECTED: '/api/v1/cart/',                 // PUT /{cartId}/selected
+    BATCH_SELECTED: '/api/v1/cart/batch-selected', // PUT 批量选中
+    COUNT: '/api/v1/cart/count'                // GET 数量
 }
 
 /**
@@ -32,7 +32,7 @@ const API = {
  * @returns {Promise<Result<Array<CartItemVO>>>}
  */
 function getCartList() {
-  return get(API.LIST)
+    return get(API.LIST)
 }
 
 /**
@@ -44,7 +44,7 @@ function getCartList() {
  * @returns {Promise<Result<void>>}
  */
 function addCart(data) {
-  return post(API.ADD, data)
+    return post(API.ADD, data)
 }
 
 /**
@@ -54,8 +54,8 @@ function addCart(data) {
  * @returns {Promise<Result<void>>}
  */
 function updateQuantity(cartId, quantity) {
-  const url = buildUrl(API.QUANTITY, cartId) + '/quantity'
-  return put(url, { quantity: quantity })
+    const url = buildUrl(API.QUANTITY, cartId) + '/quantity'
+    return put(url, { quantity: quantity })
 }
 
 /**
@@ -64,8 +64,8 @@ function updateQuantity(cartId, quantity) {
  * @returns {Promise<Result<void>>}
  */
 function removeCart(cartId) {
-  const url = buildUrl(API.REMOVE, cartId)
-  return del(url)
+    const url = buildUrl(API.REMOVE, cartId)
+    return del(url)
 }
 
 /**
@@ -73,7 +73,7 @@ function removeCart(cartId) {
  * @returns {Promise<Result<void>>}
  */
 function clearCart() {
-  return del(API.CLEAR)
+    return del(API.CLEAR)
 }
 
 /**
@@ -83,8 +83,8 @@ function clearCart() {
  * @returns {Promise<Result<void>>}
  */
 function updateSelected(cartId, selected) {
-  const url = buildUrl(API.SELECTED, cartId) + '/selected'
-  return put(url, { selected: !!selected })
+    const url = buildUrl(API.SELECTED, cartId) + '/selected'
+    return put(url, { selected: !!selected })
 }
 
 /**
@@ -94,10 +94,10 @@ function updateSelected(cartId, selected) {
  * @returns {Promise<Result<void>>}
  */
 function batchUpdateSelected(cartIds, selected) {
-  return put(API.BATCH_SELECTED, {
-    cartIds: Array.isArray(cartIds) ? cartIds : [],
-    selected: !!selected
-  })
+    return put(API.BATCH_SELECTED, {
+        cartIds: Array.isArray(cartIds) ? cartIds : [],
+        selected: !!selected
+    })
 }
 
 /**
@@ -105,16 +105,16 @@ function batchUpdateSelected(cartIds, selected) {
  * @returns {Promise<Result<number>>}
  */
 function getCartCount() {
-  return get(API.COUNT)
+    return get(API.COUNT)
 }
 
 module.exports = {
-  getCartList,
-  addCart,
-  updateQuantity,
-  removeCart,
-  clearCart,
-  updateSelected,
-  batchUpdateSelected,
-  getCartCount
+    getCartList,
+    addCart,
+    updateQuantity,
+    removeCart,
+    clearCart,
+    updateSelected,
+    batchUpdateSelected,
+    getCartCount
 }

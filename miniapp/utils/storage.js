@@ -9,12 +9,12 @@
  * @returns {any} 值，不存在时返回空字符串 ''（wx.getStorageSync 行为）
  */
 function get(key) {
-  try {
-    return wx.getStorageSync(key)
-  } catch (e) {
-    // 读取异常时返回空字符串，避免抛出导致程序崩溃
-    return ''
-  }
+    try {
+        return wx.getStorageSync(key)
+    } catch (e) {
+        // 读取异常时返回空字符串，避免抛出导致程序崩溃
+        return ''
+    }
 }
 
 /**
@@ -23,11 +23,11 @@ function get(key) {
  * @param {any} value 值
  */
 function set(key, value) {
-  try {
-    wx.setStorageSync(key, value)
-  } catch (e) {
-    // 写入异常静默处理（如存储空间不足），上层可按需扩展提示
-  }
+    try {
+        wx.setStorageSync(key, value)
+    } catch (e) {
+        // 写入异常静默处理（如存储空间不足），上层可按需扩展提示
+    }
 }
 
 /**
@@ -35,27 +35,27 @@ function set(key, value) {
  * @param {string} key 键名
  */
 function remove(key) {
-  try {
-    wx.removeStorageSync(key)
-  } catch (e) {
-    // 删除异常静默处理
-  }
+    try {
+        wx.removeStorageSync(key)
+    } catch (e) {
+        // 删除异常静默处理
+    }
 }
 
 /**
  * 清空所有本地存储（谨慎使用）
  */
 function clear() {
-  try {
-    wx.clearStorageSync()
-  } catch (e) {
-    // 静默处理
-  }
+    try {
+        wx.clearStorageSync()
+    } catch (e) {
+        // 静默处理
+    }
 }
 
 module.exports = {
-  get,
-  set,
-  remove,
-  clear
+    get,
+    set,
+    remove,
+    clear
 }

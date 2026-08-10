@@ -19,147 +19,147 @@ const { maskPhone } = require('../../utils/format')
 
 // 订单状态宫格配置
 const ORDER_STATUS_GRID = [
-  { key: 'PENDING_PAY', name: '待付款', icon: '💰' },
-  { key: 'PENDING_SHIP', name: '待发货', icon: '📦' },
-  { key: 'PENDING_RECEIVE', name: '待收货', icon: '🚚' },
-  { key: 'COMPLETED', name: '已完成', icon: '✅' }
+    { key: 'PENDING_PAY', name: '待付款', icon: '💰' },
+    { key: 'PENDING_SHIP', name: '待发货', icon: '📦' },
+    { key: 'PENDING_RECEIVE', name: '待收货', icon: '🚚' },
+    { key: 'COMPLETED', name: '已完成', icon: '✅' }
 ]
 
 Page({
-  data: {
-    // 是否已登录
-    isLoggedIn: false,
-    // 用户信息 { id, nickname, avatar, phone, email, ... }
-    userInfo: null,
-    // 手机号脱敏展示
-    phoneMasked: '',
-    // 订单状态宫格
-    orderStatusGrid: ORDER_STATUS_GRID
-  },
-
-  onShow() {
-    this._refreshLoginState()
-  },
-
-  /**
-   * 刷新登录态与用户信息
-   * - 未登录：清空 userInfo，展示"请登录"
-   * - 已登录：先展示本地缓存，再异步 getMe 刷新
-   */
-  _refreshLoginState() {
-    const logged = isLoggedIn()
-    if (!logged) {
-      this.setData({
+    data: {
+        // 是否已登录
         isLoggedIn: false,
+        // 用户信息 { id, nickname, avatar, phone, email, ... }
         userInfo: null,
-        phoneMasked: ''
-      })
-      return
-    }
+        // 手机号脱敏展示
+        phoneMasked: '',
+        // 订单状态宫格
+        orderStatusGrid: ORDER_STATUS_GRID
+    },
 
-    // 先用本地缓存快速展示
-    const cached = getUserInfo()
-    this._applyUserInfo(cached, true)
+    onShow() {
+        this._refreshLoginState()
+    },
 
-    // 异步刷新（不阻塞 UI）
-    authApi.getMe()
-      .then((res) => {
-        const info = (res && res.data) || null
-        if (info) {
-          // 更新本地缓存
-          setUserInfo(info)
-          this._applyUserInfo(info, true)
+    /**
+     * 刷新登录态与用户信息
+     * - 未登录：清空 userInfo，展示"请登录"
+     * - 已登录：先展示本地缓存，再异步 getMe 刷新
+     */
+    _refreshLoginState() {
+        const logged = isLoggedIn()
+        if (!logged) {
+            this.setData({
+                isLoggedIn: false,
+                userInfo: null,
+                phoneMasked: ''
+            })
+            return
         }
-      })
-      .catch(() => {
-        // getMe 失败（如 token 过期已被 request 拦截器处理）不阻塞页面
-      })
-  },
 
-  /**
-   * 应用用户信息到 data
-   * @param {object|null} info
-   * @param {boolean} logged
-   */
-  _applyUserInfo(info, logged) {
-    this.setData({
-      isLoggedIn: !!logged,
-      userInfo: info || null,
-      phoneMasked: info && info.phone ? maskPhone(info.phone) : ''
-    })
-  },
+        // 先用本地缓存快速展示
+        const cached = getUserInfo()
+        this._applyUserInfo(cached, true)
 
-  // ========== 事件处理 ==========
+        // 异步刷新（不阻塞 UI）
+        authApi.getMe()
+            .then((res) => {
+                const info = (res && res.data) || null
+                if (info) {
+                    // 更新本地缓存
+                    setUserInfo(info)
+                    this._applyUserInfo(info, true)
+                }
+            })
+            .catch(() => {
+                // getMe 失败（如 token 过期已被 request 拦截器处理）不阻塞页面
+            })
+    },
 
-  /**
-   * 点击用户卡：未登录跳登录页，已登录跳编辑资料
-   */
-  onTapUserCard() {
-    if (!this.data.isLoggedIn) {
-      const pages = getCurrentPages()
-      const cur = pages[pages.length - 1]
-      const redirect = cur ? '/' + cur.route : ''
-      navigateToLogin(redirect)
-      return
-    }
-    wx.navigateTo({
-      url: '/subpackages/user-center/profile-edit/profile-edit'
-    })
-  },
+    /**
+     * 应用用户信息到 data
+     * @param {object|null} info
+     * @param {boolean} logged
+     */
+    _applyUserInfo(info, logged) {
+        this.setData({
+            isLoggedIn: !!logged,
+            userInfo: info || null,
+            phoneMasked: info && info.phone ? maskPhone(info.phone) : ''
+        })
+    },
 
-  /**
-   * 点击订单状态宫格 → 跳订单页带 status
-   */
-  onTapOrderStatus(e) {
-    const { status } = e.currentTarget.dataset
-    if (!status) return
-    if (!this.data.isLoggedIn) {
-      navigateToLogin('/pages/orders/orders?status=' + status)
-      return
-    }
-    wx.switchTab({
-      url: '/pages/orders/orders',
-      success: () => {
-        // switchTab 不能带 query，通过全局数据通道传递 status
-        const app = getApp()
-        if (app && app.globalData) {
-          app.globalData.__ordersStatusFilter__ = status
+    // ========== 事件处理 ==========
+
+    /**
+     * 点击用户卡：未登录跳登录页，已登录跳编辑资料
+     */
+    onTapUserCard() {
+        if (!this.data.isLoggedIn) {
+            const pages = getCurrentPages()
+            const cur = pages[pages.length - 1]
+            const redirect = cur ? '/' + cur.route : ''
+            navigateToLogin(redirect)
+            return
         }
-      }
-    })
-  },
+        wx.navigateTo({
+            url: '/subpackages/user-center/profile-edit/profile-edit'
+        })
+    },
 
-  /**
-   * 点击功能入口
-   */
-  onTapFeature(e) {
-    const { url, needLogin } = e.currentTarget.dataset
-    if (!url) return
-    if (needLogin && !this.data.isLoggedIn) {
-      navigateToLogin(url)
-      return
+    /**
+     * 点击订单状态宫格 → 跳订单页带 status
+     */
+    onTapOrderStatus(e) {
+        const { status } = e.currentTarget.dataset
+        if (!status) return
+        if (!this.data.isLoggedIn) {
+            navigateToLogin('/pages/orders/orders?status=' + status)
+            return
+        }
+        wx.switchTab({
+            url: '/pages/orders/orders',
+            success: () => {
+                // switchTab 不能带 query，通过全局数据通道传递 status
+                const app = getApp()
+                if (app && app.globalData) {
+                    app.globalData.__ordersStatusFilter__ = status
+                }
+            }
+        })
+    },
+
+    /**
+     * 点击功能入口
+     */
+    onTapFeature(e) {
+        const { url, needLogin } = e.currentTarget.dataset
+        if (!url) return
+        if (needLogin && !this.data.isLoggedIn) {
+            navigateToLogin(url)
+            return
+        }
+        wx.navigateTo({ url })
+    },
+
+    /**
+     * 退出登录
+     */
+    onLogout() {
+        if (!this.data.isLoggedIn) return
+        wx.showModal({
+            title: '提示',
+            content: '确认退出登录？',
+            success: (res) => {
+                if (!res.confirm) return
+                // 先调后端 logout（best-effort），再清本地 token，最后 reLaunch 登录页
+                authApi.logout()
+                    .catch(() => { })
+                    .finally(() => {
+                        clearToken()
+                        wx.reLaunch({ url: '/pages/login/login' })
+                    })
+            }
+        })
     }
-    wx.navigateTo({ url })
-  },
-
-  /**
-   * 退出登录
-   */
-  onLogout() {
-    if (!this.data.isLoggedIn) return
-    wx.showModal({
-      title: '提示',
-      content: '确认退出登录？',
-      success: (res) => {
-        if (!res.confirm) return
-        // 先调后端 logout（best-effort），再清本地 token，最后 reLaunch 登录页
-        authApi.logout()
-          .catch(() => {})
-          .finally(() => {
-            clearToken()
-            wx.reLaunch({ url: '/pages/login/login' })
-          })
-      }
-    })
-  }
 })

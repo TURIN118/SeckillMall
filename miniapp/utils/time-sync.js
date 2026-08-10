@@ -12,12 +12,12 @@ let timeOffset = 0
 
 // 初始化时尝试从本地存储恢复 timeOffset
 try {
-  const stored = storage.get(TIME_OFFSET_KEY)
-  if (typeof stored === 'number' && !Number.isNaN(stored)) {
-    timeOffset = stored
-  }
+    const stored = storage.get(TIME_OFFSET_KEY)
+    if (typeof stored === 'number' && !Number.isNaN(stored)) {
+        timeOffset = stored
+    }
 } catch (e) {
-  // 静默处理
+    // 静默处理
 }
 
 /**
@@ -27,15 +27,15 @@ try {
  *   - 对齐 spec 5.3.3 异常场景 1
  */
 function syncServerTime(timestamp) {
-  if (timestamp == null) return
-  const serverTime = typeof timestamp === 'number'
-    ? timestamp
-    : new Date(timestamp).getTime()
-  if (Number.isNaN(serverTime)) return
-  const localTime = Date.now()
-  timeOffset = serverTime - localTime
-  // 持久化，避免冷启动丢失（秒杀倒计时依赖）
-  storage.set(TIME_OFFSET_KEY, timeOffset)
+    if (timestamp == null) return
+    const serverTime = typeof timestamp === 'number'
+        ? timestamp
+        : new Date(timestamp).getTime()
+    if (Number.isNaN(serverTime)) return
+    const localTime = Date.now()
+    timeOffset = serverTime - localTime
+    // 持久化，避免冷启动丢失（秒杀倒计时依赖）
+    storage.set(TIME_OFFSET_KEY, timeOffset)
 }
 
 /**
@@ -43,7 +43,7 @@ function syncServerTime(timestamp) {
  * @returns {number} timeOffset（ms），可为负数
  */
 function getTimeOffset() {
-  return timeOffset
+    return timeOffset
 }
 
 /**
@@ -51,20 +51,20 @@ function getTimeOffset() {
  * @returns {number} localTime + timeOffset
  */
 function getServerNow() {
-  return Date.now() + timeOffset
+    return Date.now() + timeOffset
 }
 
 /**
  * 重置时间偏移（主要用于登出/测试）
  */
 function resetTimeOffset() {
-  timeOffset = 0
-  storage.remove(TIME_OFFSET_KEY)
+    timeOffset = 0
+    storage.remove(TIME_OFFSET_KEY)
 }
 
 module.exports = {
-  syncServerTime,
-  getTimeOffset,
-  getServerNow,
-  resetTimeOffset
+    syncServerTime,
+    getTimeOffset,
+    getServerNow,
+    resetTimeOffset
 }

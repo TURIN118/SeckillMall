@@ -17,8 +17,8 @@
  *   => '/api/v1/seckill/123'
  */
 function buildUrl(path, id) {
-  // 强制 String 转换，禁止 Number 化；encodeURIComponent 防止特殊字符注入
-  return path + encodeURIComponent(String(id))
+    // 强制 String 转换，禁止 Number 化；encodeURIComponent 防止特殊字符注入
+    return path + encodeURIComponent(String(id))
 }
 
 /**
@@ -31,8 +31,8 @@ function buildUrl(path, id) {
  * 同时禁止 Number 转换（精度丢失风险）。
  */
 function equalId(a, b) {
-  if (a == null || b == null) return false
-  return String(a) === String(b)
+    if (a == null || b == null) return false
+    return String(a) === String(b)
 }
 
 /**
@@ -41,12 +41,12 @@ function equalId(a, b) {
  * @returns {string}
  */
 function toString(id) {
-  if (id == null) return ''
-  return String(id)
+    if (id == null) return ''
+    return String(id)
 }
 
 module.exports = {
-  buildUrl,
-  equalId,
-  toString
+    buildUrl,
+    equalId,
+    toString
 }

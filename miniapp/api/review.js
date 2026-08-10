@@ -21,8 +21,8 @@ const { get, post } = require('../utils/request')
 
 // ========== 接口端点常量 ==========
 const API = {
-  BY_PRODUCT: '/api/v1/reviews/product/', // GET /{productId} 商品评论分页
-  CREATE: '/api/v1/reviews/create'        // POST 发表评论
+    BY_PRODUCT: '/api/v1/reviews/product/', // GET /{productId} 商品评论分页
+    CREATE: '/api/v1/reviews/create'        // POST 发表评论
 }
 
 /**
@@ -32,17 +32,17 @@ const API = {
  * @returns {Promise<Result<PageResult<ReviewVO>>>}
  */
 function listByProduct(productId, params) {
-  const url = API.BY_PRODUCT + encodeURIComponent(String(productId))
-  const query = params || {}
-  // 清理空值字段
-  const cleaned = {}
-  Object.keys(query).forEach((key) => {
-    const v = query[key]
-    if (v !== '' && v !== null && v !== undefined) {
-      cleaned[key] = v
-    }
-  })
-  return get(url, cleaned)
+    const url = API.BY_PRODUCT + encodeURIComponent(String(productId))
+    const query = params || {}
+    // 清理空值字段
+    const cleaned = {}
+    Object.keys(query).forEach((key) => {
+        const v = query[key]
+        if (v !== '' && v !== null && v !== undefined) {
+            cleaned[key] = v
+        }
+    })
+    return get(url, cleaned)
 }
 
 /**
@@ -52,10 +52,10 @@ function listByProduct(productId, params) {
  * @returns {Promise<Result<ReviewVO>>}
  */
 function create(data) {
-  return post(API.CREATE, data)
+    return post(API.CREATE, data)
 }
 
 module.exports = {
-  listByProduct,
-  create
+    listByProduct,
+    create
 }

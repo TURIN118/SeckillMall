@@ -28,9 +28,9 @@ const { get, post } = require('../utils/request')
 
 // ========== 接口端点常量 ==========
 const API = {
-  BASE: '/api/v1/seckill',           // 秒杀根路径
-  LIST: '/api/v1/seckill/list',      // GET 秒杀活动列表（分页）
-  ACTIVITIES: '/api/v1/seckill/activities' // GET 场次列表
+    BASE: '/api/v1/seckill',           // 秒杀根路径
+    LIST: '/api/v1/seckill/list',      // GET 秒杀活动列表（分页）
+    ACTIVITIES: '/api/v1/seckill/activities' // GET 场次列表
 }
 
 // ========== 工具函数 ==========
@@ -41,8 +41,8 @@ const API = {
  * @returns {string} 已 encodeURIComponent 的路径
  */
 function buildSeckillPath(id) {
-  const safeId = encodeURIComponent(String(id))
-  return API.BASE + '/' + safeId
+    const safeId = encodeURIComponent(String(id))
+    return API.BASE + '/' + safeId
 }
 
 /**
@@ -51,8 +51,8 @@ function buildSeckillPath(id) {
  * @returns {string}
  */
 function buildActivityPath(id) {
-  const safeId = encodeURIComponent(String(id))
-  return API.ACTIVITIES + '/' + safeId
+    const safeId = encodeURIComponent(String(id))
+    return API.ACTIVITIES + '/' + safeId
 }
 
 // ========== 9 个接口方法 ==========
@@ -66,15 +66,15 @@ function buildActivityPath(id) {
  * 说明：过滤空值字段，避免发送无效 query
  */
 function getSeckillList(params) {
-  const query = params || {}
-  const cleaned = {}
-  Object.keys(query).forEach((key) => {
-    const v = query[key]
-    if (v !== '' && v !== null && v !== undefined) {
-      cleaned[key] = v
-    }
-  })
-  return get(API.LIST, cleaned)
+    const query = params || {}
+    const cleaned = {}
+    Object.keys(query).forEach((key) => {
+        const v = query[key]
+        if (v !== '' && v !== null && v !== undefined) {
+            cleaned[key] = v
+        }
+    })
+    return get(API.LIST, cleaned)
 }
 
 /**
@@ -83,7 +83,7 @@ function getSeckillList(params) {
  * @returns {Promise<Result<SeckillActivityVO>>}
  */
 function getSeckillDetail(id) {
-  return get(buildSeckillPath(id))
+    return get(buildSeckillPath(id))
 }
 
 /**
@@ -92,7 +92,7 @@ function getSeckillDetail(id) {
  * @returns {Promise<Result<string>>} data 为 token 字符串
  */
 function getSeckillToken(id) {
-  return get(buildSeckillPath(id) + '/token')
+    return get(buildSeckillPath(id) + '/token')
 }
 
 /**
@@ -101,7 +101,7 @@ function getSeckillToken(id) {
  * @returns {Promise<Result<number>>} data 为库存数量
  */
 function getSeckillStock(id) {
-  return get(buildSeckillPath(id) + '/stock')
+    return get(buildSeckillPath(id) + '/stock')
 }
 
 /**
@@ -114,12 +114,12 @@ function getSeckillStock(id) {
  * 安全：token 通过自定义头传递，后端 @RateLimit 1/s 限流
  */
 function doSeckill(id, token) {
-  const header = {}
-  if (token != null && token !== '') {
-    header['X-Seckill-Token'] = token
-  }
-  // post(url, data, header) — request.js 第三参为 header 对象
-  return post(buildSeckillPath(id), {}, header)
+    const header = {}
+    if (token != null && token !== '') {
+        header['X-Seckill-Token'] = token
+    }
+    // post(url, data, header) — request.js 第三参为 header 对象
+    return post(buildSeckillPath(id), {}, header)
 }
 
 /**
@@ -128,7 +128,7 @@ function doSeckill(id, token) {
  * @returns {Promise<Result<SeckillResultVO>>}
  */
 function executeSeckill(id) {
-  return post(buildSeckillPath(id) + '/execute', {})
+    return post(buildSeckillPath(id) + '/execute', {})
 }
 
 /**
@@ -138,11 +138,11 @@ function executeSeckill(id) {
  * @returns {Promise<Result<SeckillResultVO>>}
  */
 function getSeckillResult(id, requestId) {
-  const query = {}
-  if (requestId != null && requestId !== '') {
-    query.requestId = String(requestId)
-  }
-  return get(buildSeckillPath(id) + '/result', query)
+    const query = {}
+    if (requestId != null && requestId !== '') {
+        query.requestId = String(requestId)
+    }
+    return get(buildSeckillPath(id) + '/result', query)
 }
 
 /**
@@ -150,7 +150,7 @@ function getSeckillResult(id, requestId) {
  * @returns {Promise<Result<List<SeckillActivityVO>>>}
  */
 function listActivities() {
-  return get(API.ACTIVITIES)
+    return get(API.ACTIVITIES)
 }
 
 /**
@@ -159,17 +159,17 @@ function listActivities() {
  * @returns {Promise<Result<SeckillActivityVO>>}
  */
 function getActivityDetail(activityId) {
-  return get(buildActivityPath(activityId))
+    return get(buildActivityPath(activityId))
 }
 
 module.exports = {
-  getSeckillList,
-  getSeckillDetail,
-  getSeckillToken,
-  getSeckillStock,
-  doSeckill,
-  executeSeckill,
-  getSeckillResult,
-  listActivities,
-  getActivityDetail
+    getSeckillList,
+    getSeckillDetail,
+    getSeckillToken,
+    getSeckillStock,
+    doSeckill,
+    executeSeckill,
+    getSeckillResult,
+    listActivities,
+    getActivityDetail
 }

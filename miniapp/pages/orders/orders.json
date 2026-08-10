@@ -1,13 +1,13 @@
 {
-  "navigationBarTitleText": "我的订单",
-  "onReachBottomDistance": 50,
-  "usingComponents": {
-    "van-tabs": "@vant/weapp/tabs/index",
-    "van-tab": "@vant/weapp/tab/index",
-    "van-empty": "@vant/weapp/empty/index",
-    "van-loading": "@vant/weapp/loading/index",
-    "van-swipe-cell": "@vant/weapp/swipe-cell/index",
-    "order-card": "../../components/order-card/order-card",
-    "load-more": "../../components/load-more/load-more"
-  }
+    "navigationBarTitleText": "我的订单",
+    "onReachBottomDistance": 50,
+    "usingComponents": {
+        "van-tabs": "@vant/weapp/tabs/index",
+        "van-tab": "@vant/weapp/tab/index",
+        "van-empty": "@vant/weapp/empty/index",
+        "van-loading": "@vant/weapp/loading/index",
+        "van-swipe-cell": "@vant/weapp/swipe-cell/index",
+        "order-card": "../../components/order-card/order-card",
+        "load-more": "../../components/load-more/load-more"
+    }
 }

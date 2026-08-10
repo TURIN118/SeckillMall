@@ -12,9 +12,9 @@
 
 const storage = require('./storage')
 const {
-  ACCESS_TOKEN_KEY,
-  REFRESH_TOKEN_KEY,
-  USER_INFO_KEY
+    ACCESS_TOKEN_KEY,
+    REFRESH_TOKEN_KEY,
+    USER_INFO_KEY
 } = require('../config/constants')
 
 // ========== 模块级刷新并发控制状态（闭包变量） ==========
@@ -33,8 +33,8 @@ let pendingQueue = []
  * @returns {string|null}
  */
 function getAccessToken() {
-  const token = storage.get(ACCESS_TOKEN_KEY)
-  return token || null
+    const token = storage.get(ACCESS_TOKEN_KEY)
+    return token || null
 }
 
 /**
@@ -42,8 +42,8 @@ function getAccessToken() {
  * @returns {string|null}
  */
 function getRefreshToken() {
-  const token = storage.get(REFRESH_TOKEN_KEY)
-  return token || null
+    const token = storage.get(REFRESH_TOKEN_KEY)
+    return token || null
 }
 
 /**
@@ -52,8 +52,8 @@ function getRefreshToken() {
  * @param {string} refresh refresh_token
  */
 function setToken(access, refresh) {
-  storage.set(ACCESS_TOKEN_KEY, access)
-  storage.set(REFRESH_TOKEN_KEY, refresh)
+    storage.set(ACCESS_TOKEN_KEY, access)
+    storage.set(REFRESH_TOKEN_KEY, refresh)
 }
 
 /**
@@ -61,9 +61,9 @@ function setToken(access, refresh) {
  * 对齐 spec 5.2.1 规则 7：禁止刷新失败后残留失效令牌
  */
 function clearToken() {
-  storage.remove(ACCESS_TOKEN_KEY)
-  storage.remove(REFRESH_TOKEN_KEY)
-  storage.remove(USER_INFO_KEY)
+    storage.remove(ACCESS_TOKEN_KEY)
+    storage.remove(REFRESH_TOKEN_KEY)
+    storage.remove(USER_INFO_KEY)
 }
 
 // ========== 登录态查询与登录引导 ==========
@@ -75,7 +75,7 @@ function clearToken() {
  * @returns {boolean}
  */
 function isLoggedIn() {
-  return !!getAccessToken()
+    return !!getAccessToken()
 }
 
 /**
@@ -84,12 +84,12 @@ function isLoggedIn() {
  * @param {string} [redirect] 登录后回跳目标页路径（带 query）
  */
 function navigateToLogin(redirect) {
-  let url = '/pages/login/login'
-  if (redirect && typeof redirect === 'string') {
-    // 对 redirect 做 encodeURIComponent，避免 query 中 & 污染登录页 onLoad options
-    url += '?redirect=' + encodeURIComponent(redirect)
-  }
-  wx.navigateTo({ url })
+    let url = '/pages/login/login'
+    if (redirect && typeof redirect === 'string') {
+        // 对 redirect 做 encodeURIComponent，避免 query 中 & 污染登录页 onLoad options
+        url += '?redirect=' + encodeURIComponent(redirect)
+    }
+    wx.navigateTo({ url })
 }
 
 // ========== 用户信息存取 ==========
@@ -99,8 +99,8 @@ function navigateToLogin(redirect) {
  * @returns {object|null}
  */
 function getUserInfo() {
-  const info = storage.get(USER_INFO_KEY)
-  return info || null
+    const info = storage.get(USER_INFO_KEY)
+    return info || null
 }
 
 /**
@@ -108,7 +108,7 @@ function getUserInfo() {
  * @param {object} info 用户信息对象
  */
 function setUserInfo(info) {
-  storage.set(USER_INFO_KEY, info)
+    storage.set(USER_INFO_KEY, info)
 }
 
 // ========== 刷新锁 ==========
@@ -118,7 +118,7 @@ function setUserInfo(info) {
  * @returns {boolean}
  */
 function isRefreshing() {
-  return refreshing
+    return refreshing
 }
 
 /**
@@ -126,7 +126,7 @@ function isRefreshing() {
  * @param {boolean} v
  */
 function setRefreshing(v) {
-  refreshing = !!v
+    refreshing = !!v
 }
 
 // ========== 等待队列 ==========
@@ -136,7 +136,7 @@ function setRefreshing(v) {
  * @param {{options: object, resolve: Function, reject: Function}} item
  */
 function pushPending(item) {
-  pendingQueue.push(item)
+    pendingQueue.push(item)
 }
 
 /**
@@ -144,33 +144,33 @@ function pushPending(item) {
  * @returns {Array}
  */
 function getPending() {
-  return pendingQueue
+    return pendingQueue
 }
 
 /**
  * 清空等待队列
  */
 function clearPending() {
-  pendingQueue = []
+    pendingQueue = []
 }
 
 module.exports = {
-  // Token 存取
-  getAccessToken,
-  getRefreshToken,
-  setToken,
-  clearToken,
-  // 用户信息
-  getUserInfo,
-  setUserInfo,
-  // 登录态查询与登录引导
-  isLoggedIn,
-  navigateToLogin,
-  // 刷新锁
-  isRefreshing,
-  setRefreshing,
-  // 等待队列
-  pushPending,
-  getPending,
-  clearPending
+    // Token 存取
+    getAccessToken,
+    getRefreshToken,
+    setToken,
+    clearToken,
+    // 用户信息
+    getUserInfo,
+    setUserInfo,
+    // 登录态查询与登录引导
+    isLoggedIn,
+    navigateToLogin,
+    // 刷新锁
+    isRefreshing,
+    setRefreshing,
+    // 等待队列
+    pushPending,
+    getPending,
+    clearPending
 }

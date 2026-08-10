@@ -13,35 +13,35 @@
 const { sanitize } = require('../../utils/rich-text')
 
 Component({
-  properties: {
-    // 原始 HTML 字符串
-    html: {
-      type: String,
-      value: ''
+    properties: {
+        // 原始 HTML 字符串
+        html: {
+            type: String,
+            value: ''
+        }
+    },
+    data: {
+        // 清洗后的 HTML 字符串，供 rich-text 渲染
+        safeHtml: ''
+    },
+    observers: {
+        'html': function (html) {
+            this._render(html)
+        }
+    },
+    lifetimes: {
+        attached() {
+            this._render(this.data.html)
+        }
+    },
+    methods: {
+        /**
+         * 清洗并渲染
+         * @param {string} html 原始 HTML
+         */
+        _render(html) {
+            const safe = sanitize(html || '')
+            this.setData({ safeHtml: safe })
+        }
     }
-  },
-  data: {
-    // 清洗后的 HTML 字符串，供 rich-text 渲染
-    safeHtml: ''
-  },
-  observers: {
-    'html': function (html) {
-      this._render(html)
-    }
-  },
-  lifetimes: {
-    attached() {
-      this._render(this.data.html)
-    }
-  },
-  methods: {
-    /**
-     * 清洗并渲染
-     * @param {string} html 原始 HTML
-     */
-    _render(html) {
-      const safe = sanitize(html || '')
-      this.setData({ safeHtml: safe })
-    }
-  }
 })

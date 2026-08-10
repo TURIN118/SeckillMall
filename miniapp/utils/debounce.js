@@ -10,18 +10,18 @@
  * @returns {Function} 防抖后的函数
  */
 function debounce(fn, wait = 300, immediate = false) {
-  let timer = null
-  return function (...args) {
-    const ctx = this
-    if (timer) clearTimeout(timer)
-    if (immediate && !timer) {
-      fn.apply(ctx, args)
+    let timer = null
+    return function (...args) {
+        const ctx = this
+        if (timer) clearTimeout(timer)
+        if (immediate && !timer) {
+            fn.apply(ctx, args)
+        }
+        timer = setTimeout(() => {
+            timer = null
+            if (!immediate) fn.apply(ctx, args)
+        }, wait)
     }
-    timer = setTimeout(() => {
-      timer = null
-      if (!immediate) fn.apply(ctx, args)
-    }, wait)
-  }
 }
 
 /**
@@ -33,31 +33,31 @@ function debounce(fn, wait = 300, immediate = false) {
  * @returns {Function} 节流后的函数
  */
 function throttle(fn, wait = 300, leading = true, trailing = false) {
-  let lastTime = 0
-  let timer = null
-  return function (...args) {
-    const ctx = this
-    const now = Date.now()
-    if (!lastTime && !leading) lastTime = now
-    const remaining = wait - (now - lastTime)
-    if (remaining <= 0 || remaining > wait) {
-      if (timer) {
-        clearTimeout(timer)
-        timer = null
-      }
-      lastTime = now
-      fn.apply(ctx, args)
-    } else if (trailing && !timer) {
-      timer = setTimeout(() => {
-        lastTime = leading ? Date.now() : 0
-        timer = null
-        fn.apply(ctx, args)
-      }, remaining)
+    let lastTime = 0
+    let timer = null
+    return function (...args) {
+        const ctx = this
+        const now = Date.now()
+        if (!lastTime && !leading) lastTime = now
+        const remaining = wait - (now - lastTime)
+        if (remaining <= 0 || remaining > wait) {
+            if (timer) {
+                clearTimeout(timer)
+                timer = null
+            }
+            lastTime = now
+            fn.apply(ctx, args)
+        } else if (trailing && !timer) {
+            timer = setTimeout(() => {
+                lastTime = leading ? Date.now() : 0
+                timer = null
+                fn.apply(ctx, args)
+            }, remaining)
+        }
     }
-  }
 }
 
 module.exports = {
-  debounce,
-  throttle
+    debounce,
+    throttle
 }

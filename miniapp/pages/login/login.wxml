@@ -6,7 +6,7 @@
     <text class="login-page__subtitle">秒杀商城小程序</text>
   </view>
 
-  <van-form bind:submit="handleLogin">
+  <view>
     <van-cell-group inset>
       <van-field
         value="{{ username }}"
@@ -47,11 +47,11 @@
     </van-cell-group>
 
     <view class="login-page__submit">
-      <van-button type="primary" block round form-type="submit" loading="{{ submitting }}">
+      <van-button type="primary" block round bind:click="handleLogin" loading="{{ submitting }}">
         登录
       </van-button>
     </view>
-  </van-form>
+  </view>
 
   <view class="login-page__footer">
     <navigator url="/pages/register/register" hover-class="none" class="login-page__link">

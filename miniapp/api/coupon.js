@@ -21,9 +21,9 @@ const { get, post } = require('../utils/request')
 
 // ========== 接口端点常量 ==========
 const API = {
-  AVAILABLE: '/api/v1/coupons/available', // GET 可领取列表
-  RECEIVE: '/api/v1/coupons/',            // POST /{id}/receive 领取
-  MINE: '/api/v1/coupons/mine'            // GET 我的优惠券
+    AVAILABLE: '/api/v1/coupons/available', // GET 可领取列表
+    RECEIVE: '/api/v1/coupons/',            // POST /{id}/receive 领取
+    MINE: '/api/v1/coupons/mine'            // GET 我的优惠券
 }
 
 /**
@@ -32,8 +32,8 @@ const API = {
  * @returns {Promise<Result<Array<CouponVO>>>}
  */
 function listAvailable(productId) {
-  const query = productId ? { productId: productId } : {}
-  return get(API.AVAILABLE, query)
+    const query = productId ? { productId: productId } : {}
+    return get(API.AVAILABLE, query)
 }
 
 /**
@@ -42,8 +42,8 @@ function listAvailable(productId) {
  * @returns {Promise<Result<void>>}
  */
 function receive(id) {
-  const url = API.RECEIVE + encodeURIComponent(String(id)) + '/receive'
-  return post(url)
+    const url = API.RECEIVE + encodeURIComponent(String(id)) + '/receive'
+    return post(url)
 }
 
 /**
@@ -52,12 +52,12 @@ function receive(id) {
  * @returns {Promise<Result<Array<UserCouponVO>>>}
  */
 function listMine(status) {
-  const query = status ? { status: status } : {}
-  return get(API.MINE, query)
+    const query = status ? { status: status } : {}
+    return get(API.MINE, query)
 }
 
 module.exports = {
-  listAvailable,
-  receive,
-  listMine
+    listAvailable,
+    receive,
+    listMine
 }

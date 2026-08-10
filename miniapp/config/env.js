@@ -6,18 +6,18 @@
 // 对齐：主计划 4.6 节、design.md 2.2 节
 
 const ENV = {
-  // 开发环境：本地后端
-  dev: {
-    BASE_URL: 'http://localhost:8080',
-    TIMEOUT: 10000,
-    LOG_ENABLED: true
-  },
-  // 生产环境：必须 HTTPS，需在微信公众平台配置 request 合法域名
-  prod: {
-    BASE_URL: 'https://api.yourdomain.com',
-    TIMEOUT: 10000,
-    LOG_ENABLED: false
-  }
+    // 开发环境：本地后端
+    dev: {
+        BASE_URL: 'http://localhost:8080',
+        TIMEOUT: 10000,
+        LOG_ENABLED: true
+    },
+    // 生产环境：必须 HTTPS，需在微信公众平台配置 request 合法域名
+    prod: {
+        BASE_URL: 'https://api.yourdomain.com',
+        TIMEOUT: 10000,
+        LOG_ENABLED: false
+    }
 }
 
 // 当前环境：'dev' | 'prod'

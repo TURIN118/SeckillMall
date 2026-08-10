@@ -20,12 +20,12 @@ const { buildUrl } = require('../utils/id')
 
 // ========== 接口端点常量 ==========
 const API = {
-  LIST: '/api/v1/favorites/list',    // GET 收藏列表
-  ADD: '/api/v1/favorites/add',      // POST 新增收藏
-  REMOVE: '/api/v1/favorites/',      // DELETE /{productId} 取消收藏
-  CHECK: '/api/v1/favorites/check/', // GET /check/{productId} 检查
-  COUNT: '/api/v1/favorites/count',  // GET 数量
-  TOGGLE: '/api/v1/favorites'        // POST 切换收藏状态（兼容 product 模块）
+    LIST: '/api/v1/favorites/list',    // GET 收藏列表
+    ADD: '/api/v1/favorites/add',      // POST 新增收藏
+    REMOVE: '/api/v1/favorites/',      // DELETE /{productId} 取消收藏
+    CHECK: '/api/v1/favorites/check/', // GET /check/{productId} 检查
+    COUNT: '/api/v1/favorites/count',  // GET 数量
+    TOGGLE: '/api/v1/favorites'        // POST 切换收藏状态（兼容 product 模块）
 }
 
 /**
@@ -33,7 +33,7 @@ const API = {
  * @returns {Promise<Result<Array<FavoriteItemVO>>>}
  */
 function getFavoriteList() {
-  return get(API.LIST)
+    return get(API.LIST)
 }
 
 /**
@@ -42,7 +42,7 @@ function getFavoriteList() {
  * @returns {Promise<Result<void>>}
  */
 function addFavorite(productId) {
-  return post(API.ADD, { productId: String(productId) })
+    return post(API.ADD, { productId: String(productId) })
 }
 
 /**
@@ -51,8 +51,8 @@ function addFavorite(productId) {
  * @returns {Promise<Result<void>>}
  */
 function removeFavorite(productId) {
-  const url = buildUrl(API.REMOVE, productId)
-  return del(url)
+    const url = buildUrl(API.REMOVE, productId)
+    return del(url)
 }
 
 /**
@@ -61,8 +61,8 @@ function removeFavorite(productId) {
  * @returns {Promise<Result<boolean>>}
  */
 function checkFavorite(productId) {
-  const url = buildUrl(API.CHECK, productId)
-  return get(url)
+    const url = buildUrl(API.CHECK, productId)
+    return get(url)
 }
 
 /**
@@ -70,7 +70,7 @@ function checkFavorite(productId) {
  * @returns {Promise<Result<number>>}
  */
 function getFavoriteCount() {
-  return get(API.COUNT)
+    return get(API.COUNT)
 }
 
 /**
@@ -79,15 +79,15 @@ function getFavoriteCount() {
  * @returns {Promise<Result<void>>}
  */
 function toggleFavorite(data) {
-  return post(API.TOGGLE, data)
+    return post(API.TOGGLE, data)
 }
 
 module.exports = {
-  getFavoriteList,
-  addFavorite,
-  removeFavorite,
-  checkFavorite,
-  getFavoriteCount,
-  // 兼容保留
-  toggleFavorite
+    getFavoriteList,
+    addFavorite,
+    removeFavorite,
+    checkFavorite,
+    getFavoriteCount,
+    // 兼容保留
+    toggleFavorite
 }

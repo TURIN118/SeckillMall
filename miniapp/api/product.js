@@ -16,8 +16,8 @@ const { get } = require('../utils/request')
 
 // ========== 接口端点常量 ==========
 const API = {
-  LIST: '/api/v1/products',       // GET 商品分页
-  DETAIL: '/api/v1/products/'    // GET /api/v1/products/{id} 商品详情
+    LIST: '/api/v1/products',       // GET 商品分页
+    DETAIL: '/api/v1/products/'    // GET /api/v1/products/{id} 商品详情
 }
 
 /**
@@ -31,20 +31,20 @@ const API = {
  *   - 过滤掉值为空字符串/undefined/null 的字段，避免发送无效 query
  */
 function getProductList(params) {
-  const query = params || {}
-  // 前台固定只查上架商品
-  if (!query.status) query.status = 'ON_SALE'
+    const query = params || {}
+    // 前台固定只查上架商品
+    if (!query.status) query.status = 'ON_SALE'
 
-  // 清理空值字段
-  const cleaned = {}
-  Object.keys(query).forEach((key) => {
-    const v = query[key]
-    if (v !== '' && v !== null && v !== undefined) {
-      cleaned[key] = v
-    }
-  })
+    // 清理空值字段
+    const cleaned = {}
+    Object.keys(query).forEach((key) => {
+        const v = query[key]
+        if (v !== '' && v !== null && v !== undefined) {
+            cleaned[key] = v
+        }
+    })
 
-  return get(API.LIST, cleaned)
+    return get(API.LIST, cleaned)
 }
 
 /**
@@ -55,11 +55,11 @@ function getProductList(params) {
  * 安全：id 强制 string + encodeURIComponent，避免 URL 注入
  */
 function getProductDetail(id) {
-  const safeId = encodeURIComponent(String(id))
-  return get(API.DETAIL + safeId)
+    const safeId = encodeURIComponent(String(id))
+    return get(API.DETAIL + safeId)
 }
 
 module.exports = {
-  getProductList,
-  getProductDetail
+    getProductList,
+    getProductDetail
 }

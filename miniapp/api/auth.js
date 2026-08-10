@@ -22,18 +22,18 @@ const { getAccessToken } = require('../utils/auth')
 
 // ========== 接口端点常量 ==========
 const API = {
-  LOGIN: '/api/v1/auth/login',
-  REGISTER: '/api/v1/auth/register',
-  CAPTCHA: '/api/v1/auth/captcha',
-  REFRESH: '/api/v1/auth/refresh',
-  ME: '/api/v1/auth/me',
-  LOGOUT: '/api/v1/auth/logout',
-  FORGOT_SEND: '/api/v1/auth/forgot-password/send-code',
-  FORGOT_RESET: '/api/v1/auth/forgot-password/reset',
-  // U1: usercenter 模块新增
-  PROFILE: '/api/v1/auth/profile',
-  AVATAR: '/api/v1/auth/avatar',
-  PASSWORD: '/api/v1/auth/password'
+    LOGIN: '/api/v1/auth/login',
+    REGISTER: '/api/v1/auth/register',
+    CAPTCHA: '/api/v1/auth/captcha',
+    REFRESH: '/api/v1/auth/refresh',
+    ME: '/api/v1/auth/me',
+    LOGOUT: '/api/v1/auth/logout',
+    FORGOT_SEND: '/api/v1/auth/forgot-password/send-code',
+    FORGOT_RESET: '/api/v1/auth/forgot-password/reset',
+    // U1: usercenter 模块新增
+    PROFILE: '/api/v1/auth/profile',
+    AVATAR: '/api/v1/auth/avatar',
+    PASSWORD: '/api/v1/auth/password'
 }
 
 /**
@@ -42,7 +42,7 @@ const API = {
  * @returns {Promise<Result<{accessToken, refreshToken, user}>>}
  */
 function login(data) {
-  return post(API.LOGIN, data)
+    return post(API.LOGIN, data)
 }
 
 /**
@@ -51,7 +51,7 @@ function login(data) {
  * @returns {Promise<Result<UserVO>>}
  */
 function register(data) {
-  return post(API.REGISTER, data)
+    return post(API.REGISTER, data)
 }
 
 /**
@@ -59,7 +59,7 @@ function register(data) {
  * @returns {Promise<Result<{captchaKey, image}>>}
  */
 function getCaptcha() {
-  return get(API.CAPTCHA)
+    return get(API.CAPTCHA)
 }
 
 /**
@@ -68,7 +68,7 @@ function getCaptcha() {
  * @returns {Promise<Result<{accessToken, refreshToken}>>}
  */
 function refreshToken(data) {
-  return post(API.REFRESH, data)
+    return post(API.REFRESH, data)
 }
 
 /**
@@ -76,7 +76,7 @@ function refreshToken(data) {
  * @returns {Promise<Result<UserVO>>}
  */
 function getMe() {
-  return get(API.ME)
+    return get(API.ME)
 }
 
 /**
@@ -84,7 +84,7 @@ function getMe() {
  * @returns {Promise<Result<void>>}
  */
 function logout() {
-  return post(API.LOGOUT)
+    return post(API.LOGOUT)
 }
 
 /**
@@ -93,7 +93,7 @@ function logout() {
  * @returns {Promise<Result<void>>}
  */
 function sendForgotCode(data) {
-  return post(API.FORGOT_SEND, data)
+    return post(API.FORGOT_SEND, data)
 }
 
 /**
@@ -102,7 +102,7 @@ function sendForgotCode(data) {
  * @returns {Promise<Result<void>>}
  */
 function resetPassword(data) {
-  return post(API.FORGOT_RESET, data)
+    return post(API.FORGOT_RESET, data)
 }
 
 // ========== U1: usercenter 模块新增方法 ==========
@@ -114,7 +114,7 @@ function resetPassword(data) {
  * @returns {Promise<Result<UserVO>>}
  */
 function updateProfile(data) {
-  return put(API.PROFILE, data)
+    return put(API.PROFILE, data)
 }
 
 /**
@@ -124,7 +124,7 @@ function updateProfile(data) {
  * @returns {Promise<Result<void>>}
  */
 function changePassword(data) {
-  return put(API.PASSWORD, data)
+    return put(API.PASSWORD, data)
 }
 
 /**
@@ -143,61 +143,61 @@ function changePassword(data) {
  *   - 网络层失败 → reject Error(errMsg)
  */
 function uploadAvatar(filePath) {
-  const token = getAccessToken()
-  if (!token) {
-    return Promise.reject(new Error('未登录'))
-  }
-  if (!filePath) {
-    return Promise.reject(new Error('缺少文件路径'))
-  }
+    const token = getAccessToken()
+    if (!token) {
+        return Promise.reject(new Error('未登录'))
+    }
+    if (!filePath) {
+        return Promise.reject(new Error('缺少文件路径'))
+    }
 
-  return new Promise((resolve, reject) => {
-    wx.uploadFile({
-      url: BASE_URL + API.AVATAR,
-      filePath: filePath,
-      name: 'file',
-      header: {
-        Authorization: 'Bearer ' + token
-      },
-      success: (res) => {
-        // res.data 是字符串，需 JSON.parse
-        let body = null
-        try {
-          body = typeof res.data === 'string' ? JSON.parse(res.data) : res.data
-        } catch (e) {
-          reject(new Error('上传响应解析失败'))
-          return
-        }
+    return new Promise((resolve, reject) => {
+        wx.uploadFile({
+            url: BASE_URL + API.AVATAR,
+            filePath: filePath,
+            name: 'file',
+            header: {
+                Authorization: 'Bearer ' + token
+            },
+            success: (res) => {
+                // res.data 是字符串，需 JSON.parse
+                let body = null
+                try {
+                    body = typeof res.data === 'string' ? JSON.parse(res.data) : res.data
+                } catch (e) {
+                    reject(new Error('上传响应解析失败'))
+                    return
+                }
 
-        const statusCode = res.statusCode
-        if (statusCode >= 200 && statusCode < 300 && body && body.code === 200) {
-          const data = body.data || {}
-          const avatarUrl = data.avatarUrl || ''
-          resolve(avatarUrl)
-        } else {
-          const msg = (body && body.message) || '上传失败'
-          reject(new Error(msg))
-        }
-      },
-      fail: (err) => {
-        const errMsg = (err && err.errMsg) || '上传失败'
-        reject(new Error(errMsg))
-      }
+                const statusCode = res.statusCode
+                if (statusCode >= 200 && statusCode < 300 && body && body.code === 200) {
+                    const data = body.data || {}
+                    const avatarUrl = data.avatarUrl || ''
+                    resolve(avatarUrl)
+                } else {
+                    const msg = (body && body.message) || '上传失败'
+                    reject(new Error(msg))
+                }
+            },
+            fail: (err) => {
+                const errMsg = (err && err.errMsg) || '上传失败'
+                reject(new Error(errMsg))
+            }
+        })
     })
-  })
 }
 
 module.exports = {
-  login,
-  register,
-  getCaptcha,
-  refreshToken,
-  getMe,
-  logout,
-  sendForgotCode,
-  resetPassword,
-  // U1: usercenter 模块新增
-  updateProfile,
-  uploadAvatar,
-  changePassword
+    login,
+    register,
+    getCaptcha,
+    refreshToken,
+    getMe,
+    logout,
+    sendForgotCode,
+    resetPassword,
+    // U1: usercenter 模块新增
+    updateProfile,
+    uploadAvatar,
+    changePassword
 }

@@ -6,7 +6,7 @@
     <text class="register-page__subtitle">创建你的秒杀商城账号</text>
   </view>
 
-  <van-form bind:submit="handleRegister">
+  <view>
     <van-cell-group inset>
       <van-field
         value="{{ username }}"
@@ -62,11 +62,11 @@
     </view>
 
     <view class="register-page__submit">
-      <van-button type="primary" block round form-type="submit" loading="{{ submitting }}">
+      <van-button type="primary" block round bind:click="handleRegister" loading="{{ submitting }}">
         注册
       </van-button>
     </view>
-  </van-form>
+  </view>
 
   <view class="register-page__footer">
     <navigator url="/pages/login/login" hover-class="none" class="register-page__link">

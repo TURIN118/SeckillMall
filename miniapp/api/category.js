@@ -12,7 +12,7 @@ const { get } = require('../utils/request')
 
 // ========== 接口端点常量 ==========
 const API = {
-  TREE: '/api/v1/categories' // GET 分类树
+    TREE: '/api/v1/categories' // GET 分类树
 }
 
 /**
@@ -22,9 +22,9 @@ const API = {
  * 返回结构：一级分类数组，每个分类含 children（子分类数组），递归
  */
 function getCategoryTree() {
-  return get(API.TREE)
+    return get(API.TREE)
 }
 
 module.exports = {
-  getCategoryTree
+    getCategoryTree
 }

@@ -19,18 +19,18 @@ const { buildUrl } = require('../utils/id')
 
 // ========== 接口端点常量 ==========
 const API = {
-  UNIFIED: '/api/v1/orders/unified',   // GET 统一订单列表
-  DETAIL: '/api/v1/orders/',           // GET /{id} 秒杀订单详情
-  NORMAL_DETAIL: '/api/v1/orders/',    // GET /{id}/detail 普通订单详情
-  CREATE_BUY_NOW: '/api/v1/orders',    // POST 立即购买
-  CREATE_FROM_CART: '/api/v1/orders/from-cart', // POST 购物车结算
-  PAY: '/api/v1/orders/',              // POST /{id}/pay 秒杀支付
-  PAY_NORMAL: '/api/v1/orders/',       // POST /{id}/pay-normal 普通支付
-  CANCEL: '/api/v1/orders/',           // POST /{id}/cancel 取消秒杀
-  CANCEL_NORMAL: '/api/v1/orders/',    // POST /{id}/cancel-normal 取消普通
-  CONFIRM: '/api/v1/orders/',          // POST /{id}/confirm 确认收货秒杀
-  CONFIRM_NORMAL: '/api/v1/orders/',   // POST /{id}/normal-confirm 确认收货普通
-  DELETE: '/api/v1/orders/'            // DELETE /{id} 逻辑删除
+    UNIFIED: '/api/v1/orders/unified',   // GET 统一订单列表
+    DETAIL: '/api/v1/orders/',           // GET /{id} 秒杀订单详情
+    NORMAL_DETAIL: '/api/v1/orders/',    // GET /{id}/detail 普通订单详情
+    CREATE_BUY_NOW: '/api/v1/orders',    // POST 立即购买
+    CREATE_FROM_CART: '/api/v1/orders/from-cart', // POST 购物车结算
+    PAY: '/api/v1/orders/',              // POST /{id}/pay 秒杀支付
+    PAY_NORMAL: '/api/v1/orders/',       // POST /{id}/pay-normal 普通支付
+    CANCEL: '/api/v1/orders/',           // POST /{id}/cancel 取消秒杀
+    CANCEL_NORMAL: '/api/v1/orders/',    // POST /{id}/cancel-normal 取消普通
+    CONFIRM: '/api/v1/orders/',          // POST /{id}/confirm 确认收货秒杀
+    CONFIRM_NORMAL: '/api/v1/orders/',   // POST /{id}/normal-confirm 确认收货普通
+    DELETE: '/api/v1/orders/'            // DELETE /{id} 逻辑删除
 }
 
 /**
@@ -43,16 +43,16 @@ const API = {
  * @returns {Promise<Result<PageResult<OrderListItemVO>>>}
  */
 function getUnifiedOrders(params) {
-  const query = params || {}
-  // 清理空值字段
-  const cleaned = {}
-  Object.keys(query).forEach((key) => {
-    const v = query[key]
-    if (v !== '' && v !== null && v !== undefined) {
-      cleaned[key] = v
-    }
-  })
-  return get(API.UNIFIED, cleaned)
+    const query = params || {}
+    // 清理空值字段
+    const cleaned = {}
+    Object.keys(query).forEach((key) => {
+        const v = query[key]
+        if (v !== '' && v !== null && v !== undefined) {
+            cleaned[key] = v
+        }
+    })
+    return get(API.UNIFIED, cleaned)
 }
 
 /**
@@ -61,8 +61,8 @@ function getUnifiedOrders(params) {
  * @returns {Promise<Result<OrderDetailVO>>}
  */
 function getOrderDetail(id) {
-  const url = buildUrl(API.DETAIL, id)
-  return get(url)
+    const url = buildUrl(API.DETAIL, id)
+    return get(url)
 }
 
 /**
@@ -71,8 +71,8 @@ function getOrderDetail(id) {
  * @returns {Promise<Result<OrderDetailVO>>}
  */
 function getNormalOrderDetail(id) {
-  const url = buildUrl(API.NORMAL_DETAIL, id) + '/detail'
-  return get(url)
+    const url = buildUrl(API.NORMAL_DETAIL, id) + '/detail'
+    return get(url)
 }
 
 /**
@@ -81,7 +81,7 @@ function getNormalOrderDetail(id) {
  * @returns {Promise<Result<{orderId:string, orderType:string}>>}
  */
 function buyNow(data) {
-  return post(API.CREATE_BUY_NOW, data)
+    return post(API.CREATE_BUY_NOW, data)
 }
 
 /**
@@ -90,7 +90,7 @@ function buyNow(data) {
  * @returns {Promise<Result<{orderId:string, orderType:string}>>}
  */
 function checkoutFromCart(data) {
-  return post(API.CREATE_FROM_CART, data)
+    return post(API.CREATE_FROM_CART, data)
 }
 
 /**
@@ -100,9 +100,9 @@ function checkoutFromCart(data) {
  * @returns {Promise<Result<void>>}
  */
 function payOrder(id, payMethod) {
-  const url = buildUrl(API.PAY, id) + '/pay'
-  const body = payMethod ? { payMethod: payMethod } : {}
-  return post(url, body)
+    const url = buildUrl(API.PAY, id) + '/pay'
+    const body = payMethod ? { payMethod: payMethod } : {}
+    return post(url, body)
 }
 
 /**
@@ -112,9 +112,9 @@ function payOrder(id, payMethod) {
  * @returns {Promise<Result<void>>}
  */
 function payNormalOrder(id, payMethod) {
-  const url = buildUrl(API.PAY_NORMAL, id) + '/pay-normal'
-  const body = payMethod ? { payMethod: payMethod } : {}
-  return post(url, body)
+    const url = buildUrl(API.PAY_NORMAL, id) + '/pay-normal'
+    const body = payMethod ? { payMethod: payMethod } : {}
+    return post(url, body)
 }
 
 /**
@@ -123,8 +123,8 @@ function payNormalOrder(id, payMethod) {
  * @returns {Promise<Result<void>>}
  */
 function cancelOrder(id) {
-  const url = buildUrl(API.CANCEL, id) + '/cancel'
-  return post(url)
+    const url = buildUrl(API.CANCEL, id) + '/cancel'
+    return post(url)
 }
 
 /**
@@ -133,8 +133,8 @@ function cancelOrder(id) {
  * @returns {Promise<Result<void>>}
  */
 function cancelNormalOrder(id) {
-  const url = buildUrl(API.CANCEL_NORMAL, id) + '/cancel-normal'
-  return post(url)
+    const url = buildUrl(API.CANCEL_NORMAL, id) + '/cancel-normal'
+    return post(url)
 }
 
 /**
@@ -143,8 +143,8 @@ function cancelNormalOrder(id) {
  * @returns {Promise<Result<void>>}
  */
 function confirmOrder(id) {
-  const url = buildUrl(API.CONFIRM, id) + '/confirm'
-  return post(url)
+    const url = buildUrl(API.CONFIRM, id) + '/confirm'
+    return post(url)
 }
 
 /**
@@ -153,8 +153,8 @@ function confirmOrder(id) {
  * @returns {Promise<Result<void>>}
  */
 function confirmNormalOrder(id) {
-  const url = buildUrl(API.CONFIRM_NORMAL, id) + '/normal-confirm'
-  return post(url)
+    const url = buildUrl(API.CONFIRM_NORMAL, id) + '/normal-confirm'
+    return post(url)
 }
 
 /**
@@ -163,21 +163,21 @@ function confirmNormalOrder(id) {
  * @returns {Promise<Result<void>>}
  */
 function deleteOrder(id) {
-  const url = buildUrl(API.DELETE, id)
-  return del(url)
+    const url = buildUrl(API.DELETE, id)
+    return del(url)
 }
 
 module.exports = {
-  getUnifiedOrders,
-  getOrderDetail,
-  getNormalOrderDetail,
-  buyNow,
-  checkoutFromCart,
-  payOrder,
-  payNormalOrder,
-  cancelOrder,
-  cancelNormalOrder,
-  confirmOrder,
-  confirmNormalOrder,
-  deleteOrder
+    getUnifiedOrders,
+    getOrderDetail,
+    getNormalOrderDetail,
+    buyNow,
+    checkoutFromCart,
+    payOrder,
+    payNormalOrder,
+    cancelOrder,
+    cancelNormalOrder,
+    confirmOrder,
+    confirmNormalOrder,
+    deleteOrder
 }

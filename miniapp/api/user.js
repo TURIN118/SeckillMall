@@ -16,8 +16,8 @@ const { put } = require('../utils/request')
 
 // ========== 接口端点常量 ==========
 const API = {
-  PHONE: '/api/v1/users/profile/phone', // PUT 修改手机号
-  EMAIL: '/api/v1/users/profile/email'  // PUT 修改邮箱
+    PHONE: '/api/v1/users/profile/phone', // PUT 修改手机号
+    EMAIL: '/api/v1/users/profile/email'  // PUT 修改邮箱
 }
 
 /**
@@ -27,7 +27,7 @@ const API = {
  * @returns {Promise<Result<void>>}
  */
 function updatePhone(phone, code) {
-  return put(API.PHONE, { phone: phone, code: code })
+    return put(API.PHONE, { phone: phone, code: code })
 }
 
 /**
@@ -37,10 +37,10 @@ function updatePhone(phone, code) {
  * @returns {Promise<Result<void>>}
  */
 function updateEmail(email, code) {
-  return put(API.EMAIL, { email: email, code: code })
+    return put(API.EMAIL, { email: email, code: code })
 }
 
 module.exports = {
-  updatePhone,
-  updateEmail
+    updatePhone,
+    updateEmail
 }

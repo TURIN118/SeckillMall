@@ -201,6 +201,7 @@ Page({
         const product = this.data.product
         const sku = this.data.currentSku
         const params = [
+            'buyNow=1',
             'productId=' + encodeURIComponent(String(product.id)),
             'quantity=1'
         ]

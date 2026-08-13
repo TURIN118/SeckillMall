@@ -1,6 +1,7 @@
 package com.seckill.mall.ai.gateway.config;
 
 import com.seckill.mall.ai.gateway.advisor.*;
+import com.seckill.mall.ai.gateway.entity.AiAuditMapper;
 import com.seckill.mall.cache.RedisService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -54,8 +55,8 @@ public class AiGatewayConfig {
     }
 
     @Bean
-    public AuditAdvisor auditAdvisor() {
-        return new AuditAdvisor();
+    public AuditAdvisor auditAdvisor(AiAuditMapper aiAuditMapper) {
+        return new AuditAdvisor(aiAuditMapper);
     }
 
     @Bean

@@ -1,0 +1,54 @@
+# ============================================================
+# AI 能力中台配置（ai-gateway）
+# DeepSeek 为主模型（OpenAI 兼容协议），通义备用，文心合规场景
+# ============================================================
+
+spring:
+  ai:
+    openai:
+      api-key: ${DEEPSEEK_API_KEY:sk-placeholder}
+      base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+      chat:
+        options:
+          model: ${DEEPSEEK_MODEL:deepseek-chat}
+          temperature: 0.7
+          max-tokens: 2000
+
+# AI 网关治理配置
+ai:
+  gateway:
+    # 多模型路由
+    routing:
+      default-model: deepseek
+      rules:
+        - scene: REASONING
+          model: deepseek
+        - scene: CHINESE_UNDERSTANDING
+          model: qwen
+        - scene: COMPLIANCE
+          model: ernie
+    # 限流（复用现有 RateLimitAspect 令牌桶模式）
+    rate-limit:
+      user-capacity: 20
+      user-rate: 10
+      ip-capacity: 100
+      ip-rate: 50
+    # 语义缓存
+    cache:
+      enabled: true
+      ttl-seconds: 3600
+      similarity-threshold: 0.95
+    # 审计
+    audit:
+      enabled: true
+      log-tokens: true
+      log-cost: true
+    # 降级
+    fallback:
+      timeout-ms: 15000
+      retry-times: 1
+    # 预算护栏
+    budget:
+      daily-token-limit: 2000000
+      monthly-cost-limit: 5000.00
+      degrade-threshold: 0.9

@@ -4,6 +4,7 @@ import com.seckill.mall.ai.gateway.advisor.*;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
  * <p>默认接入 DeepSeek（deepseek-chat），通过 OpenAI 兼容协议调用。
  */
 @Configuration
+@EnableConfigurationProperties(ModelRouteProperties.class)
 public class AiGatewayConfig {
 
     @Bean

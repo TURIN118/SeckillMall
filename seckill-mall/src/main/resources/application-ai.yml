@@ -16,6 +16,13 @@ spring:
 
 # AI 网关治理配置
 ai:
+  # 多模型路由配置（与 gateway 平级）
+  # 绑定 ModelRouteProperties，键为 Scene 枚举名小写，值为模型名
+  models:
+    route:
+      reasoning: deepseek-chat
+      chinese: qwen-plus
+      compliance: ernie-bot
   gateway:
     # 多模型路由
     routing:

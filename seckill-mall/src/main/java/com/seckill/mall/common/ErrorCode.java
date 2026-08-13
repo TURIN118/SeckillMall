@@ -106,7 +106,9 @@ public enum ErrorCode {
     WALLET_RECHARGE_FAILED(11002, "充值失败"),
 
     // AI 网关相关
-    AI_RATE_LIMIT_EXCEEDED(42901, "AI 调用太频繁，请稍后再试");
+    AI_RATE_LIMIT_EXCEEDED(42901, "AI 调用太频繁，请稍后再试"),
+    AI_BUDGET_EXCEEDED(42902, "AI 预算超限，已降级"),
+    AI_LLM_TIMEOUT(50301, "AI 响应超时");
 
     private final int code;
     private final String message;

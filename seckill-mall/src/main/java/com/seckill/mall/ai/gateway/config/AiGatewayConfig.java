@@ -2,6 +2,7 @@ package com.seckill.mall.ai.gateway.config;
 
 import com.seckill.mall.ai.gateway.advisor.*;
 import com.seckill.mall.ai.gateway.entity.AiAuditMapper;
+import com.seckill.mall.cache.CacheDegradeService;
 import com.seckill.mall.cache.RedisService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -60,13 +61,15 @@ public class AiGatewayConfig {
     }
 
     @Bean
-    public FallbackAdvisor fallbackAdvisor() {
-        return new FallbackAdvisor();
+    public FallbackAdvisor fallbackAdvisor(CacheDegradeService cacheDegradeService) {
+        return new FallbackAdvisor(cacheDegradeService);
     }
 
     @Bean
-    public BudgetAdvisor budgetAdvisor() {
-        return new BudgetAdvisor();
+    public BudgetAdvisor budgetAdvisor(RedisService redisService,
+                                       @Value("${ai.gateway.budget.daily-token-limit:2000000}") long dailyTokenLimit,
+                                       @Value("${ai.gateway.budget.monthly-cost-limit:5000.00}") double monthlyCostLimit) {
+        return new BudgetAdvisor(redisService, dailyTokenLimit, monthlyCostLimit);
     }
 
     /**
@@ -85,15 +88,16 @@ public class AiGatewayConfig {
     @Bean
     public ChatClient chatClient(OpenAiChatModel chatModel,
                                   OpenAiChatOptions defaultChatOptions,
+                                  BudgetAdvisor budgetAdvisor,
                                   RateLimitAdvisor rateLimitAdvisor,
                                   SemanticCacheAdvisor semanticCacheAdvisor,
                                   AuditAdvisor auditAdvisor,
-                                  FallbackAdvisor fallbackAdvisor,
-                                  BudgetAdvisor budgetAdvisor) {
+                                  FallbackAdvisor fallbackAdvisor) {
+        // Advisor 执行顺序按 order 升序：budget(5) → rateLimit(10) → cache(20) → audit(30) → fallback(40)
         return ChatClient.builder(chatModel)
                 .defaultOptions(defaultChatOptions)
-                .defaultAdvisors(rateLimitAdvisor, semanticCacheAdvisor,
-                        auditAdvisor, fallbackAdvisor, budgetAdvisor)
+                .defaultAdvisors(budgetAdvisor, rateLimitAdvisor, semanticCacheAdvisor,
+                        auditAdvisor, fallbackAdvisor)
                 .build();
     }
 }

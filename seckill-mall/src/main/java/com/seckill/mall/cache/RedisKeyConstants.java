@@ -29,6 +29,10 @@ public final class RedisKeyConstants {
     public static final String RATE_AI = "rate:ai:";
     /** AI 语义缓存前缀：ai:cache:{sha256(prompt)}，TTL 3600s */
     public static final String CACHE_AI = "ai:cache:";
+    /** AI 预算护栏日 token 计数前缀：ai:budget:tokens:{yyyy-MM-dd} */
+    public static final String BUDGET_AI = "ai:budget:tokens:";
+    /** AI 预算护栏月成本计数前缀：ai:budget:cost:{yyyy-MM} */
+    public static final String BUDGET_AI_COST = "ai:budget:cost:";
     public static final String LOGIN_FAIL = "login:fail:";
     public static final String TOKEN_BLACKLIST = "token:blacklist:";
     public static final String CAPTCHA = "captcha:";

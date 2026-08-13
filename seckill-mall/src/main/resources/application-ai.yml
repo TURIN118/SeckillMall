@@ -40,6 +40,8 @@ ai:
       user-rate: 10
       ip-capacity: 100
       ip-rate: 50
+      # 时间窗口秒数：>0 时由 Lua 按 capacity/seconds 计算补充速率
+      window-seconds: 60
     # 语义缓存
     cache:
       enabled: true

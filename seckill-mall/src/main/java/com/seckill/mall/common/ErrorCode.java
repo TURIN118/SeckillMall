@@ -103,7 +103,10 @@ public enum ErrorCode {
 
     // 钱包相关
     WALLET_BALANCE_NOT_ENOUGH(11001, "钱包余额不足"),
-    WALLET_RECHARGE_FAILED(11002, "充值失败");
+    WALLET_RECHARGE_FAILED(11002, "充值失败"),
+
+    // AI 网关相关
+    AI_RATE_LIMIT_EXCEEDED(42901, "AI 调用太频繁，请稍后再试");
 
     private final int code;
     private final String message;

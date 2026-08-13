@@ -25,6 +25,8 @@ public final class RedisKeyConstants {
     public static final String SECKILL_BLOOM_GOODS = "seckill:bloom:goods";
     public static final String RATE_SECKILL = "rate:seckill:";
     public static final String RATE_IP = "rate:ip:";
+    /** AI 网关限流前缀：rate:ai:{caller}:{userId或ip} */
+    public static final String RATE_AI = "rate:ai:";
     public static final String LOGIN_FAIL = "login:fail:";
     public static final String TOKEN_BLACKLIST = "token:blacklist:";
     public static final String CAPTCHA = "captcha:";

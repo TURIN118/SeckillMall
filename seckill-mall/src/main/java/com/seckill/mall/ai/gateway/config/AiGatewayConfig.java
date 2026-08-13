@@ -4,9 +4,14 @@ import com.seckill.mall.ai.gateway.advisor.*;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.scripting.support.ResourceScriptSource;
 
 /**
  * AI 网关配置：装配 ChatClient 单例 + 五大 Advisor。
@@ -17,9 +22,29 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(ModelRouteProperties.class)
 public class AiGatewayConfig {
 
+    /**
+     * 限流 Lua 脚本 Bean（令牌桶），复用 seckill-mall 既有 lua/rate_limit.lua。
+     * <p>供 {@link RateLimitAdvisor} 与 {@link com.seckill.mall.aspect.RateLimitAspect} 共用同一脚本。
+     * <p>返回类型 Long：1=允许 / 0=拒绝。
+     */
+    @Bean("aiRateLimitScript")
+    public DefaultRedisScript<Long> aiRateLimitScript() {
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setScriptSource(new ResourceScriptSource(new ClassPathResource("lua/rate_limit.lua")));
+        script.setResultType(Long.class);
+        return script;
+    }
+
     @Bean
-    public RateLimitAdvisor rateLimitAdvisor() {
-        return new RateLimitAdvisor();
+    public RateLimitAdvisor rateLimitAdvisor(StringRedisTemplate redisTemplate,
+                                             DefaultRedisScript<Long> aiRateLimitScript,
+                                             @Value("${ai.gateway.rate-limit.user-capacity:20}") int userCapacity,
+                                             @Value("${ai.gateway.rate-limit.user-rate:10}") int userRate,
+                                             @Value("${ai.gateway.rate-limit.ip-capacity:100}") int ipCapacity,
+                                             @Value("${ai.gateway.rate-limit.ip-rate:50}") int ipRate,
+                                             @Value("${ai.gateway.rate-limit.window-seconds:60}") int windowSeconds) {
+        return new RateLimitAdvisor(redisTemplate, aiRateLimitScript,
+                userCapacity, userRate, ipCapacity, ipRate, windowSeconds);
     }
 
     @Bean

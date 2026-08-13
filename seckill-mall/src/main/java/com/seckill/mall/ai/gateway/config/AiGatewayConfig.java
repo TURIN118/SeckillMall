@@ -1,6 +1,7 @@
 package com.seckill.mall.ai.gateway.config;
 
 import com.seckill.mall.ai.gateway.advisor.*;
+import com.seckill.mall.cache.RedisService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
@@ -48,8 +49,8 @@ public class AiGatewayConfig {
     }
 
     @Bean
-    public SemanticCacheAdvisor semanticCacheAdvisor() {
-        return new SemanticCacheAdvisor();
+    public SemanticCacheAdvisor semanticCacheAdvisor(RedisService redisService) {
+        return new SemanticCacheAdvisor(redisService);
     }
 
     @Bean

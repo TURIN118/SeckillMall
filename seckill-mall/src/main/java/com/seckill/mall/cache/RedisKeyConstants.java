@@ -27,6 +27,8 @@ public final class RedisKeyConstants {
     public static final String RATE_IP = "rate:ip:";
     /** AI 网关限流前缀：rate:ai:{caller}:{userId或ip} */
     public static final String RATE_AI = "rate:ai:";
+    /** AI 语义缓存前缀：ai:cache:{sha256(prompt)}，TTL 3600s */
+    public static final String CACHE_AI = "ai:cache:";
     public static final String LOGIN_FAIL = "login:fail:";
     public static final String TOKEN_BLACKLIST = "token:blacklist:";
     public static final String CAPTCHA = "captcha:";

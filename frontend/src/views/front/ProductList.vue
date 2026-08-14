@@ -42,6 +42,9 @@
       <!-- 右侧商品区 -->
       <div class="product-area">
 
+        <!-- T14: AI 导购助手 (可折叠, 默认展开) -->
+        <AIShoppingAssistant />
+
         <!-- 筛选排序栏 -->
         <div class="filter-bar">
           <!-- 排序 Tab -->
@@ -164,6 +167,7 @@ import { useCartStore } from '@/stores/cart'
 import { useCategoryStore } from '@/stores/category'
 import { formatImageUrl } from '@/utils/image'
 import PaginationWrapper from '@/components/PaginationWrapper.vue'
+import AIShoppingAssistant from '@/components/AIShoppingAssistant.vue'
 import type { ProductVO, CategoryTreeNode, ProductQueryRequest } from '@/types'
 
 // 显式声明组件名, 使 keep-alive 的 include 匹配生效

@@ -1,10 +1,11 @@
 package com.seckill.mall.service.impl;
 
-import com.seckill.mall.common.BusinessException;
+import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.entity.User;
 import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.service.UserService;
+import com.seckill.mall.utils.DataMaskUtil;
 import com.seckill.mall.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -72,9 +73,9 @@ public class UserServiceImpl implements UserService {
         UserVO vo = new UserVO();
         vo.setId(user.getId());
         vo.setUsername(user.getUsername());
-        // M31 安全说明：phone/email 脱敏，与 UserConverter 的脱敏逻辑保持一致
-        vo.setPhone(maskPhone(user.getPhone()));
-        vo.setEmail(maskEmail(user.getEmail()));
+        // M31 安全说明：phone/email 脱敏，复用 DataMaskUtil 统一实现
+        vo.setPhone(DataMaskUtil.maskPhone(user.getPhone()));
+        vo.setEmail(DataMaskUtil.maskEmail(user.getEmail()));
         vo.setNickname(user.getNickname());
         vo.setAvatar(user.getAvatarUrl());
         vo.setRole(user.getRole() == null ? null : user.getRole().getCode());
@@ -83,23 +84,4 @@ public class UserServiceImpl implements UserService {
         return vo;
     }
 
-    /** 手机号脱敏：保留前 3 后 4（如 138****8000），与 UserConverter.maskPhoneInternal 一致 */
-    private static String maskPhone(String phone) {
-        if (phone == null || phone.length() < 7) {
-            return phone;
-        }
-        return phone.substring(0, 3) + "****" + phone.substring(phone.length() - 4);
-    }
-
-    /** 邮箱脱敏：保留首字符 + 域名（如 w***@ex.com），与 UserConverter.maskEmailInternal 一致 */
-    private static String maskEmail(String email) {
-        if (email == null || email.isEmpty()) {
-            return email;
-        }
-        int at = email.indexOf('@');
-        if (at <= 0) {
-            return email;
-        }
-        return email.charAt(0) + "***" + email.substring(at);
-    }
 }

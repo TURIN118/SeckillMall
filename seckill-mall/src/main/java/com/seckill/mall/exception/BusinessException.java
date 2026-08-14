@@ -1,8 +1,11 @@
-package com.seckill.mall.common;
+package com.seckill.mall.exception;
 
+import com.seckill.mall.common.ErrorCode;
 import lombok.Getter;
 
 /**
+ * 业务异常。
+ *
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
  * 文件名称：BusinessException.java

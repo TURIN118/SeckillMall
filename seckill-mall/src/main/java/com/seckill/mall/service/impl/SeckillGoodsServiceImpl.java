@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seckill.mall.cache.RedisKeyConstants;
 import com.seckill.mall.cache.RedisService;
-import com.seckill.mall.common.BusinessException;
+import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.SeckillCreateRequest;

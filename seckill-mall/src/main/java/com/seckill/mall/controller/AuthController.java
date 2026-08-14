@@ -13,6 +13,7 @@ import com.seckill.mall.dto.RegisterRequest;
 import com.seckill.mall.service.AuthService;
 import com.seckill.mall.service.CaptchaService;
 import com.seckill.mall.service.UploadService;
+import com.seckill.mall.utils.IpUtils;
 import com.seckill.mall.vo.CaptchaVO;
 import com.seckill.mall.vo.LoginVO;
 import com.seckill.mall.vo.TokenVO;
@@ -51,18 +52,15 @@ public class AuthController {
 
     @Operation(summary = "用户登录")
     @OperationLog(module = "AUTH", action = "LOGIN", targetType = "USER")
-    // M-S1 修复：登录接口按 IP 维度限流，防"不同用户名+同弱口令"横向爆破。
-    // 60 秒内同一 IP 仅允许 10 次登录尝试（capacity=10, seconds=60）。
     @RateLimit(key = "login", capacity = 10, rate = 10, seconds = 60)
     @PostMapping("/login")
     public Result<LoginVO> login(@Valid @RequestBody LoginRequest req, HttpServletRequest request) {
-        return Result.success(authService.login(req, getClientIp(request), request));
+        return Result.success(authService.login(req, IpUtils.getClientIp(request), request));
     }
 
     @Operation(summary = "退出登录")
     @OperationLog(module = "AUTH", action = "LOGOUT", targetType = "USER")
     @PostMapping("/logout")
-    // 安全修复（L2）：Authorization 头可选，避免缺失时直接 400，由 Service 内部处理无 token 情况
     public Result<Void> logout(@RequestHeader(value = "Authorization", required = false) String authorization) {
         authService.logout(authorization);
         return Result.success();
@@ -83,7 +81,6 @@ public class AuthController {
 
     @Operation(summary = "更新个人信息")
     @PutMapping("/profile")
-    // 安全修复（M1）：添加 @Valid 触发 ProfileUpdateRequest 上的字段校验注解
     public Result<UserVO> updateProfile(@Valid @RequestBody ProfileUpdateRequest req) {
         return Result.success("个人信息更新成功", authService.updateProfile(req));
     }
@@ -120,27 +117,4 @@ public class AuthController {
         return Result.success("密码重置成功", null);
     }
 
-    /**
-     * 获取客户端 IP。
-     * <p>
-     * 安全修复（M2）：X-Forwarded-For 可被客户端伪造，仅在可信代理环境下才应信任该头。
-     * 当前实现假设部署在受信反向代理（Nginx/网关）之后，代理会覆盖或追加真实客户端 IP。
-     * <p>
-     * 加固建议：
-     * 1. 在反向代理层强制覆盖 X-Forwarded-For 为真实客户端 IP，禁止透传客户端伪造值；
-     * 2. 或在应用侧维护可信代理网段列表，从右向左取第一个非可信 IP 作为真实客户端 IP。
-     */
-    private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
-            // 多层代理时取首个 IP（仅在所有代理均受信时安全）
-            int comma = ip.indexOf(',');
-            return comma > 0 ? ip.substring(0, comma).trim() : ip.trim();
-        }
-        ip = request.getHeader("X-Real-IP");
-        if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
-            return ip;
-        }
-        return request.getRemoteAddr();
-    }
 }

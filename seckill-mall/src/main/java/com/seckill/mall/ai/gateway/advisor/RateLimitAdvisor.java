@@ -1,8 +1,9 @@
 package com.seckill.mall.ai.gateway.advisor;
 
 import com.seckill.mall.cache.RedisKeyConstants;
-import com.seckill.mall.common.BusinessException;
+import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
+import com.seckill.mall.utils.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.advisor.api.AdvisedRequest;
@@ -113,10 +114,10 @@ public class RateLimitAdvisor implements CallAroundAdvisor, StreamAroundAdvisor 
     private void checkRateLimit(AdvisedRequest request) {
         Map<String, Object> toolContext = request.toolContext();
 
-        String caller = readString(toolContext, CTX_CALLER, "default");
-        String userId = readString(toolContext, CTX_USER_ID, null);
-        String ip = readString(toolContext, CTX_IP, null);
-        String model = readString(toolContext, CTX_MODEL, null);
+        String caller = MapUtils.readString(toolContext, CTX_CALLER, "default");
+        String userId = MapUtils.readString(toolContext, CTX_USER_ID, null);
+        String ip = MapUtils.readString(toolContext, CTX_IP, null);
+        String model = MapUtils.readString(toolContext, CTX_MODEL, null);
 
         // 限流主体：优先 userId，其次 ip，最后 unknown
         String subject;
@@ -164,16 +165,4 @@ public class RateLimitAdvisor implements CallAroundAdvisor, StreamAroundAdvisor 
         }
     }
 
-    /** 从 toolContext 读取字符串值，缺失或空白时返回默认值。 */
-    private static String readString(Map<String, Object> ctx, String key, String defaultValue) {
-        if (ctx == null) {
-            return defaultValue;
-        }
-        Object value = ctx.get(key);
-        if (value == null) {
-            return defaultValue;
-        }
-        String s = String.valueOf(value).trim();
-        return StringUtils.hasText(s) ? s : defaultValue;
-    }
 }

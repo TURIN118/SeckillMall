@@ -133,7 +133,7 @@ import { streamChat } from '@/utils/sse'
 defineOptions({ name: 'AIChatWidget' })
 
 /** 客服 SSE 接口完整 URL (与 sse.ts 中 AI_SHOPPING_ASSISTANT_URL 同构, 此处独立常量) */
-const AI_CUSTOMER_SERVICE_URL: string = '/api/v1/ai/customer-service'
+const AI_CUSTOMER_SERVICE_URL: string = '/api/v1/ai/customer-service/chat'
 
 /** 消息角色 */
 type ChatRole = 'user' | 'assistant'
@@ -199,6 +199,19 @@ function openWidget(): void {
     router.push(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
     return
   }
+  // token 过期则尝试静默刷新, 失败跳登录
+  if (userStore.isTokenExpired()) {
+    userStore.refreshTokenAction().then((ok) => {
+      if (!ok) {
+        ElMessage.warning('登录已过期，请重新登录')
+        router.push(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
+        return
+      }
+      visible.value = true
+      scrollToBottom()
+    })
+    return
+  }
   visible.value = true
   scrollToBottom()
 }
@@ -240,6 +253,16 @@ async function send(): Promise<void> {
     ElMessage.warning('请先登录后使用智能客服')
     router.push(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
     return
+  }
+
+  // token 过期则尝试静默刷新, 失败跳登录
+  if (userStore.isTokenExpired()) {
+    const ok = await userStore.refreshTokenAction()
+    if (!ok) {
+      ElMessage.warning('登录已过期，请重新登录')
+      router.push(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
+      return
+    }
   }
 
   // 1. 追加用户消息

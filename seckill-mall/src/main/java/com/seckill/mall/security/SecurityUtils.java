@@ -1,6 +1,6 @@
 package com.seckill.mall.security;
 
-import com.seckill.mall.common.BusinessException;
+import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.entity.User;
 import com.seckill.mall.entity.enums.UserRole;

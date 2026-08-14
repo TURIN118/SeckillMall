@@ -22,6 +22,12 @@ public enum ErrorCode {
     SYSTEM_ERROR(500, "系统繁忙"),
     RATE_LIMIT_EXCEEDED(429, "请求过于频繁，请稍后再试"),
 
+    // HTTP 异常相关（补全全局异常拦截）
+    NOT_FOUND(1404, "资源不存在"),
+    METHOD_NOT_ALLOWED(1405, "请求方法不支持"),
+    REQUEST_TIMEOUT(1504, "请求超时"),
+    DATA_CONFLICT(1409, "数据冲突，请检查唯一性约束"),
+
     // 用户相关
     USERNAME_OR_PASSWORD_ERROR(1003, "用户名或密码错误"),
     ACCOUNT_DISABLED(1004, "账号已被禁用"),

@@ -2,8 +2,9 @@ package com.seckill.mall.ai.gateway.advisor;
 
 import com.seckill.mall.cache.RedisKeyConstants;
 import com.seckill.mall.cache.RedisService;
-import com.seckill.mall.common.BusinessException;
+import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
+import com.seckill.mall.utils.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.advisor.api.AdvisedRequest;
@@ -117,7 +118,7 @@ public class BudgetAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
      */
     private void checkBudget(AdvisedRequest request) {
         Map<String, Object> toolContext = request.toolContext();
-        String caller = readString(toolContext, CTX_CALLER, DEFAULT_CALLER);
+        String caller = MapUtils.readString(toolContext, CTX_CALLER, DEFAULT_CALLER);
 
         // 1. 校验日 token 预算
         String dailyKey = RedisKeyConstants.BUDGET_AI + LocalDate.now().toString();
@@ -175,16 +176,4 @@ public class BudgetAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
         }
     }
 
-    /** 从 toolContext 读取字符串值，缺失或空白时返回默认值。 */
-    private static String readString(Map<String, Object> ctx, String key, String defaultValue) {
-        if (ctx == null) {
-            return defaultValue;
-        }
-        Object value = ctx.get(key);
-        if (value == null) {
-            return defaultValue;
-        }
-        String s = String.valueOf(value).trim();
-        return StringUtils.hasText(s) ? s : defaultValue;
-    }
 }

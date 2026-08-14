@@ -1,6 +1,7 @@
 package com.seckill.mall.converter;
 
 import com.seckill.mall.entity.User;
+import com.seckill.mall.utils.DataMaskUtil;
 import com.seckill.mall.vo.UserVO;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
@@ -55,29 +56,9 @@ public interface UserConverter {
         if (entity.getStatus() != null) {
             vo.setStatus(entity.getStatus().getCode());
         }
-        // M31 安全说明：手机号脱敏（如 138****8000）
-        vo.setPhone(maskPhoneInternal(entity.getPhone()));
-        // M31 安全说明：邮箱脱敏（如 w***@ex.com）
-        vo.setEmail(maskEmailInternal(entity.getEmail()));
-    }
-
-    /** 手机号脱敏：保留前 3 后 4（私有辅助，不作为 MapStruct 映射方法） */
-    private static String maskPhoneInternal(String phone) {
-        if (phone == null || phone.length() < 7) {
-            return phone;
-        }
-        return phone.substring(0, 3) + "****" + phone.substring(phone.length() - 4);
-    }
-
-    /** 邮箱脱敏：保留首字符 + 域名（私有辅助，不作为 MapStruct 映射方法） */
-    private static String maskEmailInternal(String email) {
-        if (email == null || email.isEmpty()) {
-            return email;
-        }
-        int at = email.indexOf('@');
-        if (at <= 0) {
-            return email;
-        }
-        return email.charAt(0) + "***" + email.substring(at);
+        // M31 安全说明：手机号脱敏（如 138****8000），复用 DataMaskUtil 统一实现
+        vo.setPhone(DataMaskUtil.maskPhone(entity.getPhone()));
+        // M31 安全说明：邮箱脱敏（如 w***@ex.com），复用 DataMaskUtil 统一实现
+        vo.setEmail(DataMaskUtil.maskEmail(entity.getEmail()));
     }
 }

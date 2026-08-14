@@ -3,7 +3,7 @@ package com.seckill.mall.ai.aigc.service;
 import com.seckill.mall.ai.aigc.dto.AigcGenerateRequest;
 import com.seckill.mall.ai.aigc.safety.ContentSafetyService;
 import com.seckill.mall.ai.gateway.service.AiGatewayService;
-import com.seckill.mall.common.BusinessException;
+import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -5,6 +5,7 @@ import com.seckill.mall.entity.OperationLog;
 import com.seckill.mall.entity.User;
 import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.security.SecurityUtils;
+import com.seckill.mall.utils.IpUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,7 +62,7 @@ public class OperationLogAspect {
             entity.setTargetType(operationLog.targetType().isEmpty()
                     ? operationLog.module() : operationLog.targetType());
             entity.setTargetId(evaluateTargetId(operationLog.targetIdSpEL(), method, joinPoint.getArgs()));
-            entity.setIpAddress(getClientIp());
+            entity.setIpAddress(IpUtils.getClientIp());
 
             fillOperator(entity, joinPoint.getArgs());
 
@@ -119,26 +120,4 @@ public class OperationLogAspect {
         }
     }
 
-    private String getClientIp() {
-        try {
-            ServletRequestAttributes attributes =
-                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes == null) {
-                return null;
-            }
-            HttpServletRequest request = attributes.getRequest();
-            String ip = request.getHeader("X-Forwarded-For");
-            if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
-                int comma = ip.indexOf(',');
-                return comma > 0 ? ip.substring(0, comma).trim() : ip.trim();
-            }
-            ip = request.getHeader("X-Real-IP");
-            if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
-                return ip;
-            }
-            return request.getRemoteAddr();
-        } catch (Exception e) {
-            return null;
-        }
-    }
 }

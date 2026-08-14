@@ -2,6 +2,7 @@ package com.seckill.mall.ai.gateway.advisor;
 
 import com.seckill.mall.ai.gateway.entity.AiAudit;
 import com.seckill.mall.ai.gateway.entity.AiAuditMapper;
+import com.seckill.mall.utils.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.advisor.api.AdvisedRequest;
@@ -99,9 +100,9 @@ public class AuditAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
     public AdvisedResponse aroundCall(AdvisedRequest request, CallAroundAdvisorChain chain) {
         long start = System.currentTimeMillis();
         Map<String, Object> toolContext = request.toolContext();
-        String caller = readString(toolContext, CTX_CALLER, DEFAULT_CALLER);
-        Long userId = readLong(toolContext, CTX_USER_ID);
-        String model = readString(toolContext, CTX_MODEL, DEFAULT_MODEL);
+        String caller = MapUtils.readString(toolContext, CTX_CALLER, DEFAULT_CALLER);
+        Long userId = MapUtils.readLong(toolContext, CTX_USER_ID);
+        String model = MapUtils.readString(toolContext, CTX_MODEL, DEFAULT_MODEL);
         String promptHash = sha256(extractPrompt(request));
 
         AdvisedResponse response;
@@ -146,9 +147,9 @@ public class AuditAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
     public Flux<AdvisedResponse> aroundStream(AdvisedRequest request, StreamAroundAdvisorChain chain) {
         long start = System.currentTimeMillis();
         Map<String, Object> toolContext = request.toolContext();
-        String caller = readString(toolContext, CTX_CALLER, DEFAULT_CALLER);
-        Long userId = readLong(toolContext, CTX_USER_ID);
-        String model = readString(toolContext, CTX_MODEL, DEFAULT_MODEL);
+        String caller = MapUtils.readString(toolContext, CTX_CALLER, DEFAULT_CALLER);
+        Long userId = MapUtils.readLong(toolContext, CTX_USER_ID);
+        String model = MapUtils.readString(toolContext, CTX_MODEL, DEFAULT_MODEL);
         String promptHash = sha256(extractPrompt(request));
 
         return chain.nextAroundStream(request)
@@ -247,36 +248,5 @@ public class AuditAdvisor implements CallAroundAdvisor, StreamAroundAdvisor {
         return value > Integer.MAX_VALUE ? Integer.MAX_VALUE : value.intValue();
     }
 
-    /** 从 toolContext 读取字符串值，缺失或空白时返回默认值。 */
-    private static String readString(Map<String, Object> ctx, String key, String defaultValue) {
-        if (ctx == null) {
-            return defaultValue;
-        }
-        Object value = ctx.get(key);
-        if (value == null) {
-            return defaultValue;
-        }
-        String s = String.valueOf(value).trim();
-        return StringUtils.hasText(s) ? s : defaultValue;
-    }
 
-    /** 从 toolContext 读取 Long 值，缺失或解析失败时返回 null。 */
-    private static Long readLong(Map<String, Object> ctx, String key) {
-        if (ctx == null) {
-            return null;
-        }
-        Object value = ctx.get(key);
-        if (value == null) {
-            return null;
-        }
-        try {
-            if (value instanceof Number) {
-                return ((Number) value).longValue();
-            }
-            String s = String.valueOf(value).trim();
-            return StringUtils.hasText(s) ? Long.parseLong(s) : null;
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
 }

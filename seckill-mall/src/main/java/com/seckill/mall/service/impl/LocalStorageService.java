@@ -1,6 +1,6 @@
 package com.seckill.mall.service.impl;
 
-import com.seckill.mall.common.BusinessException;
+import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.config.UploadProperties;
 import com.seckill.mall.service.StorageService;

@@ -1,16 +1,24 @@
 package com.seckill.mall.common;
 
+import com.seckill.mall.exception.BusinessException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /**
@@ -83,6 +91,76 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 请求方法不支持 → 405 Method Not Allowed
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Result<Void>> handleMethodNotSupported(HttpRequestMethodNotSupportedException e) {
+        log.warn("请求方法不支持: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(Result.error(ErrorCode.METHOD_NOT_ALLOWED.getCode(), e.getMessage()));
+    }
+
+    /**
+     * 缺少必需参数 → 400 Bad Request
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Result<Void>> handleMissingParam(MissingServletRequestParameterException e) {
+        log.warn("缺少必需参数: {}", e.getParameterName());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Result.error(ErrorCode.PARAM_ERROR.getCode(), "缺少必需参数: " + e.getParameterName()));
+    }
+
+    /**
+     * 请求体格式错误 → 400 Bad Request
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Result<Void>> handleNotReadable(HttpMessageNotReadableException e) {
+        log.warn("请求体格式错误: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Result.error(ErrorCode.PARAM_ERROR.getCode(), "请求体格式错误"));
+    }
+
+    /**
+     * 文件大小超限 → 413 Payload Too Large
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Result<Void>> handleMaxUploadSize(MaxUploadSizeExceededException e) {
+        log.warn("文件大小超限: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(Result.error(ErrorCode.FILE_TOO_LARGE));
+    }
+
+    /**
+     * 数据完整性冲突 → 409 Conflict
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Result<Void>> handleDataIntegrityViolation(DataIntegrityViolationException e) {
+        log.warn("数据完整性冲突: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Result.error(ErrorCode.DATA_CONFLICT));
+    }
+
+    /**
+     * 请求超时 → 504 Gateway Timeout
+     */
+    @ExceptionHandler(TimeoutException.class)
+    public ResponseEntity<Result<Void>> handleTimeout(TimeoutException e) {
+        log.warn("请求超时: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT)
+                .body(Result.error(ErrorCode.REQUEST_TIMEOUT));
+    }
+
+    /**
+     * 接口不存在 → 404 Not Found
+     */
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<Result<Void>> handleNoHandlerFound(NoHandlerFoundException e) {
+        log.warn("接口不存在: {} {}", e.getHttpMethod(), e.getRequestURL());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Result.error(ErrorCode.NOT_FOUND));
+    }
+
+    /**
      * 兜底异常 → 500 Internal Server Error
      */
     @ExceptionHandler(Exception.class)
@@ -142,6 +220,19 @@ public class GlobalExceptionHandler {
         // 系统错误 → 500
         if (errorCode == ErrorCode.SYSTEM_ERROR) {
             return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        // HTTP 异常相关 → 对应状态码
+        if (errorCode == ErrorCode.NOT_FOUND) {
+            return HttpStatus.NOT_FOUND;
+        }
+        if (errorCode == ErrorCode.METHOD_NOT_ALLOWED) {
+            return HttpStatus.METHOD_NOT_ALLOWED;
+        }
+        if (errorCode == ErrorCode.REQUEST_TIMEOUT) {
+            return HttpStatus.GATEWAY_TIMEOUT;
+        }
+        if (errorCode == ErrorCode.DATA_CONFLICT) {
+            return HttpStatus.CONFLICT;
         }
         // 其他业务异常默认 400
         return HttpStatus.BAD_REQUEST;

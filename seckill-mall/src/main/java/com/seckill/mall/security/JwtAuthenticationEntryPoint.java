@@ -28,12 +28,29 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final ObjectMapper objectMapper;
 
+    /** SSE 端点路径前缀（认证失败时需返回 text/event-stream 格式错误） */
+    private static final String SSE_ENDPOINT_PREFIX = "/api/v1/ai/";
+
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {
         log.debug("未认证访问: {} - {}", request.getRequestURI(), authException.getMessage());
         // 安全修复（H2）：CORS 头统一由 SecurityConfig#corsConfigurationSource 管理，此处不再手动反射 Origin
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+        // SSE 端点认证失败：返回 text/event-stream 格式错误事件，避免前端 content-type 不匹配
+        String requestUri = request.getRequestURI();
+        if (requestUri != null && requestUri.startsWith(SSE_ENDPOINT_PREFIX)) {
+            response.setContentType(MediaType.TEXT_EVENT_STREAM_VALUE);
+            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+            // SSE 错误事件格式：event: error\ndata: {json}\n\n
+            String errorJson = objectMapper.writeValueAsString(
+                    Result.error(ErrorCode.UNAUTHORIZED));
+            response.getWriter().write("event: error\ndata: " + errorJson + "\n\n");
+            return;
+        }
+
+        // 非 SSE 端点：返回 JSON 格式错误（原有逻辑）
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         Result<Void> result = Result.error(ErrorCode.UNAUTHORIZED);

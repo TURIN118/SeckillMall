@@ -2,8 +2,9 @@ package com.seckill.mall.aspect;
 
 import com.seckill.mall.annotation.RateLimit;
 import com.seckill.mall.cache.RedisKeyConstants;
-import com.seckill.mall.common.BusinessException;
+import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
+import com.seckill.mall.utils.IpUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -121,16 +122,7 @@ public class RateLimitAspect {
     }
 
     /**
-     * 获取客户端真实 IP。
-     * <p>
-     * C2 修复：仅当请求直连远端地址（remoteAddr）在可信代理白名单时，才信任 X-Forwarded-For / X-Real-IP。
-     * 这样攻击者即使伪造 X-Forwarded-For 头，只要不是从可信代理发起的请求，也不会被采信。
-     * <p>
-     * 算法：
-     * 1. 取 request.getRemoteAddr() 作为直连对端地址；
-     * 2. 若直连对端是可信代理，则从 X-Forwarded-For 从右向左取第一个非可信 IP（防代理链伪造）；
-     * 3. 若无 X-Forwarded-For 则取 X-Real-IP；
-     * 4. 否则直接使用 remoteAddr。
+     * 获取客户端真实 IP（复用 IpUtils 统一算法，传入自定义可信代理白名单）。
      */
     private String getClientIp() {
         ServletRequestAttributes attrs =
@@ -138,31 +130,6 @@ public class RateLimitAspect {
         if (attrs == null) {
             return "unknown";
         }
-        HttpServletRequest request = attrs.getRequest();
-        String remoteAddr = request.getRemoteAddr();
-
-        // 仅当直连对端是可信代理时才信任 forwarded 头
-        if (trustedProxyIps.contains(remoteAddr)) {
-            String xff = request.getHeader("X-Forwarded-For");
-            if (StringUtils.hasText(xff) && !"unknown".equalsIgnoreCase(xff)) {
-                // 从右向左取第一个非可信 IP，防代理链伪造
-                String[] parts = xff.split(",");
-                for (int i = parts.length - 1; i >= 0; i--) {
-                    String candidate = parts[i].trim();
-                    if (StringUtils.hasText(candidate) && !"unknown".equalsIgnoreCase(candidate)
-                            && !trustedProxyIps.contains(candidate)) {
-                        return candidate;
-                    }
-                }
-                // 全是可信代理 IP，取最左侧（最原始的客户端 IP）
-                return parts[0].trim();
-            }
-            String xRealIp = request.getHeader("X-Real-IP");
-            if (StringUtils.hasText(xRealIp) && !"unknown".equalsIgnoreCase(xRealIp)) {
-                return xRealIp.trim();
-            }
-        }
-        // 非可信代理直连，或无 forwarded 头：直接使用 remoteAddr
-        return remoteAddr;
+        return IpUtils.getClientIp(attrs.getRequest(), trustedProxyIps);
     }
 }

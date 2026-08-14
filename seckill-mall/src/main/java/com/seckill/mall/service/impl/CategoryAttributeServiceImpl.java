@@ -2,7 +2,7 @@ package com.seckill.mall.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 
-import com.seckill.mall.common.BusinessException;
+import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.dto.CategoryAttributeDTO;
 import com.seckill.mall.entity.CategoryAttribute;

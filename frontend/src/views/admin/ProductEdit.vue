@@ -19,7 +19,14 @@
           <!-- 左列：基本信息 -->
           <div class="form-col form-col-left">
             <el-form-item label="商品名称" prop="productName">
-              <el-input v-model="formData.productName" placeholder="请输入商品名称" maxlength="100" show-word-limit />
+              <div class="input-with-ai">
+                <el-input v-model="formData.productName" placeholder="请输入商品名称" maxlength="100" show-word-limit />
+                <el-button type="primary" plain size="small" class="ai-gen-btn" :loading="generatingTitle"
+                  @click="generateTitle">
+                  <el-icon><MagicStick /></el-icon>
+                  AI 生成
+                </el-button>
+              </div>
             </el-form-item>
 
             <el-form-item label="分类" prop="categoryId">
@@ -97,8 +104,15 @@
             </el-form-item>
 
             <el-form-item label="商品简介" prop="description">
-              <el-input v-model="formData.description" type="textarea" :rows="3" placeholder="请输入商品简介/描述"
-                maxlength="500" show-word-limit />
+              <div class="input-with-ai input-with-ai-column">
+                <el-input v-model="formData.description" type="textarea" :rows="3" placeholder="请输入商品简介/描述"
+                  maxlength="500" show-word-limit />
+                <el-button type="primary" plain size="small" class="ai-gen-btn" :loading="generatingDescription"
+                  @click="generateDescription">
+                  <el-icon><MagicStick /></el-icon>
+                  AI 生成简介
+                </el-button>
+              </div>
             </el-form-item>
           </div>
         </div>
@@ -150,7 +164,14 @@
         <!-- 全宽：富文本编辑器 -->
         <el-form-item label="商品详情" prop="detailHtml" class="form-item-full">
           <div class="wang-editor-wrap">
-            <Toolbar :editor="editorRef" :mode="mode" style="border-bottom: 1px solid #ccc" />
+            <div class="wang-editor-toolbar-wrap">
+              <Toolbar :editor="editorRef" :mode="mode" style="border-bottom: 1px solid #ccc; flex: 1" />
+              <el-button size="small" class="ai-gen-detail-btn" :loading="generatingDetail"
+                @click="generateDetail">
+                <el-icon><MagicStick /></el-icon>
+                AI 生成详情
+              </el-button>
+            </div>
             <Editor v-model="formData.detailHtml" :defaultConfig="editorConfig" :mode="mode"
               style="height: 360px; overflow-y: hidden;" @onCreated="(editor: IDomEditor) => editorRef = editor" />
           </div>
@@ -176,7 +197,8 @@
  */
 import { ref, reactive, computed, onMounted, onBeforeUnmount, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { MagicStick } from '@element-plus/icons-vue'
 import {
   getProductDetail,
   createProduct,
@@ -186,6 +208,8 @@ import { getCategoryTree } from '@/api/category'
 import { getCategoryAttributes } from '@/api/categoryAttribute'
 import { generateSkuCombinations } from '@/api/sku'
 import { uploadImage } from '@/api/upload'
+// T17: AIGC 文案生成接口
+import { generateAigc } from '@/api/ai'
 import type {
   ProductVO,
   CategoryVO,
@@ -341,6 +365,24 @@ async function fetchCategoryTree(): Promise<void> {
   } catch {
     // 错误已由全局拦截器提示
   }
+}
+
+/* === T17: 根据分类 ID 查找分类名称（遍历分类树） ===
+ *  AIGC 接口需要 categoryName 参数，从已加载的 categoryOptions 树中查找
+ */
+function getCategoryName(categoryId: string | number | undefined): string {
+  if (categoryId == null) return ''
+  const walk = (nodes: CascaderOption[]): string => {
+    for (const node of nodes) {
+      if (node.value === categoryId) return node.label
+      if (node.children && node.children.length > 0) {
+        const found = walk(node.children)
+        if (found) return found
+      }
+    }
+    return ''
+  }
+  return walk(categoryOptions.value)
 }
 
 /* === 选择分类后自动带出规格模板 ===
@@ -525,6 +567,137 @@ const editorConfig = {
   }
 }
 const mode = 'default'
+
+/* ==================== T17: AIGC 文案生成 ==================== */
+/** AI 生成加载状态 */
+const generatingTitle = ref(false)
+const generatingDescription = ref(false)
+const generatingDetail = ref(false)
+
+/** 构造 AIGC 请求公共参数 */
+function buildAigcBaseParams(generateType: 'TITLE' | 'DESCRIPTION' | 'DETAIL' | 'SEO') {
+  return {
+    productId: editingId.value ?? undefined,
+    categoryId: formData.categoryId as string | number,
+    categoryName: getCategoryName(formData.categoryId),
+    skuAttributes: JSON.stringify(
+      formData.attributes.map((a) => ({ name: a.name, values: a.values.map((v) => v.value) }))
+    ),
+    price: formData.originalPrice || 0,
+    generateType
+  }
+}
+
+/** AI 生成标题：调用 AIGC 接口 → 预览弹窗 → 用户确认后采纳 */
+async function generateTitle(): Promise<void> {
+  if (!formData.categoryId) {
+    ElMessage.warning('请先选择商品分类')
+    return
+  }
+  generatingTitle.value = true
+  try {
+    const res = await generateAigc(buildAigcBaseParams('TITLE'))
+    if (res.code === 200 && res.data) {
+      try {
+        await ElMessageBox.confirm(res.data, 'AI 生成标题预览', {
+          confirmButtonText: '采纳',
+          cancelButtonText: '取消',
+          type: 'info',
+          dangerouslyUseHTMLString: false
+        })
+        formData.productName = res.data
+        ElMessage.success('已采纳 AI 生成的标题')
+      } catch (action) {
+        // 用户点取消/关闭不算错误，不提示
+        if (action !== 'cancel' && action !== 'close') {
+          ElMessage.info('已取消采纳')
+        }
+      }
+    } else {
+      ElMessage.error(res.message || 'AI 生成失败')
+    }
+  } catch {
+    ElMessage.error('AI 生成失败，请稍后重试')
+  } finally {
+    generatingTitle.value = false
+  }
+}
+
+/** AI 生成简介：调用 AIGC 接口 → 预览弹窗 → 用户确认后采纳 */
+async function generateDescription(): Promise<void> {
+  if (!formData.categoryId) {
+    ElMessage.warning('请先选择商品分类')
+    return
+  }
+  generatingDescription.value = true
+  try {
+    const res = await generateAigc(buildAigcBaseParams('DESCRIPTION'))
+    if (res.code === 200 && res.data) {
+      try {
+        await ElMessageBox.confirm(res.data, 'AI 生成简介预览', {
+          confirmButtonText: '采纳',
+          cancelButtonText: '取消',
+          type: 'info',
+          dangerouslyUseHTMLString: false
+        })
+        formData.description = res.data
+        ElMessage.success('已采纳 AI 生成的简介')
+      } catch (action) {
+        if (action !== 'cancel' && action !== 'close') {
+          ElMessage.info('已取消采纳')
+        }
+      }
+    } else {
+      ElMessage.error(res.message || 'AI 生成失败')
+    }
+  } catch {
+    ElMessage.error('AI 生成失败，请稍后重试')
+  } finally {
+    generatingDescription.value = false
+  }
+}
+
+/** AI 生成详情：调用 AIGC 接口 → 预览弹窗 → 用户确认后采纳写入 wangEditor */
+async function generateDetail(): Promise<void> {
+  if (!formData.categoryId) {
+    ElMessage.warning('请先选择商品分类')
+    return
+  }
+  generatingDetail.value = true
+  try {
+    const res = await generateAigc(buildAigcBaseParams('DETAIL'))
+    if (res.code === 200 && res.data) {
+      try {
+        // 详情内容可能含 HTML，使用 dangerouslyUseHTMLString 渲染预览
+        await ElMessageBox.confirm(res.data, 'AI 生成详情预览', {
+          confirmButtonText: '采纳',
+          cancelButtonText: '取消',
+          type: 'info',
+          dangerouslyUseHTMLString: true
+        })
+        // 采纳：写入 wangEditor 内容
+        const editor = editorRef.value
+        if (editor) {
+          editor.setHtml(res.data)
+        } else {
+          // 编辑器未就绪时直接赋值 v-model
+          formData.detailHtml = res.data
+        }
+        ElMessage.success('已采纳 AI 生成的详情')
+      } catch (action) {
+        if (action !== 'cancel' && action !== 'close') {
+          ElMessage.info('已取消采纳')
+        }
+      }
+    } else {
+      ElMessage.error(res.message || 'AI 生成失败')
+    }
+  } catch {
+    ElMessage.error('AI 生成失败，请稍后重试')
+  } finally {
+    generatingDetail.value = false
+  }
+}
 
 onBeforeUnmount(() => {
   const editor = editorRef.value
@@ -775,6 +948,44 @@ onMounted(async () => {
   width: 100%;
   border-radius: 4px;
   overflow: hidden;
+}
+
+/* === T17: wangEditor 工具栏容器（含 AI 生成详情按钮） === */
+.wang-editor-toolbar-wrap {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #ccc;
+}
+
+.ai-gen-detail-btn {
+  margin: 0 8px;
+  flex-shrink: 0;
+}
+
+/* === T17: 输入框 + AI 生成按钮布局 === */
+.input-with-ai {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.input-with-ai .el-input {
+  flex: 1;
+}
+
+/* 简介区域：textarea 与按钮纵向排列 */
+.input-with-ai-column {
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.input-with-ai-column .el-textarea {
+  width: 100%;
+}
+
+.ai-gen-btn {
+  flex-shrink: 0;
 }
 
 /* === 商品规格区域 === */

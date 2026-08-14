@@ -31,3 +31,33 @@ export interface TrackEventRequest {
 export function trackEvent(data: TrackEventRequest): Promise<Result<void>> {
   return post<void>('/api/v1/track/event', data)
 }
+
+/* ==================== T17 AIGC 文案生成 ==================== */
+
+/** AIGC 生成类型 */
+export type AigcGenerateType = 'TITLE' | 'DESCRIPTION' | 'DETAIL' | 'SEO'
+
+/** AIGC 文案生成请求体 */
+export interface AigcGenerateRequest {
+  /** 商品 ID（编辑时传，新增时可不传） */
+  productId?: string | number
+  /** 分类 ID */
+  categoryId: string | number
+  /** 分类名称 */
+  categoryName: string
+  /** SKU 属性（JSON 字符串） */
+  skuAttributes: string
+  /** 价格 */
+  price: number
+  /** 生成类型 */
+  generateType: AigcGenerateType
+}
+
+/**
+ * AIGC 文案生成
+ * POST /api/v1/admin/aigc/generate
+ * 后端 T15 并行开发中，返回 AI 生成的文案（标题/简介/详情/SEO）
+ */
+export function generateAigc(data: AigcGenerateRequest): Promise<Result<string>> {
+  return post<string>('/api/v1/admin/aigc/generate', data)
+}

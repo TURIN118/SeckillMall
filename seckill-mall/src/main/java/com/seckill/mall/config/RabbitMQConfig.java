@@ -50,6 +50,11 @@ public class RabbitMQConfig {
     public static final String SECKILL_RESULT_EXCHANGE = "seckill.result.exchange";
     public static final String SECKILL_RESULT_QUEUE = "seckill.result.queue";
 
+    // ===== 用户行为埋点（T10：批量异步落库）=====
+    public static final String TRACK_EXCHANGE = "track.exchange";
+    public static final String TRACK_QUEUE = "track.queue";
+    public static final String TRACK_ROUTING_KEY = "track.event";
+
     /**
      * JSON 消息转换器：生产/消费统一使用 Jackson 序列化。
      */
@@ -194,5 +199,24 @@ public class RabbitMQConfig {
     public Binding seckillResultBinding() {
         return BindingBuilder.bind(seckillResultQueue())
                 .to(seckillResultExchange());
+    }
+
+    // ===== 4. 用户行为埋点 direct（T10）=====
+    // track.queue 不配 DLX：埋点丢一条可接受，避免毒消息无限重试占用队列
+    @Bean
+    public DirectExchange trackExchange() {
+        return new DirectExchange(TRACK_EXCHANGE, true, false);
+    }
+
+    @Bean
+    public Queue trackQueue() {
+        return QueueBuilder.durable(TRACK_QUEUE).build();
+    }
+
+    @Bean
+    public Binding trackBinding() {
+        return BindingBuilder.bind(trackQueue())
+                .to(trackExchange())
+                .with(TRACK_ROUTING_KEY);
     }
 }

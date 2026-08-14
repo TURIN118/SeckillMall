@@ -102,6 +102,8 @@ public class SecurityConfig {
                                 "/api/v1/seckill/*/stock",
                                 "/api/v1/banners/active",
                                 "/api/v1/verification/**",
+                                // T9：埋点上报允许未登录用户访问（userId 为 null）
+                                "/api/v1/track/**",
                                 "/upload/**",
                                 "/images/**"
                         ).permitAll()

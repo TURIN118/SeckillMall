@@ -96,6 +96,9 @@
     <footer class="mock-footer">
       SeckillMall 秒杀商城 — 正品秒杀，手快有手慢无
     </footer>
+
+    <!-- T19 AI 智能客服全局浮窗 (右下角 fixed, 全站可用) -->
+    <AIChatWidget />
   </div>
 </template>
 
@@ -108,6 +111,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useCartStore } from '@/stores/cart'
+import AIChatWidget from '@/components/AIChatWidget.vue'
 
 const route = useRoute()
 const router = useRouter()

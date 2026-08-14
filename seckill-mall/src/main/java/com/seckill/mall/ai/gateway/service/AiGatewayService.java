@@ -3,6 +3,7 @@ package com.seckill.mall.ai.gateway.service;
 import com.seckill.mall.ai.gateway.advisor.FallbackAdvisor;
 import com.seckill.mall.ai.gateway.dto.Scene;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.model.function.FunctionCallback;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -130,5 +131,66 @@ public class AiGatewayService {
                 .stream()
                 .content()
                 .onErrorResume(e -> Flux.just(fallbackAdvisor.fallback(caller, e)));
+    }
+
+    /**
+     * 流式调用 + function-calling 工具（导购助手等需要工具调用的场景）。
+     * <p>Spring AI 1.0.0-M3 通过 {@code .functions(FunctionCallback...)} 注册工具回调，
+     * 大模型可在生成过程中调用工具并将结果回填继续生成。
+     * <p>使用 ChatClient 默认模型（deepseek-chat）。
+     * <p>流式异常时通过 {@code onErrorResume} 返回降级兜底文案。
+     *
+     * <h3>API 适配说明</h3>
+     * <p>1.0.0-M3 不存在 {@code .tools(Object...)} 方法（1.0.0-M4+ 才引入），
+     * 等价 API 为 {@code .functions(FunctionCallback...)}。本方法保留 {@code tools} 命名以对齐上层语义，
+     * 内部转发到 {@code .functions()}。
+     *
+     * @param systemPrompt 系统提示词
+     * @param userPrompt   用户输入
+     * @param caller       调用方标识
+     * @param tools        function-calling 工具回调数组（{@link FunctionCallback} 实例），
+     *                     为空时不注册工具，等价于 {@link #stream(String, String, String)}
+     * @return 流式响应 Flux<String>
+     */
+    public Flux<String> stream(String systemPrompt, String userPrompt, String caller, FunctionCallback... tools) {
+        if (tools == null || tools.length == 0) {
+            return stream(systemPrompt, userPrompt, caller);
+        }
+        return chatClient.prompt()
+                .system(systemPrompt)
+                .user(userPrompt)
+                .functions(tools)
+                .toolContext(java.util.Map.of("caller", caller))
+                .stream()
+                .content()
+                .onErrorResume(e -> Flux.just(fallbackAdvisor.fallback(caller, e)));
+    }
+
+    /**
+     * 同步调用 + function-calling 工具。
+     * <p>用于需要工具调用但非流式返回的场景（如内部批量推荐）。
+     * <p>LLM 调用异常时返回降级兜底文案。
+     *
+     * @param systemPrompt 系统提示词
+     * @param userPrompt   用户输入
+     * @param caller       调用方标识
+     * @param tools        function-calling 工具回调数组
+     * @return 模型响应文本
+     */
+    public String call(String systemPrompt, String userPrompt, String caller, FunctionCallback... tools) {
+        if (tools == null || tools.length == 0) {
+            return call(systemPrompt, userPrompt, caller);
+        }
+        try {
+            return chatClient.prompt()
+                    .system(systemPrompt)
+                    .user(userPrompt)
+                    .functions(tools)
+                    .toolContext(java.util.Map.of("caller", caller))
+                    .call()
+                    .content();
+        } catch (Exception e) {
+            return fallbackAdvisor.fallback(caller, e);
+        }
     }
 }

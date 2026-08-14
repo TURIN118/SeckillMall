@@ -1,6 +1,8 @@
 package com.seckill.mall.ai.gateway;
 
+import com.seckill.mall.ai.gateway.advisor.FallbackAdvisor;
 import com.seckill.mall.ai.gateway.service.AiGatewayService;
+import com.seckill.mall.ai.gateway.service.RouteService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,6 +39,10 @@ class AiGatewayServiceTest {
     private ChatClient.CallResponseSpec callResponseSpec;
     @Mock
     private ChatClient.StreamResponseSpec streamResponseSpec;
+    @Mock
+    private RouteService routeService;
+    @Mock
+    private FallbackAdvisor fallbackAdvisor;
 
     private AiGatewayService aiGatewayService;
 
@@ -51,7 +57,7 @@ class AiGatewayServiceTest {
         given(requestSpec.call()).willReturn(callResponseSpec);
         given(callResponseSpec.content()).willReturn("模拟响应");
 
-        aiGatewayService = new AiGatewayService(chatClient);
+        aiGatewayService = new AiGatewayService(chatClient, routeService, fallbackAdvisor);
 
         // when
         String result = aiGatewayService.call("你是一个测试助手", "你好", "test");
@@ -72,7 +78,7 @@ class AiGatewayServiceTest {
         given(requestSpec.stream()).willReturn(streamResponseSpec);
         given(streamResponseSpec.content()).willReturn(expectedFlux);
 
-        aiGatewayService = new AiGatewayService(chatClient);
+        aiGatewayService = new AiGatewayService(chatClient, routeService, fallbackAdvisor);
 
         // when
         Flux<String> result = aiGatewayService.stream("你是一个测试助手", "你好", "test");
@@ -86,7 +92,7 @@ class AiGatewayServiceTest {
     @DisplayName("构造注入：ChatClient 注入后服务实例应可用")
     void constructor_shouldInjectChatClient() {
         // given & when
-        aiGatewayService = new AiGatewayService(chatClient);
+        aiGatewayService = new AiGatewayService(chatClient, routeService, fallbackAdvisor);
 
         // then —— 仅验证实例构造成功，不触发真实调用
         assertThat(aiGatewayService).isNotNull();

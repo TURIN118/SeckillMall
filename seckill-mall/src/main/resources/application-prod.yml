@@ -48,6 +48,18 @@ spring:
         retry:
           enabled: false
 
+  # ---------- AI 能力中台（T20 追加：DeepSeek 主模型，OpenAI 兼容协议）----------
+  # 生产环境必须从环境变量注入 API Key，不硬编码
+  ai:
+    openai:
+      api-key: ${DEEPSEEK_API_KEY:?required}
+      base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+      chat:
+        options:
+          model: ${DEEPSEEK_MODEL:deepseek-chat}
+          temperature: 0.7
+          max-tokens: 2000
+
 # ---------- 日志 ----------
 logging:
   level:
@@ -107,3 +119,51 @@ management:
 info:
   app:
     name: seckill-mall
+
+# ============================================================
+# AI 网关治理配置（T20 追加）
+# 治理参数（限流/缓存/审计/降级/预算）与 application-ai.yml 对齐
+# ============================================================
+ai:
+  # 多模型路由（与 application-ai.yml 对齐）
+  models:
+    route:
+      reasoning: deepseek-chat
+      chinese: qwen-plus
+      compliance: ernie-bot
+  gateway:
+    routing:
+      default-model: deepseek
+      rules:
+        - scene: REASONING
+          model: deepseek
+        - scene: CHINESE_UNDERSTANDING
+          model: qwen
+        - scene: COMPLIANCE
+          model: ernie
+    # 限流：用户维度 20 次/60s，IP 维度 100 次/60s
+    rate-limit:
+      user-capacity: 20
+      user-rate: 10
+      ip-capacity: 100
+      ip-rate: 50
+      window-seconds: 60
+    # 语义缓存：开启，TTL 1 小时
+    cache:
+      enabled: true
+      ttl-seconds: 3600
+      similarity-threshold: 0.95
+    # 审计：开启，记录 tokens 与 cost
+    audit:
+      enabled: true
+      log-tokens: true
+      log-cost: true
+    # 降级：超时 15s，重试 1 次
+    fallback:
+      timeout-ms: 15000
+      retry-times: 1
+    # 预算护栏：日 token 200 万，月成本 5000¥，90% 阈值告警
+    budget:
+      daily-token-limit: 2000000
+      monthly-cost-limit: 5000.00
+      degrade-threshold: 0.9

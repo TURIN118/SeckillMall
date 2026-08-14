@@ -215,6 +215,12 @@
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- MockWebServer：集成测试模拟 DeepSeek/OpenAI 协议 LLM 服务端，版本由 spring-boot-dependencies 管理 -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <repositories>

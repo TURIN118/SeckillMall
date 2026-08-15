@@ -75,6 +75,31 @@ public class AiGatewayService {
     }
 
     /**
+     * 流式调用（带用户 ID，用于按用户维度限流）。
+     * <p>与 {@link #stream(String, String, String)} 相同，但将 userId 放入 toolContext，
+     * 供 {@link com.seckill.mall.ai.gateway.advisor.RateLimitAdvisor} 按用户维度限流。
+     * userId 为 null 时退化为不传 userId（与原方法行为一致）。
+     *
+     * @param systemPrompt 系统提示词
+     * @param userPrompt   用户输入
+     * @param caller       调用方标识
+     * @param userId       登录用户 ID（可为 null）
+     * @return 流式响应 Flux<String>
+     */
+    public Flux<String> stream(String systemPrompt, String userPrompt, String caller, Long userId) {
+        java.util.Map<String, Object> ctx = userId == null
+                ? java.util.Map.of("caller", caller)
+                : java.util.Map.of("caller", caller, "userId", String.valueOf(userId));
+        return chatClient.prompt()
+                .system(systemPrompt)
+                .user(userPrompt)
+                .toolContext(ctx)
+                .stream()
+                .content()
+                .onErrorResume(e -> Flux.just(fallbackAdvisor.fallback(caller, e)));
+    }
+
+    /**
      * 同步调用（指定场景，按路由选择模型）。
      * <p>根据 Scene 经 RouteService 解析目标模型名，构造 OpenAiChatOptions 覆盖默认模型。
      * <p>LLM 调用异常时返回降级兜底文案。
@@ -161,6 +186,43 @@ public class AiGatewayService {
                 .user(userPrompt)
                 .functions(tools)
                 .toolContext(java.util.Map.of("caller", caller))
+                .stream()
+                .content()
+                .onErrorResume(e -> Flux.just(fallbackAdvisor.fallback(caller, e)));
+    }
+
+    /**
+     * 流式调用 + function-calling 工具（带用户 ID，用于按用户维度限流）。
+     * <p>与 {@link #stream(String, String, String, FunctionCallback...)} 相同，但将 userId 放入 toolContext，
+     * 供 {@link com.seckill.mall.ai.gateway.advisor.RateLimitAdvisor} 按用户维度限流。
+     * userId 为 null 时退化为不传 userId（与原方法行为一致）。
+     *
+     * @param systemPrompt 系统提示词
+     * @param userPrompt   用户输入
+     * @param caller       调用方标识
+     * @param userId       登录用户 ID（可为 null）
+     * @param tools        function-calling 工具回调数组（{@link FunctionCallback} 实例），
+     *                     为空时不注册工具，等价于 {@link #stream(String, String, String, Long)}
+     * @return 流式响应 Flux<String>
+     */
+    public Flux<String> stream(String systemPrompt, String userPrompt, String caller, Long userId, FunctionCallback... tools) {
+        java.util.Map<String, Object> ctx = userId == null
+                ? java.util.Map.of("caller", caller)
+                : java.util.Map.of("caller", caller, "userId", String.valueOf(userId));
+        if (tools == null || tools.length == 0) {
+            return chatClient.prompt()
+                    .system(systemPrompt)
+                    .user(userPrompt)
+                    .toolContext(ctx)
+                    .stream()
+                    .content()
+                    .onErrorResume(e -> Flux.just(fallbackAdvisor.fallback(caller, e)));
+        }
+        return chatClient.prompt()
+                .system(systemPrompt)
+                .user(userPrompt)
+                .functions(tools)
+                .toolContext(ctx)
                 .stream()
                 .content()
                 .onErrorResume(e -> Flux.just(fallbackAdvisor.fallback(caller, e)));

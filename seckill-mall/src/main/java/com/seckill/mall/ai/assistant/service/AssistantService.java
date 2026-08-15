@@ -113,8 +113,8 @@ public class AssistantService {
         // 3. 构建工具回调
         FunctionCallback toolCallback = productSearchTool.buildFunctionCallback();
 
-        // 4. 调 AI 网关流式接口（带工具），追加历史 + 降级
-        return aiGatewayService.stream(SYSTEM_PROMPT, fullPrompt, CALLER, toolCallback)
+        // 4. 调 AI 网关流式接口（带工具），传入 userId 供 RateLimitAdvisor 按用户维度限流，追加历史 + 降级
+        return aiGatewayService.stream(SYSTEM_PROMPT, fullPrompt, CALLER, userId, toolCallback)
                 .doOnNext(token -> {
                     // 流式追加 token 到历史
                     chatHistoryService.appendToken(userId, conversationId, token);

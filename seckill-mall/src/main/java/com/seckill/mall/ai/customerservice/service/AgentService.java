@@ -139,8 +139,9 @@ public class AgentService {
         }
 
         // 3. LLM 兜底：FAQ 与查单均未命中，调 AI 网关流式生成
+        //    传入 userId 供 RateLimitAdvisor 按用户维度限流（避免退化为全局共享桶）
         log.info("客服走 LLM 兜底 userId={} msgLen={}", userId, message.length());
-        return aiGatewayService.stream(SYSTEM_PROMPT, message, CALLER)
+        return aiGatewayService.stream(SYSTEM_PROMPT, message, CALLER, userId)
                 // 4. 降级：极端异常时转人工（AiGatewayService 已内置一层降级，此处再兜底）
                 .onErrorResume(e -> {
                     log.error("客服 LLM 兜底异常，转人工 userId={} err={}",

@@ -6,7 +6,7 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.OperationLogQueryRequest;
 import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.mapper.OperationLogMapper;
-import com.seckill.mall.mapper.SeckillOrderMapper;
+import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.service.SystemService;
 import com.seckill.mall.vo.OperationLogVO;
 import com.seckill.mall.vo.OrderStatusDistributionVO;
@@ -60,7 +60,7 @@ public class SystemServiceImpl implements SystemService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private final SeckillOrderMapper seckillOrderMapper;
+    private final SeckillOrderService seckillOrderService;
     private final OperationLogMapper operationLogMapper;
     private final StringRedisTemplate stringRedisTemplate;
     private final JdbcTemplate jdbcTemplate;
@@ -132,7 +132,7 @@ public class SystemServiceImpl implements SystemService {
         LocalDate startDate = endDate.minusDays(n - 1L);
 
         // 仅统计 PAID/COMPLETED 订单
-        List<Map<String, Object>> rows = seckillOrderMapper.selectOrderTrend(
+        List<Map<String, Object>> rows = seckillOrderService.selectOrderTrend(
                 startDate, endDate, List.of(OrderStatus.PAID, OrderStatus.COMPLETED));
 
         // 查询结果按日期建立索引，便于按天补零
@@ -178,7 +178,7 @@ public class SystemServiceImpl implements SystemService {
         LocalDateTime startLdt = parseDateTime(startTime, LocalDateTime.now().minusDays(30));
         LocalDateTime endLdt = parseDateTime(endTime, LocalDateTime.now());
 
-        List<Map<String, Object>> rows = seckillOrderMapper.selectStatusDistribution(startLdt, endLdt);
+        List<Map<String, Object>> rows = seckillOrderService.selectStatusDistribution(startLdt, endLdt);
 
         // 按状态码建立计数索引
         Map<String, Long> countByStatus = new HashMap<>();

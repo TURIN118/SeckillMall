@@ -89,4 +89,33 @@ public interface UserService {
      * @return 每行包含 dt(日期)、cnt(注册数)
      */
     java.util.List<java.util.Map<String, Object>> selectUserTrend(java.time.LocalDate startDate, java.time.LocalDate endDate);
+
+    /**
+     * Phase 15：用户余额增加（封装 userMapper.update(null, wrapper)，消除 RechargeCardServiceImpl 跨模块 Mapper 依赖）。
+     * <p>
+     * 使用 {@code setSql} 直接执行 {@code balance = balance + amount}，避免覆盖更新。
+     *
+     * @param userId 用户 ID
+     * @param amount 增加金额
+     */
+    void addBalance(Long userId, java.math.BigDecimal amount);
+
+    /**
+     * Phase 15：分页查询用户（封装 userMapper.selectPage(page, wrapper)，消除 AdminUserServiceImpl 跨模块 Mapper 依赖）。
+     *
+     * @param page    分页参数
+     * @param wrapper 查询条件
+     * @return 分页结果
+     */
+    com.baomidou.mybatisplus.core.metadata.IPage<User> selectUserPage(
+            com.baomidou.mybatisplus.core.metadata.IPage<User> page,
+            com.baomidou.mybatisplus.core.conditions.Wrapper<User> wrapper);
+
+    /**
+     * Phase 15：根据 ID 更新用户（封装 userMapper.updateById(user)，消除 AdminUserServiceImpl 跨模块 Mapper 依赖）。
+     *
+     * @param user 待更新用户实体（含主键）
+     * @return 影响行数
+     */
+    int updateUserById(User user);
 }

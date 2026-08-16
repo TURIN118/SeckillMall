@@ -13,8 +13,8 @@ import com.seckill.mall.entity.enums.LoginResult;
 import com.seckill.mall.entity.enums.UserRole;
 import com.seckill.mall.entity.enums.UserStatus;
 import com.seckill.mall.mapper.LoginLogMapper;
-import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.service.AdminUserService;
+import com.seckill.mall.service.UserService;
 import com.seckill.mall.security.TokenVersionService;
 import com.seckill.mall.security.UserStatusCacheService;
 import com.seckill.mall.vo.LoginLogVO;
@@ -36,7 +36,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AdminUserServiceImpl implements AdminUserService {
 
-    private final UserMapper userMapper;
+    private final UserService userService;
     private final LoginLogMapper loginLogMapper;
     private final TokenVersionService tokenVersionService;
     private final UserStatusCacheService userStatusCacheService;
@@ -61,7 +61,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         }
         wrapper.orderByDesc("create_time");
 
-        IPage<User> page = userMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
+        IPage<User> page = userService.selectUserPage(new Page<>(pageNum, pageSize), wrapper);
         List<UserVO> list = page.getRecords() == null ? Collections.emptyList()
                 : page.getRecords().stream().map(this::toUserVO).toList();
         return PageResult.of(list, page.getTotal(), page.getCurrent(), page.getSize());
@@ -74,7 +74,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         User update = new User();
         update.setId(user.getId());
         update.setStatus(status);
-        userMapper.updateById(update);
+        userService.updateUserById(update);
         // 禁用/锁定用户后递增 Token 版本号（踢下所有设备）
         tokenVersionService.incrementVersion(userId);
         // 刷新用户状态缓存
@@ -88,7 +88,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         User update = new User();
         update.setId(user.getId());
         update.setRole(role);
-        userMapper.updateById(update);
+        userService.updateUserById(update);
         // 修改角色后刷新用户状态缓存
         userStatusCacheService.refreshUserAuth(userId);
     }
@@ -109,7 +109,7 @@ public class AdminUserServiceImpl implements AdminUserService {
     }
 
     private User loadUser(Long userId) {
-        User user = userMapper.selectById(userId);
+        User user = userService.getUserById(userId);
         if (user == null) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }

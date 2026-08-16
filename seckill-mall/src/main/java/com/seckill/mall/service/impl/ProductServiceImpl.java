@@ -357,6 +357,30 @@ public class ProductServiceImpl implements ProductService {
     }
 
     /**
+     * Phase 15：递增/递减商品加购计数，封装 productMapper.update(null, wrapper)。
+     * <p>
+     * 消除 CartServiceImpl 对 ProductMapper 的跨模块依赖。
+     */
+    @Override
+    public void updateCartCount(Long productId, int delta) {
+        productMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Product>()
+                .eq(Product::getId, productId)
+                .setSql("cart_count = cart_count + " + delta));
+    }
+
+    /**
+     * Phase 15：递增/递减商品收藏计数，封装 productMapper.update(null, wrapper)。
+     * <p>
+     * 消除 UserFavoriteServiceImpl 对 ProductMapper 的跨模块依赖。
+     */
+    @Override
+    public void updateFavoriteCount(Long productId, int delta) {
+        productMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Product>()
+                .eq(Product::getId, productId)
+                .setSql("favorite_count = favorite_count + " + delta));
+    }
+
+    /**
      * 白名单过滤排序字段，防 SQL 注入。
      * 将前端传入的 sortBy 归一化为 Mapper 支持的标准字段(price/sales/createTime)：
      * 1. 空值 → 默认值 createTime

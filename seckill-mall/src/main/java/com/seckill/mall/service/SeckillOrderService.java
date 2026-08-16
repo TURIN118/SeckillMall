@@ -196,4 +196,17 @@ public interface SeckillOrderService {
      * @return 每行包含 status(状态码)、cnt(订单数)
      */
     List<Map<String, Object>> selectStatusDistribution(LocalDateTime startTime, LocalDateTime endTime);
+
+    /**
+     * Phase 15：后台订单高级筛选分页查询（封装 seckillOrderMapper.selectAdminOrderPage(page, req)）。
+     * <p>
+     * 消除 AdminOrderServiceImpl 对 SeckillOrderMapper 的跨模块依赖。
+     *
+     * @param page 分页参数
+     * @param req  查询条件（sortBy/sortOrder 已白名单归一化）
+     * @return 分页结果
+     */
+    com.baomidou.mybatisplus.core.metadata.IPage<com.seckill.mall.vo.AdminOrderVO> selectAdminOrderPage(
+            com.baomidou.mybatisplus.core.metadata.IPage<com.seckill.mall.vo.AdminOrderVO> page,
+            com.seckill.mall.dto.AdminOrderQueryRequest req);
 }

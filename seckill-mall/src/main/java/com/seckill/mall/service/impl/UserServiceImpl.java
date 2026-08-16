@@ -136,6 +136,40 @@ public class UserServiceImpl implements UserService {
         return userMapper.selectUserTrend(startDate, endDate);
     }
 
+    /**
+     * Phase 15：用户余额增加，封装 userMapper.update(null, wrapper)。
+     * <p>
+     * 消除 RechargeCardServiceImpl 对 UserMapper 的跨模块依赖。
+     */
+    @Override
+    public void addBalance(Long userId, java.math.BigDecimal amount) {
+        userMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<User>()
+                .eq(User::getId, userId)
+                .setSql("balance = balance + " + amount.toPlainString()));
+    }
+
+    /**
+     * Phase 15：分页查询用户，封装 userMapper.selectPage(page, wrapper)。
+     * <p>
+     * 消除 AdminUserServiceImpl 对 UserMapper 的跨模块依赖。
+     */
+    @Override
+    public com.baomidou.mybatisplus.core.metadata.IPage<User> selectUserPage(
+            com.baomidou.mybatisplus.core.metadata.IPage<User> page,
+            com.baomidou.mybatisplus.core.conditions.Wrapper<User> wrapper) {
+        return userMapper.selectPage(page, wrapper);
+    }
+
+    /**
+     * Phase 15：根据 ID 更新用户，封装 userMapper.updateById(user)。
+     * <p>
+     * 消除 AdminUserServiceImpl 对 UserMapper 的跨模块依赖。
+     */
+    @Override
+    public int updateUserById(User user) {
+        return userMapper.updateById(user);
+    }
+
     /** Entity → VO */
     private UserVO toUserVO(User user) {
         UserVO vo = new UserVO();

@@ -4,8 +4,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.AdminOrderQueryRequest;
-import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.service.AdminOrderService;
+import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.vo.AdminOrderVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +42,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
 
     private static final Set<String> SORT_ORDER_WHITELIST = Set.of("asc", "desc");
 
-    private final SeckillOrderMapper seckillOrderMapper;
+    private final SeckillOrderService seckillOrderService;
 
     @Override
     public PageResult<AdminOrderVO> getAdminOrderList(AdminOrderQueryRequest req) {
@@ -106,7 +106,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         }
 
         Page<AdminOrderVO> page = new Page<>(pageNum, pageSize);
-        IPage<AdminOrderVO> result = seckillOrderMapper.selectAdminOrderPage(page, req);
+        IPage<AdminOrderVO> result = seckillOrderService.selectAdminOrderPage(page, req);
         List<AdminOrderVO> list = result.getRecords() == null
                 ? Collections.emptyList() : result.getRecords();
         return PageResult.of(list, result.getTotal(), result.getCurrent(), result.getSize());

@@ -57,4 +57,26 @@ public interface ProductService {
      * @return 商品总数
      */
     long countAll();
+
+    /**
+     * Phase 15：递增/递减商品加购计数（冗余计数维护）。
+     * <p>
+     * 使用 {@code setSql} 直接执行 {@code cart_count = cart_count + delta}，
+     * 避免并发下的覆盖更新。{@code @TableLogic} 自动追加 {@code is_deleted=0} 条件。
+     *
+     * @param productId 商品 ID
+     * @param delta     变化量（+1 或 -1）
+     */
+    void updateCartCount(Long productId, int delta);
+
+    /**
+     * Phase 15：递增/递减商品收藏计数（冗余计数维护）。
+     * <p>
+     * 使用 {@code setSql} 直接执行 {@code favorite_count = favorite_count + delta}，
+     * 避免并发下的覆盖更新。{@code @TableLogic} 自动追加 {@code is_deleted=0} 条件。
+     *
+     * @param productId 商品 ID
+     * @param delta     变化量（+1 或 -1）
+     */
+    void updateFavoriteCount(Long productId, int delta);
 }

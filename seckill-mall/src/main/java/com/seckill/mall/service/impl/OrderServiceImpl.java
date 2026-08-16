@@ -33,9 +33,12 @@ import com.seckill.mall.service.UserAddressService;
 import com.seckill.mall.service.UserService;
 import com.seckill.mall.shared.kernel.port.MessageBusPort;
 import com.seckill.mall.vo.NormalOrderDetailVO;
+import com.seckill.mall.vo.NormalOrderItemVO;
+import com.seckill.mall.vo.NormalOrderVO;
 import com.seckill.mall.vo.OrderListItemVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -792,11 +795,22 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 组装订单详情视图。
+     * <p>
+     * 将 Entity（NormalOrder / NormalOrderItem）字段复制到独立 VO
+     * （NormalOrderVO / NormalOrderItemVO），避免 VO 直接持有 Entity 引用
+     * 而违反 ArchUnit VO→Entity 分层规则。字段名一致，JSON 响应结构不变。
      */
     private NormalOrderDetailVO assembleDetail(NormalOrder order, List<NormalOrderItem> items) {
         NormalOrderDetailVO vo = new NormalOrderDetailVO();
-        vo.setOrder(order);
-        vo.setItems(items);
+        NormalOrderVO orderVO = new NormalOrderVO();
+        BeanUtils.copyProperties(order, orderVO);
+        vo.setOrder(orderVO);
+        List<NormalOrderItemVO> itemVOs = items.stream().map(item -> {
+            NormalOrderItemVO itemVO = new NormalOrderItemVO();
+            BeanUtils.copyProperties(item, itemVO);
+            return itemVO;
+        }).collect(Collectors.toList());
+        vo.setItems(itemVOs);
         // 查询收货地址
         if (order.getAddressId() != null) {
             try {

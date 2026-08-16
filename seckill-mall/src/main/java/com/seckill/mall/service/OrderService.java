@@ -1,6 +1,7 @@
 package com.seckill.mall.service;
 
 import com.seckill.mall.common.PageResult;
+import com.seckill.mall.entity.NormalOrder;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
 
@@ -175,4 +176,16 @@ public interface OrderService {
      * @return true=已购买
      */
     boolean hasUserPurchasedProduct(Long userId, Long productId, Long skuId);
+
+    /**
+     * Phase 12：查询用户钱包支付的已支付普通订单。
+     * <p>
+     * 条件：payMethod=WALLET 且 status in (PAID, SHIPPED, COMPLETED)。
+     * 仅供 WalletServiceImpl 跨模块内部调用，封装原 LambdaQueryWrapper 构造逻辑，
+     * 消除 WalletServiceImpl 对 NormalOrderMapper 的直接依赖。
+     *
+     * @param userId 用户 ID
+     * @return 用户钱包支付的已支付普通订单列表
+     */
+    List<NormalOrder> getWalletPaidOrdersByUser(Long userId);
 }

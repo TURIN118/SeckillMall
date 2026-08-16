@@ -482,4 +482,12 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
                         .in(SeckillOrder::getStatus, OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED));
         return !seckillOrders.isEmpty();
     }
+
+    @Override
+    public List<SeckillOrder> getWalletPaidOrdersByUser(Long userId) {
+        return seckillOrderMapper.selectList(new LambdaQueryWrapper<SeckillOrder>()
+                .eq(SeckillOrder::getUserId, userId)
+                .eq(SeckillOrder::getPayMethod, "WALLET")
+                .in(SeckillOrder::getStatus, OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED));
+    }
 }

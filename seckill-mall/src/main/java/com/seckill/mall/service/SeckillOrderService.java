@@ -127,4 +127,16 @@ public interface SeckillOrderService {
      * @return true=已购买
      */
     boolean hasUserPurchasedSeckill(Long userId, Long productId);
+
+    /**
+     * Phase 12：查询用户钱包支付的已支付秒杀订单。
+     * <p>
+     * 条件：payMethod=WALLET 且 status in (PAID, SHIPPED, COMPLETED)。
+     * 仅供 WalletServiceImpl 跨模块内部调用，封装原 LambdaQueryWrapper 构造逻辑，
+     * 消除 WalletServiceImpl 对 SeckillOrderMapper 的直接依赖。
+     *
+     * @param userId 用户 ID
+     * @return 用户钱包支付的已支付秒杀订单列表
+     */
+    List<SeckillOrder> getWalletPaidOrdersByUser(Long userId);
 }

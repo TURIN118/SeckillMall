@@ -180,6 +180,13 @@ public class RechargeCardServiceImpl implements RechargeCardService {
         log.info("禁用充值卡成功，id={}, cardNo={}", id, card.getCardNo());
     }
 
+    @Override
+    public List<RechargeCard> getUsedCardsByUser(Long userId) {
+        return rechargeCardMapper.selectList(new LambdaQueryWrapper<RechargeCard>()
+                .eq(RechargeCard::getUsedBy, userId)
+                .eq(RechargeCard::getStatus, RechargeCardStatus.USED));
+    }
+
     // ==================== 私有方法 ====================
 
     /**

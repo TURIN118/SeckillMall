@@ -1,6 +1,7 @@
 package com.seckill.mall.service;
 
 import com.seckill.mall.common.PageResult;
+import com.seckill.mall.entity.RechargeCard;
 import com.seckill.mall.vo.RechargeCardGenerateVO;
 import com.seckill.mall.vo.RechargeCardVO;
 
@@ -55,4 +56,15 @@ public interface RechargeCardService {
      * @param id 充值卡ID
      */
     void disable(Long id);
+
+    /**
+     * Phase 12：查询用户已使用的充值卡（status=USED）。
+     * <p>
+     * 仅供 WalletServiceImpl 跨模块内部调用，封装原 LambdaQueryWrapper 构造逻辑，
+     * 消除 WalletServiceImpl 对 RechargeCardMapper 的直接依赖。
+     *
+     * @param userId 用户 ID
+     * @return 用户已使用的充值卡列表
+     */
+    List<RechargeCard> getUsedCardsByUser(Long userId);
 }

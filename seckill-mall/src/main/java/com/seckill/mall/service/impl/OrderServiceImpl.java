@@ -1150,4 +1150,12 @@ public class OrderServiceImpl implements OrderService {
                         .in(NormalOrder::getStatus, OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED));
         return !orders.isEmpty();
     }
+
+    @Override
+    public List<NormalOrder> getWalletPaidOrdersByUser(Long userId) {
+        return normalOrderMapper.selectList(new LambdaQueryWrapper<NormalOrder>()
+                .eq(NormalOrder::getUserId, userId)
+                .eq(NormalOrder::getPayMethod, "WALLET")
+                .in(NormalOrder::getStatus, OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED));
+    }
 }

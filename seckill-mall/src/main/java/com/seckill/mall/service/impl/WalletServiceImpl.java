@@ -1,16 +1,13 @@
 package com.seckill.mall.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.seckill.mall.entity.NormalOrder;
 import com.seckill.mall.entity.RechargeCard;
 import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.User;
-import com.seckill.mall.entity.enums.OrderStatus;
-import com.seckill.mall.entity.enums.RechargeCardStatus;
-import com.seckill.mall.mapper.NormalOrderMapper;
-import com.seckill.mall.mapper.RechargeCardMapper;
-import com.seckill.mall.mapper.SeckillOrderMapper;
-import com.seckill.mall.mapper.UserMapper;
+import com.seckill.mall.service.OrderService;
+import com.seckill.mall.service.RechargeCardService;
+import com.seckill.mall.service.SeckillOrderService;
+import com.seckill.mall.service.UserService;
 import com.seckill.mall.service.WalletService;
 import com.seckill.mall.vo.WalletRecordVO;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +26,9 @@ import java.util.List;
  * M-D2 修复：从 {@code WalletController} 下沉而来，封装对
  * {@code RechargeCardMapper} / {@code UserMapper} 的访问，
  * Controller 不再直接依赖 Mapper。
+ * <p>
+ * Phase 12：消除跨模块 Mapper 依赖，改用对应领域 Service 调用，
+ * 本类不再直接依赖 UserMapper / RechargeCardMapper / NormalOrderMapper / SeckillOrderMapper。
  *
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
@@ -40,14 +40,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class WalletServiceImpl implements WalletService {
 
-    private final RechargeCardMapper rechargeCardMapper;
-    private final UserMapper userMapper;
-    private final NormalOrderMapper normalOrderMapper;
-    private final SeckillOrderMapper seckillOrderMapper;
+    private final UserService userService;
+    private final RechargeCardService rechargeCardService;
+    private final OrderService orderService;
+    private final SeckillOrderService seckillOrderService;
 
     @Override
     public BigDecimal getBalance(Long userId) {
-        User user = userMapper.selectById(userId);
+        User user = userService.getUserById(userId);
         if (user == null || user.getBalance() == null) {
             return BigDecimal.ZERO;
         }
@@ -57,40 +57,27 @@ public class WalletServiceImpl implements WalletService {
     @Override
     public List<WalletRecordVO> listRecords(Long userId) {
         // 查询用户当前余额，用于填充每笔交易后的余额（简化：都填当前余额）
-        User user = userMapper.selectById(userId);
+        User user = userService.getUserById(userId);
         BigDecimal currentBalance = user == null || user.getBalance() == null
                 ? BigDecimal.ZERO : user.getBalance();
 
         List<WalletRecordVO> records = new ArrayList<>();
 
         // 1. 查询当前用户已使用的充值卡作为充值记录（type=RECHARGE，金额为正）
-        List<RechargeCard> cards = rechargeCardMapper.selectList(
-                new LambdaQueryWrapper<RechargeCard>()
-                        .eq(RechargeCard::getUsedBy, userId)
-                        .eq(RechargeCard::getStatus, RechargeCardStatus.USED));
+        List<RechargeCard> cards = rechargeCardService.getUsedCardsByUser(userId);
         for (RechargeCard card : cards) {
             records.add(toRechargeVO(card, currentBalance));
         }
 
         // 2. 查询普通订单中钱包支付的已支付订单作为消费记录（type=CONSUME，金额为负）
-        List<NormalOrder> normalOrders = normalOrderMapper.selectList(
-                new LambdaQueryWrapper<NormalOrder>()
-                        .eq(NormalOrder::getUserId, userId)
-                        .eq(NormalOrder::getPayMethod, "WALLET")
-                        .in(NormalOrder::getStatus,
-                                OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED));
+        List<NormalOrder> normalOrders = orderService.getWalletPaidOrdersByUser(userId);
         for (NormalOrder order : normalOrders) {
             records.add(toConsumeVO(order.getId(), order.getPayAmount(),
                     order.getPayTime(), order.getCreateTime(), currentBalance, "订单支付"));
         }
 
         // 3. 查询秒杀订单中钱包支付的已支付订单作为消费记录
-        List<SeckillOrder> seckillOrders = seckillOrderMapper.selectList(
-                new LambdaQueryWrapper<SeckillOrder>()
-                        .eq(SeckillOrder::getUserId, userId)
-                        .eq(SeckillOrder::getPayMethod, "WALLET")
-                        .in(SeckillOrder::getStatus,
-                                OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED));
+        List<SeckillOrder> seckillOrders = seckillOrderService.getWalletPaidOrdersByUser(userId);
         for (SeckillOrder order : seckillOrders) {
             records.add(toConsumeVO(order.getId(), order.getTotalAmount(),
                     order.getPayTime(), order.getCreateTime(), currentBalance, "秒杀订单支付"));

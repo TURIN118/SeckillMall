@@ -148,6 +148,11 @@ public class UserServiceImpl implements UserService {
                 .setSql("balance = balance + " + amount.toPlainString()));
     }
 
+    @Override
+    public int deductBalance(Long userId, java.math.BigDecimal amount) {
+        return userMapper.deductBalance(userId, amount);
+    }
+
     /**
      * Phase 15：分页查询用户，封装 userMapper.selectPage(page, wrapper)。
      * <p>

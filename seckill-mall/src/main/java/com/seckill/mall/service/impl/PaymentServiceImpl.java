@@ -2,8 +2,8 @@ package com.seckill.mall.service.impl;
 
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.exception.BusinessException;
-import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.service.PaymentService;
+import com.seckill.mall.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,13 +30,13 @@ public class PaymentServiceImpl implements PaymentService {
     /** 钱包支付方式标识 */
     private static final String PAY_METHOD_WALLET = "WALLET";
 
-    private final UserMapper userMapper;
+    private final UserService userService;
 
     @Override
     public void pay(Long userId, BigDecimal amount, String payMethod) {
         if (PAY_METHOD_WALLET.equalsIgnoreCase(payMethod)) {
             // 钱包支付：原子扣减余额，余额不足提示去充值
-            int rows = userMapper.deductBalance(userId, amount);
+            int rows = userService.deductBalance(userId, amount);
             if (rows == 0) {
                 throw new BusinessException(ErrorCode.WALLET_BALANCE_NOT_ENOUGH);
             }

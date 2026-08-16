@@ -101,6 +101,14 @@ public interface UserService {
     void addBalance(Long userId, java.math.BigDecimal amount);
 
     /**
+     * 扣减用户钱包余额（原子操作）。
+     * @param userId 用户 ID
+     * @param amount 扣减金额
+     * @return 受影响行数（0 表示余额不足或用户不存在）
+     */
+    int deductBalance(Long userId, java.math.BigDecimal amount);
+
+    /**
      * Phase 15：分页查询用户（封装 userMapper.selectPage(page, wrapper)，消除 AdminUserServiceImpl 跨模块 Mapper 依赖）。
      *
      * @param page    分页参数

@@ -2,7 +2,7 @@ package com.seckill.mall.ai.customerservice.service;
 
 import com.seckill.mall.ai.gateway.service.AiGatewayService;
 import com.seckill.mall.common.PageResult;
-import com.seckill.mall.service.OrderService;
+import com.seckill.mall.service.OrderQueryService;
 import com.seckill.mall.vo.OrderListItemVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ import java.util.List;
  *       命中直接 {@code Flux.just(answer)} 返回（最快且免费，不消耗 LLM token）</li>
  *   <li><b>查单意图</b>：消息含"订单"关键词时按登录状态分流：
  *       <ul>
- *         <li>已登录（userId != null）：调 {@link OrderService#getUnifiedOrderList}
+ *         <li>已登录（userId != null）：调 {@link OrderQueryService#getUnifiedOrderList}
  *             查最近 1 条订单，返回自然语言描述"您的最近订单：{orderNo} 状态：{status}"，
  *             未查到返回"您最近没有订单"</li>
  *         <li>未登录（userId == null）：返回"请先登录后查看订单信息"（防越权）</li>
@@ -92,14 +92,14 @@ public class AgentService {
 
     private final AiGatewayService aiGatewayService;
     private final FaqService faqService;
-    private final OrderService orderService;
+    private final OrderQueryService orderQueryService;
 
     public AgentService(AiGatewayService aiGatewayService,
                         FaqService faqService,
-                        OrderService orderService) {
+                        OrderQueryService orderQueryService) {
         this.aiGatewayService = aiGatewayService;
         this.faqService = faqService;
-        this.orderService = orderService;
+        this.orderQueryService = orderQueryService;
     }
 
     /**
@@ -152,7 +152,7 @@ public class AgentService {
 
     /**
      * 查询用户最近一条订单并返回自然语言描述。
-     * <p>调 {@link OrderService#getUnifiedOrderList} 取第 1 页第 1 条（按 createTime 降序），
+     * <p>调 {@link OrderQueryService#getUnifiedOrderList} 取第 1 页第 1 条（按 createTime 降序），
      * 查到返回"您的最近订单：{orderNo} 状态：{status}"，未查到返回"您最近没有订单"。
      * <p>异常时返回友好提示而非抛出，避免阻断客服对话。
      *
@@ -161,7 +161,7 @@ public class AgentService {
      */
     private String queryRecentOrder(Long userId) {
         try {
-            PageResult<OrderListItemVO> page = orderService.getUnifiedOrderList(
+            PageResult<OrderListItemVO> page = orderQueryService.getUnifiedOrderList(
                     userId, null, null, 1, 1);
             List<OrderListItemVO> list = page == null ? null : page.getList();
             if (list == null || list.isEmpty()) {

@@ -3,6 +3,7 @@ package com.seckill.mall.ai.customerservice.controller;
 import com.seckill.mall.ai.customerservice.service.AgentService;
 import com.seckill.mall.annotation.RateLimit;
 import com.seckill.mall.security.SecurityUtils;
+import com.seckill.mall.shared.kernel.util.SseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -11,12 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 
-import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * AI 智能客服 SSE 接口（T18 实现）。
@@ -54,8 +52,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @PreAuthorize("hasAnyRole('BUYER','ADMIN')")
 public class CustomerServiceController {
 
-    /** SSE 超时时间 60s */
-    private static final long SSE_TIMEOUT = 60_000L;
 
     private final AgentService agentService;
     private final SecurityUtils securityUtils;
@@ -78,61 +74,8 @@ public class CustomerServiceController {
         log.info("AI 客服 SSE 请求 userId={} msgLen={}",
                 userId, message == null ? 0 : message.length());
 
-        SseEmitter emitter = new SseEmitter(SSE_TIMEOUT);
-
         Flux<String> flux = agentService.chat(message, userId);
-
-        java.util.concurrent.atomic.AtomicReference<reactor.core.Disposable> subscriptionRef =
-                new java.util.concurrent.atomic.AtomicReference<>();
-
-        // Flux → SseEmitter 转换（参考 ShoppingAssistantController 模式）
-        Disposable subscription = flux.doOnNext(token -> {
-                    try {
-                        emitter.send(SseEmitter.event().data(token));
-                    } catch (Exception e) {
-                        log.warn("客服 SSE 发送 token 失败，客户端可能已断开 userId={} err={}",
-                                userId, e.getMessage());
-                        disposeQuietly(subscriptionRef);
-                        completeWithErrorQuietly(emitter, e);
-                    }
-                })
-                .doOnComplete(() -> completeQuietly(emitter))
-                .doOnError(e -> {
-                    log.error("客服 SSE 流异常，关闭 emitter userId={} err={}",
-                            userId, e.getMessage(), e);
-                    disposeQuietly(subscriptionRef);
-                    completeWithErrorQuietly(emitter, e);
-                })
-                .subscribe(null, e -> log.warn("客服 SSE 订阅 onError userId={} err={}",
-                        userId, e.getMessage()), () -> {});
-        subscriptionRef.set(subscription);
-
-        // 客户端断开时清理
-        emitter.onTimeout(() -> {
-            log.warn("客服 SSE 超时 userId={}", userId);
-            disposeQuietly(subscriptionRef);
-        });
-        emitter.onError(e -> {
-            log.warn("客服 SSE 客户端异常 userId={} err={}", userId, e.getMessage());
-            disposeQuietly(subscriptionRef);
-        });
-        emitter.onCompletion(() -> disposeQuietly(subscriptionRef));
-
-        return emitter;
+        return SseUtils.stream(flux, "客服", userId);
     }
 
-    private void disposeQuietly(java.util.concurrent.atomic.AtomicReference<reactor.core.Disposable> ref) {
-        reactor.core.Disposable d = ref.getAndSet(null);
-        if (d != null && !d.isDisposed()) {
-            d.dispose();
-        }
-    }
-
-    private void completeQuietly(SseEmitter emitter) {
-        try { emitter.complete(); } catch (Exception ignored) { }
-    }
-
-    private void completeWithErrorQuietly(SseEmitter emitter, Throwable e) {
-        try { emitter.completeWithError(e); } catch (Exception ignored) { }
-    }
 }

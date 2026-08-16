@@ -330,6 +330,11 @@ public class ProductServiceImpl implements ProductService {
         categoryService.evictCategoryCache();
     }
 
+    @Override
+    public boolean existsById(Long id) {
+        return productMapper.selectById(id) != null;
+    }
+
     /**
      * 白名单过滤排序字段，防 SQL 注入。
      * 将前端传入的 sortBy 归一化为 Mapper 支持的标准字段(price/sales/createTime)：

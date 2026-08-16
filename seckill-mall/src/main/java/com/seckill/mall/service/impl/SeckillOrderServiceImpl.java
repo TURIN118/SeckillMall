@@ -7,16 +7,15 @@ import com.seckill.mall.cache.SeckillLuaService;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.converter.SeckillOrderConverter;
-import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.exception.BusinessException;
-import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.service.EmailService;
 import com.seckill.mall.service.PaymentService;
+import com.seckill.mall.service.ProductService;
 import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.SeckillOrderVO;
@@ -63,7 +62,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
 
     private final SeckillOrderMapper seckillOrderMapper;
     private final SeckillGoodsMapper seckillGoodsMapper;
-    private final ProductMapper productMapper;
+    private final ProductService productService;
     private final SeckillLuaService seckillLuaService;
     private final UserService userService;
     private final EmailService emailService;
@@ -82,8 +81,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
         if (goods == null) {
             throw new BusinessException(ErrorCode.SECKILL_NOT_FOUND);
         }
-        Product product = productMapper.selectById(goods.getProductId());
-        if (product == null) {
+        if (!productService.existsById(goods.getProductId())) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
 

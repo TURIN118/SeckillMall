@@ -23,4 +23,12 @@ public interface ProductService {
     ProductVO updateProduct(Long id, ProductUpdateRequest req);
 
     void deleteProduct(Long id);
+
+    /**
+     * 检查商品是否存在。
+     *
+     * @param id 商品 ID
+     * @return true 表示存在
+     */
+    boolean existsById(Long id);
 }

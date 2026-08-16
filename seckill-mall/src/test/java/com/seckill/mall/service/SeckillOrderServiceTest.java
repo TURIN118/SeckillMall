@@ -3,13 +3,11 @@ package com.seckill.mall.service;
 
 import com.seckill.mall.cache.SeckillLuaService;
 import com.seckill.mall.converter.SeckillOrderConverter;
-import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
-import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.service.impl.SeckillOrderServiceImpl;
@@ -59,7 +57,7 @@ class SeckillOrderServiceTest {
     @Mock
     private SeckillGoodsMapper seckillGoodsMapper;
     @Mock
-    private ProductMapper productMapper;
+    private ProductService productService;
     @Mock
     private SeckillLuaService seckillLuaService;
     @Mock
@@ -103,12 +101,6 @@ class SeckillOrderServiceTest {
         return goods;
     }
 
-    private Product buildProduct() {
-        Product p = new Product();
-        p.setId(1001L);
-        p.setName("iPhone");
-        return p;
-    }
 
     private SeckillOrder buildOrder(OrderStatus status) {
         SeckillOrder order = new SeckillOrder();
@@ -130,7 +122,7 @@ class SeckillOrderServiceTest {
     void createSeckillOrder_shouldGenerateOrderNoAndInsert() {
         // given
         given(seckillGoodsMapper.selectById(SECKILL_ID)).willReturn(buildGoods());
-        given(productMapper.selectById(1001L)).willReturn(buildProduct());
+        given(productService.existsById(1001L)).willReturn(true);
 
         // when
         SeckillOrder order = seckillOrderService.createSeckillOrder(SECKILL_ID, USER_ID, "req-1");
@@ -165,7 +157,7 @@ class SeckillOrderServiceTest {
     void createSeckillOrder_shouldThrowRepeatOnDuplicateKey() {
         // given
         given(seckillGoodsMapper.selectById(SECKILL_ID)).willReturn(buildGoods());
-        given(productMapper.selectById(1001L)).willReturn(buildProduct());
+        given(productService.existsById(1001L)).willReturn(true);
         org.mockito.Mockito.doThrow(new DuplicateKeyException("uk_user_seckill"))
                 .when(seckillOrderMapper).insert(any(SeckillOrder.class));
 

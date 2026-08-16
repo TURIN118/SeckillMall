@@ -90,6 +90,8 @@ class OrderServiceTest {
     private CouponService couponService;
     @Mock
     private PaymentService paymentService;
+    @Mock
+    private InventoryService inventoryService;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -183,7 +185,7 @@ class OrderServiceTest {
         given(productMapper.selectById(PRODUCT_ID)).willReturn(buildOnSaleProduct());
         given(userAddressMapper.selectById(ADDRESS_ID)).willReturn(buildAddress());
         // 扣减商品库存成功
-        given(productMapper.update(any(), any())).willReturn(1);
+        given(inventoryService.deductProductStock(any(), any())).willReturn(1);
         // normalOrderMapper.insert 设置 id 后会被 assembleDetail 使用
         org.mockito.Mockito.doAnswer(invocation -> {
             NormalOrder o = invocation.getArgument(0);

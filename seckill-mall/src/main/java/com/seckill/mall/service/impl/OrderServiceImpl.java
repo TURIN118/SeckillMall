@@ -28,6 +28,7 @@ import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.mq.message.OrderDelayMessage;
 import com.seckill.mall.service.CouponService;
 import com.seckill.mall.service.EmailService;
+import com.seckill.mall.service.InventoryService;
 import com.seckill.mall.service.OrderService;
 import com.seckill.mall.service.PaymentService;
 import com.seckill.mall.service.ProductSkuService;
@@ -92,6 +93,8 @@ public class OrderServiceImpl implements OrderService {
     private final CouponService couponService;
     // Phase 4b-2：支付扣款逻辑抽取至 PaymentService（钱包扣款 + 模拟支付）
     private final PaymentService paymentService;
+    // Phase 4b-3：商品库存扣减/回补抽取至 InventoryService
+    private final InventoryService inventoryService;
 
     @Value("${seckill.pay-timeout-minutes:15}")
     private long payTimeoutMinutes;
@@ -239,7 +242,7 @@ public class OrderServiceImpl implements OrderService {
             if (product.getStock() == null || product.getStock() < quantity) {
                 throw new BusinessException(ErrorCode.STOCK_EMPTY);
             }
-            int updated = deductProductStock(productId, quantity);
+            int updated = inventoryService.deductProductStock(productId, quantity);
             if (updated == 0) {
                 throw new BusinessException(ErrorCode.STOCK_EMPTY);
             }
@@ -385,7 +388,7 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         for (Map.Entry<Long, Integer> e : qtyByProduct.entrySet()) {
-            int updated = deductProductStock(e.getKey(), e.getValue());
+            int updated = inventoryService.deductProductStock(e.getKey(), e.getValue());
             if (updated == 0) {
                 // 并发库存不足，事务回滚
                 throw new BusinessException(ErrorCode.STOCK_EMPTY);
@@ -652,65 +655,13 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 乐观锁扣减商品库存与销量：WHERE stock >= quantity AND status=ON_SALE。
-     *
-     * @return 受影响行数：1=成功，0=库存不足或商品不在售
-     */
-    private int deductProductStock(Long productId, Integer quantity) {
-        LambdaUpdateWrapper<Product> wrapper = new LambdaUpdateWrapper<Product>()
-                .eq(Product::getId, productId)
-                .eq(Product::getStatus, ProductStatus.ON_SALE)
-                .ge(Product::getStock, quantity)
-                .setSql("stock = stock - " + quantity)
-                .setSql("sales_count = sales_count + " + quantity);
-        return productMapper.update(null, wrapper);
-    }
-
-    /**
-     * 回补商品库存与销量（普通订单取消时调用）。
-     * <p>
-     * 按商品 ID 聚合各明细数量后，使用乐观锁更新：
-     * {@code stock = stock + qty, sales_count = sales_count - qty}。
-     * 仅对在售商品回补（已下架商品保留库存不变，避免污染下架态数据）。
-     * 回补失败仅记录日志，不阻断取消主流程（库存以商品表为准，可由对账任务兜底）。
-     *
-     * @param items 订单明细列表
-     */
-    private void rollbackProductStock(List<NormalOrderItem> items) {
-        if (items == null || items.isEmpty()) {
-            return;
-        }
-        // 按商品聚合数量
-        Map<Long, Integer> qtyByProduct = new HashMap<>();
-        for (NormalOrderItem item : items) {
-            if (item.getProductId() == null || item.getQuantity() == null || item.getQuantity() <= 0) {
-                continue;
-            }
-            qtyByProduct.merge(item.getProductId(), item.getQuantity(), Integer::sum);
-        }
-        // 乐观锁回补：仅对在售商品生效
-        for (Map.Entry<Long, Integer> e : qtyByProduct.entrySet()) {
-            LambdaUpdateWrapper<Product> wrapper = new LambdaUpdateWrapper<Product>()
-                    .eq(Product::getId, e.getKey())
-                    .eq(Product::getStatus, ProductStatus.ON_SALE)
-                    .setSql("stock = stock + " + e.getValue())
-                    .setSql("sales_count = sales_count - " + e.getValue());
-            int rows = productMapper.update(null, wrapper);
-            if (rows == 0) {
-                log.warn("回补商品库存失败（商品不存在或已下架），productId={}, qty={}",
-                        e.getKey(), e.getValue());
-            }
-        }
-    }
-
-    /**
      * 5.7.3：回补库存（SKU 库存或商品库存），用于订单取消 / 超时。
      * <p>
      * 遍历订单明细，对每项：
      * <ul>
      *   <li>skuId != null && skuId != 0：调用 {@code productSkuService.restoreStock} 回补 SKU 库存，
      *       并刷新 t_product.total_stock 冗余字段（建议3）</li>
-     *   <li>skuId == null || skuId == 0：按原逻辑回补 t_product.stock 与 sales_count</li>
+     *   <li>skuId == null || skuId == 0：委托 {@link InventoryService#rollbackProductStock} 回补 t_product.stock 与 sales_count</li>
      * </ul>
      *
      * @param items 订单明细列表
@@ -748,16 +699,7 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         for (Map.Entry<Long, Integer> e : qtyByProduct.entrySet()) {
-            LambdaUpdateWrapper<Product> wrapper = new LambdaUpdateWrapper<Product>()
-                    .eq(Product::getId, e.getKey())
-                    .eq(Product::getStatus, ProductStatus.ON_SALE)
-                    .setSql("stock = stock + " + e.getValue())
-                    .setSql("sales_count = sales_count - " + e.getValue());
-            int rows = productMapper.update(null, wrapper);
-            if (rows == 0) {
-                log.warn("回补商品库存失败（商品不存在或已下架），productId={}, qty={}",
-                        e.getKey(), e.getValue());
-            }
+            inventoryService.rollbackProductStock(e.getKey(), e.getValue());
         }
     }
 

@@ -226,7 +226,8 @@ public class OrderServiceImpl implements OrderService {
                 throw new BusinessException(ErrorCode.STOCK_EMPTY);
             }
             // 扣减 SKU 库存（乐观锁）
-            if (!productSkuService.deductStock(effectiveSkuId, quantity)) {
+            // Phase 8：统一通过 InventoryService 入口操作 SKU 库存
+            if (!inventoryService.deductSkuStock(effectiveSkuId, quantity)) {
                 throw new BusinessException(ErrorCode.STOCK_EMPTY);
             }
             unitPrice = sku.getPrice();
@@ -368,7 +369,8 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         for (Map.Entry<Long, Integer> e : qtyBySku.entrySet()) {
-            if (!productSkuService.deductStock(e.getKey(), e.getValue())) {
+            // Phase 8：统一通过 InventoryService 入口操作 SKU 库存
+            if (!inventoryService.deductSkuStock(e.getKey(), e.getValue())) {
                 // 并发库存不足，事务回滚
                 throw new BusinessException(ErrorCode.STOCK_EMPTY);
             }
@@ -654,7 +656,7 @@ public class OrderServiceImpl implements OrderService {
      * <p>
      * 遍历订单明细，对每项：
      * <ul>
-     *   <li>skuId != null && skuId != 0：调用 {@code productSkuService.restoreStock} 回补 SKU 库存，
+     *   <li>skuId != null && skuId != 0：调用 {@code inventoryService.rollbackSkuStock} 回补 SKU 库存，
      *       并刷新 t_product.total_stock 冗余字段（建议3）</li>
      *   <li>skuId == null || skuId == 0：委托 {@link InventoryService#rollbackProductStock} 回补 t_product.stock 与 sales_count</li>
      * </ul>
@@ -676,7 +678,8 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         for (Map.Entry<Long, Integer> e : qtyBySku.entrySet()) {
-            productSkuService.restoreStock(e.getKey(), e.getValue());
+            // Phase 8：统一通过 InventoryService 入口回补 SKU 库存
+            inventoryService.rollbackSkuStock(e.getKey(), e.getValue());
             // 建议3：同步刷新 t_product.total_stock
             Long productId = skuToProduct.get(e.getKey());
             if (productId != null) {

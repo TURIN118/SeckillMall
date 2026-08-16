@@ -88,6 +88,8 @@ class OrderServiceTest {
     private ObjectMapper objectMapper;
     @Mock
     private CouponService couponService;
+    @Mock
+    private PaymentService paymentService;
 
     @InjectMocks
     private OrderServiceImpl orderService;

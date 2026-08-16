@@ -29,6 +29,7 @@ import com.seckill.mall.mq.message.OrderDelayMessage;
 import com.seckill.mall.service.CouponService;
 import com.seckill.mall.service.EmailService;
 import com.seckill.mall.service.OrderService;
+import com.seckill.mall.service.PaymentService;
 import com.seckill.mall.service.ProductSkuService;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
@@ -73,8 +74,6 @@ public class OrderServiceImpl implements OrderService {
     private static final String CANCEL_REASON_USER = "用户主动取消";
     private static final String CANCEL_REASON_TIMEOUT = "超时未支付，自动取消";
 
-    /** 钱包支付方式标识 */
-    private static final String PAY_METHOD_WALLET = "WALLET";
     /** 普通订单默认运费（当前简化为 0，后续可按地址/重量扩展） */
     private static final BigDecimal DEFAULT_FREIGHT = BigDecimal.ZERO;
 
@@ -91,6 +90,8 @@ public class OrderServiceImpl implements OrderService {
     private final ObjectMapper objectMapper;
     // 优惠券服务：普通订单创建/支付/取消时接入优惠券核销与回退
     private final CouponService couponService;
+    // Phase 4b-2：支付扣款逻辑抽取至 PaymentService（钱包扣款 + 模拟支付）
+    private final PaymentService paymentService;
 
     @Value("${seckill.pay-timeout-minutes:15}")
     private long payTimeoutMinutes;
@@ -467,18 +468,8 @@ public class OrderServiceImpl implements OrderService {
 
         BigDecimal payAmount = order.getPayAmount();
 
-        if (PAY_METHOD_WALLET.equalsIgnoreCase(payMethod)) {
-            // 钱包支付：原子扣减余额，余额不足提示去充值
-            int rows = userMapper.deductBalance(userId, payAmount);
-            if (rows == 0) {
-                throw new BusinessException(ErrorCode.WALLET_BALANCE_NOT_ENOUGH);
-            }
-            log.info("钱包扣款成功，userId={}, orderId={}, amount={}", userId, orderId, payAmount);
-        } else {
-            // 模拟支付（ALIPAY/WECHAT 等）：直接置 PAID
-            log.info("模拟支付成功，userId={}, orderId={}, payMethod={}, amount={}",
-                    userId, orderId, payMethod, payAmount);
-        }
+        // Phase 4b-2：支付扣款逻辑统一委托至 PaymentService
+        paymentService.pay(userId, payAmount, payMethod);
 
         // H-C3 修复：状态判定下沉到 SQL 乐观锁，防并发双扣。
         // UPDATE ... SET status=PAID WHERE id=? AND status='UNPAID'

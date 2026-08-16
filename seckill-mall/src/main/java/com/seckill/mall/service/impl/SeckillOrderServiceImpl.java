@@ -18,6 +18,7 @@ import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.service.EmailService;
+import com.seckill.mall.service.PaymentService;
 import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.vo.SeckillOrderVO;
 import lombok.RequiredArgsConstructor;
@@ -61,15 +62,14 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
     // 一人一单：当前表结构 uk_user_seckill 约束限购 1 件
     private static final int SECKILL_QUANTITY = 1;
 
-    /** 钱包支付方式标识 */
-    private static final String PAY_METHOD_WALLET = "WALLET";
-
     private final SeckillOrderMapper seckillOrderMapper;
     private final SeckillGoodsMapper seckillGoodsMapper;
     private final ProductMapper productMapper;
     private final SeckillLuaService seckillLuaService;
     private final UserMapper userMapper;
     private final EmailService emailService;
+    // Phase 4b-2：支付扣款逻辑抽取至 PaymentService（钱包扣款 + 模拟支付）
+    private final PaymentService paymentService;
     // 问题4修复：使用 MapStruct Converter 替代手工 SeckillOrderVO.from()，统一转换逻辑
     private final SeckillOrderConverter seckillOrderConverter;
 
@@ -155,19 +155,9 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
         }
 
         // M12 修复：秒杀订单支付支持钱包扣款，与 payNormalOrder 保持一致
+        // Phase 4b-2：支付扣款逻辑统一委托至 PaymentService
         BigDecimal payAmount = order.getTotalAmount();
-        if (PAY_METHOD_WALLET.equalsIgnoreCase(payMethod)) {
-            // 钱包支付：原子扣减余额，余额不足提示去充值
-            int rows = userMapper.deductBalance(userId, payAmount);
-            if (rows == 0) {
-                throw new BusinessException(ErrorCode.WALLET_BALANCE_NOT_ENOUGH);
-            }
-            log.info("秒杀订单钱包扣款成功，userId={}, orderId={}, amount={}", userId, orderId, payAmount);
-        } else {
-            // 模拟支付（ALIPAY/WECHAT 等）：直接置 PAID
-            log.info("秒杀订单模拟支付成功，userId={}, orderId={}, payMethod={}, amount={}",
-                    userId, orderId, payMethod, payAmount);
-        }
+        paymentService.pay(userId, payAmount, payMethod);
 
         // H-C3 修复：状态判定下沉到 SQL 乐观锁，防并发双扣。
         // UPDATE ... SET status=PAID WHERE id=? AND status='UNPAID'

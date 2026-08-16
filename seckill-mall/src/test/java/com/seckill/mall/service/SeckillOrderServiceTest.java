@@ -70,6 +70,8 @@ class SeckillOrderServiceTest {
     private EmailService emailService;
     @Mock
     private SeckillOrderConverter seckillOrderConverter;
+    @Mock
+    private PaymentService paymentService;
 
     @InjectMocks
     private SeckillOrderServiceImpl seckillOrderService;

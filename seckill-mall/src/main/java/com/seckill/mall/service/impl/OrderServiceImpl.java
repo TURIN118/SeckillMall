@@ -31,11 +31,11 @@ import com.seckill.mall.service.ProductSkuService;
 import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.service.UserAddressService;
 import com.seckill.mall.service.UserService;
+import com.seckill.mall.shared.kernel.port.MessageBusPort;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,7 +81,7 @@ public class OrderServiceImpl implements OrderService {
     private final EmailService emailService;
     private final NormalOrderMapper normalOrderMapper;
     private final NormalOrderItemMapper normalOrderItemMapper;
-    private final RabbitTemplate rabbitTemplate;
+    private final MessageBusPort messageBusPort;
     private final ProductSkuService productSkuService;
     // Phase 6：消除跨模块 Mapper 依赖，改用 ProductService 查询商品
     private final ProductService productService;
@@ -172,7 +172,7 @@ public class OrderServiceImpl implements OrderService {
             delay.setOrderType("NORMAL");
             delay.setExpireTime(order.getPayExpireTime() == null ? null
                     : order.getPayExpireTime().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli());
-            rabbitTemplate.convertAndSend(
+            messageBusPort.publish(
                     RabbitMQConfig.ORDER_DELAY_EXCHANGE,
                     RabbitMQConfig.ORDER_DELAY_ROUTING_KEY,
                     delay);

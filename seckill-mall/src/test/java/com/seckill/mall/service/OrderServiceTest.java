@@ -17,6 +17,7 @@ import com.seckill.mall.mapper.NormalOrderItemMapper;
 import com.seckill.mall.mapper.NormalOrderMapper;
 
 import com.seckill.mall.service.impl.OrderServiceImpl;
+import com.seckill.mall.shared.kernel.port.MessageBusPort;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
 import org.junit.jupiter.api.BeforeAll;
@@ -27,7 +28,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -69,7 +69,7 @@ class OrderServiceTest {
     @Mock
     private NormalOrderItemMapper normalOrderItemMapper;
     @Mock
-    private RabbitTemplate rabbitTemplate;
+    private MessageBusPort messageBusPort;
     @Mock
     private ProductSkuService productSkuService;
     @Mock

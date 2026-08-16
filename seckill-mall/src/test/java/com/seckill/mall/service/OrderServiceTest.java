@@ -67,7 +67,7 @@ class OrderServiceTest {
     @Mock
     private ObjectMapper objectMapper;
     @Mock
-    private CouponService couponService;
+    private CouponUsageService couponUsageService;
     @Mock
     private InventoryService inventoryService;
     @Mock

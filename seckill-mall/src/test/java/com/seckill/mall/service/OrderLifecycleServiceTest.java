@@ -58,7 +58,7 @@ class OrderLifecycleServiceTest {
     @Mock
     private NormalOrderItemMapper normalOrderItemMapper;
     @Mock
-    private CouponService couponService;
+    private CouponUsageService couponUsageService;
     @Mock
     private PaymentService paymentService;
     @Mock

@@ -31,7 +31,7 @@ public interface OrderService {
      * 价格取 SKU 价格；SKU 属性快照由 SKU 的 attributes JSON 转可读字符串。
      * 若 skuId 为空，按原逻辑扣减 t_product.stock，价格取 t_product.original_price。
      * <p>
-     * 优惠券：若 userCouponId 非空，调用 {@code couponService.calculateDiscount} 计算优惠金额，
+     * 优惠券：若 userCouponId 非空，调用 {@code couponUsageService.calculateDiscount} 计算优惠金额，
      * 实付金额 = 商品总额 - 优惠金额，订单记录 userCouponId 与 discountAmount。
      *
      * @param userId       用户 ID

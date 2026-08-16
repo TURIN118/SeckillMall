@@ -18,7 +18,7 @@ import com.seckill.mall.mapper.NormalOrderItemMapper;
 import com.seckill.mall.mapper.NormalOrderMapper;
 import com.seckill.mall.mq.message.OrderDelayMessage;
 import com.seckill.mall.service.CartService;
-import com.seckill.mall.service.CouponService;
+import com.seckill.mall.service.CouponUsageService;
 import com.seckill.mall.service.InventoryService;
 import com.seckill.mall.service.OrderService;
 import com.seckill.mall.service.ProductService;
@@ -73,8 +73,8 @@ public class OrderServiceImpl implements OrderService {
     // Phase 6：消除跨模块 Mapper 依赖，改用 ProductService 查询商品
     private final ProductService productService;
     private final ObjectMapper objectMapper;
-    // 优惠券服务：普通订单创建时接入优惠券抵扣
-    private final CouponService couponService;
+    // 优惠券核销服务：普通订单创建时接入优惠券抵扣（Phase P2-3 从 CouponService 拆分）
+    private final CouponUsageService couponUsageService;
     // Phase 4b-3：商品库存扣减/回补抽取至 InventoryService
     private final InventoryService inventoryService;
     // Phase 7：消除剩余跨模块 Mapper 依赖，改用对应领域 Service 内部调用入口
@@ -415,7 +415,7 @@ public class OrderServiceImpl implements OrderService {
      * 优惠券抵扣：计算优惠金额并更新订单的 userCouponId / discountAmount / payAmount。
      * <p>
      * 若 userCouponId 为空，discountAmount 置 0，payAmount 不变。
-     * 若 userCouponId 非空，调用 {@code couponService.calculateDiscount} 计算优惠金额，
+     * 若 userCouponId 非空，调用 {@code couponUsageService.calculateDiscount} 计算优惠金额，
      * 实付金额 = 商品总额 + 运费 - 优惠金额（不能为负）。
      */
     private void applyCouponToOrder(NormalOrder order, Long userCouponId, Long userId,
@@ -426,7 +426,7 @@ public class OrderServiceImpl implements OrderService {
             // payAmount 已在 buildNormalOrder 中设置为 totalAmount + freight
             return;
         }
-        BigDecimal discount = couponService.calculateDiscount(userCouponId, userId, orderAmount, productIds);
+        BigDecimal discount = couponUsageService.calculateDiscount(userCouponId, userId, orderAmount, productIds);
         order.setUserCouponId(userCouponId);
         order.setDiscountAmount(discount);
         // 实付金额 = 商品总额 + 运费 - 优惠金额

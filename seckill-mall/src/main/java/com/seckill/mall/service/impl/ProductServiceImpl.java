@@ -21,6 +21,7 @@ import com.seckill.mall.service.ProductAttributeService;
 import com.seckill.mall.service.ProductService;
 import com.seckill.mall.service.ProductSkuService;
 import com.seckill.mall.shared.kernel.port.CachePort;
+import com.seckill.mall.util.ProductSortUtil;
 import com.seckill.mall.vo.ProductAttributeVO;
 import com.seckill.mall.vo.ProductSkuVO;
 import com.seckill.mall.vo.ProductVO;
@@ -67,21 +68,6 @@ public class ProductServiceImpl implements ProductService {
     private static final long RETRY_SLEEP_MS = 50L;
     private static final long LOCK_HOLD_SECONDS = 10L;
 
-    // ===== 排序字段白名单（与 ProductMapper.xml ORDER BY 支持的字段对齐）=====
-    /** Mapper XML 实际支持的标准排序字段 */
-    private static final java.util.Set<String> ALLOWED_SORT_FIELDS = java.util.Set.of("price", "sales", "createTime");
-    /** 前端常用别名 → Mapper 标准字段 的归一化映射 */
-    private static final java.util.Map<String, String> SORT_FIELD_ALIASES = java.util.Map.of(
-            "salesCount", "sales",
-            "originalPrice", "price",
-            "id", "createTime"
-    );
-    /** 默认排序字段（非法值回退） */
-    private static final String DEFAULT_SORT_FIELD = "createTime";
-    /** 合法排序方向 */
-    private static final java.util.Set<String> ALLOWED_SORT_ORDERS = java.util.Set.of("asc", "desc");
-    /** 默认排序方向（非法值回退） */
-    private static final String DEFAULT_SORT_ORDER = "desc";
 
     private final ProductMapper productMapper;
     private final CategoryMapper categoryMapper;
@@ -109,8 +95,8 @@ public class ProductServiceImpl implements ProductService {
             }
         }
         // 排序字段/方向白名单过滤，防 SQL 注入；非法值回退默认值
-        String sortField = sanitizeSortBy(req.getSortBy());
-        String sortOrder = sanitizeSortOrder(req.getSortOrder());
+        String sortField = ProductSortUtil.sanitizeSortBy(req.getSortBy());
+        String sortOrder = ProductSortUtil.sanitizeSortOrder(req.getSortOrder());
 
         // 分类筛选：一级分类(parentId=0)展开为所有二级分类 ID 集合，按 IN 查询；
         // 二级分类保持等值查询；空子分类直接返回空结果避免 IN() 语法错误。
@@ -380,46 +366,6 @@ public class ProductServiceImpl implements ProductService {
                 .setSql("favorite_count = favorite_count + " + delta));
     }
 
-    /**
-     * 白名单过滤排序字段，防 SQL 注入。
-     * 将前端传入的 sortBy 归一化为 Mapper 支持的标准字段(price/sales/createTime)：
-     * 1. 空值 → 默认值 createTime
-     * 2. 命中别名映射(如 salesCount→sales, originalPrice→price, id→createTime) → 标准字段
-     * 3. 命中白名单(price/sales/createTime) → 原值
-     * 4. 其他非法值 → 默认值 createTime
-     */
-    private String sanitizeSortBy(String sortBy) {
-        if (sortBy == null || sortBy.isBlank()) {
-            return DEFAULT_SORT_FIELD;
-        }
-        String trimmed = sortBy.trim();
-        // 先查别名映射
-        String normalized = SORT_FIELD_ALIASES.get(trimmed);
-        if (normalized != null) {
-            return normalized;
-        }
-        // 再查白名单
-        if (ALLOWED_SORT_FIELDS.contains(trimmed)) {
-            return trimmed;
-        }
-        return DEFAULT_SORT_FIELD;
-    }
-
-    /**
-     * 白名单过滤排序方向，防 SQL 注入。
-     * 将 sortOrder 归一化为小写 asc/desc，非法值回退为默认值 desc。
-     * 兼容前端传入的 ASC/DESC 大写形式。
-     */
-    private String sanitizeSortOrder(String sortOrder) {
-        if (sortOrder == null || sortOrder.isBlank()) {
-            return DEFAULT_SORT_ORDER;
-        }
-        String lower = sortOrder.trim().toLowerCase();
-        if (ALLOWED_SORT_ORDERS.contains(lower)) {
-            return lower;
-        }
-        return DEFAULT_SORT_ORDER;
-    }
 
     private void validateCategory(Long categoryId) {
         Category category = categoryMapper.selectById(categoryId);

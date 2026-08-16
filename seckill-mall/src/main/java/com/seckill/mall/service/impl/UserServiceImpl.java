@@ -68,6 +68,15 @@ public class UserServiceImpl implements UserService {
         return toUserVO(latest);
     }
 
+    @Override
+    public String getEmail(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        User user = userMapper.selectById(userId);
+        return user == null ? null : user.getEmail();
+    }
+
     /** Entity → VO */
     private UserVO toUserVO(User user) {
         UserVO vo = new UserVO();

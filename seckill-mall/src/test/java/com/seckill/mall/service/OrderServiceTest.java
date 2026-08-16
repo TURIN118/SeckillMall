@@ -19,7 +19,7 @@ import com.seckill.mall.mapper.NormalOrderMapper;
 import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.mapper.UserAddressMapper;
-import com.seckill.mall.mapper.UserMapper;
+
 import com.seckill.mall.service.impl.OrderServiceImpl;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
@@ -69,7 +69,7 @@ class OrderServiceTest {
     @Mock
     private ProductMapper productMapper;
     @Mock
-    private UserMapper userMapper;
+    private UserService userService;
     @Mock
     private EmailService emailService;
     @Mock
@@ -352,7 +352,7 @@ class OrderServiceTest {
         given(normalOrderMapper.selectById(NORMAL_ORDER_ID)).willReturn(unpaid);
         given(normalOrderMapper.update(any(), any())).willReturn(1);
         given(normalOrderItemMapper.selectList(any())).willReturn(List.of(buildNormalOrderItem()));
-        given(userMapper.selectById(USER_ID)).willReturn(null);
+        given(userService.getEmail(USER_ID)).willReturn(null);
 
         // when
         boolean result = orderService.timeoutCancelNormalOrder(NORMAL_ORDER_ID);

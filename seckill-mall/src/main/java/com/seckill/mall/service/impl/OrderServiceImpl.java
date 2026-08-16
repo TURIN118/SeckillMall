@@ -13,7 +13,6 @@ import com.seckill.mall.entity.NormalOrderItem;
 import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.ProductSku;
 import com.seckill.mall.entity.SeckillOrder;
-import com.seckill.mall.entity.User;
 import com.seckill.mall.entity.UserAddress;
 import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.entity.enums.ProductStatus;
@@ -24,7 +23,6 @@ import com.seckill.mall.mapper.NormalOrderMapper;
 import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.mapper.UserAddressMapper;
-import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.mq.message.OrderDelayMessage;
 import com.seckill.mall.service.CouponService;
 import com.seckill.mall.service.EmailService;
@@ -32,6 +30,7 @@ import com.seckill.mall.service.InventoryService;
 import com.seckill.mall.service.OrderService;
 import com.seckill.mall.service.PaymentService;
 import com.seckill.mall.service.ProductSkuService;
+import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
 import lombok.RequiredArgsConstructor;
@@ -80,7 +79,7 @@ public class OrderServiceImpl implements OrderService {
 
     private final SeckillOrderMapper seckillOrderMapper;
     private final ProductMapper productMapper;
-    private final UserMapper userMapper;
+    private final UserService userService;
     private final EmailService emailService;
     private final NormalOrderMapper normalOrderMapper;
     private final NormalOrderItemMapper normalOrderItemMapper;
@@ -149,7 +148,7 @@ public class OrderServiceImpl implements OrderService {
         log.info("普通订单超时取消成功，orderNo={}, orderId={}", order.getOrderNo(), orderId);
 
         // 超时取消邮件：异步发送，失败不影响主流程
-        String email = getUserEmail(order.getUserId());
+        String email = userService.getEmail(order.getUserId());
         if (email != null) {
             try {
                 emailService.sendOrderCancel(email, order.getOrderNo(), CANCEL_REASON_TIMEOUT);
@@ -181,13 +180,6 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-    private String getUserEmail(Long userId) {
-        if (userId == null) {
-            return null;
-        }
-        User user = userMapper.selectById(userId);
-        return user == null ? null : user.getEmail();
-    }
 
     private String generateTransactionId() {
         return "PAY" + LocalDateTime.now().format(ORDER_NO_FORMATTER) + randomDigits(6);
@@ -504,7 +496,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 邮件通知（异步，失败不影响主流程）
-        String email = getUserEmail(userId);
+        String email = userService.getEmail(userId);
         if (email != null) {
             try {
                 emailService.sendPaySuccess(email, order.getOrderNo(), order.getPayAmount(),
@@ -579,7 +571,7 @@ public class OrderServiceImpl implements OrderService {
                 order.getOrderNo(), userId, items.size());
 
         // 7. 取消邮件通知（异步，失败不影响主流程）
-        String email = getUserEmail(userId);
+        String email = userService.getEmail(userId);
         if (email != null) {
             try {
                 emailService.sendOrderCancel(email, order.getOrderNo(), CANCEL_REASON_USER);

@@ -10,16 +10,15 @@ import com.seckill.mall.converter.SeckillOrderConverter;
 import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.SeckillOrder;
-import com.seckill.mall.entity.User;
 import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
-import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.service.EmailService;
 import com.seckill.mall.service.PaymentService;
 import com.seckill.mall.service.SeckillOrderService;
+import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.SeckillOrderVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +65,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
     private final SeckillGoodsMapper seckillGoodsMapper;
     private final ProductMapper productMapper;
     private final SeckillLuaService seckillLuaService;
-    private final UserMapper userMapper;
+    private final UserService userService;
     private final EmailService emailService;
     // Phase 4b-2：支付扣款逻辑抽取至 PaymentService（钱包扣款 + 模拟支付）
     private final PaymentService paymentService;
@@ -182,7 +181,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
         SeckillOrder paidOrder = seckillOrderMapper.selectById(orderId);
 
         // L8: 支付成功邮件：异步发送，失败不影响主流程，添加 try-catch 防止异常冒泡
-        String email = getUserEmail(userId);
+        String email = userService.getEmail(userId);
         if (email != null) {
             try {
                 emailService.sendPaySuccess(email, paidOrder.getOrderNo(), paidOrder.getTotalAmount(),
@@ -237,7 +236,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
         SeckillOrder cancelledOrder = seckillOrderMapper.selectById(orderId);
 
         // 订单取消邮件：异步发送，失败不影响主流程
-        String email = getUserEmail(userId);
+        String email = userService.getEmail(userId);
         if (email != null) {
             try {
                 emailService.sendOrderCancel(email, cancelledOrder.getOrderNo(), CANCEL_REASON_USER);
@@ -296,7 +295,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
         log.info("秒杀订单超时取消成功，orderNo={}, orderId={}", order.getOrderNo(), orderId);
 
         // 超时取消邮件：异步发送，失败不影响主流程
-        String email = getUserEmail(order.getUserId());
+        String email = userService.getEmail(order.getUserId());
         if (email != null) {
             try {
                 emailService.sendOrderCancel(email, order.getOrderNo(), CANCEL_REASON_TIMEOUT);
@@ -387,13 +386,6 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
         return order;
     }
 
-    private String getUserEmail(Long userId) {
-        if (userId == null) {
-            return null;
-        }
-        User user = userMapper.selectById(userId);
-        return user == null ? null : user.getEmail();
-    }
 
     private OrderStatus parseStatus(Integer status) {
         if (status == null) {

@@ -32,4 +32,12 @@ public interface UserService {
      * @return 更新后的用户信息
      */
     UserVO updateEmail(Long userId, String email);
+
+    /**
+     * 查询用户邮箱（用于订单通知等场景）。
+     *
+     * @param userId 用户 ID
+     * @return 邮箱地址，用户不存在时返回 null
+     */
+    String getEmail(Long userId);
 }

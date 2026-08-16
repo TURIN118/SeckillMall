@@ -6,14 +6,12 @@ import com.seckill.mall.converter.SeckillOrderConverter;
 import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.SeckillOrder;
-import com.seckill.mall.entity.User;
 import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
-import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.service.impl.SeckillOrderServiceImpl;
 import com.seckill.mall.vo.SeckillOrderVO;
 import org.junit.jupiter.api.BeforeAll;
@@ -65,7 +63,7 @@ class SeckillOrderServiceTest {
     @Mock
     private SeckillLuaService seckillLuaService;
     @Mock
-    private UserMapper userMapper;
+    private UserService userService;
     @Mock
     private EmailService emailService;
     @Mock
@@ -192,10 +190,7 @@ class SeckillOrderServiceTest {
         given(seckillOrderMapper.selectById(ORDER_ID)).willReturn(order, paidOrder);
         // 乐观锁更新成功
         given(seckillOrderMapper.update(any(), any())).willReturn(1);
-        User user = new User();
-        user.setId(USER_ID);
-        user.setEmail("buyer@seckill.com");
-        given(userMapper.selectById(USER_ID)).willReturn(user);
+        given(userService.getEmail(USER_ID)).willReturn("buyer@seckill.com");
 
         // when
         SeckillOrderVO paid = seckillOrderService.payOrder(USER_ID, ORDER_ID, "ALIPAY");
@@ -264,7 +259,7 @@ class SeckillOrderServiceTest {
         // 实现中 cancelOrder 会两次 selectById：首次返回 UNPAID，再次返回 CANCELLED
         given(seckillOrderMapper.selectById(ORDER_ID)).willReturn(order, cancelledOrder);
         given(seckillOrderMapper.update(any(), any())).willReturn(1);
-        given(userMapper.selectById(USER_ID)).willReturn(null);
+        given(userService.getEmail(USER_ID)).willReturn(null);
 
         // when
         SeckillOrderVO cancelled = seckillOrderService.cancelOrder(USER_ID, ORDER_ID);
@@ -299,7 +294,7 @@ class SeckillOrderServiceTest {
         SeckillOrder order = buildOrder(OrderStatus.UNPAID);
         given(seckillOrderMapper.selectById(ORDER_ID)).willReturn(order);
         given(seckillOrderMapper.update(any(), any())).willReturn(1);
-        given(userMapper.selectById(USER_ID)).willReturn(null);
+        given(userService.getEmail(USER_ID)).willReturn(null);
 
         // when
         boolean result = seckillOrderService.timeoutCancel(ORDER_ID);

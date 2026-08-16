@@ -1,6 +1,6 @@
 package com.seckill.mall.service;
 
-import com.seckill.mall.common.BusinessException;
+import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.dto.LoginRequest;
 import com.seckill.mall.dto.RegisterRequest;

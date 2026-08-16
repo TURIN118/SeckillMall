@@ -1,7 +1,7 @@
 package com.seckill.mall.service;
 
 
-import com.seckill.mall.cache.SeckillLuaService;
+
 import com.seckill.mall.converter.SeckillOrderConverter;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.SeckillOrder;
@@ -59,7 +59,7 @@ class SeckillOrderServiceTest {
     @Mock
     private ProductService productService;
     @Mock
-    private SeckillLuaService seckillLuaService;
+    private SeckillInventoryPort seckillInventoryPort;
     @Mock
     private UserService userService;
     @Mock
@@ -260,9 +260,8 @@ class SeckillOrderServiceTest {
         assertThat(cancelled.getStatus()).isEqualTo("CANCELLED");
         assertThat(cancelled.getCancelTime()).isNotNull();
         assertThat(cancelled.getCancelReason()).isEqualTo("用户主动取消");
-        // rollbackStock 已改为调用 seckillLuaService.rollbackDeduct + seckillGoodsMapper.restoreStockOptimistic
-        then(seckillGoodsMapper).should().restoreStockOptimistic(SECKILL_ID);
-        then(seckillLuaService).should().rollbackDeduct(SECKILL_ID, USER_ID);
+        // Phase 10：rollbackStock 已迁移至 SeckillInventoryPort.rollback
+        then(seckillInventoryPort).should().rollback(SECKILL_ID, USER_ID);
     }
 
     @Test
@@ -276,7 +275,7 @@ class SeckillOrderServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.ORDER_CANCEL_FAILED);
-        then(seckillLuaService).should(never()).rollbackDeduct(any(), any());
+        then(seckillInventoryPort).should(never()).rollback(any(), any());
     }
 
     @Test
@@ -293,9 +292,8 @@ class SeckillOrderServiceTest {
 
         // then
         assertThat(result).isTrue();
-        // rollbackStock 已改为调用 seckillLuaService.rollbackDeduct + seckillGoodsMapper.restoreStockOptimistic
-        then(seckillGoodsMapper).should().restoreStockOptimistic(SECKILL_ID);
-        then(seckillLuaService).should().rollbackDeduct(SECKILL_ID, USER_ID);
+        // Phase 10：rollbackStock 已迁移至 SeckillInventoryPort.rollback
+        then(seckillInventoryPort).should().rollback(SECKILL_ID, USER_ID);
     }
 
     @Test
@@ -309,7 +307,7 @@ class SeckillOrderServiceTest {
 
         // then
         assertThat(result).isFalse();
-        then(seckillLuaService).should(never()).rollbackDeduct(any(), any());
+        then(seckillInventoryPort).should(never()).rollback(any(), any());
     }
 
     @Test

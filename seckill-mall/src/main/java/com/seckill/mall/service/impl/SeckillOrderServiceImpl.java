@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.seckill.mall.cache.SeckillLuaService;
+
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.converter.SeckillOrderConverter;
@@ -17,6 +17,7 @@ import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.service.EmailService;
 import com.seckill.mall.service.PaymentService;
 import com.seckill.mall.service.ProductService;
+import com.seckill.mall.service.SeckillInventoryPort;
 import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.SeckillOrderVO;
@@ -64,7 +65,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
     private final SeckillOrderMapper seckillOrderMapper;
     private final SeckillGoodsMapper seckillGoodsMapper;
     private final ProductService productService;
-    private final SeckillLuaService seckillLuaService;
+    private final SeckillInventoryPort seckillInventoryPort;
     private final UserService userService;
     private final EmailService emailService;
     // Phase 4b-2：支付扣款逻辑抽取至 PaymentService（钱包扣款 + 模拟支付）
@@ -215,7 +216,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
 
         // H-C1 修复：回补 DB + Redis 库存移到事务提交后执行，避免事务回滚后不一致
         Long seckillId = order.getSeckillId();
-        registerAfterCommit(() -> rollbackStock(seckillId, userId));
+        registerAfterCommit(() -> seckillInventoryPort.rollback(seckillId, userId));
 
         // 步骤2：CANCELLING → CANCELLED
         // 问题6修复：检查第二步 update 返回行数，若为 0 记录 warn 日志。
@@ -281,7 +282,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
         // H-C1 修复：回补 DB + Redis 库存移到事务提交后执行
         Long seckillId = order.getSeckillId();
         Long orderUserId = order.getUserId();
-        registerAfterCommit(() -> rollbackStock(seckillId, orderUserId));
+        registerAfterCommit(() -> seckillInventoryPort.rollback(seckillId, orderUserId));
 
         // CANCELLING → TIMEOUT
         seckillOrderMapper.update(null, new LambdaUpdateWrapper<SeckillOrder>()
@@ -323,36 +324,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
     }
 
     /**
-     * H-C1 + M-C2 修复：回补 DB available_count + 原子回补 Redis 库存。
-     * <p>
-     * H-C1：在 afterCommit 中回补 DB available_count（之前只回补 Redis，DB 库存单调递减）。
-     * M-C2：Redis 回补使用 Lua 脚本原子执行 INCR + SREM，避免非原子操作的不一致。
-     * <p>
-     * DB 回补失败仅记录日志，由 SeckillStatusScheduler 中的库存对账补偿任务兜底。
-     * Redis 回补失败仅记录日志，不影响主流程。
-     */
-    private void rollbackStock(Long seckillId, Long userId) {
-        // H-C1 修复：回补 DB available_count
-        try {
-            int rows = seckillGoodsMapper.restoreStockOptimistic(seckillId);
-            if (rows == 0) {
-                log.warn("回补 DB 库存失败（活动不存在或库存已满），seckillId={}，由补偿任务兜底", seckillId);
-            } else {
-                log.info("回补 DB 库存成功 seckillId={}", seckillId);
-            }
-        } catch (Exception e) {
-            log.warn("回补 DB 库存异常 seckillId={}，由补偿任务兜底", seckillId, e);
-        }
-        // M-C2 修复：原子回补 Redis 库存（Lua 脚本 INCR + SREM）
-        try {
-            seckillLuaService.rollbackDeduct(seckillId, userId);
-        } catch (Exception e) {
-            // Redis 异常不阻断主流程，由补偿任务兜底
-            log.warn("回补 Redis 库存失败，由补偿任务兜底 seckillId={} userId={}", seckillId, userId, e);
-        }
-    }
 
-    /**
      * H-C2 修复：物理删除秒杀订单（用于消费者 DB 扣减失败时撤销幽灵单）。
      * <p>
      * 仅在订单为 UNPAID 状态时删除，避免误删已进入业务流程的订单。

@@ -17,7 +17,7 @@ import com.seckill.mall.mq.message.OrderDelayMessage;
 import com.seckill.mall.mq.message.SeckillOrderMessage;
 import com.seckill.mall.mq.message.SeckillResultMessage;
 import com.seckill.mall.service.EmailService;
-import com.seckill.mall.service.OrderService;
+import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.vo.SeckillResultVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +45,7 @@ public class SeckillOrderConsumer {
     private static final long RESULT_TTL_MINUTES = 10L;
     private static final long CONSUMED_TTL_HOURS = 24L;
 
-    private final OrderService orderService;
+    private final SeckillOrderService seckillOrderService;
     private final RabbitTemplate rabbitTemplate;
     private final RedisService redisService;
     private final ObjectMapper objectMapper;
@@ -77,7 +77,7 @@ public class SeckillOrderConsumer {
         }
 
         try {
-            SeckillOrder order = orderService.createSeckillOrder(
+            SeckillOrder order = seckillOrderService.createSeckillOrder(
                     message.getSeckillId(), message.getUserId(), message.getRequestId());
 
             // H-C2 修复：DB 扣减失败（rows==0）必须撤销订单并写失败结果，不写 writeSuccessResult。
@@ -89,7 +89,7 @@ public class SeckillOrderConsumer {
             } catch (Exception e) {
                 log.error("MQ Consumer 扣减 DB 库存异常，撤销订单 seckillId={} orderNo={}",
                         message.getSeckillId(), order.getOrderNo(), e);
-                orderService.deleteSeckillOrderPhysically(order.getId());
+                seckillOrderService.deleteSeckillOrderPhysically(order.getId());
                 writeFailureResult(message);
                 channel.basicAck(deliveryTag, false);
                 return;
@@ -97,7 +97,7 @@ public class SeckillOrderConsumer {
             if (rows == 0) {
                 log.warn("MQ Consumer 扣减 DB 库存失败（库存已为 0），撤销订单 seckillId={} orderNo={}",
                         message.getSeckillId(), order.getOrderNo());
-                orderService.deleteSeckillOrderPhysically(order.getId());
+                seckillOrderService.deleteSeckillOrderPhysically(order.getId());
                 writeFailureResult(message);
                 channel.basicAck(deliveryTag, false);
                 return;

@@ -1,7 +1,5 @@
 package com.seckill.mall.vo;
 
-import com.seckill.mall.entity.NormalOrder;
-import com.seckill.mall.entity.NormalOrderItem;
 import lombok.Data;
 
 import java.util.List;
@@ -9,11 +7,10 @@ import java.util.List;
 /**
  * 普通订单详情视图对象
  * <p>
- * 在普通订单实体基础上携带订单明细列表，用于订单详情展示。
- * <p>
- * M32 安全说明：当前直接暴露 {@link NormalOrder} / {@link NormalOrderItem} 实体，
- * 可能将内部字段(如 isDeleted、 updateTime、敏感字段)泄露给前端。
- * 建议后续重构为独立 VO，仅暴露前端所需字段，避免 Entity 与 VO 强耦合。
+ * 在普通订单视图基础上携带订单明细列表，用于订单详情展示。
+ * 订单与明细分别使用 {@link NormalOrderVO} / {@link NormalOrderItemVO}
+ * 独立 VO 承载，避免直接暴露 Entity 而违反 ArchUnit VO→Entity 分层规则。
+ * 字段名与原 Entity 一致，确保 JSON 响应结构不变。
  *
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
@@ -24,10 +21,10 @@ import java.util.List;
 public class NormalOrderDetailVO {
 
     /** 订单基础信息 */
-    private NormalOrder order;
+    private NormalOrderVO order;
 
     /** 订单明细列表 */
-    private List<NormalOrderItem> items;
+    private List<NormalOrderItemVO> items;
 
     /** 收货地址-收件人 */
     private String receiverName;

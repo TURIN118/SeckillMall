@@ -15,12 +15,12 @@ import com.seckill.mall.entity.User;
 import com.seckill.mall.entity.UserCoupon;
 import com.seckill.mall.entity.enums.CouponType;
 import com.seckill.mall.entity.enums.UserCouponStatus;
-import com.seckill.mall.mapper.CategoryMapper;
 import com.seckill.mall.mapper.CouponMapper;
-import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.UserCouponMapper;
-import com.seckill.mall.mapper.UserMapper;
+import com.seckill.mall.service.CategoryService;
 import com.seckill.mall.service.CouponService;
+import com.seckill.mall.service.ProductService;
+import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.AdminCouponRecordVO;
 import com.seckill.mall.vo.CouponVO;
 import com.seckill.mall.vo.UserCouponVO;
@@ -68,9 +68,9 @@ public class CouponServiceImpl implements CouponService {
 
     private final CouponMapper couponMapper;
     private final UserCouponMapper userCouponMapper;
-    private final UserMapper userMapper;
-    private final ProductMapper productMapper;
-    private final CategoryMapper categoryMapper;
+    private final UserService userService;
+    private final ProductService productService;
+    private final CategoryService categoryService;
 
     // ==================== 后台管理 ====================
 
@@ -169,7 +169,7 @@ public class CouponServiceImpl implements CouponService {
             throw new BusinessException(ErrorCode.COUPON_DISABLED);
         }
         // 校验用户存在
-        User user = userMapper.selectById(userId);
+        User user = userService.getUserById(userId);
         if (user == null) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
@@ -220,9 +220,7 @@ public class CouponServiceImpl implements CouponService {
                 .map(UserCoupon::getUserId)
                 .distinct()
                 .collect(Collectors.toList());
-        Map<Long, String> usernameMap = userMapper.selectList(
-                        new LambdaQueryWrapper<User>().in(User::getId, userIds))
-                .stream().collect(Collectors.toMap(User::getId, User::getUsername));
+        Map<Long, String> usernameMap = userService.getUsernamesByIds(userIds);
         // 查询优惠券名称
         Coupon coupon = couponMapper.selectById(couponId);
         String couponName = coupon == null ? null : coupon.getName();
@@ -251,7 +249,7 @@ public class CouponServiceImpl implements CouponService {
                 .collect(Collectors.toList());
         // 按商品筛选：仅保留该商品可用的券（通用券 + 该商品分类券 + 该商品专属券）
         if (productId != null) {
-            Product product = productMapper.selectById(productId);
+            Product product = productService.getProductById(productId);
             Long productCategoryId = product == null ? null : product.getCategoryId();
             available = available.stream()
                     .filter(c -> isCouponApplicableToProduct(c, productId, productCategoryId))
@@ -354,136 +352,13 @@ public class CouponServiceImpl implements CouponService {
                         new LambdaQueryWrapper<Coupon>().in(Coupon::getId, couponIds))
                 .stream().collect(Collectors.toMap(Coupon::getId, c -> c));
         // 查询当前用户名（批量场景下仅一个用户，单查即可）
-        User user = userMapper.selectById(userId);
+        User user = userService.getUserById(userId);
         String username = user == null ? null : user.getUsername();
         return userCoupons.stream()
                 .map(uc -> toUserCouponVO(uc, couponMap.get(uc.getCouponId()), username))
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public BigDecimal calculateDiscount(Long userCouponId, Long userId, BigDecimal orderAmount, List<Long> productIds) {
-        if (userCouponId == null || userId == null || orderAmount == null) {
-            return BigDecimal.ZERO;
-        }
-        // 查询用户优惠券
-        UserCoupon userCoupon = userCouponMapper.selectById(userCouponId);
-        if (userCoupon == null || !userId.equals(userCoupon.getUserId())) {
-            return BigDecimal.ZERO;
-        }
-        // 校验状态：必须未使用
-        if (userCoupon.getStatus() != UserCouponStatus.UNUSED) {
-            return BigDecimal.ZERO;
-        }
-        // 查询关联优惠券
-        Coupon coupon = couponMapper.selectById(userCoupon.getCouponId());
-        if (coupon == null) {
-            return BigDecimal.ZERO;
-        }
-        // 校验有效期
-        LocalDateTime now = LocalDateTime.now();
-        if (coupon.getStartTime() != null && now.isBefore(coupon.getStartTime())) {
-            return BigDecimal.ZERO;
-        }
-        if (coupon.getEndTime() != null && now.isAfter(coupon.getEndTime())) {
-            return BigDecimal.ZERO;
-        }
-        // 适用小计：当前简化处理，传入的 orderAmount 已是前端按 scope 预计算的适用商品小计
-        BigDecimal applicableAmount = orderAmount;
-        // 校验门槛：适用小计 >= minAmount
-        if (coupon.getMinAmount() != null && applicableAmount.compareTo(coupon.getMinAmount()) < 0) {
-            return BigDecimal.ZERO;
-        }
-        // 按券类型计算优惠金额
-        BigDecimal discount;
-        if (coupon.getType() == CouponType.AMOUNT) {
-            // 满减券：优惠 = coupon.amount
-            discount = coupon.getAmount() == null ? BigDecimal.ZERO : coupon.getAmount();
-        } else if (coupon.getType() == CouponType.DISCOUNT) {
-            // 折扣券：优惠 = 适用小计 × (1 - coupon.amount)
-            if (coupon.getAmount() == null) {
-                discount = BigDecimal.ZERO;
-            } else {
-                BigDecimal discountRate = BigDecimal.ONE.subtract(coupon.getAmount());
-                discount = applicableAmount.multiply(discountRate);
-            }
-        } else {
-            discount = BigDecimal.ZERO;
-        }
-        // 优惠金额不能超过适用小计（避免负实付）
-        if (discount.compareTo(applicableAmount) > 0) {
-            discount = applicableAmount;
-        }
-        // 优惠金额不能为负
-        if (discount.compareTo(BigDecimal.ZERO) < 0) {
-            discount = BigDecimal.ZERO;
-        }
-        return discount;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void useCoupon(Long userCouponId, Long userId, Long orderId) {
-        if (userCouponId == null || userId == null) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR, "用户优惠券ID/用户ID不能为空");
-        }
-        UserCoupon userCoupon = userCouponMapper.selectById(userCouponId);
-        if (userCoupon == null || !userId.equals(userCoupon.getUserId())) {
-            throw new BusinessException(ErrorCode.COUPON_NOT_FOUND, "优惠券不存在或不属于当前用户");
-        }
-        if (userCoupon.getStatus() != UserCouponStatus.UNUSED) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR, "优惠券已使用或已过期，无法核销");
-        }
-        // 乐观锁更新：UNUSED → USED，防并发重复核销
-        int rows = userCouponMapper.update(null, new LambdaUpdateWrapper<UserCoupon>()
-                .eq(UserCoupon::getId, userCouponId)
-                .eq(UserCoupon::getStatus, UserCouponStatus.UNUSED)
-                .set(UserCoupon::getStatus, UserCouponStatus.USED)
-                .set(UserCoupon::getUseTime, LocalDateTime.now())
-                .set(UserCoupon::getOrderId, orderId));
-        if (rows == 0) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR, "优惠券核销失败，可能已被并发使用");
-        }
-        // Coupon.usedCount 原子 +1
-        couponMapper.update(null, new LambdaUpdateWrapper<Coupon>()
-                .eq(Coupon::getId, userCoupon.getCouponId())
-                .setSql("used_count = used_count + 1"));
-        log.info("优惠券核销成功，userCouponId={}, userId={}, orderId={}", userCouponId, userId, orderId);
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void revertCoupon(Long userCouponId, Long userId) {
-        if (userCouponId == null || userId == null) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR, "用户优惠券ID/用户ID不能为空");
-        }
-        UserCoupon userCoupon = userCouponMapper.selectById(userCouponId);
-        if (userCoupon == null || !userId.equals(userCoupon.getUserId())) {
-            throw new BusinessException(ErrorCode.COUPON_NOT_FOUND, "优惠券不存在或不属于当前用户");
-        }
-        if (userCoupon.getStatus() != UserCouponStatus.USED) {
-            // 幂等：非 USED 状态直接返回（可能已回退过）
-            log.info("优惠券回退幂等返回，userCouponId={}, status={}", userCouponId, userCoupon.getStatus());
-            return;
-        }
-        // 乐观锁更新：USED → UNUSED，清除使用时间与订单ID
-        int rows = userCouponMapper.update(null, new LambdaUpdateWrapper<UserCoupon>()
-                .eq(UserCoupon::getId, userCouponId)
-                .eq(UserCoupon::getStatus, UserCouponStatus.USED)
-                .set(UserCoupon::getStatus, UserCouponStatus.UNUSED)
-                .set(UserCoupon::getUseTime, null)
-                .set(UserCoupon::getOrderId, null));
-        if (rows == 0) {
-            log.warn("优惠券回退失败，userCouponId={}，可能被并发修改", userCouponId);
-            return;
-        }
-        // Coupon.usedCount 原子 -1（防负数兜底）
-        couponMapper.update(null, new LambdaUpdateWrapper<Coupon>()
-                .eq(Coupon::getId, userCoupon.getCouponId())
-                .gt(Coupon::getUsedCount, 0)
-                .setSql("used_count = used_count - 1"));
-        log.info("优惠券回退成功，userCouponId={}, userId={}", userCouponId, userId);
-    }
 
     // ==================== 私有方法 ====================
 
@@ -498,9 +373,7 @@ public class CouponServiceImpl implements CouponService {
         return coupon;
     }
 
-    /**
-     * 校验优惠券创建/更新请求
-     */
+    /** 校验优惠券创建/更新请求 */
     private void validateCouponRequest(CouponCreateRequest req) {
         // 类型校验
         try {
@@ -558,13 +431,8 @@ public class CouponServiceImpl implements CouponService {
     }
 
     /**
-     * 构建适用范围描述标签。
-     * <ul>
-     *   <li>ALL / null：通用券，返回 null（不显示标签）</li>
-     *   <li>CATEGORY：返回"仅限XX分类"（查询分类名）</li>
-     *   <li>PRODUCT：返回"仅限XX商品"（查询商品名）</li>
-     * </ul>
-     * 查询失败时返回"仅限指定分类/商品"兜底文案，不抛异常。
+     * 构建适用范围标签：ALL→null / CATEGORY→"仅限XX分类" / PRODUCT→"仅限XX商品"。
+     * 查询失败返回兜底文案，不抛异常。
      */
     private String buildScopeLabel(Coupon coupon) {
         String scope = coupon.getScopeType();
@@ -575,7 +443,7 @@ public class CouponServiceImpl implements CouponService {
             if (coupon.getCategoryId() == null) {
                 return "仅限指定分类";
             }
-            Category category = categoryMapper.selectById(coupon.getCategoryId());
+            Category category = categoryService.getCategoryById(coupon.getCategoryId());
             String name = category == null ? "指定分类" : category.getName();
             return "仅限" + name;
         }
@@ -583,7 +451,7 @@ public class CouponServiceImpl implements CouponService {
             if (coupon.getProductId() == null) {
                 return "仅限指定商品";
             }
-            Product product = productMapper.selectById(coupon.getProductId());
+            Product product = productService.getProductById(coupon.getProductId());
             String name = product == null ? "指定商品" : product.getName();
             return "仅限" + name;
         }

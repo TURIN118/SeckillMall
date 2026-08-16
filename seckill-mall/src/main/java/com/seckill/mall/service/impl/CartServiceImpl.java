@@ -11,8 +11,8 @@ import com.seckill.mall.entity.Cart;
 import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.ProductSku;
 import com.seckill.mall.mapper.CartMapper;
-import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.service.CartService;
+import com.seckill.mall.service.ProductService;
 import com.seckill.mall.service.ProductSkuService;
 import com.seckill.mall.vo.CartItemVO;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +59,7 @@ public class CartServiceImpl implements CartService {
     private static final int MAX_CART_QUANTITY = 999;
 
     private final CartMapper cartMapper;
-    private final ProductMapper productMapper;
+    private final ProductService productService;
     private final ProductSkuService productSkuService;
     private final ObjectMapper objectMapper;
 
@@ -78,8 +78,7 @@ public class CartServiceImpl implements CartService {
                 .map(Cart::getProductId)
                 .distinct()
                 .collect(Collectors.toList());
-        List<Product> products = productMapper.selectList(
-                new LambdaQueryWrapper<Product>().in(Product::getId, productIds));
+        List<Product> products = productService.getProductsByIds(productIds);
         Map<Long, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
         // 2.1 批量查询 SKU 信息（5.7.2：填充 skuId / skuAttributes / skuMainImage）
@@ -121,7 +120,7 @@ public class CartServiceImpl implements CartService {
             throw new BusinessException(ErrorCode.CART_QUANTITY_INVALID);
         }
         // 校验商品存在
-        Product product = productMapper.selectById(productId);
+        Product product = productService.getProductById(productId);
         if (product == null) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
@@ -293,17 +292,14 @@ public class CartServiceImpl implements CartService {
     /**
      * 递增/递减商品加购计数（冗余计数维护）。
      * <p>
-     * 使用 {@code setSql} 直接执行 {@code cart_count = cart_count + delta}，
-     * 避免并发下的覆盖更新。{@code @TableLogic} 自动追加 {@code is_deleted=0} 条件。
+     * Phase 15：委托 {@link ProductService#updateCartCount(Long, int)}，
+     * 消除本类对 {@code ProductMapper} 的跨模块依赖。
      *
      * @param productId 商品 ID
      * @param delta     变化量（+1 或 -1）
      */
     private void updateProductCartCount(Long productId, int delta) {
-        LambdaUpdateWrapper<Product> wrapper = new LambdaUpdateWrapper<Product>()
-                .eq(Product::getId, productId)
-                .setSql("cart_count = cart_count + " + delta);
-        productMapper.update(null, wrapper);
+        productService.updateCartCount(productId, delta);
     }
 
     /**
@@ -373,5 +369,24 @@ public class CartServiceImpl implements CartService {
             log.warn("转换 SKU 属性 JSON 失败: {}", attributesJson, e);
             return attributesJson;
         }
+    }
+
+    // ==================== Phase 7：跨模块内部调用入口（供 OrderServiceImpl 使用） ====================
+
+    @Override
+    public List<Cart> getCartsByIds(List<Long> cartIds) {
+        if (cartIds == null || cartIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return cartMapper.selectList(
+                new LambdaQueryWrapper<Cart>().in(Cart::getId, cartIds));
+    }
+
+    @Override
+    public void deleteCartsByIds(List<Long> cartIds) {
+        if (cartIds == null || cartIds.isEmpty()) {
+            return;
+        }
+        cartMapper.delete(new LambdaQueryWrapper<Cart>().in(Cart::getId, cartIds));
     }
 }

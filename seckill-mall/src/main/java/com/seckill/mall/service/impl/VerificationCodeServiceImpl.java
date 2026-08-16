@@ -3,10 +3,10 @@ package com.seckill.mall.service.impl;
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.service.VerificationCodeService;
+import com.seckill.mall.shared.kernel.port.CachePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -45,7 +45,7 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
     /** 发送频率限制（秒） */
     private static final long RATE_LIMIT_SECONDS = 60L;
 
-    private final StringRedisTemplate stringRedisTemplate;
+    private final CachePort cachePort;
     private final JavaMailSender mailSender;
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -104,14 +104,14 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
             return false;
         }
         String key = CODE_KEY_PREFIX + target;
-        String stored = stringRedisTemplate.opsForValue().get(key);
+        String stored = cachePort.get(key);
         if (stored == null) {
             // 验证码不存在或已过期
             return false;
         }
         if (stored.equals(code)) {
             // 校验成功后立即删除，避免重复使用
-            stringRedisTemplate.delete(key);
+            cachePort.del(key);
             log.info("验证码校验成功，target={}", target);
             return true;
         }
@@ -137,10 +137,10 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
      */
     private void storeCode(String target, String code) {
         String key = CODE_KEY_PREFIX + target;
-        stringRedisTemplate.opsForValue().set(key, code, CODE_TTL_MINUTES, TimeUnit.MINUTES);
+        cachePort.set(key, code, CODE_TTL_MINUTES, TimeUnit.MINUTES);
         // 设置发送频率限制
         String rateKey = RATE_KEY_PREFIX + target;
-        stringRedisTemplate.opsForValue().set(rateKey, "1", RATE_LIMIT_SECONDS, TimeUnit.SECONDS);
+        cachePort.set(rateKey, "1", RATE_LIMIT_SECONDS, TimeUnit.SECONDS);
     }
 
     /**
@@ -148,7 +148,7 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
      */
     private void checkRateLimit(String target) {
         String rateKey = RATE_KEY_PREFIX + target;
-        Boolean exists = stringRedisTemplate.hasKey(rateKey);
+        Boolean exists = cachePort.exists(rateKey);
         if (Boolean.TRUE.equals(exists)) {
             throw new BusinessException(ErrorCode.VERIFICATION_CODE_RATE_LIMIT);
         }

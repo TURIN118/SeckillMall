@@ -1,6 +1,6 @@
 package com.seckill.mall.service;
 
-import com.seckill.mall.common.BusinessException;
+import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.dto.LoginRequest;
 import com.seckill.mall.dto.RegisterRequest;
@@ -15,6 +15,7 @@ import com.seckill.mall.security.TokenBlacklistService;
 import com.seckill.mall.security.TokenVersionService;
 import com.seckill.mall.security.UserStatusCacheService;
 import com.seckill.mall.service.impl.AuthServiceImpl;
+import com.seckill.mall.shared.kernel.port.CachePort;
 import com.seckill.mall.vo.LoginVO;
 import com.seckill.mall.vo.UserVO;
 import org.junit.jupiter.api.DisplayName;
@@ -23,8 +24,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,9 +57,7 @@ class AuthServiceTest {
     @Mock
     private CaptchaService captchaService;
     @Mock
-    private StringRedisTemplate stringRedisTemplate;
-    @Mock
-    private ValueOperations<String, String> valueOperations;
+    private CachePort cachePort;
     @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
@@ -146,8 +143,7 @@ class AuthServiceTest {
         req.setUsername(user.getUsername());
         req.setPassword("pass123");
 
-        given(stringRedisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get("login:fail:" + user.getUsername())).willReturn(null);
+        given(cachePort.get("login:fail:" + user.getUsername())).willReturn(null);
         given(userMapper.findByUsername(user.getUsername())).willReturn(user);
         given(passwordEncoder.matches(req.getPassword(), user.getPassword())).willReturn(true);
         given(tokenVersionService.getCurrentVersion(user.getId())).willReturn(1L);
@@ -162,7 +158,7 @@ class AuthServiceTest {
         assertThat(vo.getRefreshToken()).isEqualTo("refresh-token");
         assertThat(vo.getUser()).extracting(UserVO::getUsername).isEqualTo(user.getUsername());
         // 登录成功应清除失败计数并写入成功日志
-        then(stringRedisTemplate).should().delete("login:fail:" + user.getUsername());
+        then(cachePort).should().del("login:fail:" + user.getUsername());
         then(loginLogMapper).should().insert(any(LoginLog.class));
     }
 
@@ -175,11 +171,10 @@ class AuthServiceTest {
         req.setUsername(user.getUsername());
         req.setPassword("wrong");
 
-        given(stringRedisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get("login:fail:" + user.getUsername())).willReturn("0");
+        given(cachePort.get("login:fail:" + user.getUsername())).willReturn("0");
         given(userMapper.findByUsername(user.getUsername())).willReturn(user);
         given(passwordEncoder.matches(req.getPassword(), user.getPassword())).willReturn(false);
-        given(valueOperations.increment("login:fail:" + user.getUsername())).willReturn(1L);
+        given(cachePort.incr("login:fail:" + user.getUsername())).willReturn(1L);
 
         // when / then
         assertThatThrownBy(() -> authService.login(req, "127.0.0.1", null))
@@ -187,7 +182,7 @@ class AuthServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.USERNAME_OR_PASSWORD_ERROR);
         // 失败计数首次累加应设置 TTL
-        then(stringRedisTemplate).should(times(1)).expire(eq("login:fail:" + user.getUsername()), anyLong(), any());
+        then(cachePort).should(times(1)).expire(eq("login:fail:" + user.getUsername()), anyLong(), any());
     }
 
     @Test
@@ -198,8 +193,7 @@ class AuthServiceTest {
         req.setUsername("locked-user");
         req.setPassword("any");
 
-        given(stringRedisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get("login:fail:locked-user")).willReturn("5");
+        given(cachePort.get("login:fail:locked-user")).willReturn("5");
 
         // when / then
         assertThatThrownBy(() -> authService.login(req, "1.1.1.1", null))
@@ -219,11 +213,10 @@ class AuthServiceTest {
         req.setUsername(user.getUsername());
         req.setPassword("pass123");
 
-        given(stringRedisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get("login:fail:" + user.getUsername())).willReturn("0");
+        given(cachePort.get("login:fail:" + user.getUsername())).willReturn("0");
         given(userMapper.findByUsername(user.getUsername())).willReturn(user);
         given(passwordEncoder.matches(req.getPassword(), user.getPassword())).willReturn(true);
-        given(valueOperations.increment("login:fail:" + user.getUsername())).willReturn(1L);
+        given(cachePort.incr("login:fail:" + user.getUsername())).willReturn(1L);
 
         // when / then
         assertThatThrownBy(() -> authService.login(req, "127.0.0.1", null))

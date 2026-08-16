@@ -6,45 +6,28 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.OperationLogQueryRequest;
 import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.mapper.OperationLogMapper;
-import com.seckill.mall.mapper.SeckillOrderMapper;
+import com.seckill.mall.service.SeckillOrderService;
+import com.seckill.mall.service.SystemHealthMonitor;
 import com.seckill.mall.service.SystemService;
 import com.seckill.mall.vo.OperationLogVO;
 import com.seckill.mall.vo.OrderStatusDistributionVO;
 import com.seckill.mall.vo.OrderTrendVO;
 import com.seckill.mall.vo.SystemHealthVO;
-import com.sun.management.OperatingSystemMXBean;
-import com.zaxxer.hikari.HikariDataSource;
-import com.zaxxer.hikari.HikariPoolMXBean;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.connection.Connection;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.sql.DataSource;
-import java.io.File;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
-import java.lang.management.RuntimeMXBean;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Date;
-import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * 创建人：@author WNJ
@@ -60,15 +43,12 @@ public class SystemServiceImpl implements SystemService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private final SeckillOrderMapper seckillOrderMapper;
+    private final SeckillOrderService seckillOrderService;
     private final OperationLogMapper operationLogMapper;
-    private final StringRedisTemplate stringRedisTemplate;
-    private final JdbcTemplate jdbcTemplate;
-    private final ConnectionFactory rabbitConnectionFactory;
     /**
-     * 数据库连接池数据源，用于获取 HikariCP 连接池使用情况
+     * 系统健康监控端口，负责 Redis/DB/MQ 健康检查与资源采集
      */
-    private final DataSource dataSource;
+    private final SystemHealthMonitor systemHealthMonitor;
 
     @Override
 
@@ -96,29 +76,29 @@ public class SystemServiceImpl implements SystemService {
     @Override
     public SystemHealthVO getSystemHealth() {
         SystemHealthVO vo = new SystemHealthVO();
-        vo.setRedis(checkRedis());
-        vo.setDatabase(checkDatabase());
-        vo.setMq(checkMq());
+        vo.setRedis(systemHealthMonitor.checkRedis());
+        vo.setDatabase(systemHealthMonitor.checkDatabase());
+        vo.setMq(systemHealthMonitor.checkMq());
         // 资源监控字段（可选，采集失败返回 null，不影响主流程）
-        vo.setCpuUsage(getCpuUsage());
-        vo.setMemoryUsage(getMemoryUsage());
-        vo.setDiskUsage(getDiskUsage());
-        vo.setRedisHitRate(getRedisHitRate());
-        vo.setRedisResponseTime(getRedisResponseTime());
-        vo.setDbPoolUsage(getDbPoolUsage());
-        vo.setMqQueueBacklog(getMqQueueBacklog());
+        vo.setCpuUsage(systemHealthMonitor.getCpuUsage());
+        vo.setMemoryUsage(systemHealthMonitor.getMemoryUsage());
+        vo.setDiskUsage(systemHealthMonitor.getDiskUsage());
+        vo.setRedisHitRate(systemHealthMonitor.getRedisHitRate());
+        vo.setRedisResponseTime(systemHealthMonitor.getRedisResponseTime());
+        vo.setDbPoolUsage(systemHealthMonitor.getDbPoolUsage());
+        vo.setMqQueueBacklog(systemHealthMonitor.getMqQueueBacklog());
         // JVM 内存监控
-        vo.setJvmHeapUsage(getJvmHeapUsage());
-        vo.setJvmNonHeapUsage(getJvmNonHeapUsage());
+        vo.setJvmHeapUsage(systemHealthMonitor.getJvmHeapUsage());
+        vo.setJvmNonHeapUsage(systemHealthMonitor.getJvmNonHeapUsage());
         // 数据库连接池详情
-        vo.setDbActiveConnections(getDbActiveConnections());
-        vo.setDbIdleConnections(getDbIdleConnections());
-        vo.setDbMaxConnections(getDbMaxConnections());
+        vo.setDbActiveConnections(systemHealthMonitor.getDbActiveConnections());
+        vo.setDbIdleConnections(systemHealthMonitor.getDbIdleConnections());
+        vo.setDbMaxConnections(systemHealthMonitor.getDbMaxConnections());
         // 系统信息
-        vo.setOsName(getOsName());
-        vo.setJdkVersion(getJdkVersion());
-        vo.setAppStartTime(getAppStartTime());
-        vo.setAppUptime(getAppUptime());
+        vo.setOsName(systemHealthMonitor.getOsName());
+        vo.setJdkVersion(systemHealthMonitor.getJdkVersion());
+        vo.setAppStartTime(systemHealthMonitor.getAppStartTime());
+        vo.setAppUptime(systemHealthMonitor.getAppUptime());
 
         return vo;
     }
@@ -132,7 +112,7 @@ public class SystemServiceImpl implements SystemService {
         LocalDate startDate = endDate.minusDays(n - 1L);
 
         // 仅统计 PAID/COMPLETED 订单
-        List<Map<String, Object>> rows = seckillOrderMapper.selectOrderTrend(
+        List<Map<String, Object>> rows = seckillOrderService.selectOrderTrend(
                 startDate, endDate, List.of(OrderStatus.PAID, OrderStatus.COMPLETED));
 
         // 查询结果按日期建立索引，便于按天补零
@@ -178,7 +158,7 @@ public class SystemServiceImpl implements SystemService {
         LocalDateTime startLdt = parseDateTime(startTime, LocalDateTime.now().minusDays(30));
         LocalDateTime endLdt = parseDateTime(endTime, LocalDateTime.now());
 
-        List<Map<String, Object>> rows = seckillOrderMapper.selectStatusDistribution(startLdt, endLdt);
+        List<Map<String, Object>> rows = seckillOrderService.selectStatusDistribution(startLdt, endLdt);
 
         // 按状态码建立计数索引
         Map<String, Long> countByStatus = new HashMap<>();
@@ -223,368 +203,6 @@ public class SystemServiceImpl implements SystemService {
         vo.setItems(items);
         vo.setTotal(total);
         return vo;
-    }
-
-    private String checkRedis() {
-        try {
-            RedisConnection connection = stringRedisTemplate.getConnectionFactory().getConnection();
-            try {
-                String pong = connection.ping();
-                return "PONG".equalsIgnoreCase(pong) ? "UP" : "DOWN";
-            } finally {
-                connection.close();
-            }
-        } catch (Exception e) {
-            log.warn("Redis 健康检查失败: {}", e.getMessage());
-            return "DOWN";
-        }
-    }
-
-    private String checkDatabase() {
-        try {
-            Integer one = jdbcTemplate.queryForObject("SELECT 1", Integer.class);
-            return one != null && one == 1 ? "UP" : "DOWN";
-        } catch (Exception e) {
-            log.warn("数据库健康检查失败: {}", e.getMessage());
-            return "DOWN";
-        }
-    }
-
-    private String checkMq() {
-        try {
-            Connection connection = rabbitConnectionFactory.createConnection();
-            try {
-                return connection.isOpen() ? "UP" : "DOWN";
-            } finally {
-                connection.close();
-            }
-        } catch (Exception e) {
-            log.warn("RabbitMQ 健康检查失败: {}", e.getMessage());
-            return "DOWN";
-        }
-    }
-
-    // ==================== 资源监控采集方法（失败返回 null，不影响主流程） ====================
-
-    /**
-     * 采集系统 CPU 使用率（0-100，1 位小数）
-     */
-    private Double getCpuUsage() {
-        try {
-            OperatingSystemMXBean osBean =
-                    (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-            double load = osBean.getSystemCpuLoad();
-            if (load < 0) {
-                // 首次调用可能返回 -1
-                return null;
-            }
-            return round1(load * 100);
-        } catch (Exception e) {
-            log.debug("CPU采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 采集系统物理内存使用率（0-100，1 位小数）
-     */
-    private Double getMemoryUsage() {
-        try {
-            OperatingSystemMXBean osBean =
-                    (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-            long total = osBean.getTotalPhysicalMemorySize();
-            long free = osBean.getFreePhysicalMemorySize();
-            if (total <= 0) {
-                return null;
-            }
-            return round1((double) (total - free) / total * 100);
-        } catch (Exception e) {
-            log.debug("内存采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 采集当前工作目录所在磁盘的使用率（0-100，1 位小数）
-     */
-    private Double getDiskUsage() {
-        try {
-            File root = new File(".").getAbsoluteFile().getParentFile();
-            if (root == null) {
-                root = new File("/");
-            }
-            long total = root.getTotalSpace();
-            long free = root.getFreeSpace();
-            if (total <= 0) {
-                return null;
-            }
-            return round1((double) (total - free) / total * 100);
-        } catch (Exception e) {
-            log.debug("磁盘采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 采集 Redis 缓存命中率（0-100，1 位小数，基于 INFO stats 的 keyspace_hits/keyspace_misses）
-     */
-    private Double getRedisHitRate() {
-        try {
-            RedisConnection conn = stringRedisTemplate.getConnectionFactory().getConnection();
-            try {
-                Properties props = conn.info("stats");
-                if (props == null) {
-                    return null;
-                }
-                long hits = parseLong(props.getProperty("keyspace_hits"));
-                long misses = parseLong(props.getProperty("keyspace_misses"));
-                long total = hits + misses;
-                if (total <= 0) {
-                    return null;
-                }
-                return round1((double) hits / total * 100);
-            } finally {
-                conn.close();
-            }
-        } catch (Exception e) {
-            log.debug("Redis命中率采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 测量 Redis PING 响应耗时（如 "2ms"）
-     */
-    private String getRedisResponseTime() {
-        try {
-            long start = System.currentTimeMillis();
-            RedisConnection conn = stringRedisTemplate.getConnectionFactory().getConnection();
-            try {
-                conn.ping();
-            } finally {
-                conn.close();
-            }
-            long cost = System.currentTimeMillis() - start;
-            return cost + "ms";
-        } catch (Exception e) {
-            log.debug("Redis响应时间采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 采集 HikariCP 数据库连接池使用情况（如 "12/50"，active/max）
-     */
-    private String getDbPoolUsage() {
-        try {
-            HikariDataSource hikari = (HikariDataSource) dataSource;
-            HikariPoolMXBean pool = hikari.getHikariPoolMXBean();
-            if (pool == null) {
-                return null;
-            }
-            return pool.getActiveConnections() + "/" + hikari.getMaximumPoolSize();
-        } catch (Exception e) {
-            log.debug("DB连接池采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 采集 MQ 队列积压消息数。
-     * 简化实现：项目队列名未在此上下文可知，且秒杀场景下积压通常为 0；
-     * 如需精确值可注入 RabbitAdmin 遍历队列获取 messageCount。
-     */
-    private String getMqQueueBacklog() {
-        try {
-            return "0";
-        } catch (Exception e) {
-            log.debug("MQ积压采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    // ==================== JVM 内存监控 ====================
-
-    /**
-     * 采集 JVM 堆内存使用率（0-100，1 位小数）
-     */
-    private Double getJvmHeapUsage() {
-        try {
-            MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
-            MemoryUsage usage = memoryBean.getHeapMemoryUsage();
-            long used = usage.getUsed();
-            long max = usage.getMax();
-            if (max <= 0) {
-                return null;
-            }
-            return round1((double) used / max * 100);
-        } catch (Exception e) {
-            log.debug("JVM堆内存采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 采集 JVM 非堆内存使用率（0-100，1 位小数）
-     */
-    private Double getJvmNonHeapUsage() {
-        try {
-            MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
-            MemoryUsage usage = memoryBean.getNonHeapMemoryUsage();
-            long used = usage.getUsed();
-            long max = usage.getMax();
-            // 非堆内存 max 可能不固定（-1），无法计算百分比
-            if (max <= 0) {
-                return null;
-            }
-            return round1((double) used / max * 100);
-        } catch (Exception e) {
-            log.debug("JVM非堆内存采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    // ==================== 数据库连接池详情 ====================
-
-    /**
-     * 采集 HikariCP 活跃连接数
-     */
-    private Integer getDbActiveConnections() {
-        try {
-            HikariDataSource hikari = (HikariDataSource) dataSource;
-            HikariPoolMXBean pool = hikari.getHikariPoolMXBean();
-            if (pool == null) {
-                return null;
-            }
-            return pool.getActiveConnections();
-        } catch (Exception e) {
-            log.debug("DB活跃连接数采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 采集 HikariCP 空闲连接数
-     */
-    private Integer getDbIdleConnections() {
-        try {
-            HikariDataSource hikari = (HikariDataSource) dataSource;
-            HikariPoolMXBean pool = hikari.getHikariPoolMXBean();
-            if (pool == null) {
-                return null;
-            }
-            return pool.getIdleConnections();
-        } catch (Exception e) {
-            log.debug("DB空闲连接数采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 采集 HikariCP 最大连接数
-     */
-    private Integer getDbMaxConnections() {
-        try {
-            HikariDataSource hikari = (HikariDataSource) dataSource;
-            return hikari.getMaximumPoolSize();
-        } catch (Exception e) {
-            log.debug("DB最大连接数采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    // ==================== 系统信息 ====================
-
-    /**
-     * 获取操作系统名称
-     */
-    private String getOsName() {
-        try {
-            return System.getProperty("os.name");
-        } catch (Exception e) {
-            log.debug("操作系统名称采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 获取 JDK 版本
-     */
-    private String getJdkVersion() {
-        try {
-            return System.getProperty("java.version");
-        } catch (Exception e) {
-            log.debug("JDK版本采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 获取应用启动时间（yyyy-MM-dd HH:mm:ss）
-     */
-    private String getAppStartTime() {
-        try {
-            RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
-            long startTimeMillis = runtimeBean.getStartTime();
-            LocalDateTime startLdt = LocalDateTime.ofInstant(
-                    Instant.ofEpochMilli(startTimeMillis), ZoneId.systemDefault());
-            return startLdt.format(DATETIME_FORMATTER);
-        } catch (Exception e) {
-            log.debug("应用启动时间采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * 获取应用运行时长（如 "2h 13m" 或 "13m 25s"）
-     */
-    private String getAppUptime() {
-        try {
-            RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
-            long uptimeMillis = runtimeBean.getUptime();
-            Duration duration = Duration.ofMillis(uptimeMillis);
-            long days = duration.toDays();
-            long hours = duration.minusDays(days).toHours();
-            long minutes = duration.minusDays(days).minusHours(hours).toMinutes();
-            long seconds = duration.minusDays(days).minusHours(hours).minusMinutes(minutes).getSeconds();
-            StringBuilder sb = new StringBuilder();
-            if (days > 0) {
-                sb.append(days).append("d ");
-            }
-            if (hours > 0 || days > 0) {
-                sb.append(hours).append("h ");
-            }
-            if (minutes > 0 || hours > 0 || days > 0) {
-                sb.append(minutes).append("m ");
-            }
-            sb.append(seconds).append("s");
-            return sb.toString().trim();
-        } catch (Exception e) {
-            log.debug("应用运行时长采集失败: {}", e.getMessage());
-            return null;
-        }
-    }
-
-
-    /**
-     * 保留 1 位小数（HALF_UP）后转 double
-     */
-    private Double round1(double value) {
-        return BigDecimal.valueOf(value).setScale(1, RoundingMode.HALF_UP).doubleValue();
-    }
-
-    /**
-     * 安全解析 long，空串/非法值返回 0
-     */
-    private long parseLong(String s) {
-        if (s == null || s.isBlank()) {
-            return 0L;
-        }
-        try {
-            return Long.parseLong(s.trim());
-        } catch (NumberFormatException e) {
-            return 0L;
-        }
     }
 
     /**

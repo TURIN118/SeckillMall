@@ -20,6 +20,8 @@ import com.seckill.mall.service.CategoryService;
 import com.seckill.mall.service.ProductAttributeService;
 import com.seckill.mall.service.ProductService;
 import com.seckill.mall.service.ProductSkuService;
+import com.seckill.mall.shared.kernel.port.CachePort;
+import com.seckill.mall.util.ProductSortUtil;
 import com.seckill.mall.vo.ProductAttributeVO;
 import com.seckill.mall.vo.ProductSkuVO;
 import com.seckill.mall.vo.ProductVO;
@@ -27,7 +29,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,26 +68,11 @@ public class ProductServiceImpl implements ProductService {
     private static final long RETRY_SLEEP_MS = 50L;
     private static final long LOCK_HOLD_SECONDS = 10L;
 
-    // ===== 排序字段白名单（与 ProductMapper.xml ORDER BY 支持的字段对齐）=====
-    /** Mapper XML 实际支持的标准排序字段 */
-    private static final java.util.Set<String> ALLOWED_SORT_FIELDS = java.util.Set.of("price", "sales", "createTime");
-    /** 前端常用别名 → Mapper 标准字段 的归一化映射 */
-    private static final java.util.Map<String, String> SORT_FIELD_ALIASES = java.util.Map.of(
-            "salesCount", "sales",
-            "originalPrice", "price",
-            "id", "createTime"
-    );
-    /** 默认排序字段（非法值回退） */
-    private static final String DEFAULT_SORT_FIELD = "createTime";
-    /** 合法排序方向 */
-    private static final java.util.Set<String> ALLOWED_SORT_ORDERS = java.util.Set.of("asc", "desc");
-    /** 默认排序方向（非法值回退） */
-    private static final String DEFAULT_SORT_ORDER = "desc";
 
     private final ProductMapper productMapper;
     private final CategoryMapper categoryMapper;
     private final CategoryService categoryService;
-    private final StringRedisTemplate stringRedisTemplate;
+    private final CachePort cachePort;
     private final RedissonClient redissonClient;
     private final ObjectMapper objectMapper;
     private final ProductAttributeService productAttributeService;
@@ -109,8 +95,8 @@ public class ProductServiceImpl implements ProductService {
             }
         }
         // 排序字段/方向白名单过滤，防 SQL 注入；非法值回退默认值
-        String sortField = sanitizeSortBy(req.getSortBy());
-        String sortOrder = sanitizeSortOrder(req.getSortOrder());
+        String sortField = ProductSortUtil.sanitizeSortBy(req.getSortBy());
+        String sortOrder = ProductSortUtil.sanitizeSortOrder(req.getSortOrder());
 
         // 分类筛选：一级分类(parentId=0)展开为所有二级分类 ID 集合，按 IN 查询；
         // 二级分类保持等值查询；空子分类直接返回空结果避免 IN() 语法错误。
@@ -168,7 +154,7 @@ public class ProductServiceImpl implements ProductService {
         String key = CACHE_KEY_PREFIX + id;
 
         for (int retry = 0; retry < MAX_RETRY; retry++) {
-            String cached = stringRedisTemplate.opsForValue().get(key);
+            String cached = cachePort.get(key);
 
             // 1. 缓存命中：区分空值标记与真实数据
             if (cached != null) {
@@ -193,7 +179,7 @@ public class ProductServiceImpl implements ProductService {
                 }
 
                 // 3. Double Check：拿到锁后再查一次缓存
-                cached = stringRedisTemplate.opsForValue().get(key);
+                cached = cachePort.get(key);
                 if (cached != null) {
                     if (NULL_MARKER.equals(cached)) {
                         throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
@@ -208,7 +194,7 @@ public class ProductServiceImpl implements ProductService {
                 Product product = productMapper.selectById(id);
                 if (product == null) {
                     // 数据库不存在 → 缓存空值标记防穿透
-                    stringRedisTemplate.opsForValue().set(key, NULL_MARKER, NULL_TTL_SECONDS, TimeUnit.SECONDS);
+                    cachePort.set(key, NULL_MARKER, NULL_TTL_SECONDS, TimeUnit.SECONDS);
                     throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
                 }
 
@@ -217,7 +203,7 @@ public class ProductServiceImpl implements ProductService {
                 enrichWithSkuInfo(vo, product);
                 // 5. 写入缓存：TTL = 30min + 随机偏移(1~5min)，防雪崩
                 long ttl = BASE_TTL_SECONDS + ThreadLocalRandom.current().nextInt(RANDOM_TTL_BOUND_SECONDS) + 1;
-                stringRedisTemplate.opsForValue().set(key, serialize(vo), ttl, TimeUnit.SECONDS);
+                cachePort.set(key, serialize(vo), ttl, TimeUnit.SECONDS);
                 return vo;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -330,46 +316,56 @@ public class ProductServiceImpl implements ProductService {
         categoryService.evictCategoryCache();
     }
 
-    /**
-     * 白名单过滤排序字段，防 SQL 注入。
-     * 将前端传入的 sortBy 归一化为 Mapper 支持的标准字段(price/sales/createTime)：
-     * 1. 空值 → 默认值 createTime
-     * 2. 命中别名映射(如 salesCount→sales, originalPrice→price, id→createTime) → 标准字段
-     * 3. 命中白名单(price/sales/createTime) → 原值
-     * 4. 其他非法值 → 默认值 createTime
-     */
-    private String sanitizeSortBy(String sortBy) {
-        if (sortBy == null || sortBy.isBlank()) {
-            return DEFAULT_SORT_FIELD;
+    @Override
+    public boolean existsById(Long id) {
+        return productMapper.selectById(id) != null;
+    }
+
+    @Override
+    public Product getProductById(Long id) {
+        return productMapper.selectById(id);
+    }
+
+    @Override
+    public List<Product> getProductsByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
         }
-        String trimmed = sortBy.trim();
-        // 先查别名映射
-        String normalized = SORT_FIELD_ALIASES.get(trimmed);
-        if (normalized != null) {
-            return normalized;
-        }
-        // 再查白名单
-        if (ALLOWED_SORT_FIELDS.contains(trimmed)) {
-            return trimmed;
-        }
-        return DEFAULT_SORT_FIELD;
+        return productMapper.selectBatchIds(ids);
     }
 
     /**
-     * 白名单过滤排序方向，防 SQL 注入。
-     * 将 sortOrder 归一化为小写 asc/desc，非法值回退为默认值 desc。
-     * 兼容前端传入的 ASC/DESC 大写形式。
+     * Phase 14：商品总数，封装 productMapper.selectCount(null)。
      */
-    private String sanitizeSortOrder(String sortOrder) {
-        if (sortOrder == null || sortOrder.isBlank()) {
-            return DEFAULT_SORT_ORDER;
-        }
-        String lower = sortOrder.trim().toLowerCase();
-        if (ALLOWED_SORT_ORDERS.contains(lower)) {
-            return lower;
-        }
-        return DEFAULT_SORT_ORDER;
+    @Override
+    public long countAll() {
+        return productMapper.selectCount(null);
     }
+
+    /**
+     * Phase 15：递增/递减商品加购计数，封装 productMapper.update(null, wrapper)。
+     * <p>
+     * 消除 CartServiceImpl 对 ProductMapper 的跨模块依赖。
+     */
+    @Override
+    public void updateCartCount(Long productId, int delta) {
+        productMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Product>()
+                .eq(Product::getId, productId)
+                .setSql("cart_count = cart_count + " + delta));
+    }
+
+    /**
+     * Phase 15：递增/递减商品收藏计数，封装 productMapper.update(null, wrapper)。
+     * <p>
+     * 消除 UserFavoriteServiceImpl 对 ProductMapper 的跨模块依赖。
+     */
+    @Override
+    public void updateFavoriteCount(Long productId, int delta) {
+        productMapper.update(null, new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<Product>()
+                .eq(Product::getId, productId)
+                .setSql("favorite_count = favorite_count + " + delta));
+    }
+
 
     private void validateCategory(Long categoryId) {
         Category category = categoryMapper.selectById(categoryId);
@@ -382,7 +378,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private void evictCache(Long id) {
-        stringRedisTemplate.delete(CACHE_KEY_PREFIX + id);
+        cachePort.del(CACHE_KEY_PREFIX + id);
     }
 
     private Map<Long, String> buildCategoryNameMap(List<Product> products) {

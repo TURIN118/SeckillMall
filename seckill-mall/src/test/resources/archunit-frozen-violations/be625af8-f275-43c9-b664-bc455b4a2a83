@@ -1,0 +1,7 @@
+Constructor <com.seckill.mall.dto.ProductCreateRequest.<init>()> gets field <com.seckill.mall.entity.enums.ProductStatus.ON_SALE> in (ProductCreateRequest.java:62)
+Field <com.seckill.mall.dto.ProductCreateRequest.status> has type <com.seckill.mall.entity.enums.ProductStatus> in (ProductCreateRequest.java:0)
+Field <com.seckill.mall.dto.ProductUpdateRequest.status> has type <com.seckill.mall.entity.enums.ProductStatus> in (ProductUpdateRequest.java:0)
+Method <com.seckill.mall.dto.ProductCreateRequest.getStatus()> has return type <com.seckill.mall.entity.enums.ProductStatus> in (ProductCreateRequest.java:0)
+Method <com.seckill.mall.dto.ProductCreateRequest.setStatus(com.seckill.mall.entity.enums.ProductStatus)> has parameter of type <com.seckill.mall.entity.enums.ProductStatus> in (ProductCreateRequest.java:0)
+Method <com.seckill.mall.dto.ProductUpdateRequest.getStatus()> has return type <com.seckill.mall.entity.enums.ProductStatus> in (ProductUpdateRequest.java:0)
+Method <com.seckill.mall.dto.ProductUpdateRequest.setStatus(com.seckill.mall.entity.enums.ProductStatus)> has parameter of type <com.seckill.mall.entity.enums.ProductStatus> in (ProductUpdateRequest.java:0)

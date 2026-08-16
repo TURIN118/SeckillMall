@@ -5,6 +5,7 @@ import com.seckill.mall.security.JwtUtils;
 import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.security.TokenBlacklistService;
 import com.seckill.mall.service.OrderService;
+import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.vo.SeckillOrderVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,8 @@ class OrderControllerTest {
     @MockBean
     private OrderService orderService;
     @MockBean
+    private SeckillOrderService seckillOrderService;
+    @MockBean
     private SecurityUtils securityUtils;
     // 安全 Filter 依赖
     @MockBean
@@ -70,7 +73,7 @@ class OrderControllerTest {
     void pay_shouldReturnPaidOrder() throws Exception {
         // given
         given(securityUtils.getCurrentUserId()).willReturn(USER_ID);
-        given(orderService.payOrder(eq(USER_ID), eq(ORDER_ID), eq("ALIPAY")))
+        given(seckillOrderService.payOrder(eq(USER_ID), eq(ORDER_ID), eq("ALIPAY")))
                 .willReturn(buildPaidOrder());
 
         // when / then
@@ -87,7 +90,7 @@ class OrderControllerTest {
     void detail_shouldReturnOrder() throws Exception {
         // given
         given(securityUtils.getCurrentUserId()).willReturn(USER_ID);
-        given(orderService.getOrderDetail(eq(USER_ID), eq(ORDER_ID)))
+        given(seckillOrderService.getOrderDetail(eq(USER_ID), eq(ORDER_ID)))
                 .willReturn(buildPaidOrder());
 
         // when / then
@@ -103,7 +106,7 @@ class OrderControllerTest {
     void status_shouldReturnOrderStatus() throws Exception {
         // given
         given(securityUtils.getCurrentUserId()).willReturn(USER_ID);
-        given(orderService.getOrderStatus(eq(USER_ID), eq(ORDER_ID)))
+        given(seckillOrderService.getOrderStatus(eq(USER_ID), eq(ORDER_ID)))
                 .willReturn("PAID");
 
         // when / then

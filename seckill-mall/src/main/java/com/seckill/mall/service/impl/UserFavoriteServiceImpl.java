@@ -1,14 +1,14 @@
 package com.seckill.mall.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.UserFavorite;
-import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.UserFavoriteMapper;
+import com.seckill.mall.service.ProductService;
 import com.seckill.mall.service.UserFavoriteService;
 import com.seckill.mall.vo.FavoriteItemVO;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +24,7 @@ import java.util.stream.Collectors;
 /**
  * 用户收藏夹服务实现
  * <p>
- * 基于 {@link UserFavoriteMapper} 进行 CRUD，使用 {@link LambdaQueryWrapper} /
- * {@link LambdaUpdateWrapper} 构造条件。
+ * 基于 {@link UserFavoriteMapper} 进行 CRUD，使用 {@link LambdaQueryWrapper} 构造条件。
  * <p>
  * 收藏语义说明：
  * <ul>
@@ -46,7 +45,7 @@ import java.util.stream.Collectors;
 public class UserFavoriteServiceImpl implements UserFavoriteService {
 
     private final UserFavoriteMapper userFavoriteMapper;
-    private final ProductMapper productMapper;
+    private final ProductService productService;
 
     @Override
     public Result<List<FavoriteItemVO>> getFavoriteList(Long userId) {
@@ -63,8 +62,7 @@ public class UserFavoriteServiceImpl implements UserFavoriteService {
                 .map(UserFavorite::getProductId)
                 .distinct()
                 .collect(Collectors.toList());
-        List<Product> products = productMapper.selectList(
-                new LambdaQueryWrapper<Product>().in(Product::getId, productIds));
+        List<Product> products = productService.getProductsByIds(productIds);
         Map<Long, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
         // 3. 组装 VO
@@ -78,7 +76,7 @@ public class UserFavoriteServiceImpl implements UserFavoriteService {
     @Transactional(rollbackFor = Exception.class)
     public Result<Void> addFavorite(Long userId, Long productId) {
         // 校验商品存在
-        Product product = productMapper.selectById(productId);
+        Product product = productService.getProductById(productId);
         if (product == null) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
@@ -152,17 +150,14 @@ public class UserFavoriteServiceImpl implements UserFavoriteService {
     /**
      * 递增/递减商品收藏计数（冗余计数维护）。
      * <p>
-     * 使用 {@code setSql} 直接执行 {@code favorite_count = favorite_count + delta}，
-     * 避免并发下的覆盖更新。{@code @TableLogic} 自动追加 {@code is_deleted=0} 条件。
+     * Phase 15：委托 {@link ProductService#updateFavoriteCount(Long, int)}，
+     * 消除本类对 {@code ProductMapper} 的跨模块依赖。
      *
      * @param productId 商品 ID
      * @param delta     变化量（+1 或 -1）
      */
     private void updateProductFavoriteCount(Long productId, int delta) {
-        LambdaUpdateWrapper<Product> wrapper = new LambdaUpdateWrapper<Product>()
-                .eq(Product::getId, productId)
-                .setSql("favorite_count = favorite_count + " + delta);
-        productMapper.update(null, wrapper);
+        productService.updateFavoriteCount(productId, delta);
     }
 
     /**

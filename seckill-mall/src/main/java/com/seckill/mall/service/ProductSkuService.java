@@ -10,7 +10,10 @@ import java.util.List;
 /**
  * 商品 SKU 服务接口
  * <p>
- * 维护商品 SKU（属性值组合）的查询、保存、库存扣减/回补与价格库存聚合。
+ * 维护商品 SKU（属性值组合）的查询、保存与价格库存聚合。
+ * <p>
+ * Phase 8 起，库存扣减/回补操作（deductStock/restoreStock）已迁移至
+ * {@link InventoryService}，本接口仅保留查询与聚合方法。
  *
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
@@ -59,27 +62,6 @@ public interface ProductSkuService {
      * @return 启用 SKU 实体，不存在或已禁用返回 null
      */
     ProductSku getByIdEnabled(Long skuId);
-
-    /**
-     * 扣减 SKU 库存（乐观锁，返回是否成功）
-     * <p>
-     * 使用参数绑定防 SQL 注入：{@code stock = stock - #{quantity} WHERE id = ? AND stock >= ?}
-     *
-     * @param skuId    SKU ID
-     * @param quantity 扣减数量
-     * @return true=扣减成功，false=库存不足或 SKU 不存在
-     */
-    boolean deductStock(Long skuId, Integer quantity);
-
-    /**
-     * 回补 SKU 库存（取消订单 / 超时）
-     * <p>
-     * 使用参数绑定防注入：{@code stock = stock + #{quantity}}
-     *
-     * @param skuId    SKU ID
-     * @param quantity 回补数量
-     */
-    void restoreStock(Long skuId, Integer quantity);
 
     /**
      * 计算商品价格区间最小值

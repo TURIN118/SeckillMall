@@ -5,7 +5,7 @@ import com.seckill.mall.cache.CacheDegradeService;
 import com.seckill.mall.cache.RedisKeyConstants;
 import com.seckill.mall.cache.RedisService;
 import com.seckill.mall.cache.SeckillLuaService;
-import com.seckill.mall.common.BusinessException;
+import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.SeckillOrder;
@@ -242,6 +242,69 @@ class SeckillServiceTest {
         // given
         given(securityUtils.getCurrentUserId()).willReturn(USER_ID);
         given(redisService.get(RedisKeyConstants.seckillResult(SECKILL_ID, USER_ID))).willReturn(null);
+
+        // when
+        SeckillResultVO vo = seckillService.getSeckillResult(SECKILL_ID, "req-1");
+
+        // then
+        assertThat(vo.getStatus()).isEqualTo(-1);
+        assertThat(vo.getRequestId()).isEqualTo("req-1");
+    }
+
+    @Test
+    @DisplayName("getSeckillResult：Redis 缓存命中且 requestId 匹配时返回成功结果（status=1）")
+    void getSeckillResult_shouldReturnSuccessWhenCacheHitAndRequestIdMatch() throws Exception {
+        // given
+        given(securityUtils.getCurrentUserId()).willReturn(USER_ID);
+        SeckillResultVO cached = new SeckillResultVO();
+        cached.setStatus(1);
+        cached.setRequestId("req-success");
+        cached.setOrderId(8001L);
+        cached.setOrderNo("SK20260731120000");
+        cached.setTotalAmount(new BigDecimal("5999.00"));
+        String json = "{\"status\":1,\"requestId\":\"req-success\",\"orderId\":8001}";
+        given(redisService.get(RedisKeyConstants.seckillResult(SECKILL_ID, USER_ID))).willReturn(json);
+        given(objectMapper.readValue(json, SeckillResultVO.class)).willReturn(cached);
+
+        // when
+        SeckillResultVO vo = seckillService.getSeckillResult(SECKILL_ID, "req-success");
+
+        // then
+        assertThat(vo.getStatus()).isEqualTo(1);
+        assertThat(vo.getRequestId()).isEqualTo("req-success");
+        assertThat(vo.getOrderId()).isEqualTo(8001L);
+        assertThat(vo.getOrderNo()).isEqualTo("SK20260731120000");
+    }
+
+    @Test
+    @DisplayName("getSeckillResult：Redis 缓存命中但 requestId 不匹配时返回 status=-1（防越权）")
+    void getSeckillResult_shouldReturnNotFoundWhenRequestIdMismatch() throws Exception {
+        // given
+        given(securityUtils.getCurrentUserId()).willReturn(USER_ID);
+        SeckillResultVO cached = new SeckillResultVO();
+        cached.setStatus(1);
+        cached.setRequestId("req-other-user");
+        String json = "{\"status\":1,\"requestId\":\"req-other-user\"}";
+        given(redisService.get(RedisKeyConstants.seckillResult(SECKILL_ID, USER_ID))).willReturn(json);
+        given(objectMapper.readValue(json, SeckillResultVO.class)).willReturn(cached);
+
+        // when
+        SeckillResultVO vo = seckillService.getSeckillResult(SECKILL_ID, "req-current-user");
+
+        // then
+        assertThat(vo.getStatus()).isEqualTo(-1);
+        assertThat(vo.getRequestId()).isEqualTo("req-current-user");
+    }
+
+    @Test
+    @DisplayName("getSeckillResult：Redis 缓存 JSON 解析失败时返回 status=-1（容错）")
+    void getSeckillResult_shouldReturnNotFoundWhenJsonParseError() throws Exception {
+        // given
+        given(securityUtils.getCurrentUserId()).willReturn(USER_ID);
+        String badJson = "not-a-json";
+        given(redisService.get(RedisKeyConstants.seckillResult(SECKILL_ID, USER_ID))).willReturn(badJson);
+        given(objectMapper.readValue(badJson, SeckillResultVO.class))
+                .willThrow(new com.fasterxml.jackson.core.JsonProcessingException("parse error") {});
 
         // when
         SeckillResultVO vo = seckillService.getSeckillResult(SECKILL_ID, "req-1");

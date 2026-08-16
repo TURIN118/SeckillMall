@@ -3,6 +3,7 @@ package com.seckill.mall.service;
 import com.seckill.mall.dto.CategoryCreateRequest;
 import com.seckill.mall.dto.CategoryStatusUpdateRequest;
 import com.seckill.mall.dto.CategoryUpdateRequest;
+import com.seckill.mall.entity.Category;
 import com.seckill.mall.vo.CategoryVO;
 
 import java.util.List;
@@ -54,4 +55,12 @@ public interface CategoryService {
      * 商品增删改后需调用，以保证分类树 productCount 及时更新。
      */
     void evictCategoryCache();
+
+    /**
+     * 根据 ID 查询分类实体（模块间内部调用用）。
+     *
+     * @param id 分类 ID
+     * @return 分类实体，不存在返回 null
+     */
+    Category getCategoryById(Long id);
 }

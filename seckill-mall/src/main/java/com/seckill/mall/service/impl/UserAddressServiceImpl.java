@@ -210,4 +210,11 @@ public class UserAddressServiceImpl implements UserAddressService {
         vo.setCreateTime(entity.getCreateTime());
         return vo;
     }
+
+    // ==================== Phase 7：跨模块内部调用入口（供 OrderServiceImpl 使用） ====================
+
+    @Override
+    public UserAddress getAddressById(Long addressId) {
+        return userAddressMapper.selectById(addressId);
+    }
 }

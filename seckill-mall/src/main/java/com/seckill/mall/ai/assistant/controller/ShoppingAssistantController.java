@@ -4,6 +4,7 @@ import com.seckill.mall.ai.assistant.dto.ShoppingAssistantRequest;
 import com.seckill.mall.ai.assistant.service.AssistantService;
 import com.seckill.mall.annotation.RateLimit;
 import com.seckill.mall.security.SecurityUtils;
+import com.seckill.mall.shared.kernel.util.SseUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,11 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
-
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * AI 导购助手 SSE 接口（T12 实现）。
@@ -49,8 +46,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @RequiredArgsConstructor
 public class ShoppingAssistantController {
 
-    /** SSE 超时时间 60s */
-    private static final long SSE_TIMEOUT = 60_000L;
 
     private final AssistantService assistantService;
     private final SecurityUtils securityUtils;
@@ -72,48 +67,8 @@ public class ShoppingAssistantController {
         log.info("AI 导购 SSE 请求 userId={} convId={} msgLen={}",
                 userId, conversationId, req.getMessage().length());
 
-        SseEmitter emitter = new SseEmitter(SSE_TIMEOUT);
-
         Flux<String> flux = assistantService.chat(req.getMessage(), userId, conversationId);
-
-        java.util.concurrent.atomic.AtomicReference<reactor.core.Disposable> subscriptionRef =
-                new java.util.concurrent.atomic.AtomicReference<>();
-
-        // Flux → SseEmitter 转换
-        Disposable subscription = flux.doOnNext(token -> {
-                    try {
-                        emitter.send(SseEmitter.event().data(token));
-                    } catch (Exception e) {
-                        log.warn("SSE 发送 token 失败，客户端可能已断开 userId={} convId={} err={}",
-                                userId, conversationId, e.getMessage());
-                        disposeQuietly(subscriptionRef);
-                        completeWithErrorQuietly(emitter, e);
-                    }
-                })
-                .doOnComplete(() -> completeQuietly(emitter))
-                .doOnError(e -> {
-                    log.error("SSE 流异常，关闭 emitter userId={} convId={} err={}",
-                            userId, conversationId, e.getMessage(), e);
-                    disposeQuietly(subscriptionRef);
-                    completeWithErrorQuietly(emitter, e);
-                })
-                .subscribe(null, e -> log.warn("SSE 订阅 onError userId={} convId={} err={}",
-                        userId, conversationId, e.getMessage()), () -> {});
-        subscriptionRef.set(subscription);
-
-        // 客户端断开时清理
-        emitter.onTimeout(() -> {
-            log.warn("SSE 超时 userId={} convId={}", userId, conversationId);
-            disposeQuietly(subscriptionRef);
-        });
-        emitter.onError(e -> {
-            log.warn("SSE 客户端异常 userId={} convId={} err={}",
-                    userId, conversationId, e.getMessage());
-            disposeQuietly(subscriptionRef);
-        });
-        emitter.onCompletion(() -> disposeQuietly(subscriptionRef));
-
-        return emitter;
+        return SseUtils.stream(flux, "AI 导购", userId, conversationId);
     }
 
     /**
@@ -132,18 +87,4 @@ public class ShoppingAssistantController {
         }
     }
 
-    private void disposeQuietly(java.util.concurrent.atomic.AtomicReference<reactor.core.Disposable> ref) {
-        reactor.core.Disposable d = ref.getAndSet(null);
-        if (d != null && !d.isDisposed()) {
-            d.dispose();
-        }
-    }
-
-    private void completeQuietly(SseEmitter emitter) {
-        try { emitter.complete(); } catch (Exception ignored) { }
-    }
-
-    private void completeWithErrorQuietly(SseEmitter emitter, Throwable e) {
-        try { emitter.completeWithError(e); } catch (Exception ignored) { }
-    }
 }

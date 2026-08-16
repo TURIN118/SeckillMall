@@ -1,0 +1,212 @@
+package com.seckill.mall.service;
+
+import com.seckill.mall.common.PageResult;
+import com.seckill.mall.entity.SeckillOrder;
+import com.seckill.mall.entity.enums.OrderStatus;
+import com.seckill.mall.vo.SeckillOrderVO;
+import com.seckill.mall.vo.SeckillRankingVO;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 秒杀订单领域服务（Phase 4b-1 从 OrderService 拆分而来）。
+ * <p>
+ * 仅承载秒杀订单相关的创建/查询/支付/取消/发货/确认/超时/物理删除等用例，
+ * 与普通订单（{@link OrderService}）完全独立。
+ * <p>
+ * 创建人：@author WNJ
+ * 项目名称：seckill-mall
+ * 文件名称：SeckillOrderService.java
+ * 邮箱：nj651217@163.com
+ */
+public interface SeckillOrderService {
+
+    /**
+     * 异步下单消费者调用：创建秒杀订单（一人一单由 uk_user_seckill 兜底）。
+     */
+    SeckillOrder createSeckillOrder(Long seckillId, Long userId, String requestId);
+
+    /**
+     * H-C2 修复：物理删除秒杀订单（用于消费者 DB 扣减失败时撤销幽灵单）。
+     * <p>
+     * 仅在订单刚创建且未支付时允许删除，避免误删已有业务关联的订单。
+     *
+     * @param orderId 秒杀订单 ID
+     */
+    void deleteSeckillOrderPhysically(Long orderId);
+
+    /**
+     * B4 修复：返回 SeckillOrderVO 而非 Entity，避免契约泄漏。
+     */
+    PageResult<SeckillOrderVO> getOrderList(Long userId, Integer status, Integer pageNum, Integer pageSize);
+
+    /**
+     * B4 修复：返回 SeckillOrderVO 而非 Entity，避免契约泄漏。
+     */
+    SeckillOrderVO getOrderDetail(Long userId, Long orderId);
+
+    /**
+     * B4 修复：返回 SeckillOrderVO 而非 Entity，避免契约泄漏。
+     */
+    SeckillOrderVO payOrder(Long userId, Long orderId, String payMethod);
+
+    /**
+     * B4 修复：返回 SeckillOrderVO 而非 Entity，避免契约泄漏。
+     */
+    SeckillOrderVO cancelOrder(Long userId, Long orderId);
+
+    /**
+     * B4 修复：返回状态字符串而非枚举，避免序列化枚举内部结构。
+     */
+    String getOrderStatus(Long userId, Long orderId);
+
+    /**
+     * 超时取消（延迟消费者触发）：UNPAID → TIMEOUT 并回补库存，已支付等终态幂等忽略。
+     *
+     * @return true 表示本次执行了超时取消
+     */
+    boolean timeoutCancel(Long orderId);
+
+    /**
+     * 秒杀订单发货：PAID → SHIPPED，设置发货时间与物流信息。
+     *
+     * @param userId          操作人 ID（管理员）
+     * @param orderId         秒杀订单 ID
+     * @param shippingCompany 物流公司
+     * @param shippingNo      快递单号
+     */
+    void shipOrder(Long userId, Long orderId, String shippingCompany, String shippingNo);
+
+    /**
+     * 秒杀订单确认收货：SHIPPED → COMPLETED，设置确认收货时间。
+     *
+     * @param userId  用户 ID
+     * @param orderId 秒杀订单 ID
+     */
+    void confirmOrder(Long userId, Long orderId);
+
+    /**
+     * Phase 7：返回秒杀订单实体（模块间内部调用用）。
+     * <p>
+     * 仅供 OrderServiceImpl 跨模块内部调用，外部 API 应使用 {@link #getOrderDetail(Long, Long)}
+     * 返回 VO 避免契约泄漏。
+     *
+     * @param orderId 秒杀订单 ID
+     * @return 秒杀订单实体，不存在返回 null
+     */
+    SeckillOrder getSeckillOrderById(Long orderId);
+
+    /**
+     * Phase 7：统一订单列表查询（按 userId + 可选 status + createTime 降序 + LIMIT）。
+     * <p>
+     * 仅供 OrderServiceImpl#getUnifiedOrderList 跨模块内部调用，封装原 LambdaQueryWrapper 构造逻辑。
+     *
+     * @param userId 用户 ID
+     * @param status 订单状态枚举序号（null 表示不筛选）；0=UNPAID 1=PAID 2=SHIPPED 3=CANCELLED 4=TIMEOUT 5=COMPLETED
+     * @param limit  最大返回条数（对应原 LIMIT 子句）
+     * @return 秒杀订单实体列表
+     */
+    List<SeckillOrder> getSeckillOrdersForUnifiedList(Long userId, Integer status, int limit);
+
+    /**
+     * Phase 7：逻辑删除秒杀订单（{@code @TableLogic} 自动 set is_deleted=1）。
+     * <p>
+     * 与 {@link #deleteSeckillOrderPhysically(Long)}（物理删除）区分：本方法走 MyBatis-Plus 逻辑删除，
+     * 仅供 OrderServiceImpl#deleteOrder 跨模块内部调用。
+     *
+     * @param orderId 秒杀订单 ID
+     * @return true 表示删除成功（影响行数 > 0）
+     */
+    boolean logicalDeleteSeckillOrder(Long orderId);
+
+    /**
+     * 校验用户是否通过秒杀订单购买了该商品（用于商品评价权限校验）。
+     * <p>
+     * 查询秒杀订单 by userId + productId + status in (PAID, SHIPPED, COMPLETED)。
+     *
+     * @param userId    用户 ID
+     * @param productId 商品 ID
+     * @return true=已购买
+     */
+    boolean hasUserPurchasedSeckill(Long userId, Long productId);
+
+    /**
+     * Phase 12：查询用户钱包支付的已支付秒杀订单。
+     * <p>
+     * 条件：payMethod=WALLET 且 status in (PAID, SHIPPED, COMPLETED)。
+     * 仅供 WalletServiceImpl 跨模块内部调用，封装原 LambdaQueryWrapper 构造逻辑，
+     * 消除 WalletServiceImpl 对 SeckillOrderMapper 的直接依赖。
+     *
+     * @param userId 用户 ID
+     * @return 用户钱包支付的已支付秒杀订单列表
+     */
+    List<SeckillOrder> getWalletPaidOrdersByUser(Long userId);
+
+    /**
+     * Phase 14：订单总数（封装 seckillOrderMapper.selectCount(null)，消除跨模块 Mapper 依赖）。
+     *
+     * @return 订单总数
+     */
+    long countAll();
+
+    /**
+     * Phase 14：销售总额（封装 seckillOrderMapper.sumSalesAmount(statuses)）。
+     *
+     * @param statuses 需统计的订单状态列表
+     * @return 销售总额，可能为 null
+     */
+    BigDecimal sumSalesAmount(List<OrderStatus> statuses);
+
+    /**
+     * Phase 14：今日订单数（封装 seckillOrderMapper.countTodayOrders(today)）。
+     *
+     * @param today 当天日期
+     * @return 订单数，可能为 null
+     */
+    Long countTodayOrders(LocalDate today);
+
+    /**
+     * Phase 14：订单趋势（封装 seckillOrderMapper.selectOrderTrend(startDate, endDate, statuses)）。
+     *
+     * @param startDate 起始日期（含）
+     * @param endDate   结束日期（含）
+     * @param statuses  需统计的状态列表
+     * @return 每行包含 dt(日期)、cnt(订单数)、amt(销售额)
+     */
+    List<Map<String, Object>> selectOrderTrend(LocalDate startDate, LocalDate endDate, List<OrderStatus> statuses);
+
+    /**
+     * Phase 14：秒杀排行榜 Top N（封装 seckillOrderMapper.selectSeckillRanking(statuses, limit)）。
+     *
+     * @param statuses 需统计的订单状态列表
+     * @param limit    Top N
+     * @return 排行榜列表
+     */
+    List<SeckillRankingVO> selectSeckillRanking(List<OrderStatus> statuses, int limit);
+
+    /**
+     * Phase 14：订单状态分布（封装 seckillOrderMapper.selectStatusDistribution(startTime, endTime)）。
+     *
+     * @param startTime 起始时间（含），null 表示不限
+     * @param endTime   结束时间（含），null 表示不限
+     * @return 每行包含 status(状态码)、cnt(订单数)
+     */
+    List<Map<String, Object>> selectStatusDistribution(LocalDateTime startTime, LocalDateTime endTime);
+
+    /**
+     * Phase 15：后台订单高级筛选分页查询（封装 seckillOrderMapper.selectAdminOrderPage(page, req)）。
+     * <p>
+     * 消除 AdminOrderServiceImpl 对 SeckillOrderMapper 的跨模块依赖。
+     *
+     * @param page 分页参数
+     * @param req  查询条件（sortBy/sortOrder 已白名单归一化）
+     * @return 分页结果
+     */
+    com.baomidou.mybatisplus.core.metadata.IPage<com.seckill.mall.vo.AdminOrderVO> selectAdminOrderPage(
+            com.baomidou.mybatisplus.core.metadata.IPage<com.seckill.mall.vo.AdminOrderVO> page,
+            com.seckill.mall.dto.AdminOrderQueryRequest req);
+}

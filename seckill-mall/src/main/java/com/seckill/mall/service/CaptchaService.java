@@ -1,9 +1,9 @@
 package com.seckill.mall.service;
 
+import com.seckill.mall.shared.kernel.port.CachePort;
 import com.seckill.mall.vo.CaptchaVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -33,7 +33,7 @@ public class CaptchaService {
     private static final int CODE_LENGTH = 4;
     private static final String CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-    private final StringRedisTemplate stringRedisTemplate;
+    private final CachePort cachePort;
 
     public CaptchaVO generateCaptcha() {
         String captchaId = UUID.randomUUID().toString();
@@ -41,7 +41,7 @@ public class CaptchaService {
         BufferedImage image = drawImage(code);
         String base64 = toBase64(image);
 
-        stringRedisTemplate.opsForValue().set(
+        cachePort.set(
                 CAPTCHA_KEY_PREFIX + captchaId,
                 code,
                 CAPTCHA_TTL_MINUTES,
@@ -59,9 +59,9 @@ public class CaptchaService {
             return false;
         }
         String key = CAPTCHA_KEY_PREFIX + captchaId;
-        String stored = stringRedisTemplate.opsForValue().get(key);
+        String stored = cachePort.get(key);
         // 一次性：无论校验结果均删除
-        stringRedisTemplate.delete(key);
+        cachePort.del(key);
         return stored != null && stored.equalsIgnoreCase(captchaCode);
     }
 

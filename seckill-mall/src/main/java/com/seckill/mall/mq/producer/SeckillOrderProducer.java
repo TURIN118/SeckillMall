@@ -5,7 +5,7 @@ import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mq.message.OrderDelayMessage;
 import com.seckill.mall.mq.message.SeckillOrderMessage;
-import com.seckill.mall.service.OrderService;
+import com.seckill.mall.service.SeckillOrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.AmqpException;
@@ -29,7 +29,7 @@ import java.util.UUID;
 public class SeckillOrderProducer {
 
     private final RabbitTemplate rabbitTemplate;
-    private final OrderService orderService;
+    private final SeckillOrderService seckillOrderService;
     private final SeckillGoodsMapper seckillGoodsMapper;
 
     /**
@@ -91,7 +91,7 @@ public class SeckillOrderProducer {
         Long userId = message.getUserId();
 
         // 1. 同步创建订单（事务内）
-        SeckillOrder order = orderService.createSeckillOrder(seckillId, userId, message.getRequestId());
+        SeckillOrder order = seckillOrderService.createSeckillOrder(seckillId, userId, message.getRequestId());
 
         // 2. 扣减 DB 库存（乐观锁）；失败则撤销订单
         int rows = seckillGoodsMapper.deductStockOptimistic(seckillId);
@@ -99,7 +99,7 @@ public class SeckillOrderProducer {
             log.error("MQ 降级同步下单扣减 DB 库存失败（库存不足），撤销订单 orderNo={} seckillId={}",
                     order.getOrderNo(), seckillId);
             // 撤销订单：物理删除，避免占用 uk_user_seckill 唯一索引
-            orderService.deleteSeckillOrderPhysically(order.getId());
+            seckillOrderService.deleteSeckillOrderPhysically(order.getId());
             throw new AmqpException("MQ 降级同步下单库存不足");
         }
 

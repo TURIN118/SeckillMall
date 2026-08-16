@@ -31,13 +31,13 @@ import java.util.stream.Collectors;
  *       skuCode 为空时调用 generateSkuCode 可靠生成（基于 productId + SHA-256 摘要，
  *       避免 hashCode 碰撞风险）。物理删除避免编辑商品时 sku_code 唯一键冲突
  *       （uk_product_sku_code 不包含 is_deleted，逻辑删除后旧记录仍占用唯一键）</li>
- *   <li>deductStock：使用 MyBatis-Plus 乐观锁 + 参数绑定防 SQL 注入。
- *       setSql("stock = stock - {0}", quantity) 中 {0} 为参数占位符，MyBatis 预编译参数化</li>
- *   <li>restoreStock：同样使用参数绑定 stock = stock + {0}，防注入</li>
  *   <li>calculateMinPrice / calculateMaxPrice / calculateTotalStock：查询启用 SKU 列表后内存聚合。
  *       聚合结果同步写入 t_product.min_price / max_price / total_stock 冗余字段（建议3）</li>
  *   <li>refreshTotalStock：库存变更后同步刷新 t_product.total_stock，保持列表页展示一致性</li>
  * </ul>
+ * <p>
+ * Phase 8 起，库存扣减/回补操作（deductStock/restoreStock）已迁移至
+ * {@link com.seckill.mall.service.InventoryService}，本实现仅保留查询与聚合方法。
  *
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
@@ -120,31 +120,6 @@ public class ProductSkuServiceImpl implements ProductSkuService {
             return null;
         }
         return sku;
-    }
-
-    @Override
-    public boolean deductStock(Long skuId, Integer quantity) {
-        if (skuId == null || quantity == null || quantity <= 0) {
-            return false;
-        }
-        // 使用参数绑定防 SQL 注入，禁止字符串拼接
-        // {0} 为 MyBatis 参数占位符，预编译参数化
-        int rows = skuMapper.update(null, new LambdaUpdateWrapper<ProductSku>()
-                .eq(ProductSku::getId, skuId)
-                .ge(ProductSku::getStock, quantity)
-                .setSql("stock = stock - {0}", quantity));
-        return rows > 0;
-    }
-
-    @Override
-    public void restoreStock(Long skuId, Integer quantity) {
-        if (skuId == null || quantity == null || quantity <= 0) {
-            return;
-        }
-        // 参数绑定防注入
-        skuMapper.update(null, new LambdaUpdateWrapper<ProductSku>()
-                .eq(ProductSku::getId, skuId)
-                .setSql("stock = stock + {0}", quantity));
     }
 
     @Override

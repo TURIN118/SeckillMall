@@ -5,6 +5,7 @@ import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.entity.User;
 import com.seckill.mall.entity.enums.UserRole;
 import com.seckill.mall.mapper.UserMapper;
+import com.seckill.mall.shared.kernel.CurrentUserContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-public class SecurityUtils {
+public class SecurityUtils implements CurrentUserContext {
 
     private final UserMapper userMapper;
 

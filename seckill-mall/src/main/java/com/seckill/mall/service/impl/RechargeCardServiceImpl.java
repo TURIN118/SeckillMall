@@ -11,8 +11,8 @@ import com.seckill.mall.entity.RechargeCard;
 import com.seckill.mall.entity.User;
 import com.seckill.mall.entity.enums.RechargeCardStatus;
 import com.seckill.mall.mapper.RechargeCardMapper;
-import com.seckill.mall.mapper.UserMapper;
 import com.seckill.mall.service.RechargeCardService;
+import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.RechargeCardGenerateVO;
 import com.seckill.mall.vo.RechargeCardVO;
 import lombok.RequiredArgsConstructor;
@@ -55,7 +55,7 @@ public class RechargeCardServiceImpl implements RechargeCardService {
     private static final DateTimeFormatter BATCH_FMT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     private final RechargeCardMapper rechargeCardMapper;
-    private final UserMapper userMapper;
+    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -133,13 +133,10 @@ public class RechargeCardServiceImpl implements RechargeCardService {
             // 并发场景：卡已被他人使用
             throw new BusinessException(ErrorCode.RECHARGE_CARD_USED);
         }
-        // 用户余额 += 面额（使用 setSql 避免覆盖更新）
-        LambdaUpdateWrapper<User> userUpdate = new LambdaUpdateWrapper<User>()
-                .eq(User::getId, userId)
-                .setSql("balance = balance + " + card.getFaceValue().toPlainString());
-        userMapper.update(null, userUpdate);
+        // 用户余额 += 面额（Phase 15：委托 UserService.addBalance，删除 LambdaUpdateWrapper 构建）
+        userService.addBalance(userId, card.getFaceValue());
         // 查询最新余额
-        User user = userMapper.selectById(userId);
+        User user = userService.getUserById(userId);
         BigDecimal newBalance = user == null ? BigDecimal.ZERO : user.getBalance();
         log.info("充值成功，cardNo={}, userId={}, faceValue={}, newBalance={}",
                 cardNo, userId, card.getFaceValue(), newBalance);
@@ -178,6 +175,13 @@ public class RechargeCardServiceImpl implements RechargeCardService {
                 .set(RechargeCard::getStatus, RechargeCardStatus.DISABLED);
         rechargeCardMapper.update(null, wrapper);
         log.info("禁用充值卡成功，id={}, cardNo={}", id, card.getCardNo());
+    }
+
+    @Override
+    public List<RechargeCard> getUsedCardsByUser(Long userId) {
+        return rechargeCardMapper.selectList(new LambdaQueryWrapper<RechargeCard>()
+                .eq(RechargeCard::getUsedBy, userId)
+                .eq(RechargeCard::getStatus, RechargeCardStatus.USED));
     }
 
     // ==================== 私有方法 ====================

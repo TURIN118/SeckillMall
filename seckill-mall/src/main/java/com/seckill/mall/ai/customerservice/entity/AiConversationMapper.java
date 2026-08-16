@@ -6,7 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 /**
  * AI 客服对话 Mapper
  * <p>依赖 {@code @Mapper} 注解被 MyBatis-Plus 自动配置扫描
- * （与现有 {@code com.seckill.mall.ai.track.entity.UserEventMapper} 同机制）。
+ * （与现有 {@code com.seckill.mall.analytics.tracking.entity.UserEventMapper} 同机制）。
  * <p>单条 insert 会自动填充雪花 ID（{@code IdType.ASSIGN_ID}）与
  * {@code createTime}/{@code updateTime}（{@code MetaObjectHandler}），
  * 逻辑删除由 {@code @TableLogic} 自动改写 SQL，无需自定义 XML。

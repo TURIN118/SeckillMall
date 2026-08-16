@@ -1,5 +1,6 @@
 package com.seckill.mall.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -13,9 +14,9 @@ import com.seckill.mall.dto.SeckillCreateRequest;
 import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.enums.SeckillStatus;
-import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.security.SecurityUtils;
+import com.seckill.mall.service.ProductService;
 import com.seckill.mall.service.SeckillGoodsService;
 import com.seckill.mall.vo.SeckillGoodsVO;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -53,7 +55,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
     private static final int DEFAULT_PER_LIMIT = 1;
 
     private final SeckillGoodsMapper seckillGoodsMapper;
-    private final ProductMapper productMapper;
+    private final ProductService productService;
     private final RedisService redisService;
     private final RedissonClient redissonClient;
     private final ObjectMapper objectMapper;
@@ -85,14 +87,14 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         if (goods == null) {
             throw new BusinessException(ErrorCode.SECKILL_NOT_FOUND);
         }
-        Product product = productMapper.selectById(goods.getProductId());
+        Product product = productService.getProductById(goods.getProductId());
         return toVO(goods, product == null ? Collections.emptyMap() : Map.of(product.getId(), product));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public SeckillGoodsVO createSeckill(SeckillCreateRequest req) {
-        Product product = productMapper.selectById(req.getProductId());
+        Product product = productService.getProductById(req.getProductId());
         if (product == null) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
@@ -136,7 +138,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "开始时间必须早于结束时间");
         }
         if (req.getProductId() != null) {
-            if (productMapper.selectById(req.getProductId()) == null) {
+            if (!productService.existsById(req.getProductId())) {
                 throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
             }
             goods.setProductId(req.getProductId());
@@ -174,7 +176,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
             evictCache(id);
             preheatSeckill(id);
         });
-        Product product = productMapper.selectById(goods.getProductId());
+        Product product = productService.getProductById(goods.getProductId());
         return toVO(goods, product == null ? Collections.emptyMap() : Map.of(product.getId(), product));
     }
 
@@ -268,7 +270,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         if (productIds.isEmpty()) {
             return Collections.emptyMap();
         }
-        List<Product> products = productMapper.selectBatchIds(productIds);
+        List<Product> products = productService.getProductsByIds(productIds);
         return products.stream()
                 .collect(Collectors.toMap(Product::getId, p -> p, (a, b) -> a));
     }
@@ -375,5 +377,65 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         } catch (NumberFormatException e2) {
             return null;
         }
+    }
+
+    // ==================== Phase 14：统计方法（从 StatsServiceImpl 迁移，消除跨模块 Mapper 依赖） ====================
+
+    /**
+     * Phase 14：秒杀活动总数，封装 seckillGoodsMapper.selectCount(null)。
+     */
+    @Override
+    public long countAll() {
+        return seckillGoodsMapper.selectCount(null);
+    }
+
+    /**
+     * Phase 14：统计进行中的秒杀活动数量。
+     * <p>
+     * M17: DB 中 status 字段不会随时间自动更新（创建时为 PENDING，仅取消时改为 CANCELLED），
+     * 直接按 status=ACTIVE 查询会漏掉所有已开始但 status 仍为 PENDING 的活动。
+     * 正确做法应基于时间窗口动态计算：start_time &lt;= now &lt; end_time 且 status != CANCELLED。
+     */
+    @Override
+    public long countActive() {
+        LocalDateTime now = LocalDateTime.now();
+        LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
+        wrapper.ne(SeckillGoods::getStatus, SeckillStatus.CANCELLED)
+                .le(SeckillGoods::getStartTime, now)
+                .gt(SeckillGoods::getEndTime, now);
+        return seckillGoodsMapper.selectCount(wrapper);
+    }
+
+    /**
+     * Phase 14：统计待开始的秒杀活动数量。
+     * <p>
+     * M17: 基于 start_time &gt; now 且未取消动态计算，不依赖 DB status 字段。
+     */
+    @Override
+    public long countPending() {
+        LocalDateTime now = LocalDateTime.now();
+        LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
+        wrapper.ne(SeckillGoods::getStatus, SeckillStatus.CANCELLED)
+                .gt(SeckillGoods::getStartTime, now);
+        return seckillGoodsMapper.selectCount(wrapper);
+    }
+
+    /**
+     * Phase 14：统计今日已完成的秒杀活动数量。
+     * <p>
+     * M17: 基于 end_time &lt; now 且 endTime 在今日、未取消动态计算，不依赖 DB status 字段。
+     */
+    @Override
+    public long countCompletedToday() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+        LocalDateTime now = LocalDateTime.now();
+        LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
+        wrapper.ne(SeckillGoods::getStatus, SeckillStatus.CANCELLED)
+                .lt(SeckillGoods::getEndTime, now)
+                .ge(SeckillGoods::getEndTime, startOfDay)
+                .lt(SeckillGoods::getEndTime, endOfDay);
+        return seckillGoodsMapper.selectCount(wrapper);
     }
 }

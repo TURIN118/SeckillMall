@@ -1,5 +1,6 @@
 package com.seckill.mall.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -28,6 +29,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -375,5 +377,65 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         } catch (NumberFormatException e2) {
             return null;
         }
+    }
+
+    // ==================== Phase 14：统计方法（从 StatsServiceImpl 迁移，消除跨模块 Mapper 依赖） ====================
+
+    /**
+     * Phase 14：秒杀活动总数，封装 seckillGoodsMapper.selectCount(null)。
+     */
+    @Override
+    public long countAll() {
+        return seckillGoodsMapper.selectCount(null);
+    }
+
+    /**
+     * Phase 14：统计进行中的秒杀活动数量。
+     * <p>
+     * M17: DB 中 status 字段不会随时间自动更新（创建时为 PENDING，仅取消时改为 CANCELLED），
+     * 直接按 status=ACTIVE 查询会漏掉所有已开始但 status 仍为 PENDING 的活动。
+     * 正确做法应基于时间窗口动态计算：start_time &lt;= now &lt; end_time 且 status != CANCELLED。
+     */
+    @Override
+    public long countActive() {
+        LocalDateTime now = LocalDateTime.now();
+        LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
+        wrapper.ne(SeckillGoods::getStatus, SeckillStatus.CANCELLED)
+                .le(SeckillGoods::getStartTime, now)
+                .gt(SeckillGoods::getEndTime, now);
+        return seckillGoodsMapper.selectCount(wrapper);
+    }
+
+    /**
+     * Phase 14：统计待开始的秒杀活动数量。
+     * <p>
+     * M17: 基于 start_time &gt; now 且未取消动态计算，不依赖 DB status 字段。
+     */
+    @Override
+    public long countPending() {
+        LocalDateTime now = LocalDateTime.now();
+        LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
+        wrapper.ne(SeckillGoods::getStatus, SeckillStatus.CANCELLED)
+                .gt(SeckillGoods::getStartTime, now);
+        return seckillGoodsMapper.selectCount(wrapper);
+    }
+
+    /**
+     * Phase 14：统计今日已完成的秒杀活动数量。
+     * <p>
+     * M17: 基于 end_time &lt; now 且 endTime 在今日、未取消动态计算，不依赖 DB status 字段。
+     */
+    @Override
+    public long countCompletedToday() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+        LocalDateTime now = LocalDateTime.now();
+        LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
+        wrapper.ne(SeckillGoods::getStatus, SeckillStatus.CANCELLED)
+                .lt(SeckillGoods::getEndTime, now)
+                .ge(SeckillGoods::getEndTime, startOfDay)
+                .lt(SeckillGoods::getEndTime, endOfDay);
+        return seckillGoodsMapper.selectCount(wrapper);
     }
 }

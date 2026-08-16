@@ -349,6 +349,14 @@ public class ProductServiceImpl implements ProductService {
     }
 
     /**
+     * Phase 14：商品总数，封装 productMapper.selectCount(null)。
+     */
+    @Override
+    public long countAll() {
+        return productMapper.selectCount(null);
+    }
+
+    /**
      * 白名单过滤排序字段，防 SQL 注入。
      * 将前端传入的 sortBy 归一化为 Mapper 支持的标准字段(price/sales/createTime)：
      * 1. 空值 → 默认值 createTime

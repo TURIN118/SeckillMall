@@ -2,9 +2,15 @@ package com.seckill.mall.service;
 
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.entity.SeckillOrder;
+import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.vo.SeckillOrderVO;
+import com.seckill.mall.vo.SeckillRankingVO;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 秒杀订单领域服务（Phase 4b-1 从 OrderService 拆分而来）。
@@ -139,4 +145,55 @@ public interface SeckillOrderService {
      * @return 用户钱包支付的已支付秒杀订单列表
      */
     List<SeckillOrder> getWalletPaidOrdersByUser(Long userId);
+
+    /**
+     * Phase 14：订单总数（封装 seckillOrderMapper.selectCount(null)，消除跨模块 Mapper 依赖）。
+     *
+     * @return 订单总数
+     */
+    long countAll();
+
+    /**
+     * Phase 14：销售总额（封装 seckillOrderMapper.sumSalesAmount(statuses)）。
+     *
+     * @param statuses 需统计的订单状态列表
+     * @return 销售总额，可能为 null
+     */
+    BigDecimal sumSalesAmount(List<OrderStatus> statuses);
+
+    /**
+     * Phase 14：今日订单数（封装 seckillOrderMapper.countTodayOrders(today)）。
+     *
+     * @param today 当天日期
+     * @return 订单数，可能为 null
+     */
+    Long countTodayOrders(LocalDate today);
+
+    /**
+     * Phase 14：订单趋势（封装 seckillOrderMapper.selectOrderTrend(startDate, endDate, statuses)）。
+     *
+     * @param startDate 起始日期（含）
+     * @param endDate   结束日期（含）
+     * @param statuses  需统计的状态列表
+     * @return 每行包含 dt(日期)、cnt(订单数)、amt(销售额)
+     */
+    List<Map<String, Object>> selectOrderTrend(LocalDate startDate, LocalDate endDate, List<OrderStatus> statuses);
+
+    /**
+     * Phase 14：秒杀排行榜 Top N（封装 seckillOrderMapper.selectSeckillRanking(statuses, limit)）。
+     *
+     * @param statuses 需统计的订单状态列表
+     * @param limit    Top N
+     * @return 排行榜列表
+     */
+    List<SeckillRankingVO> selectSeckillRanking(List<OrderStatus> statuses, int limit);
+
+    /**
+     * Phase 14：订单状态分布（封装 seckillOrderMapper.selectStatusDistribution(startTime, endTime)）。
+     *
+     * @param startTime 起始时间（含），null 表示不限
+     * @param endTime   结束时间（含），null 表示不限
+     * @return 每行包含 status(状态码)、cnt(订单数)
+     */
+    List<Map<String, Object>> selectStatusDistribution(LocalDateTime startTime, LocalDateTime endTime);
 }

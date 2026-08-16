@@ -50,4 +50,11 @@ public interface ProductService {
      * @return 商品实体列表
      */
     List<Product> getProductsByIds(List<Long> ids);
+
+    /**
+     * Phase 14：商品总数（封装 productMapper.selectCount(null)，消除跨模块 Mapper 依赖）。
+     *
+     * @return 商品总数
+     */
+    long countAll();
 }

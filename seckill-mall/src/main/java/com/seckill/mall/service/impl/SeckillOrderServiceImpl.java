@@ -21,6 +21,7 @@ import com.seckill.mall.service.SeckillInventoryPort;
 import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.SeckillOrderVO;
+import com.seckill.mall.vo.SeckillRankingVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,9 +32,11 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -489,5 +492,55 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
                 .eq(SeckillOrder::getUserId, userId)
                 .eq(SeckillOrder::getPayMethod, "WALLET")
                 .in(SeckillOrder::getStatus, OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED));
+    }
+
+    // ==================== Phase 14：统计方法（封装 Mapper 调用，消除 StatsServiceImpl 跨模块 Mapper 依赖） ====================
+
+    /**
+     * Phase 14：订单总数，封装 seckillOrderMapper.selectCount(null)。
+     */
+    @Override
+    public long countAll() {
+        return seckillOrderMapper.selectCount(null);
+    }
+
+    /**
+     * Phase 14：销售总额，封装 seckillOrderMapper.sumSalesAmount(statuses)。
+     */
+    @Override
+    public BigDecimal sumSalesAmount(List<OrderStatus> statuses) {
+        return seckillOrderMapper.sumSalesAmount(statuses);
+    }
+
+    /**
+     * Phase 14：今日订单数，封装 seckillOrderMapper.countTodayOrders(today)。
+     */
+    @Override
+    public Long countTodayOrders(LocalDate today) {
+        return seckillOrderMapper.countTodayOrders(today);
+    }
+
+    /**
+     * Phase 14：订单趋势，封装 seckillOrderMapper.selectOrderTrend(startDate, endDate, statuses)。
+     */
+    @Override
+    public List<Map<String, Object>> selectOrderTrend(LocalDate startDate, LocalDate endDate, List<OrderStatus> statuses) {
+        return seckillOrderMapper.selectOrderTrend(startDate, endDate, statuses);
+    }
+
+    /**
+     * Phase 14：秒杀排行榜 Top N，封装 seckillOrderMapper.selectSeckillRanking(statuses, limit)。
+     */
+    @Override
+    public List<SeckillRankingVO> selectSeckillRanking(List<OrderStatus> statuses, int limit) {
+        return seckillOrderMapper.selectSeckillRanking(statuses, limit);
+    }
+
+    /**
+     * Phase 14：订单状态分布，封装 seckillOrderMapper.selectStatusDistribution(startTime, endTime)。
+     */
+    @Override
+    public List<Map<String, Object>> selectStatusDistribution(LocalDateTime startTime, LocalDateTime endTime) {
+        return seckillOrderMapper.selectStatusDistribution(startTime, endTime);
     }
 }

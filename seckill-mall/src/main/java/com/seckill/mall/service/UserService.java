@@ -65,4 +65,28 @@ public interface UserService {
      * @return Map<userId, username>，空列表返回 emptyMap
      */
     java.util.Map<Long, String> getUsernamesByIds(java.util.List<Long> userIds);
+
+    /**
+     * Phase 14：用户总数（封装 userMapper.selectCount(null)，消除跨模块 Mapper 依赖）。
+     *
+     * @return 用户总数
+     */
+    long countAll();
+
+    /**
+     * Phase 14：今日注册用户数（封装 userMapper.countTodayRegistered(today)）。
+     *
+     * @param today 当天日期
+     * @return 注册数，可能为 null
+     */
+    Long countTodayRegistered(java.time.LocalDate today);
+
+    /**
+     * Phase 14：用户注册趋势（封装 userMapper.selectUserTrend(startDate, endDate)）。
+     *
+     * @param startDate 起始日期（含）
+     * @param endDate   结束日期（含）
+     * @return 每行包含 dt(日期)、cnt(注册数)
+     */
+    java.util.List<java.util.Map<String, Object>> selectUserTrend(java.time.LocalDate startDate, java.time.LocalDate endDate);
 }

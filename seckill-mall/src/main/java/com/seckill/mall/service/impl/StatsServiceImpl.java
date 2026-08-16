@@ -1,14 +1,11 @@
 package com.seckill.mall.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.enums.OrderStatus;
-import com.seckill.mall.entity.enums.SeckillStatus;
-import com.seckill.mall.mapper.ProductMapper;
-import com.seckill.mall.mapper.SeckillGoodsMapper;
-import com.seckill.mall.mapper.SeckillOrderMapper;
-import com.seckill.mall.mapper.UserMapper;
+import com.seckill.mall.service.ProductService;
+import com.seckill.mall.service.SeckillGoodsService;
+import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.service.StatsService;
+import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.OrderStatusItemVO;
 import com.seckill.mall.vo.SeckillOverviewVO;
 import com.seckill.mall.vo.SeckillRankingVO;
@@ -21,7 +18,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,6 +30,9 @@ import java.util.Map;
  *
  * <p>所有指标均从数据库实时查询，不做任何模拟数据。
  * 趋势接口对缺失日期补零，保证前端图表横轴连续。</p>
+ *
+ * <p>Phase 14：消除对 UserMapper/SeckillOrderMapper/SeckillGoodsMapper/ProductMapper
+ * 4 个跨模块 Mapper 的直接依赖，统一改为领域 Service 调用。</p>
  *
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
@@ -57,38 +56,38 @@ public class StatsServiceImpl implements StatsService {
      */
     private static final int RANKING_MAX_LIMIT = 50;
 
-    private final UserMapper userMapper;
-    private final SeckillOrderMapper seckillOrderMapper;
-    private final SeckillGoodsMapper seckillGoodsMapper;
-    private final ProductMapper productMapper;
+    private final UserService userService;
+    private final SeckillOrderService seckillOrderService;
+    private final SeckillGoodsService seckillGoodsService;
+    private final ProductService productService;
 
     @Override
     public StatsOverviewVO getOverview() {
         StatsOverviewVO vo = new StatsOverviewVO();
 
         // 用户总数
-        vo.setUserCount(userMapper.selectCount(null));
+        vo.setUserCount(userService.countAll());
 
         // 订单总数
-        vo.setOrderCount(seckillOrderMapper.selectCount(null));
+        vo.setOrderCount(seckillOrderService.countAll());
 
         // 秒杀活动数
-        vo.setSeckillCount(seckillGoodsMapper.selectCount(null));
+        vo.setSeckillCount(seckillGoodsService.countAll());
 
         // 商品总数
-        vo.setProductCount(productMapper.selectCount(null));
+        vo.setProductCount(productService.countAll());
 
         // 销售总额（仅统计 PAID/COMPLETED）
-        BigDecimal sales = seckillOrderMapper.sumSalesAmount(
+        BigDecimal sales = seckillOrderService.sumSalesAmount(
                 List.of(OrderStatus.PAID, OrderStatus.COMPLETED));
         vo.setTotalSales(sales == null ? BigDecimal.ZERO : sales);
 
         // 今日注册数 / 今日订单数
         LocalDate today = LocalDate.now();
-        Long todayUser = userMapper.countTodayRegistered(today);
+        Long todayUser = userService.countTodayRegistered(today);
         vo.setTodayUserCount(todayUser == null ? 0L : todayUser);
 
-        Long todayOrder = seckillOrderMapper.countTodayOrders(today);
+        Long todayOrder = seckillOrderService.countTodayOrders(today);
         vo.setTodayOrderCount(todayOrder == null ? 0L : todayOrder);
 
         return vo;
@@ -100,7 +99,7 @@ public class StatsServiceImpl implements StatsService {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(n - 1L);
 
-        List<Map<String, Object>> rows = userMapper.selectUserTrend(startDate, endDate);
+        List<Map<String, Object>> rows = userService.selectUserTrend(startDate, endDate);
         Map<String, Long> countByDate = indexByDate(rows);
 
         return fillTrend(startDate, n, countByDate);
@@ -113,7 +112,7 @@ public class StatsServiceImpl implements StatsService {
         LocalDate startDate = endDate.minusDays(n - 1L);
 
         // 复用现有 selectOrderTrend：按日期分组统计订单数（仅统计 PAID/COMPLETED）
-        List<Map<String, Object>> rows = seckillOrderMapper.selectOrderTrend(
+        List<Map<String, Object>> rows = seckillOrderService.selectOrderTrend(
                 startDate, endDate, List.of(OrderStatus.PAID, OrderStatus.COMPLETED));
         Map<String, Long> countByDate = indexByDate(rows);
 
@@ -123,7 +122,7 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public List<SeckillRankingVO> getSeckillRanking(Integer limit) {
         int n = normalizeLimit(limit);
-        List<SeckillRankingVO> rows = seckillOrderMapper.selectSeckillRanking(
+        List<SeckillRankingVO> rows = seckillOrderService.selectSeckillRanking(
                 List.of(OrderStatus.PAID, OrderStatus.COMPLETED), n);
         return rows == null ? Collections.emptyList() : rows;
     }
@@ -131,7 +130,7 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public List<OrderStatusItemVO> getOrderStatusDistribution() {
         // 复用现有 selectStatusDistribution：按 status 分组统计订单数（不限时间范围）
-        List<Map<String, Object>> rows = seckillOrderMapper.selectStatusDistribution(null, null);
+        List<Map<String, Object>> rows = seckillOrderService.selectStatusDistribution(null, null);
 
         // 按状态码建立计数索引
         Map<String, Long> countByStatus = new HashMap<>();
@@ -160,74 +159,23 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public SeckillOverviewVO getSeckillOverview() {
         SeckillOverviewVO vo = new SeckillOverviewVO();
-        vo.setActiveCount(getSeckillActiveCount());
-        vo.setPendingCount(getSeckillPendingCount());
-        vo.setCompletedToday(getSeckillCompletedToday());
-        return vo;
-    }
-
-    // ==================== 秒杀活动概览（基于时间窗口动态计算，M17 修正） ====================
-
-    /**
-     * 统计进行中的秒杀活动数量
-     * <p>
-     * M17: DB 中 status 字段不会随时间自动更新（创建时为 PENDING，仅取消时改为 CANCELLED），
-     * 直接按 status=ACTIVE 查询会漏掉所有已开始但 status 仍为 PENDING 的活动。
-     * 正确做法应基于时间窗口动态计算：start_time <= now < end_time 且 status != CANCELLED。
-     */
-    private Integer getSeckillActiveCount() {
+        // Phase 14：秒杀活动计数逻辑下沉至 SeckillGoodsService，此处仅做异常兜底
         try {
-            LocalDateTime now = LocalDateTime.now();
-            LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
-            wrapper.ne(SeckillGoods::getStatus, SeckillStatus.CANCELLED)
-                    .le(SeckillGoods::getStartTime, now)
-                    .gt(SeckillGoods::getEndTime, now);
-            return Math.toIntExact(seckillGoodsMapper.selectCount(wrapper));
+            vo.setActiveCount(Math.toIntExact(seckillGoodsService.countActive()));
         } catch (Exception e) {
             log.debug("进行中秒杀数采集失败: {}", e.getMessage());
-            return null;
         }
-    }
-
-    /**
-     * 统计待开始的秒杀活动数量
-     * <p>
-     * M17: 基于 start_time > now 且未取消动态计算，不依赖 DB status 字段。
-     */
-    private Integer getSeckillPendingCount() {
         try {
-            LocalDateTime now = LocalDateTime.now();
-            LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
-            wrapper.ne(SeckillGoods::getStatus, SeckillStatus.CANCELLED)
-                    .gt(SeckillGoods::getStartTime, now);
-            return Math.toIntExact(seckillGoodsMapper.selectCount(wrapper));
+            vo.setPendingCount(Math.toIntExact(seckillGoodsService.countPending()));
         } catch (Exception e) {
             log.debug("待开始秒杀数采集失败: {}", e.getMessage());
-            return null;
         }
-    }
-
-    /**
-     * 统计今日已完成的秒杀活动数量
-     * <p>
-     * M17: 基于 end_time < now 且 endTime 在今日、未取消动态计算，不依赖 DB status 字段。
-     */
-    private Integer getSeckillCompletedToday() {
         try {
-            LocalDate today = LocalDate.now();
-            LocalDateTime startOfDay = today.atStartOfDay();
-            LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
-            LocalDateTime now = LocalDateTime.now();
-            LambdaQueryWrapper<SeckillGoods> wrapper = new LambdaQueryWrapper<>();
-            wrapper.ne(SeckillGoods::getStatus, SeckillStatus.CANCELLED)
-                    .lt(SeckillGoods::getEndTime, now)
-                    .ge(SeckillGoods::getEndTime, startOfDay)
-                    .lt(SeckillGoods::getEndTime, endOfDay);
-            return Math.toIntExact(seckillGoodsMapper.selectCount(wrapper));
+            vo.setCompletedToday(Math.toIntExact(seckillGoodsService.countCompletedToday()));
         } catch (Exception e) {
             log.debug("今日已完成秒杀数采集失败: {}", e.getMessage());
-            return null;
         }
+        return vo;
     }
 
     // ==================== 私有工具方法 ====================

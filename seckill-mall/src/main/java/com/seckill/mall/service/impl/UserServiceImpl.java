@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDate;
 import java.util.stream.Collectors;
 
 /**
@@ -109,6 +110,30 @@ public class UserServiceImpl implements UserService {
         }
         return userMapper.selectList(new LambdaQueryWrapper<User>().in(User::getId, userIds))
                 .stream().collect(Collectors.toMap(User::getId, User::getUsername));
+    }
+
+    /**
+     * Phase 14：用户总数，封装 userMapper.selectCount(null)。
+     */
+    @Override
+    public long countAll() {
+        return userMapper.selectCount(null);
+    }
+
+    /**
+     * Phase 14：今日注册用户数，封装 userMapper.countTodayRegistered(today)。
+     */
+    @Override
+    public Long countTodayRegistered(LocalDate today) {
+        return userMapper.countTodayRegistered(today);
+    }
+
+    /**
+     * Phase 14：用户注册趋势，封装 userMapper.selectUserTrend(startDate, endDate)。
+     */
+    @Override
+    public List<Map<String, Object>> selectUserTrend(LocalDate startDate, LocalDate endDate) {
+        return userMapper.selectUserTrend(startDate, endDate);
     }
 
     /** Entity → VO */

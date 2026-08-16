@@ -1,8 +1,8 @@
-package com.seckill.mall.ai.track.service;
+package com.seckill.mall.analytics.tracking.service;
 
-import com.seckill.mall.ai.track.dto.TrackEventRequest;
-import com.seckill.mall.ai.track.entity.UserEvent;
-import com.seckill.mall.ai.track.mq.TrackProducer;
+import com.seckill.mall.analytics.tracking.dto.TrackEventRequest;
+import com.seckill.mall.analytics.tracking.entity.UserEvent;
+import com.seckill.mall.analytics.tracking.mq.TrackProducer;
 import com.seckill.mall.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ import java.util.List;
  *       投递 MQ 异步落库。</li>
  *   <li>{@link #track(UserEvent)}：{@code @Tracking} 注解切面调用，单条埋点投递 MQ。</li>
  * </ol>
- * <p>本服务只负责"组装 + 投递 MQ"，不直接落库，落库由 {@link com.seckill.mall.ai.track.mq.TrackConsumer} 完成。
+ * <p>本服务只负责"组装 + 投递 MQ"，不直接落库，落库由 {@link com.seckill.mall.analytics.tracking.mq.TrackConsumer} 完成。
  *
  * 创建人：@author WNJ
  * 项目名称：seckill-mall

@@ -1,4 +1,4 @@
-package com.seckill.mall.ai.track.entity;
+package com.seckill.mall.analytics.tracking.entity;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;

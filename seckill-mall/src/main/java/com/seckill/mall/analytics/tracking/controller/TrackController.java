@@ -1,7 +1,7 @@
-package com.seckill.mall.ai.track.controller;
+package com.seckill.mall.analytics.tracking.controller;
 
-import com.seckill.mall.ai.track.dto.TrackEventRequest;
-import com.seckill.mall.ai.track.service.TrackService;
+import com.seckill.mall.analytics.tracking.dto.TrackEventRequest;
+import com.seckill.mall.analytics.tracking.service.TrackService;
 import com.seckill.mall.common.Result;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

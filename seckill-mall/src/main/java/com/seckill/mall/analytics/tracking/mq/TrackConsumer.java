@@ -1,10 +1,10 @@
-package com.seckill.mall.ai.track.mq;
+package com.seckill.mall.analytics.tracking.mq;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
-import com.seckill.mall.ai.track.entity.UserEvent;
-import com.seckill.mall.ai.track.entity.UserEventMapper;
+import com.seckill.mall.analytics.tracking.entity.UserEvent;
+import com.seckill.mall.analytics.tracking.entity.UserEventMapper;
 import com.seckill.mall.cache.RedisKeyConstants;
 import com.seckill.mall.cache.RedisService;
 import com.seckill.mall.config.RabbitMQConfig;

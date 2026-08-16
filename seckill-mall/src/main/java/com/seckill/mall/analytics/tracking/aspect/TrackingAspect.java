@@ -1,8 +1,8 @@
-package com.seckill.mall.ai.track.aspect;
+package com.seckill.mall.analytics.tracking.aspect;
 
-import com.seckill.mall.ai.track.annotation.Tracking;
-import com.seckill.mall.ai.track.entity.UserEvent;
-import com.seckill.mall.ai.track.service.TrackService;
+import com.seckill.mall.analytics.tracking.annotation.Tracking;
+import com.seckill.mall.analytics.tracking.entity.UserEvent;
+import com.seckill.mall.analytics.tracking.service.TrackService;
 import com.seckill.mall.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-package com.seckill.mall.ai.track.annotation;
+package com.seckill.mall.analytics.tracking.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 /**
  * 声明式埋点注解
- * <p>标注于业务方法上，由 {@link com.seckill.mall.ai.track.aspect.TrackingAspect}
+ * <p>标注于业务方法上，由 {@link com.seckill.mall.analytics.tracking.aspect.TrackingAspect}
  * 在方法正常返回后异步采集埋点，投递 MQ 落库。
  * <p>使用示例：
  * <pre>{@code

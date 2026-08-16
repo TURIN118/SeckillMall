@@ -1,4 +1,4 @@
-package com.seckill.mall.ai.track.dto;
+package com.seckill.mall.analytics.tracking.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

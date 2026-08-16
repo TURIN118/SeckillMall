@@ -1,6 +1,6 @@
-package com.seckill.mall.ai.track.mq;
+package com.seckill.mall.analytics.tracking.mq;
 
-import com.seckill.mall.ai.track.entity.UserEvent;
+import com.seckill.mall.analytics.tracking.entity.UserEvent;
 import com.seckill.mall.config.RabbitMQConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

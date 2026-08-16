@@ -135,12 +135,12 @@ class ArchitectureRulesTest {
             .should().dependOnClassesThat().resideInAPackage("..ai.aigc..")
             .as("ai.gateway 不应依赖 ai.aigc，Gateway 是底层不应依赖上层 AI 业务"));
 
-    /** 9. ai.track 不应依赖 service.impl（Tracking 是旁路，不依赖业务实现） */
+    /** 9. analytics.tracking 不应依赖 service.impl（Tracking 是旁路，不依赖业务实现） */
     @ArchTest
-    static final ArchRule ai_track_should_not_depend_on_service_impl =
-        freeze(noClasses().that().resideInAPackage("..ai.track..")
+    static final ArchRule analytics_tracking_should_not_depend_on_service_impl =
+        freeze(noClasses().that().resideInAPackage("..analytics.tracking..")
             .should().dependOnClassesThat().resideInAPackage("..service.impl..")
-            .as("ai.track 不应依赖 service.impl，Tracking 是旁路不应依赖业务实现"));
+            .as("analytics.tracking 不应依赖 service.impl，Tracking 是旁路不应依赖业务实现"));
 
     // ============================================================
     // C. 基础设施泄露规则
@@ -153,6 +153,14 @@ class ArchitectureRulesTest {
             .should().dependOnClassesThat()
             .haveFullyQualifiedName("org.springframework.amqp.core.RabbitTemplate")
             .as("Service 不应直接依赖 RabbitTemplate，应通过 mq.producer 封装"));
+
+    /** 10b. Service 不应直接依赖 StringRedisTemplate（应通过 CachePort/RedisService 封装） */
+    @ArchTest
+    static final ArchRule service_should_not_depend_on_string_redis_template =
+        freeze(noClasses().that().resideInAPackage("..service..")
+            .should().dependOnClassesThat()
+            .haveFullyQualifiedName("org.springframework.data.redis.core.StringRedisTemplate")
+            .as("Service 不应直接依赖 StringRedisTemplate，应通过 CachePort/RedisService 封装"));
 
     /** 11a. Controller 不应直接依赖 RedisTemplate（应通过 Service） */
     @ArchTest

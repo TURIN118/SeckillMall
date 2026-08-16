@@ -1,5 +1,6 @@
 package com.seckill.mall.service;
 
+import com.seckill.mall.entity.UserAddress;
 import com.seckill.mall.vo.UserAddressVO;
 
 import java.util.List;
@@ -67,4 +68,15 @@ public interface UserAddressService {
      * @param id     地址 ID
      */
     void setDefault(Long userId, Long id);
+
+    /**
+     * Phase 7：返回地址实体（模块间内部调用用）。
+     * <p>
+     * 仅供 OrderServiceImpl 跨模块内部调用（校验收货地址归属、组装订单详情），
+     * 外部 API 应使用 {@link #listByUserId(Long)} 等返回 VO 避免契约泄漏。
+     *
+     * @param addressId 地址 ID
+     * @return 地址实体，不存在返回 null
+     */
+    UserAddress getAddressById(Long addressId);
 }

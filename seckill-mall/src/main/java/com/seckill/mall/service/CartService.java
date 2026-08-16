@@ -1,6 +1,7 @@
 package com.seckill.mall.service;
 
 import com.seckill.mall.common.Result;
+import com.seckill.mall.entity.Cart;
 import com.seckill.mall.vo.CartItemVO;
 
 import java.util.List;
@@ -93,4 +94,24 @@ public interface CartService {
      * @return 购物车项数量
      */
     Result<Integer> getCartCount(Long userId);
+
+    /**
+     * Phase 7：按 ID 批量查询购物车项实体（模块间内部调用用）。
+     * <p>
+     * 仅供 OrderServiceImpl#createOrderFromCart 跨模块内部调用，返回实体而非 VO。
+     *
+     * @param cartIds 购物车项 ID 列表
+     * @return 购物车项实体列表
+     */
+    List<Cart> getCartsByIds(List<Long> cartIds);
+
+    /**
+     * Phase 7：批量逻辑删除购物车项（{@code @TableLogic} 自动 set is_deleted=1）。
+     * <p>
+     * 仅供 OrderServiceImpl#createOrderFromCart 跨模块内部调用，
+     * 用于结算后删除已结算购物车项。
+     *
+     * @param cartIds 购物车项 ID 列表
+     */
+    void deleteCartsByIds(List<Long> cartIds);
 }

@@ -374,4 +374,23 @@ public class CartServiceImpl implements CartService {
             return attributesJson;
         }
     }
+
+    // ==================== Phase 7：跨模块内部调用入口（供 OrderServiceImpl 使用） ====================
+
+    @Override
+    public List<Cart> getCartsByIds(List<Long> cartIds) {
+        if (cartIds == null || cartIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return cartMapper.selectList(
+                new LambdaQueryWrapper<Cart>().in(Cart::getId, cartIds));
+    }
+
+    @Override
+    public void deleteCartsByIds(List<Long> cartIds) {
+        if (cartIds == null || cartIds.isEmpty()) {
+            return;
+        }
+        cartMapper.delete(new LambdaQueryWrapper<Cart>().in(Cart::getId, cartIds));
+    }
 }

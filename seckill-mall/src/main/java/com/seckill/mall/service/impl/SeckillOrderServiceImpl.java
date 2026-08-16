@@ -1,5 +1,6 @@
 package com.seckill.mall.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -472,5 +473,31 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
                 log.info("秒杀订单超时自动关闭, orderId={}", order.getId());
             }
         }
+    }
+
+    // ==================== Phase 7：跨模块内部调用入口（供 OrderServiceImpl 使用） ====================
+
+    @Override
+    public SeckillOrder getSeckillOrderById(Long orderId) {
+        return seckillOrderMapper.selectById(orderId);
+    }
+
+    @Override
+    public List<SeckillOrder> getSeckillOrdersForUnifiedList(Long userId, Integer status, int limit) {
+        LambdaQueryWrapper<SeckillOrder> wrapper = new LambdaQueryWrapper<SeckillOrder>()
+                .eq(SeckillOrder::getUserId, userId)
+                .orderByDesc(SeckillOrder::getCreateTime)
+                .last("LIMIT " + limit);
+        OrderStatus statusFilter = parseStatus(status);
+        if (statusFilter != null) {
+            wrapper.eq(SeckillOrder::getStatus, statusFilter);
+        }
+        return seckillOrderMapper.selectList(wrapper);
+    }
+
+    @Override
+    public boolean logicalDeleteSeckillOrder(Long orderId) {
+        int rows = seckillOrderMapper.deleteById(orderId);
+        return rows > 0;
     }
 }

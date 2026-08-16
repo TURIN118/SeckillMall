@@ -13,12 +13,8 @@ import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.UserAddress;
 import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.entity.enums.ProductStatus;
-import com.seckill.mall.mapper.CartMapper;
 import com.seckill.mall.mapper.NormalOrderItemMapper;
 import com.seckill.mall.mapper.NormalOrderMapper;
-
-import com.seckill.mall.mapper.SeckillOrderMapper;
-import com.seckill.mall.mapper.UserAddressMapper;
 
 import com.seckill.mall.service.impl.OrderServiceImpl;
 import com.seckill.mall.vo.NormalOrderDetailVO;
@@ -65,8 +61,6 @@ class OrderServiceTest {
     private static final Long ORDER_ID = 8001L;
 
     @Mock
-    private SeckillOrderMapper seckillOrderMapper;
-    @Mock
     private UserService userService;
     @Mock
     private EmailService emailService;
@@ -74,10 +68,6 @@ class OrderServiceTest {
     private NormalOrderMapper normalOrderMapper;
     @Mock
     private NormalOrderItemMapper normalOrderItemMapper;
-    @Mock
-    private CartMapper cartMapper;
-    @Mock
-    private UserAddressMapper userAddressMapper;
     @Mock
     private RabbitTemplate rabbitTemplate;
     @Mock
@@ -92,6 +82,13 @@ class OrderServiceTest {
     private PaymentService paymentService;
     @Mock
     private InventoryService inventoryService;
+    // Phase 7：原跨模块 Mapper Mock 替换为对应领域 Service Mock
+    @Mock
+    private SeckillOrderService seckillOrderService;
+    @Mock
+    private CartService cartService;
+    @Mock
+    private UserAddressService userAddressService;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -183,7 +180,7 @@ class OrderServiceTest {
     void createNormalOrder_shouldCreateOrderAndDeductStock() {
         // given
         given(productService.getProductById(PRODUCT_ID)).willReturn(buildOnSaleProduct());
-        given(userAddressMapper.selectById(ADDRESS_ID)).willReturn(buildAddress());
+        given(userAddressService.getAddressById(ADDRESS_ID)).willReturn(buildAddress());
         // 扣减商品库存成功
         given(inventoryService.deductProductStock(any(), any())).willReturn(1);
         // normalOrderMapper.insert 设置 id 后会被 assembleDetail 使用
@@ -230,7 +227,7 @@ class OrderServiceTest {
         Product p = buildOnSaleProduct();
         p.setStock(0); // 库存为 0
         given(productService.getProductById(PRODUCT_ID)).willReturn(p);
-        given(userAddressMapper.selectById(ADDRESS_ID)).willReturn(buildAddress());
+        given(userAddressService.getAddressById(ADDRESS_ID)).willReturn(buildAddress());
 
         // when / then
         assertThatThrownBy(() -> orderService.createNormalOrder(
@@ -266,7 +263,7 @@ class OrderServiceTest {
         given(normalOrderMapper.selectById(NORMAL_ORDER_ID)).willReturn(unpaid, paid);
         given(normalOrderMapper.update(any(), any())).willReturn(1);
         given(normalOrderItemMapper.selectList(any())).willReturn(Collections.emptyList());
-        given(userAddressMapper.selectById(ADDRESS_ID)).willReturn(buildAddress());
+        given(userAddressService.getAddressById(ADDRESS_ID)).willReturn(buildAddress());
 
         // when
         NormalOrderDetailVO vo = orderService.payNormalOrder(USER_ID, NORMAL_ORDER_ID, "ALIPAY");
@@ -316,7 +313,7 @@ class OrderServiceTest {
         given(normalOrderMapper.selectById(NORMAL_ORDER_ID)).willReturn(unpaid, cancelled);
         given(normalOrderMapper.update(any(), any())).willReturn(1);
         given(normalOrderItemMapper.selectList(any())).willReturn(List.of(buildNormalOrderItem()));
-        given(userAddressMapper.selectById(ADDRESS_ID)).willReturn(buildAddress());
+        given(userAddressService.getAddressById(ADDRESS_ID)).willReturn(buildAddress());
 
         // when
         NormalOrderDetailVO vo = orderService.cancelNormalOrder(USER_ID, NORMAL_ORDER_ID);
@@ -333,7 +330,7 @@ class OrderServiceTest {
         // given
         given(normalOrderMapper.selectById(NORMAL_ORDER_ID)).willReturn(buildNormalOrder(OrderStatus.PAID));
         given(normalOrderItemMapper.selectList(any())).willReturn(Collections.emptyList());
-        given(userAddressMapper.selectById(ADDRESS_ID)).willReturn(buildAddress());
+        given(userAddressService.getAddressById(ADDRESS_ID)).willReturn(buildAddress());
 
         // when
         NormalOrderDetailVO vo = orderService.cancelNormalOrder(USER_ID, NORMAL_ORDER_ID);
@@ -439,7 +436,7 @@ class OrderServiceTest {
         // given
         given(normalOrderMapper.selectById(NORMAL_ORDER_ID)).willReturn(buildNormalOrder(OrderStatus.UNPAID));
         given(normalOrderItemMapper.selectList(any())).willReturn(List.of(buildNormalOrderItem()));
-        given(userAddressMapper.selectById(ADDRESS_ID)).willReturn(buildAddress());
+        given(userAddressService.getAddressById(ADDRESS_ID)).willReturn(buildAddress());
 
         // when
         NormalOrderDetailVO vo = orderService.getNormalOrderDetail(USER_ID, NORMAL_ORDER_ID);
@@ -467,7 +464,8 @@ class OrderServiceTest {
     @DisplayName("getUnifiedOrderList：分页查询用户订单列表（空结果）")
     void getUnifiedOrderList_shouldReturnEmptyPage() {
         // given
-        given(seckillOrderMapper.selectList(any())).willReturn(Collections.emptyList());
+        // Phase 7：seckillOrderMapper.selectList 替换为 seckillOrderService.getSeckillOrdersForUnifiedList
+        given(seckillOrderService.getSeckillOrdersForUnifiedList(any(), any(), org.mockito.ArgumentMatchers.anyInt())).willReturn(Collections.emptyList());
         given(normalOrderMapper.selectList(any())).willReturn(Collections.emptyList());
 
         // when
@@ -488,22 +486,23 @@ class OrderServiceTest {
         cancelled.setOrderNo("SK20260731120000");
         cancelled.setUserId(USER_ID);
         cancelled.setStatus(OrderStatus.CANCELLED);
-        given(seckillOrderMapper.selectById(ORDER_ID)).willReturn(cancelled);
-        given(seckillOrderMapper.deleteById(ORDER_ID)).willReturn(1);
+        // Phase 7：seckillOrderMapper.selectById/deleteById 替换为 SeckillOrderService 内部调用入口
+        given(seckillOrderService.getSeckillOrderById(ORDER_ID)).willReturn(cancelled);
+        given(seckillOrderService.logicalDeleteSeckillOrder(ORDER_ID)).willReturn(true);
 
         // when
         boolean result = orderService.deleteOrder(ORDER_ID, USER_ID);
 
         // then
         assertThat(result).isTrue();
-        then(seckillOrderMapper).should().deleteById(ORDER_ID);
+        then(seckillOrderService).should().logicalDeleteSeckillOrder(ORDER_ID);
     }
 
     @Test
     @DisplayName("deleteOrder：订单不存在抛 ORDER_NOT_FOUND")
     void deleteOrder_shouldThrowWhenOrderNotFound() {
         // given
-        given(seckillOrderMapper.selectById(ORDER_ID)).willReturn(null);
+        given(seckillOrderService.getSeckillOrderById(ORDER_ID)).willReturn(null);
         given(normalOrderMapper.selectById(ORDER_ID)).willReturn(null);
 
         // when / then

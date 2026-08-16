@@ -17,12 +17,10 @@ import com.seckill.mall.entity.UserAddress;
 import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.entity.enums.ProductStatus;
 import com.seckill.mall.exception.BusinessException;
-import com.seckill.mall.mapper.CartMapper;
 import com.seckill.mall.mapper.NormalOrderItemMapper;
 import com.seckill.mall.mapper.NormalOrderMapper;
-import com.seckill.mall.mapper.SeckillOrderMapper;
-import com.seckill.mall.mapper.UserAddressMapper;
 import com.seckill.mall.mq.message.OrderDelayMessage;
+import com.seckill.mall.service.CartService;
 import com.seckill.mall.service.CouponService;
 import com.seckill.mall.service.EmailService;
 import com.seckill.mall.service.InventoryService;
@@ -30,6 +28,8 @@ import com.seckill.mall.service.OrderService;
 import com.seckill.mall.service.PaymentService;
 import com.seckill.mall.service.ProductService;
 import com.seckill.mall.service.ProductSkuService;
+import com.seckill.mall.service.SeckillOrderService;
+import com.seckill.mall.service.UserAddressService;
 import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
@@ -77,13 +77,10 @@ public class OrderServiceImpl implements OrderService {
     /** 普通订单默认运费（当前简化为 0，后续可按地址/重量扩展） */
     private static final BigDecimal DEFAULT_FREIGHT = BigDecimal.ZERO;
 
-    private final SeckillOrderMapper seckillOrderMapper;
     private final UserService userService;
     private final EmailService emailService;
     private final NormalOrderMapper normalOrderMapper;
     private final NormalOrderItemMapper normalOrderItemMapper;
-    private final CartMapper cartMapper;
-    private final UserAddressMapper userAddressMapper;
     private final RabbitTemplate rabbitTemplate;
     private final ProductSkuService productSkuService;
     // Phase 6：消除跨模块 Mapper 依赖，改用 ProductService 查询商品
@@ -95,6 +92,10 @@ public class OrderServiceImpl implements OrderService {
     private final PaymentService paymentService;
     // Phase 4b-3：商品库存扣减/回补抽取至 InventoryService
     private final InventoryService inventoryService;
+    // Phase 7：消除剩余跨模块 Mapper 依赖，改用对应领域 Service 内部调用入口
+    private final SeckillOrderService seckillOrderService;
+    private final CartService cartService;
+    private final UserAddressService userAddressService;
 
     @Value("${seckill.pay-timeout-minutes:15}")
     private long payTimeoutMinutes;
@@ -274,8 +275,8 @@ public class OrderServiceImpl implements OrderService {
         // 2. 查询购物车项并校验归属
         // L9: 若 cartIds 含重复 ID，selectList(in) 会去重返回，导致 carts.size() != cartIds.size() 误报错
         // 完整方案应在入口去重：cartIds = cartIds.stream().distinct().toList()
-        List<Cart> carts = cartMapper.selectList(
-                new LambdaQueryWrapper<Cart>().in(Cart::getId, cartIds));
+        // Phase 7：改用 CartService 跨模块内部调用，消除 CartMapper 依赖
+        List<Cart> carts = cartService.getCartsByIds(cartIds);
         if (carts.size() != cartIds.size()) {
             throw new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND);
         }
@@ -387,7 +388,8 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         // 7. 删除已结算购物车项（逻辑删除）
-        cartMapper.delete(new LambdaQueryWrapper<Cart>().in(Cart::getId, cartIds));
+        // Phase 7：改用 CartService 跨模块内部调用，消除 CartMapper 依赖
+        cartService.deleteCartsByIds(cartIds);
 
         log.info("购物车结算创建普通订单成功，orderNo={}, userId={}, cartIds={}, itemCount={}, userCouponId={}, discount={}",
                 order.getOrderNo(), userId, cartIds, carts.size(), userCouponId, order.getDiscountAmount());
@@ -637,7 +639,8 @@ public class OrderServiceImpl implements OrderService {
      * 校验收货地址归属当前用户。
      */
     private void checkAddressOwnership(Long userId, Long addressId) {
-        UserAddress addr = userAddressMapper.selectById(addressId);
+        // Phase 7：改用 UserAddressService 跨模块内部调用，消除 UserAddressMapper 依赖
+        UserAddress addr = userAddressService.getAddressById(addressId);
         if (addr == null) {
             throw new BusinessException(ErrorCode.ADDRESS_NOT_FOUND);
         }
@@ -794,7 +797,8 @@ public class OrderServiceImpl implements OrderService {
         // 查询收货地址
         if (order.getAddressId() != null) {
             try {
-                UserAddress address = userAddressMapper.selectById(order.getAddressId());
+                // Phase 7：改用 UserAddressService 跨模块内部调用，消除 UserAddressMapper 依赖
+                UserAddress address = userAddressService.getAddressById(order.getAddressId());
                 if (address != null) {
                     vo.setReceiverName(address.getReceiverName());
                     vo.setReceiverPhone(address.getReceiverPhone());
@@ -860,14 +864,9 @@ public class OrderServiceImpl implements OrderService {
         int maxLoad = num * size;
         List<SeckillOrder> seckillOrders = java.util.Collections.emptyList();
         if (typeFilter == null || "SECKILL".equals(typeFilter)) {
-            LambdaQueryWrapper<SeckillOrder> skWrapper = new LambdaQueryWrapper<SeckillOrder>()
-                    .eq(SeckillOrder::getUserId, userId)
-                    .orderByDesc(SeckillOrder::getCreateTime)
-                    .last("LIMIT " + maxLoad);
-            if (statusFilter != null) {
-                skWrapper.eq(SeckillOrder::getStatus, statusFilter);
-            }
-            seckillOrders = seckillOrderMapper.selectList(skWrapper);
+            // Phase 7：改用 SeckillOrderService 跨模块内部调用，消除 SeckillOrderMapper 依赖
+            // 原本在此处构造 LambdaQueryWrapper，现已下沉至 SeckillOrderServiceImpl#getSeckillOrdersForUnifiedList
+            seckillOrders = seckillOrderService.getSeckillOrdersForUnifiedList(userId, toStatusInt(statusFilter), maxLoad);
         }
 
         // 3. 查询普通订单（按 userId + status 过滤，按 createTime 降序）
@@ -932,6 +931,31 @@ public class OrderServiceImpl implements OrderService {
         } catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    /**
+     * Phase 7：OrderStatus 枚举 → Integer 序号（与 SeckillOrderService#getSeckillOrdersForUnifiedList 契约对齐）。
+     * <p>
+     * 序号映射：0=UNPAID 1=PAID 2=SHIPPED 3=CANCELLED 4=TIMEOUT 5=COMPLETED，
+     * 与 {@link SeckillOrderServiceImpl#parseStatus(Integer)} 互为逆函数。
+     * CANCELLING 为中间状态，不应作为列表筛选条件，返回 null 表示不筛选。
+     *
+     * @param status 订单状态枚举，null 返回 null
+     * @return 状态序号
+     */
+    private Integer toStatusInt(OrderStatus status) {
+        if (status == null) {
+            return null;
+        }
+        return switch (status) {
+            case UNPAID -> 0;
+            case PAID -> 1;
+            case SHIPPED -> 2;
+            case CANCELLED -> 3;
+            case TIMEOUT -> 4;
+            case COMPLETED -> 5;
+            case CANCELLING -> null;
+        };
     }
 
     /**
@@ -1054,7 +1078,8 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 1. 先尝试秒杀订单表
-        SeckillOrder seckillOrder = seckillOrderMapper.selectById(orderId);
+        // Phase 7：改用 SeckillOrderService 跨模块内部调用，消除 SeckillOrderMapper 依赖
+        SeckillOrder seckillOrder = seckillOrderService.getSeckillOrderById(orderId);
         if (seckillOrder != null) {
             // 校验归属
             if (!userId.equals(seckillOrder.getUserId())) {
@@ -1063,9 +1088,8 @@ public class OrderServiceImpl implements OrderService {
             // 校验状态：仅 COMPLETED / CANCELLED 可删除
             checkOrderDeletable(seckillOrder.getStatus());
             // 逻辑删除：@TableLogic 注解使 deleteById 自动 set is_deleted=1
-            int rows = seckillOrderMapper.deleteById(orderId);
             log.info("逻辑删除秒杀订单成功 orderId={} orderNo={} userId={}", orderId, seckillOrder.getOrderNo(), userId);
-            return rows > 0;
+            return seckillOrderService.logicalDeleteSeckillOrder(orderId);
         }
 
         // 2. 秒杀订单表未命中，尝试普通订单表

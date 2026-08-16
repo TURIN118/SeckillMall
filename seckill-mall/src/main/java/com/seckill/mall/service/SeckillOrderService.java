@@ -4,6 +4,8 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.vo.SeckillOrderVO;
 
+import java.util.List;
+
 /**
  * 秒杀订单领域服务（Phase 4b-1 从 OrderService 拆分而来）。
  * <p>
@@ -80,4 +82,38 @@ public interface SeckillOrderService {
      * @param orderId 秒杀订单 ID
      */
     void confirmOrder(Long userId, Long orderId);
+
+    /**
+     * Phase 7：返回秒杀订单实体（模块间内部调用用）。
+     * <p>
+     * 仅供 OrderServiceImpl 跨模块内部调用，外部 API 应使用 {@link #getOrderDetail(Long, Long)}
+     * 返回 VO 避免契约泄漏。
+     *
+     * @param orderId 秒杀订单 ID
+     * @return 秒杀订单实体，不存在返回 null
+     */
+    SeckillOrder getSeckillOrderById(Long orderId);
+
+    /**
+     * Phase 7：统一订单列表查询（按 userId + 可选 status + createTime 降序 + LIMIT）。
+     * <p>
+     * 仅供 OrderServiceImpl#getUnifiedOrderList 跨模块内部调用，封装原 LambdaQueryWrapper 构造逻辑。
+     *
+     * @param userId 用户 ID
+     * @param status 订单状态枚举序号（null 表示不筛选）；0=UNPAID 1=PAID 2=SHIPPED 3=CANCELLED 4=TIMEOUT 5=COMPLETED
+     * @param limit  最大返回条数（对应原 LIMIT 子句）
+     * @return 秒杀订单实体列表
+     */
+    List<SeckillOrder> getSeckillOrdersForUnifiedList(Long userId, Integer status, int limit);
+
+    /**
+     * Phase 7：逻辑删除秒杀订单（{@code @TableLogic} 自动 set is_deleted=1）。
+     * <p>
+     * 与 {@link #deleteSeckillOrderPhysically(Long)}（物理删除）区分：本方法走 MyBatis-Plus 逻辑删除，
+     * 仅供 OrderServiceImpl#deleteOrder 跨模块内部调用。
+     *
+     * @param orderId 秒杀订单 ID
+     * @return true 表示删除成功（影响行数 > 0）
+     */
+    boolean logicalDeleteSeckillOrder(Long orderId);
 }

@@ -1,0 +1,186 @@
+package com.seckill.mall.architecture;
+
+import com.tngtech.archunit.junit.AnalyzeClasses;
+import com.tngtech.archunit.junit.ArchTest;
+import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.library.freeze.FreezingArchRule;
+
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+
+/**
+ * 架构规则测试（Phase 1：阻止架构继续恶化）
+ *
+ * <p>本测试使用 ArchUnit 的 freeze 模式：
+ * <ul>
+ *   <li>首次运行时，自动将当前所有违规记录到 {@code src/test/resources/archunit-frozen-violations/} 目录</li>
+ *   <li>后续运行只检测<b>新增</b>违规，已冻结的违规不会导致测试失败</li>
+ *   <li>当某条违规被重构消除后，freeze 文件会自动同步缩减（不可逆，再次引入会失败）</li>
+ * </ul>
+ *
+ * <p>配置见 {@code src/test/resources/archunit.properties}。
+ *
+ * <p>规则分三组：
+ * <ol>
+ *   <li><b>分层依赖规则</b>：约束 controller / service / mapper / entity / vo / dto 之间的依赖方向</li>
+ *   <li><b>AI 模块保护规则</b>：保护 ai.gateway / ai.track 等已有良好结构</li>
+ *   <li><b>基础设施泄露规则</b>：禁止业务层直接依赖 RedisTemplate / RabbitTemplate 等基础设施组件</li>
+ * </ol>
+ */
+@AnalyzeClasses(packages = "com.seckill.mall")
+class ArchitectureRulesTest {
+
+    // ============================================================
+    // A. 分层依赖规则（基础层规则）
+    // ============================================================
+
+    /** 1. Controller 不应直接依赖 Mapper（Controller 应通过 Service 访问数据） */
+    @ArchTest
+    static final ArchRule controller_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..controller..")
+            .should().dependOnClassesThat().resideInAPackage("..mapper..")
+            .as("Controller 不应直接依赖 Mapper，应通过 Service 访问数据"));
+
+    /** 2. Controller 不应直接依赖 Entity（Controller 应通过 Service 返回 VO/DTO） */
+    @ArchTest
+    static final ArchRule controller_should_not_depend_on_entity =
+        freeze(noClasses().that().resideInAPackage("..controller..")
+            .should().dependOnClassesThat().resideInAPackage("..entity..")
+            .as("Controller 不应直接依赖 Entity，应通过 Service 返回 VO/DTO"));
+
+    /** 3a. Entity 不应依赖 Service（数据对象不依赖业务） */
+    @ArchTest
+    static final ArchRule entity_should_not_depend_on_service =
+        freeze(noClasses().that().resideInAPackage("..entity..")
+            .should().dependOnClassesThat().resideInAPackage("..service..")
+            .as("Entity 不应依赖 Service，数据对象不应依赖业务层"));
+
+    /** 3b. Entity 不应依赖 Controller（数据对象不依赖业务） */
+    @ArchTest
+    static final ArchRule entity_should_not_depend_on_controller =
+        freeze(noClasses().that().resideInAPackage("..entity..")
+            .should().dependOnClassesThat().resideInAPackage("..controller..")
+            .as("Entity 不应依赖 Controller，数据对象不应依赖表现层"));
+
+    /** 3c. Entity 不应依赖 Mapper（数据对象不依赖数据访问层） */
+    @ArchTest
+    static final ArchRule entity_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..entity..")
+            .should().dependOnClassesThat().resideInAPackage("..mapper..")
+            .as("Entity 不应依赖 Mapper，数据对象不应依赖数据访问层"));
+
+    /** 4a. Entity 不应依赖 VO（数据库对象不依赖输出对象） */
+    @ArchTest
+    static final ArchRule entity_should_not_depend_on_vo =
+        freeze(noClasses().that().resideInAPackage("..entity..")
+            .should().dependOnClassesThat().resideInAPackage("..vo..")
+            .as("Entity 不应依赖 VO，数据库对象不应依赖输出对象"));
+
+    /** 4b. Entity 不应依赖 DTO（数据库对象不依赖输入对象） */
+    @ArchTest
+    static final ArchRule entity_should_not_depend_on_dto =
+        freeze(noClasses().that().resideInAPackage("..entity..")
+            .should().dependOnClassesThat().resideInAPackage("..dto..")
+            .as("Entity 不应依赖 DTO，数据库对象不应依赖输入对象"));
+
+    /** 5. VO 不应依赖 Entity（输出对象不依赖数据库对象） */
+    @ArchTest
+    static final ArchRule vo_should_not_depend_on_entity =
+        freeze(noClasses().that().resideInAPackage("..vo..")
+            .should().dependOnClassesThat().resideInAPackage("..entity..")
+            .as("VO 不应依赖 Entity，输出对象不应依赖数据库对象"));
+
+    /** 6. DTO 不应依赖 Entity（输入对象不依赖数据库对象） */
+    @ArchTest
+    static final ArchRule dto_should_not_depend_on_entity =
+        freeze(noClasses().that().resideInAPackage("..dto..")
+            .should().dependOnClassesThat().resideInAPackage("..entity..")
+            .as("DTO 不应依赖 Entity，输入对象不应依赖数据库对象"));
+
+    /** 7a. Mapper 不应依赖 Service（数据层不依赖业务层） */
+    @ArchTest
+    static final ArchRule mapper_should_not_depend_on_service =
+        freeze(noClasses().that().resideInAPackage("..mapper..")
+            .should().dependOnClassesThat().resideInAPackage("..service..")
+            .as("Mapper 不应依赖 Service，数据访问层不应依赖业务层"));
+
+    /** 7b. Mapper 不应依赖 Controller（数据层不依赖表现层） */
+    @ArchTest
+    static final ArchRule mapper_should_not_depend_on_controller =
+        freeze(noClasses().that().resideInAPackage("..mapper..")
+            .should().dependOnClassesThat().resideInAPackage("..controller..")
+            .as("Mapper 不应依赖 Controller，数据访问层不应依赖表现层"));
+
+    // ============================================================
+    // B. AI 模块保护规则（保护已有的良好结构）
+    // ============================================================
+
+    /** 8a. ai.gateway 不应依赖 ai.assistant（Gateway 是底层，不依赖上层 AI 业务） */
+    @ArchTest
+    static final ArchRule ai_gateway_should_not_depend_on_ai_assistant =
+        freeze(noClasses().that().resideInAPackage("..ai.gateway..")
+            .should().dependOnClassesThat().resideInAPackage("..ai.assistant..")
+            .as("ai.gateway 不应依赖 ai.assistant，Gateway 是底层不应依赖上层 AI 业务"));
+
+    /** 8b. ai.gateway 不应依赖 ai.customerservice（Gateway 是底层，不依赖上层 AI 业务） */
+    @ArchTest
+    static final ArchRule ai_gateway_should_not_depend_on_ai_customerservice =
+        freeze(noClasses().that().resideInAPackage("..ai.gateway..")
+            .should().dependOnClassesThat().resideInAPackage("..ai.customerservice..")
+            .as("ai.gateway 不应依赖 ai.customerservice，Gateway 是底层不应依赖上层 AI 业务"));
+
+    /** 8c. ai.gateway 不应依赖 ai.aigc（Gateway 是底层，不依赖上层 AI 业务） */
+    @ArchTest
+    static final ArchRule ai_gateway_should_not_depend_on_ai_aigc =
+        freeze(noClasses().that().resideInAPackage("..ai.gateway..")
+            .should().dependOnClassesThat().resideInAPackage("..ai.aigc..")
+            .as("ai.gateway 不应依赖 ai.aigc，Gateway 是底层不应依赖上层 AI 业务"));
+
+    /** 9. ai.track 不应依赖 service.impl（Tracking 是旁路，不依赖业务实现） */
+    @ArchTest
+    static final ArchRule ai_track_should_not_depend_on_service_impl =
+        freeze(noClasses().that().resideInAPackage("..ai.track..")
+            .should().dependOnClassesThat().resideInAPackage("..service.impl..")
+            .as("ai.track 不应依赖 service.impl，Tracking 是旁路不应依赖业务实现"));
+
+    // ============================================================
+    // C. 基础设施泄露规则
+    // ============================================================
+
+    /** 10. Service 不应直接依赖 RabbitTemplate（应通过 mq.producer 封装） */
+    @ArchTest
+    static final ArchRule service_should_not_depend_on_rabbit_template =
+        freeze(noClasses().that().resideInAPackage("..service..")
+            .should().dependOnClassesThat()
+            .haveFullyQualifiedName("org.springframework.amqp.core.RabbitTemplate")
+            .as("Service 不应直接依赖 RabbitTemplate，应通过 mq.producer 封装"));
+
+    /** 11a. Controller 不应直接依赖 RedisTemplate（应通过 Service） */
+    @ArchTest
+    static final ArchRule controller_should_not_depend_on_redis_template =
+        freeze(noClasses().that().resideInAPackage("..controller..")
+            .should().dependOnClassesThat()
+            .haveFullyQualifiedName("org.springframework.data.redis.core.RedisTemplate")
+            .as("Controller 不应直接依赖 RedisTemplate，应通过 Service 访问缓存"));
+
+    /** 11b. Controller 不应直接依赖 StringRedisTemplate（应通过 Service） */
+    @ArchTest
+    static final ArchRule controller_should_not_depend_on_string_redis_template =
+        freeze(noClasses().that().resideInAPackage("..controller..")
+            .should().dependOnClassesThat()
+            .haveFullyQualifiedName("org.springframework.data.redis.core.StringRedisTemplate")
+            .as("Controller 不应直接依赖 StringRedisTemplate，应通过 Service 访问缓存"));
+
+    /**
+     * 用 FreezingArchRule 包装规则，启用 freeze 模式。
+     *
+     * <p>freeze 行为：
+     * <ul>
+     *   <li>首次运行：记录当前所有违规到 {@code archunit-frozen-violations/} 目录，测试通过</li>
+     *   <li>后续运行：只检测新增违规，已冻结的违规不会导致失败</li>
+     *   <li>违规被消除后：freeze 文件自动同步缩减，再次引入会失败</li>
+     * </ul>
+     */
+    private static ArchRule freeze(ArchRule rule) {
+        return FreezingArchRule.freeze(rule);
+    }
+}

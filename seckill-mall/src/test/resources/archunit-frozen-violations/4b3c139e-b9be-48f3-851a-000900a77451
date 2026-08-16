@@ -1,0 +1,4 @@
+Interface <com.seckill.mall.ai.customerservice.entity.AiConversationMapper> extends interface <com.baomidou.mybatisplus.core.mapper.BaseMapper> in (AiConversationMapper.java:0)
+Interface <com.seckill.mall.ai.customerservice.entity.AiMessageMapper> extends interface <com.baomidou.mybatisplus.core.mapper.BaseMapper> in (AiMessageMapper.java:0)
+Interface <com.seckill.mall.ai.gateway.entity.AiAuditMapper> extends interface <com.baomidou.mybatisplus.core.mapper.BaseMapper> in (AiAuditMapper.java:0)
+Interface <com.seckill.mall.ai.track.entity.UserEventMapper> extends interface <com.baomidou.mybatisplus.core.mapper.BaseMapper> in (UserEventMapper.java:0)

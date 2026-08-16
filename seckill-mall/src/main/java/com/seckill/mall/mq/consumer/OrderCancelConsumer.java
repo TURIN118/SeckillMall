@@ -4,6 +4,7 @@ import com.rabbitmq.client.Channel;
 import com.seckill.mall.config.RabbitMQConfig;
 import com.seckill.mall.mq.message.OrderDelayMessage;
 import com.seckill.mall.service.OrderService;
+import com.seckill.mall.service.SeckillOrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -27,6 +28,7 @@ public class OrderCancelConsumer {
     private static final String ORDER_TYPE_NORMAL = "NORMAL";
 
     private final OrderService orderService;
+    private final SeckillOrderService seckillOrderService;
 
     @RabbitListener(queues = RabbitMQConfig.ORDER_CANCEL_QUEUE)
     public void handleOrderCancel(OrderDelayMessage message,
@@ -46,7 +48,7 @@ public class OrderCancelConsumer {
                 }
             } else {
                 // 秒杀订单超时取消（默认行为）
-                cancelled = orderService.timeoutCancel(message.getOrderId());
+                cancelled = seckillOrderService.timeoutCancel(message.getOrderId());
                 if (cancelled) {
                     log.info("秒杀订单超时取消成功 orderId={} orderNo={}", message.getOrderId(), message.getOrderNo());
                 } else {

@@ -9,6 +9,7 @@ import com.seckill.mall.dto.NormalOrderPayRequest;
 import com.seckill.mall.dto.ShipRequest;
 import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.service.OrderService;
+import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
 import com.seckill.mall.vo.SeckillOrderVO;
@@ -40,6 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController {
 
     private final OrderService orderService;
+    private final SeckillOrderService seckillOrderService;
     private final SecurityUtils securityUtils;
 
     // ==================== 秒杀订单（原有） ====================
@@ -51,14 +53,14 @@ public class OrderController {
             @RequestParam(required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(orderService.getOrderList(userId, status, pageNum, pageSize));
+        return Result.success(seckillOrderService.getOrderList(userId, status, pageNum, pageSize));
     }
 
     @Operation(summary = "订单详情")
     @GetMapping("/{orderId}")
     public Result<SeckillOrderVO> detail(@PathVariable Long orderId) {
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(orderService.getOrderDetail(userId, orderId));
+        return Result.success(seckillOrderService.getOrderDetail(userId, orderId));
     }
 
     @Operation(summary = "确认支付（模拟支付）")
@@ -67,7 +69,7 @@ public class OrderController {
     public Result<SeckillOrderVO> pay(@PathVariable Long orderId,
                                       @RequestParam(defaultValue = "ALIPAY") String payMethod) {
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(orderService.payOrder(userId, orderId, payMethod));
+        return Result.success(seckillOrderService.payOrder(userId, orderId, payMethod));
     }
 
     @Operation(summary = "取消订单（仅待支付）")
@@ -75,14 +77,14 @@ public class OrderController {
     @PostMapping("/{orderId}/cancel")
     public Result<SeckillOrderVO> cancel(@PathVariable Long orderId) {
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(orderService.cancelOrder(userId, orderId));
+        return Result.success(seckillOrderService.cancelOrder(userId, orderId));
     }
 
     @Operation(summary = "查询订单状态")
     @GetMapping("/{orderId}/status")
     public Result<String> status(@PathVariable Long orderId) {
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(orderService.getOrderStatus(userId, orderId));
+        return Result.success(seckillOrderService.getOrderStatus(userId, orderId));
     }
 
     // ==================== 普通订单（需求5 立即购买 + 需求13 购物车结算） ====================
@@ -161,7 +163,7 @@ public class OrderController {
     public Result<Void> shipOrder(@PathVariable Long orderId,
                                   @RequestBody @Valid ShipRequest request) {
         Long userId = securityUtils.getCurrentUserId();
-        orderService.shipOrder(userId, orderId, request.getShippingCompany(), request.getShippingNo());
+        seckillOrderService.shipOrder(userId, orderId, request.getShippingCompany(), request.getShippingNo());
         return Result.success("发货成功", null);
     }
 
@@ -170,7 +172,7 @@ public class OrderController {
     @PostMapping("/{orderId}/confirm")
     public Result<Void> confirmOrder(@PathVariable Long orderId) {
         Long userId = securityUtils.getCurrentUserId();
-        orderService.confirmOrder(userId, orderId);
+        seckillOrderService.confirmOrder(userId, orderId);
         return Result.success("确认收货成功", null);
     }
 

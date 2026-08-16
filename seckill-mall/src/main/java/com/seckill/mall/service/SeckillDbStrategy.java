@@ -23,7 +23,7 @@ public class SeckillDbStrategy {
 
     private final SeckillGoodsMapper seckillGoodsMapper;
     private final SeckillOrderMapper seckillOrderMapper;
-    private final OrderService orderService;
+    private final SeckillOrderService seckillOrderService;
 
     /**
      * 数据库直降模式：Redis 不可用时使用。
@@ -62,6 +62,6 @@ public class SeckillDbStrategy {
             throw new BusinessException(ErrorCode.STOCK_EMPTY);
         }
         // uk_user_seckill 唯一索引作为最终并发兜底；若命中则事务回滚，库存自动恢复
-        return orderService.createSeckillOrder(seckillId, userId, requestId);
+        return seckillOrderService.createSeckillOrder(seckillId, userId, requestId);
     }
 }

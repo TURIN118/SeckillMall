@@ -2,34 +2,26 @@ package com.seckill.mall.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.seckill.mall.cache.RedisKeyConstants;
-import com.seckill.mall.cache.RedisService;
-import com.seckill.mall.cache.SeckillLuaService;
-import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.config.RabbitMQConfig;
-import com.seckill.mall.converter.SeckillOrderConverter;
 import com.seckill.mall.entity.Cart;
 import com.seckill.mall.entity.NormalOrder;
 import com.seckill.mall.entity.NormalOrderItem;
 import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.ProductSku;
-import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.User;
 import com.seckill.mall.entity.UserAddress;
 import com.seckill.mall.entity.enums.OrderStatus;
 import com.seckill.mall.entity.enums.ProductStatus;
+import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.mapper.CartMapper;
 import com.seckill.mall.mapper.NormalOrderItemMapper;
 import com.seckill.mall.mapper.NormalOrderMapper;
 import com.seckill.mall.mapper.ProductMapper;
-import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.mapper.UserAddressMapper;
 import com.seckill.mall.mapper.UserMapper;
@@ -40,16 +32,12 @@ import com.seckill.mall.service.OrderService;
 import com.seckill.mall.service.ProductSkuService;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
-import com.seckill.mall.vo.SeckillOrderVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -63,6 +51,12 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 /**
+ * 普通订单领域服务实现（Phase 4b-1 从原 OrderServiceImpl 沿自然缝拆分而来）。
+ * <p>
+ * 仅承载普通订单相关用例 + 统一订单列表（秒杀+普通合并展示）+ 跨类型逻辑删除。
+ * 秒杀订单相关用例已迁移至 {@link SeckillOrderServiceImpl}。
+ * 业务逻辑与原 OrderServiceImpl 完全一致，仅做机械移动。
+ * <p>
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
  * 文件名称：OrderServiceImpl.java
@@ -79,19 +73,13 @@ public class OrderServiceImpl implements OrderService {
     private static final String CANCEL_REASON_USER = "用户主动取消";
     private static final String CANCEL_REASON_TIMEOUT = "超时未支付，自动取消";
 
-    // 一人一单：当前表结构 uk_user_seckill 约束限购 1 件
-    private static final int SECKILL_QUANTITY = 1;
-
     /** 钱包支付方式标识 */
     private static final String PAY_METHOD_WALLET = "WALLET";
     /** 普通订单默认运费（当前简化为 0，后续可按地址/重量扩展） */
     private static final BigDecimal DEFAULT_FREIGHT = BigDecimal.ZERO;
 
     private final SeckillOrderMapper seckillOrderMapper;
-    private final SeckillGoodsMapper seckillGoodsMapper;
     private final ProductMapper productMapper;
-    private final RedisService redisService;
-    private final SeckillLuaService seckillLuaService;
     private final UserMapper userMapper;
     private final EmailService emailService;
     private final NormalOrderMapper normalOrderMapper;
@@ -101,254 +89,11 @@ public class OrderServiceImpl implements OrderService {
     private final RabbitTemplate rabbitTemplate;
     private final ProductSkuService productSkuService;
     private final ObjectMapper objectMapper;
-    // 问题4修复：使用 MapStruct Converter 替代手工 SeckillOrderVO.from()，统一转换逻辑
-    private final SeckillOrderConverter seckillOrderConverter;
     // 优惠券服务：普通订单创建/支付/取消时接入优惠券核销与回退
     private final CouponService couponService;
 
     @Value("${seckill.pay-timeout-minutes:15}")
     private long payTimeoutMinutes;
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public SeckillOrder createSeckillOrder(Long seckillId, Long userId, String requestId) {
-        SeckillGoods goods = seckillGoodsMapper.selectById(seckillId);
-        if (goods == null) {
-            throw new BusinessException(ErrorCode.SECKILL_NOT_FOUND);
-        }
-        Product product = productMapper.selectById(goods.getProductId());
-        if (product == null) {
-            throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
-        }
-
-        SeckillOrder order = new SeckillOrder();
-        order.setOrderNo(generateOrderNo());
-        order.setUserId(userId);
-        order.setSeckillId(seckillId);
-        order.setProductId(goods.getProductId());
-        order.setSeckillPrice(goods.getSeckillPrice());
-        order.setQuantity(SECKILL_QUANTITY);
-        order.setTotalAmount(goods.getSeckillPrice().multiply(BigDecimal.valueOf(SECKILL_QUANTITY)));
-        order.setStatus(OrderStatus.UNPAID);
-        order.setPayExpireTime(LocalDateTime.now().plusMinutes(payTimeoutMinutes));
-
-        // 物理删除同一(userId, seckillId)的终态订单，允许超时/取消后重新秒杀
-        seckillOrderMapper.deleteTerminalOrders(userId, seckillId);
-
-        try {
-            seckillOrderMapper.insert(order);
-        } catch (DuplicateKeyException e) {
-            // uk_user_seckill 兜底：并发重复下单
-            throw new BusinessException(ErrorCode.REPEAT_SECKILL);
-        }
-        return order;
-    }
-
-    @Override
-    public PageResult<SeckillOrderVO> getOrderList(Long userId, Integer status, Integer pageNum, Integer pageSize) {
-        int num = pageNum == null || pageNum < 1 ? 1 : pageNum;
-        int size = pageSize == null || pageSize < 1 ? 10 : Math.min(pageSize, 50);
-
-        Page<SeckillOrder> page = new Page<>(num, size);
-        IPage<SeckillOrder> result = seckillOrderMapper.selectOrderPage(page, userId, null, parseStatus(status));
-        // B4 修复：Entity → VO 转换，避免直接序列化 Entity
-        List<SeckillOrderVO> voList = result.getRecords().stream()
-                .map(seckillOrderConverter::toVO)
-                .collect(Collectors.toList());
-        return PageResult.of(voList, result.getTotal(), num, size);
-    }
-
-    @Override
-    public SeckillOrderVO getOrderDetail(Long userId, Long orderId) {
-        SeckillOrder order = loadAndCheckOwnership(userId, orderId);
-        // 超时检查：UNPAID 且已过支付截止时间，自动更新为 TIMEOUT
-        checkAndHandleSeckillOrderTimeout(order);
-        // B4 修复：返回 VO 而非 Entity
-        return seckillOrderConverter.toVO(order);
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public SeckillOrderVO payOrder(Long userId, Long orderId, String payMethod) {
-        SeckillOrder order = loadAndCheckOwnership(userId, orderId);
-        OrderStatus current = order.getStatus();
-
-        if (current == OrderStatus.PAID) {
-            throw new BusinessException(ErrorCode.ORDER_ALREADY_PAID);
-        }
-        if (current == OrderStatus.TIMEOUT) {
-            throw new BusinessException(ErrorCode.ORDER_TIMEOUT);
-        }
-        if (current != OrderStatus.UNPAID) {
-            throw new BusinessException(ErrorCode.ORDER_STATUS_ERROR);
-        }
-        // UNPAID 但已过支付截止时间（延迟取消任务尚未处理）
-        if (order.getPayExpireTime() != null && LocalDateTime.now().isAfter(order.getPayExpireTime())) {
-            throw new BusinessException(ErrorCode.ORDER_TIMEOUT);
-        }
-
-        // M12 修复：秒杀订单支付支持钱包扣款，与 payNormalOrder 保持一致
-        BigDecimal payAmount = order.getTotalAmount();
-        if (PAY_METHOD_WALLET.equalsIgnoreCase(payMethod)) {
-            // 钱包支付：原子扣减余额，余额不足提示去充值
-            int rows = userMapper.deductBalance(userId, payAmount);
-            if (rows == 0) {
-                throw new BusinessException(ErrorCode.WALLET_BALANCE_NOT_ENOUGH);
-            }
-            log.info("秒杀订单钱包扣款成功，userId={}, orderId={}, amount={}", userId, orderId, payAmount);
-        } else {
-            // 模拟支付（ALIPAY/WECHAT 等）：直接置 PAID
-            log.info("秒杀订单模拟支付成功，userId={}, orderId={}, payMethod={}, amount={}",
-                    userId, orderId, payMethod, payAmount);
-        }
-
-        // H-C3 修复：状态判定下沉到 SQL 乐观锁，防并发双扣。
-        // UPDATE ... SET status=PAID WHERE id=? AND status='UNPAID'
-        // 钱包扣减已在上一步完成，若状态变更失败（rows==0）事务回滚，钱包扣减也回滚。
-        int updateRows = seckillOrderMapper.update(null, new LambdaUpdateWrapper<SeckillOrder>()
-                .eq(SeckillOrder::getId, orderId)
-                .eq(SeckillOrder::getStatus, OrderStatus.UNPAID)
-                .set(SeckillOrder::getStatus, OrderStatus.PAID)
-                .set(SeckillOrder::getPayTime, LocalDateTime.now())
-                .set(SeckillOrder::getPayMethod, payMethod)
-                .set(SeckillOrder::getTransactionId, generateTransactionId()));
-        if (updateRows == 0) {
-            // 并发支付或状态已变，重新查询返回具体错误
-            SeckillOrder refreshed = seckillOrderMapper.selectById(orderId);
-            if (refreshed != null && refreshed.getStatus() == OrderStatus.PAID) {
-                throw new BusinessException(ErrorCode.ORDER_ALREADY_PAID);
-            }
-            throw new BusinessException(ErrorCode.ORDER_STATUS_ERROR);
-        }
-
-        // 重新加载订单（含更新后的字段）
-        SeckillOrder paidOrder = seckillOrderMapper.selectById(orderId);
-
-        // L8: 支付成功邮件：异步发送，失败不影响主流程，添加 try-catch 防止异常冒泡
-        String email = getUserEmail(userId);
-        if (email != null) {
-            try {
-                emailService.sendPaySuccess(email, paidOrder.getOrderNo(), paidOrder.getTotalAmount(),
-                        paidOrder.getPayTime().format(PAY_TIME_FORMATTER));
-            } catch (Exception e) {
-                log.error("秒杀订单支付成功邮件发送失败，orderId={}", orderId, e);
-            }
-        }
-        // B4 修复：返回 VO 而非 Entity
-        return seckillOrderConverter.toVO(paidOrder);
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public SeckillOrderVO cancelOrder(Long userId, Long orderId) {
-        SeckillOrder order = loadAndCheckOwnership(userId, orderId);
-        if (order.getStatus() != OrderStatus.UNPAID) {
-            throw new BusinessException(ErrorCode.ORDER_CANCEL_FAILED);
-        }
-
-        // H-C7 修复：引入 UNPAID→CANCELLING→CANCELLED 乐观锁状态机，防并发双回补。
-        // 步骤1：UNPAID → CANCELLING（只有一个请求能成功）
-        int rows = seckillOrderMapper.update(null, new LambdaUpdateWrapper<SeckillOrder>()
-                .eq(SeckillOrder::getId, orderId)
-                .eq(SeckillOrder::getStatus, OrderStatus.UNPAID)
-                .set(SeckillOrder::getStatus, OrderStatus.CANCELLING));
-        if (rows == 0) {
-            // 被并发抢占（如超时取消任务）
-            log.info("秒杀订单取消被并发抢占，幂等返回 orderNo={}", order.getOrderNo());
-            throw new BusinessException(ErrorCode.ORDER_CANCEL_FAILED);
-        }
-
-        // H-C1 修复：回补 DB + Redis 库存移到事务提交后执行，避免事务回滚后不一致
-        Long seckillId = order.getSeckillId();
-        registerAfterCommit(() -> rollbackStock(seckillId, userId));
-
-        // 步骤2：CANCELLING → CANCELLED
-        // 问题6修复：检查第二步 update 返回行数，若为 0 记录 warn 日志。
-        // 此时已持有 CANCELLING 行锁，理论上不会失败；若失败可能是行被并发修改，
-        // 不抛异常以保持幂等，由后续 selectById 返回最新状态。
-        int cancelRows = seckillOrderMapper.update(null, new LambdaUpdateWrapper<SeckillOrder>()
-                .eq(SeckillOrder::getId, orderId)
-                .eq(SeckillOrder::getStatus, OrderStatus.CANCELLING)
-                .set(SeckillOrder::getStatus, OrderStatus.CANCELLED)
-                .set(SeckillOrder::getCancelTime, LocalDateTime.now())
-                .set(SeckillOrder::getCancelReason, CANCEL_REASON_USER));
-        if (cancelRows == 0) {
-            log.warn("秒杀订单 CANCELLING→CANCELLED 更新未生效，orderId={}，可能被并发修改", orderId);
-        }
-
-        // 重新加载订单
-        SeckillOrder cancelledOrder = seckillOrderMapper.selectById(orderId);
-
-        // 订单取消邮件：异步发送，失败不影响主流程
-        String email = getUserEmail(userId);
-        if (email != null) {
-            try {
-                emailService.sendOrderCancel(email, cancelledOrder.getOrderNo(), CANCEL_REASON_USER);
-            } catch (Exception e) {
-                log.error("订单取消邮件发送失败，orderId={}", orderId, e);
-            }
-        }
-        // B4 修复：返回 VO 而非 Entity
-        return seckillOrderConverter.toVO(cancelledOrder);
-    }
-
-    @Override
-    public String getOrderStatus(Long userId, Long orderId) {
-        // B4 修复：返回状态字符串而非枚举
-        OrderStatus status = loadAndCheckOwnership(userId, orderId).getStatus();
-        return status != null ? status.getCode() : null;
-    }
-
-    /**
-     * 超时取消（由延迟消费者触发）：UNPAID → CANCELLING → TIMEOUT，并回补库存。
-     * H-C7 修复：引入乐观锁状态机，防并发双回补。
-     * 已支付/已取消等终态视为幂等忽略。
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public boolean timeoutCancel(Long orderId) {
-        SeckillOrder order = seckillOrderMapper.selectById(orderId);
-        if (order == null) {
-            return false;
-        }
-        if (order.getStatus() != OrderStatus.UNPAID) {
-            return false;
-        }
-        // H-C7 修复：UNPAID → CANCELLING 乐观锁，保证只有一个请求能进入回补流程
-        int rows = seckillOrderMapper.update(null, new LambdaUpdateWrapper<SeckillOrder>()
-                .eq(SeckillOrder::getId, orderId)
-                .eq(SeckillOrder::getStatus, OrderStatus.UNPAID)
-                .set(SeckillOrder::getStatus, OrderStatus.CANCELLING));
-        if (rows == 0) {
-            // 已被其他请求（如用户主动取消）抢占，直接返回
-            log.info("秒杀订单超时取消被并发抢占，幂等返回 orderNo={}", order.getOrderNo());
-            return false;
-        }
-        // H-C1 修复：回补 DB + Redis 库存移到事务提交后执行
-        Long seckillId = order.getSeckillId();
-        Long orderUserId = order.getUserId();
-        registerAfterCommit(() -> rollbackStock(seckillId, orderUserId));
-
-        // CANCELLING → TIMEOUT
-        seckillOrderMapper.update(null, new LambdaUpdateWrapper<SeckillOrder>()
-                .eq(SeckillOrder::getId, orderId)
-                .eq(SeckillOrder::getStatus, OrderStatus.CANCELLING)
-                .set(SeckillOrder::getStatus, OrderStatus.TIMEOUT)
-                .set(SeckillOrder::getCancelTime, LocalDateTime.now())
-                .set(SeckillOrder::getCancelReason, CANCEL_REASON_TIMEOUT));
-
-        log.info("秒杀订单超时取消成功，orderNo={}, orderId={}", order.getOrderNo(), orderId);
-
-        // 超时取消邮件：异步发送，失败不影响主流程
-        String email = getUserEmail(order.getUserId());
-        if (email != null) {
-            try {
-                emailService.sendOrderCancel(email, order.getOrderNo(), CANCEL_REASON_TIMEOUT);
-            } catch (Exception e) {
-                log.error("超时取消邮件发送失败，orderId={}", orderId, e);
-            }
-        }
-        return true;
-    }
 
     /**
      * Bug1修复：普通订单超时取消（延迟消费者触发）。
@@ -432,177 +177,12 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-    /**
-     * H10: 将 Redis 操作注册到事务提交后执行；无事务上下文时直接执行。
-     * 避免事务回滚后缓存与 DB 不一致。
-     */
-    private void registerAfterCommit(Runnable action) {
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    action.run();
-                }
-            });
-        } else {
-            action.run();
-        }
-    }
-
-    /**
-     * H-C1 + M-C2 修复：回补 DB available_count + 原子回补 Redis 库存。
-     * <p>
-     * H-C1：在 afterCommit 中回补 DB available_count（之前只回补 Redis，DB 库存单调递减）。
-     * M-C2：Redis 回补使用 Lua 脚本原子执行 INCR + SREM，避免非原子操作的不一致。
-     * <p>
-     * DB 回补失败仅记录日志，由 SeckillStatusScheduler 中的库存对账补偿任务兜底。
-     * Redis 回补失败仅记录日志，不影响主流程。
-     */
-    private void rollbackStock(Long seckillId, Long userId) {
-        // H-C1 修复：回补 DB available_count
-        try {
-            int rows = seckillGoodsMapper.restoreStockOptimistic(seckillId);
-            if (rows == 0) {
-                log.warn("回补 DB 库存失败（活动不存在或库存已满），seckillId={}，由补偿任务兜底", seckillId);
-            } else {
-                log.info("回补 DB 库存成功 seckillId={}", seckillId);
-            }
-        } catch (Exception e) {
-            log.warn("回补 DB 库存异常 seckillId={}，由补偿任务兜底", seckillId, e);
-        }
-        // M-C2 修复：原子回补 Redis 库存（Lua 脚本 INCR + SREM）
-        try {
-            seckillLuaService.rollbackDeduct(seckillId, userId);
-        } catch (Exception e) {
-            // Redis 异常不阻断主流程，由补偿任务兜底
-            log.warn("回补 Redis 库存失败，由补偿任务兜底 seckillId={} userId={}", seckillId, userId, e);
-        }
-    }
-
-    /**
-     * H-C2 修复：物理删除秒杀订单（用于消费者 DB 扣减失败时撤销幽灵单）。
-     * <p>
-     * 仅在订单为 UNPAID 状态时删除，避免误删已进入业务流程的订单。
-     * 使用物理删除而非逻辑删除，因为 uk_user_seckill 唯一索引不包含 is_deleted。
-     *
-     * @param orderId 秒杀订单 ID
-     */
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void deleteSeckillOrderPhysically(Long orderId) {
-        SeckillOrder order = seckillOrderMapper.selectById(orderId);
-        if (order == null) {
-            return;
-        }
-        if (order.getStatus() != OrderStatus.UNPAID) {
-            log.warn("物理删除秒杀订单跳过：订单非 UNPAID 状态 orderId={} status={}",
-                    orderId, order.getStatus());
-            return;
-        }
-        // 物理删除（绕过 MyBatis-Plus 逻辑删除）
-        seckillOrderMapper.deletePhysical(orderId);
-        log.info("物理删除秒杀订单成功 orderId={} orderNo={}", orderId, order.getOrderNo());
-    }
-
-    /**
-     * 逻辑删除订单（需求：订单逻辑删除+类型筛选）。
-     * <p>
-     * 自动识别秒杀订单与普通订单：先查秒杀订单表，未命中再查普通订单表。
-     * 仅允许 COMPLETED 或 CANCELLED 状态的订单逻辑删除，其他状态抛 {@code ORDER_DELETE_FAILED}。
-     * 利用 MyBatis-Plus {@code @TableLogic} 注解，调用 deleteById/updateById 即可自动逻辑删除。
-     *
-     * @param orderId 订单 ID
-     * @param userId  当前操作用户 ID
-     * @return true 表示删除成功
-     */
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public boolean deleteOrder(Long orderId, Long userId) {
-        if (orderId == null || userId == null) {
-            throw new BusinessException(ErrorCode.PARAM_ERROR, "订单ID/用户ID不能为空");
-        }
-
-        // 1. 先尝试秒杀订单表
-        SeckillOrder seckillOrder = seckillOrderMapper.selectById(orderId);
-        if (seckillOrder != null) {
-            // 校验归属
-            if (!userId.equals(seckillOrder.getUserId())) {
-                throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
-            }
-            // 校验状态：仅 COMPLETED / CANCELLED 可删除
-            checkOrderDeletable(seckillOrder.getStatus());
-            // 逻辑删除：@TableLogic 注解使 deleteById 自动 set is_deleted=1
-            int rows = seckillOrderMapper.deleteById(orderId);
-            log.info("逻辑删除秒杀订单成功 orderId={} orderNo={} userId={}", orderId, seckillOrder.getOrderNo(), userId);
-            return rows > 0;
-        }
-
-        // 2. 秒杀订单表未命中，尝试普通订单表
-        NormalOrder normalOrder = normalOrderMapper.selectById(orderId);
-        if (normalOrder != null) {
-            // 校验归属
-            if (!userId.equals(normalOrder.getUserId())) {
-                throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
-            }
-            // 校验状态：仅 COMPLETED / CANCELLED 可删除
-            checkOrderDeletable(normalOrder.getStatus());
-            // 逻辑删除：@TableLogic 注解使 deleteById 自动 set is_deleted=1
-            int rows = normalOrderMapper.deleteById(orderId);
-            log.info("逻辑删除普通订单成功 orderId={} orderNo={} userId={}", orderId, normalOrder.getOrderNo(), userId);
-            return rows > 0;
-        }
-
-        // 3. 两张表都未命中，订单不存在
-        throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
-    }
-
-    /**
-     * 校验订单状态是否允许逻辑删除。
-     * <p>
-     * 仅 COMPLETED（已完成）与 CANCELLED（已取消）状态允许删除，
-     * 其他状态（UNPAID/PAID/SHIPPED/TIMEOUT/CANCELLING）抛 {@code ORDER_DELETE_FAILED}。
-     *
-     * @param status 订单状态
-     */
-    private void checkOrderDeletable(OrderStatus status) {
-        if (status != OrderStatus.COMPLETED && status != OrderStatus.CANCELLED) {
-            throw new BusinessException(ErrorCode.ORDER_DELETE_FAILED);
-        }
-    }
-
-    private SeckillOrder loadAndCheckOwnership(Long userId, Long orderId) {
-        SeckillOrder order = seckillOrderMapper.selectById(orderId);
-        if (order == null || !userId.equals(order.getUserId())) {
-            throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
-        }
-        return order;
-    }
-
     private String getUserEmail(Long userId) {
         if (userId == null) {
             return null;
         }
         User user = userMapper.selectById(userId);
         return user == null ? null : user.getEmail();
-    }
-
-    private OrderStatus parseStatus(Integer status) {
-        if (status == null) {
-            return null;
-        }
-        return switch (status) {
-            case 0 -> OrderStatus.UNPAID;
-            case 1 -> OrderStatus.PAID;
-            case 2 -> OrderStatus.SHIPPED;
-            case 3 -> OrderStatus.CANCELLED;
-            case 4 -> OrderStatus.TIMEOUT;
-            case 5 -> OrderStatus.COMPLETED;
-            default -> null;
-        };
-    }
-
-    private String generateOrderNo() {
-        return "SK" + LocalDateTime.now().format(ORDER_NO_FORMATTER) + randomDigits(6);
     }
 
     private String generateTransactionId() {
@@ -1021,38 +601,6 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void shipOrder(Long userId, Long orderId, String shippingCompany, String shippingNo) {
-        SeckillOrder order = seckillOrderMapper.selectById(orderId);
-        if (order == null) {
-            throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
-        }
-        if (order.getStatus() != OrderStatus.PAID) {
-            throw new BusinessException(ErrorCode.ORDER_STATUS_ERROR, "仅已支付订单可发货");
-        }
-        order.setStatus(OrderStatus.SHIPPED);
-        order.setShippingCompany(shippingCompany);
-        order.setShippingNo(shippingNo);
-        order.setShipTime(LocalDateTime.now());
-        seckillOrderMapper.updateById(order);
-        log.info("秒杀订单发货成功，orderId={}, orderNo={}, shippingCompany={}, shippingNo={}",
-                orderId, order.getOrderNo(), shippingCompany, shippingNo);
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void confirmOrder(Long userId, Long orderId) {
-        SeckillOrder order = loadAndCheckOwnership(userId, orderId);
-        if (order.getStatus() != OrderStatus.SHIPPED) {
-            throw new BusinessException(ErrorCode.ORDER_STATUS_ERROR, "仅已发货订单可确认收货");
-        }
-        order.setStatus(OrderStatus.COMPLETED);
-        order.setConfirmTime(LocalDateTime.now());
-        seckillOrderMapper.updateById(order);
-        log.info("秒杀订单确认收货成功，orderId={}, orderNo={}", orderId, order.getOrderNo());
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
     public void shipNormalOrder(Long userId, Long orderId, String shippingCompany, String shippingNo) {
         NormalOrder order = normalOrderMapper.selectById(orderId);
         if (order == null) {
@@ -1367,29 +915,6 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 
-    /**
-     * 检查秒杀订单超时：如果状态为UNPAID且已过支付截止时间，更新为TIMEOUT。
-     * 兜底RabbitMQ延迟消息可能丢失的场景。
-     */
-    private void checkAndHandleSeckillOrderTimeout(SeckillOrder order) {
-        if (order.getStatus() == OrderStatus.UNPAID
-                && order.getPayExpireTime() != null
-                && LocalDateTime.now().isAfter(order.getPayExpireTime())) {
-            int rows = seckillOrderMapper.update(null, new LambdaUpdateWrapper<SeckillOrder>()
-                    .eq(SeckillOrder::getId, order.getId())
-                    .eq(SeckillOrder::getStatus, OrderStatus.UNPAID)
-                    .set(SeckillOrder::getStatus, OrderStatus.TIMEOUT)
-                    .set(SeckillOrder::getCancelTime, LocalDateTime.now())
-                    .set(SeckillOrder::getCancelReason, "支付超时自动取消"));
-            if (rows > 0) {
-                order.setStatus(OrderStatus.TIMEOUT);
-                order.setCancelTime(LocalDateTime.now());
-                order.setCancelReason("支付超时自动取消");
-                log.info("秒杀订单超时自动关闭, orderId={}", order.getId());
-            }
-        }
-    }
-
     // ==================== 统一订单列表（需求1 合并秒杀+普通） ====================
 
     @Override
@@ -1584,5 +1109,71 @@ public class OrderServiceImpl implements OrderService {
         }
         vo.setItems(snapshots);
         return vo;
+    }
+
+    /**
+     * 逻辑删除订单（需求：订单逻辑删除+类型筛选）。
+     * <p>
+     * 自动识别秒杀订单与普通订单：先查秒杀订单表，未命中再查普通订单表。
+     * 仅允许 COMPLETED 或 CANCELLED 状态的订单逻辑删除，其他状态抛 {@code ORDER_DELETE_FAILED}。
+     * 利用 MyBatis-Plus {@code @TableLogic} 注解，调用 deleteById/updateById 即可自动逻辑删除。
+     *
+     * @param orderId 订单 ID
+     * @param userId  当前操作用户 ID
+     * @return true 表示删除成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteOrder(Long orderId, Long userId) {
+        if (orderId == null || userId == null) {
+            throw new BusinessException(ErrorCode.PARAM_ERROR, "订单ID/用户ID不能为空");
+        }
+
+        // 1. 先尝试秒杀订单表
+        SeckillOrder seckillOrder = seckillOrderMapper.selectById(orderId);
+        if (seckillOrder != null) {
+            // 校验归属
+            if (!userId.equals(seckillOrder.getUserId())) {
+                throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+            }
+            // 校验状态：仅 COMPLETED / CANCELLED 可删除
+            checkOrderDeletable(seckillOrder.getStatus());
+            // 逻辑删除：@TableLogic 注解使 deleteById 自动 set is_deleted=1
+            int rows = seckillOrderMapper.deleteById(orderId);
+            log.info("逻辑删除秒杀订单成功 orderId={} orderNo={} userId={}", orderId, seckillOrder.getOrderNo(), userId);
+            return rows > 0;
+        }
+
+        // 2. 秒杀订单表未命中，尝试普通订单表
+        NormalOrder normalOrder = normalOrderMapper.selectById(orderId);
+        if (normalOrder != null) {
+            // 校验归属
+            if (!userId.equals(normalOrder.getUserId())) {
+                throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+            }
+            // 校验状态：仅 COMPLETED / CANCELLED 可删除
+            checkOrderDeletable(normalOrder.getStatus());
+            // 逻辑删除：@TableLogic 注解使 deleteById 自动 set is_deleted=1
+            int rows = normalOrderMapper.deleteById(orderId);
+            log.info("逻辑删除普通订单成功 orderId={} orderNo={} userId={}", orderId, normalOrder.getOrderNo(), userId);
+            return rows > 0;
+        }
+
+        // 3. 两张表都未命中，订单不存在
+        throw new BusinessException(ErrorCode.ORDER_NOT_FOUND);
+    }
+
+    /**
+     * 校验订单状态是否允许逻辑删除。
+     * <p>
+     * 仅 COMPLETED（已完成）与 CANCELLED（已取消）状态允许删除，
+     * 其他状态（UNPAID/PAID/SHIPPED/TIMEOUT/CANCELLING）抛 {@code ORDER_DELETE_FAILED}。
+     *
+     * @param status 订单状态
+     */
+    private void checkOrderDeletable(OrderStatus status) {
+        if (status != OrderStatus.COMPLETED && status != OrderStatus.CANCELLED) {
+            throw new BusinessException(ErrorCode.ORDER_DELETE_FAILED);
+        }
     }
 }

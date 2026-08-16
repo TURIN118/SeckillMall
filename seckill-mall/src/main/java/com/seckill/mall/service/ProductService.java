@@ -4,7 +4,10 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.ProductCreateRequest;
 import com.seckill.mall.dto.ProductQueryRequest;
 import com.seckill.mall.dto.ProductUpdateRequest;
+import com.seckill.mall.entity.Product;
 import com.seckill.mall.vo.ProductVO;
+
+import java.util.List;
 
 /**
  * 创建人：@author WNJ
@@ -31,4 +34,20 @@ public interface ProductService {
      * @return true 表示存在
      */
     boolean existsById(Long id);
+
+    /**
+     * 根据 ID 查询商品实体（跨模块只读访问）。
+     *
+     * @param id 商品 ID
+     * @return 商品实体，不存在时返回 null
+     */
+    Product getProductById(Long id);
+
+    /**
+     * 根据 ID 列表批量查询商品实体（跨模块只读访问）。
+     *
+     * @param ids 商品 ID 列表
+     * @return 商品实体列表
+     */
+    List<Product> getProductsByIds(List<Long> ids);
 }

@@ -13,9 +13,9 @@ import com.seckill.mall.dto.SeckillCreateRequest;
 import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.enums.SeckillStatus;
-import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.security.SecurityUtils;
+import com.seckill.mall.service.ProductService;
 import com.seckill.mall.service.SeckillGoodsService;
 import com.seckill.mall.vo.SeckillGoodsVO;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +53,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
     private static final int DEFAULT_PER_LIMIT = 1;
 
     private final SeckillGoodsMapper seckillGoodsMapper;
-    private final ProductMapper productMapper;
+    private final ProductService productService;
     private final RedisService redisService;
     private final RedissonClient redissonClient;
     private final ObjectMapper objectMapper;
@@ -85,14 +85,14 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         if (goods == null) {
             throw new BusinessException(ErrorCode.SECKILL_NOT_FOUND);
         }
-        Product product = productMapper.selectById(goods.getProductId());
+        Product product = productService.getProductById(goods.getProductId());
         return toVO(goods, product == null ? Collections.emptyMap() : Map.of(product.getId(), product));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public SeckillGoodsVO createSeckill(SeckillCreateRequest req) {
-        Product product = productMapper.selectById(req.getProductId());
+        Product product = productService.getProductById(req.getProductId());
         if (product == null) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
@@ -136,7 +136,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "开始时间必须早于结束时间");
         }
         if (req.getProductId() != null) {
-            if (productMapper.selectById(req.getProductId()) == null) {
+            if (!productService.existsById(req.getProductId())) {
                 throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
             }
             goods.setProductId(req.getProductId());
@@ -174,7 +174,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
             evictCache(id);
             preheatSeckill(id);
         });
-        Product product = productMapper.selectById(goods.getProductId());
+        Product product = productService.getProductById(goods.getProductId());
         return toVO(goods, product == null ? Collections.emptyMap() : Map.of(product.getId(), product));
     }
 
@@ -268,7 +268,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         if (productIds.isEmpty()) {
             return Collections.emptyMap();
         }
-        List<Product> products = productMapper.selectBatchIds(productIds);
+        List<Product> products = productService.getProductsByIds(productIds);
         return products.stream()
                 .collect(Collectors.toMap(Product::getId, p -> p, (a, b) -> a));
     }

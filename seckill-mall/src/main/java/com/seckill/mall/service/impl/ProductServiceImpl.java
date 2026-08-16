@@ -335,6 +335,19 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.selectById(id) != null;
     }
 
+    @Override
+    public Product getProductById(Long id) {
+        return productMapper.selectById(id);
+    }
+
+    @Override
+    public List<Product> getProductsByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return productMapper.selectBatchIds(ids);
+    }
+
     /**
      * 白名单过滤排序字段，防 SQL 注入。
      * 将前端传入的 sortBy 归一化为 Mapper 支持的标准字段(price/sales/createTime)：

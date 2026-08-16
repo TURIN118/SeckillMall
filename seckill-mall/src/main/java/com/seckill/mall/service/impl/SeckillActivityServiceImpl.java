@@ -10,10 +10,10 @@ import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.SeckillActivity;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.enums.SeckillStatus;
-import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.SeckillActivityMapper;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.security.SecurityUtils;
+import com.seckill.mall.service.ProductService;
 import com.seckill.mall.service.SeckillActivityService;
 import com.seckill.mall.service.SeckillGoodsService;
 import com.seckill.mall.vo.SeckillActivityVO;
@@ -45,7 +45,7 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
 
     private final SeckillActivityMapper seckillActivityMapper;
     private final SeckillGoodsMapper seckillGoodsMapper;
-    private final ProductMapper productMapper;
+    private final ProductService productService;
     private final SeckillGoodsService seckillGoodsService;
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
@@ -70,7 +70,7 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
                 .map(SeckillActivityCreateRequest.ActivityGoodsItem::getProductId)
                 .distinct()
                 .collect(Collectors.toList());
-        List<Product> products = productMapper.selectBatchIds(productIds);
+        List<Product> products = productService.getProductsByIds(productIds);
         if (products.size() != productIds.size()) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND, "部分商品不存在");
         }
@@ -207,7 +207,7 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
         if (productIds.isEmpty()) {
             return Collections.emptyMap();
         }
-        List<Product> products = productMapper.selectBatchIds(productIds);
+        List<Product> products = productService.getProductsByIds(productIds);
         return products.stream().collect(Collectors.toMap(Product::getId, p -> p, (a, b) -> a));
     }
 

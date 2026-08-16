@@ -233,6 +233,11 @@ public class CategoryServiceImpl implements CategoryService {
         }
     }
 
+    @Override
+    public Category getCategoryById(Long id) {
+        return categoryMapper.selectById(id);
+    }
+
     /**
      * 一次性查询每个分类直接挂载的未删除商品数，返回 categoryId → count 映射。
      * 等价 SQL: SELECT category_id, COUNT(*) FROM t_product WHERE is_deleted=0 GROUP BY category_id

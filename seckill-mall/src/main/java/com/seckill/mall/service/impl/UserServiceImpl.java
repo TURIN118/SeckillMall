@@ -1,5 +1,6 @@
 package com.seckill.mall.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.entity.User;
@@ -99,6 +100,15 @@ public class UserServiceImpl implements UserService {
                         u -> u.getNickname() != null && !u.getNickname().isBlank()
                                 ? u.getNickname() : u.getUsername(),
                         (a, b) -> a));
+    }
+
+    @Override
+    public Map<Long, String> getUsernamesByIds(List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return userMapper.selectList(new LambdaQueryWrapper<User>().in(User::getId, userIds))
+                .stream().collect(Collectors.toMap(User::getId, User::getUsername));
     }
 
     /** Entity → VO */

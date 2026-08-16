@@ -57,4 +57,12 @@ public interface UserService {
      * @return Map<userId, displayName>，空列表返回 emptyMap
      */
     java.util.Map<Long, String> getUserDisplayNamesByIds(java.util.List<Long> userIds);
+
+    /**
+     * 批量查询用户名（username）。
+     *
+     * @param userIds 用户 ID 列表
+     * @return Map<userId, username>，空列表返回 emptyMap
+     */
+    java.util.Map<Long, String> getUsernamesByIds(java.util.List<Long> userIds);
 }

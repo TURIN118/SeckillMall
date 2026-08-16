@@ -25,6 +25,7 @@ import com.seckill.mall.service.AuthService;
 import com.seckill.mall.service.CaptchaService;
 import com.seckill.mall.service.UploadService;
 import com.seckill.mall.service.VerificationCodeService;
+import com.seckill.mall.shared.kernel.port.CachePort;
 import com.seckill.mall.utils.DataMaskUtil;
 import com.seckill.mall.vo.LoginVO;
 import com.seckill.mall.vo.TokenVO;
@@ -33,7 +34,6 @@ import com.seckill.mall.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -78,7 +78,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtils jwtUtils;
     private final TokenBlacklistService tokenBlacklistService;
     private final CaptchaService captchaService;
-    private final StringRedisTemplate stringRedisTemplate;
+    private final CachePort cachePort;
     private final PasswordEncoder passwordEncoder;
     private final UploadService uploadService;
     private final VerificationCodeService verificationCodeService;
@@ -156,9 +156,9 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 登录成功：清除失败计数（用户名维度 + IP 维度）
-        stringRedisTemplate.delete(failKey);
+        cachePort.del(failKey);
         // IP 维度失败计数不清除（允许累积，但成功登录后重置该 IP 计数）
-        stringRedisTemplate.delete(ipFailKey);
+        cachePort.del(ipFailKey);
         writeLoginLog(user.getId(), ip, userAgent, LoginResult.SUCCESS, null);
 
         // 登录成功后签发 Token（携带 tokenVersion）
@@ -320,7 +320,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private int getFailCount(String failKey) {
-        String value = stringRedisTemplate.opsForValue().get(failKey);
+        String value = cachePort.get(failKey);
         if (value == null) {
             return 0;
         }
@@ -333,14 +333,14 @@ public class AuthServiceImpl implements AuthService {
 
     private void recordLoginFailure(String failKey, String ipFailKey, User user, String username,
                                      String ip, String userAgent, String reason) {
-        Long count = stringRedisTemplate.opsForValue().increment(failKey);
+        Long count = cachePort.incr(failKey);
         if (count != null && count == 1L) {
-            stringRedisTemplate.expire(failKey, FAIL_COUNT_TTL_MINUTES, TimeUnit.MINUTES);
+            cachePort.expire(failKey, FAIL_COUNT_TTL_MINUTES, TimeUnit.MINUTES);
         }
         // M-S4 修复：IP 维度失败计数
-        Long ipCount = stringRedisTemplate.opsForValue().increment(ipFailKey);
+        Long ipCount = cachePort.incr(ipFailKey);
         if (ipCount != null && ipCount == 1L) {
-            stringRedisTemplate.expire(ipFailKey, IP_FAIL_TTL_MINUTES, TimeUnit.MINUTES);
+            cachePort.expire(ipFailKey, IP_FAIL_TTL_MINUTES, TimeUnit.MINUTES);
         }
         log.warn("登录失败: username={}, failCount={}, ipFailCount={}, ip={}, reason={}",
                 username, count, ipCount, ip, reason);
@@ -411,7 +411,7 @@ public class AuthServiceImpl implements AuthService {
         // 此处再写入一个找回密码专用标记 key，便于 resetPassword 时区分业务场景并独立校验
         String forgotKey = FORGOT_PASSWORD_CODE_KEY_PREFIX + type + ":" + account;
         // 标记 key 的有效期与验证码一致（5 分钟），value 为占位标识
-        stringRedisTemplate.opsForValue().set(forgotKey, "1", FORGOT_PASSWORD_CODE_TTL_MINUTES, TimeUnit.MINUTES);
+        cachePort.set(forgotKey, "1", FORGOT_PASSWORD_CODE_TTL_MINUTES, TimeUnit.MINUTES);
         log.info("找回密码验证码已发送，type={}, account={}", type, account);
     }
 
@@ -425,7 +425,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 校验找回密码标记 key 是否存在（过期则提示重新获取）
         String forgotKey = FORGOT_PASSWORD_CODE_KEY_PREFIX + type + ":" + account;
-        Boolean forgotKeyExists = stringRedisTemplate.hasKey(forgotKey);
+        Boolean forgotKeyExists = cachePort.exists(forgotKey);
         if (!Boolean.TRUE.equals(forgotKeyExists)) {
             throw new BusinessException(ErrorCode.VERIFICATION_CODE_EXPIRED);
         }
@@ -452,7 +452,7 @@ public class AuthServiceImpl implements AuthService {
         userStatusCacheService.invalidateUserAuth(user.getId());
 
         // 删除找回密码标记 key
-        stringRedisTemplate.delete(forgotKey);
+        cachePort.del(forgotKey);
         log.info("找回密码重置成功，type={}, account={}, userId={}", type, account, user.getId());
     }
 

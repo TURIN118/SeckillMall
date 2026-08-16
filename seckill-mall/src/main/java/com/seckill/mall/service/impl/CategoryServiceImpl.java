@@ -13,10 +13,10 @@ import com.seckill.mall.entity.Product;
 import com.seckill.mall.mapper.CategoryMapper;
 import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.service.CategoryService;
+import com.seckill.mall.shared.kernel.port.CachePort;
 import com.seckill.mall.vo.CategoryVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -54,13 +54,13 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryMapper categoryMapper;
     private final ProductMapper productMapper;
-    private final StringRedisTemplate stringRedisTemplate;
+    private final CachePort cachePort;
     private final ObjectMapper objectMapper;
 
     @Override
     public List<CategoryVO> getCategoryTree() {
         // 先读缓存
-        String cached = stringRedisTemplate.opsForValue().get(CACHE_KEY);
+        String cached = cachePort.get(CACHE_KEY);
         if (cached != null) {
             List<CategoryVO> tree = deserialize(cached);
             if (tree != null) {
@@ -81,7 +81,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         // 写入缓存
         try {
-            stringRedisTemplate.opsForValue().set(CACHE_KEY, objectMapper.writeValueAsString(tree),
+            cachePort.set(CACHE_KEY, objectMapper.writeValueAsString(tree),
                     CACHE_TTL_MINUTES, TimeUnit.MINUTES);
         } catch (Exception e) {
             log.warn("分类树缓存写入失败", e);
@@ -227,7 +227,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public void evictCategoryCache() {
         try {
-            stringRedisTemplate.delete(CACHE_KEY);
+            cachePort.del(CACHE_KEY);
         } catch (Exception e) {
             log.warn("分类树缓存删除失败", e);
         }

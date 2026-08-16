@@ -17,6 +17,7 @@ import com.seckill.mall.service.CategoryService;
 import com.seckill.mall.service.ProductAttributeService;
 import com.seckill.mall.service.ProductSkuService;
 import com.seckill.mall.service.impl.ProductServiceImpl;
+import com.seckill.mall.shared.kernel.port.CachePort;
 import com.seckill.mall.vo.ProductVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,8 +27,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -62,9 +61,7 @@ class ProductServiceTest {
     @Mock
     private CategoryService categoryService;
     @Mock
-    private StringRedisTemplate stringRedisTemplate;
-    @Mock
-    private ValueOperations<String, String> valueOperations;
+    private CachePort cachePort;
     @Mock
     private RedissonClient redissonClient;
     @Mock
@@ -207,8 +204,7 @@ class ProductServiceTest {
         ProductVO cached = new ProductVO();
         cached.setId(1L);
         cached.setProductName("iPhone");
-        given(stringRedisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get(CACHE_KEY)).willReturn("{\"id\":1}");
+        given(cachePort.get(CACHE_KEY)).willReturn("{\"id\":1}");
         given(objectMapper.readValue("{\"id\":1}", ProductVO.class)).willReturn(cached);
 
         // when
@@ -224,8 +220,7 @@ class ProductServiceTest {
     @DisplayName("getProductDetail：缓存空值标记时抛 PRODUCT_NOT_FOUND")
     void getProductDetail_shouldThrowWhenCacheIsNullMarker() {
         // given
-        given(stringRedisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get(CACHE_KEY)).willReturn("NULL");
+        given(cachePort.get(CACHE_KEY)).willReturn("NULL");
 
         // when / then
         assertThatThrownBy(() -> productService.getProductDetail(1L))
@@ -240,9 +235,8 @@ class ProductServiceTest {
     void getProductDetail_shouldLoadFromDbAndFillCache() throws Exception {
         // given
         Product product = buildProduct();
-        given(stringRedisTemplate.opsForValue()).willReturn(valueOperations);
         // 首次查询与 Double Check 均未命中
-        given(valueOperations.get(CACHE_KEY)).willReturn(null);
+        given(cachePort.get(CACHE_KEY)).willReturn(null);
         given(redissonClient.getLock("lock:goods:1")).willReturn(rLock);
         given(rLock.tryLock(0L, 10L, TimeUnit.SECONDS)).willReturn(true);
         // M14 修复后 unlock 前校验 isHeldByCurrentThread，需 stub 返回 true
@@ -257,7 +251,7 @@ class ProductServiceTest {
         // then
         assertThat(vo.getProductName()).isEqualTo("iPhone");
         then(productMapper).should().selectById(1L);
-        then(valueOperations).should().set(eq(CACHE_KEY), eq("{}"), anyLong(), eq(TimeUnit.SECONDS));
+        then(cachePort).should().set(eq(CACHE_KEY), eq("{}"), anyLong(), eq(TimeUnit.SECONDS));
         then(rLock).should().unlock();
     }
 
@@ -265,8 +259,7 @@ class ProductServiceTest {
     @DisplayName("getProductDetail：DB 不存在时缓存空值标记并抛异常")
     void getProductDetail_shouldCacheNullWhenDbMiss() throws Exception {
         // given
-        given(stringRedisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get(CACHE_KEY)).willReturn(null);
+        given(cachePort.get(CACHE_KEY)).willReturn(null);
         given(redissonClient.getLock("lock:goods:1")).willReturn(rLock);
         given(rLock.tryLock(0L, 10L, TimeUnit.SECONDS)).willReturn(true);
         // M14 修复后 unlock 前校验 isHeldByCurrentThread，需 stub 返回 true
@@ -278,7 +271,7 @@ class ProductServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.PRODUCT_NOT_FOUND);
-        then(valueOperations).should().set(eq(CACHE_KEY), eq("NULL"), anyLong(), eq(TimeUnit.SECONDS));
+        then(cachePort).should().set(eq(CACHE_KEY), eq("NULL"), anyLong(), eq(TimeUnit.SECONDS));
     }
 
     @Test

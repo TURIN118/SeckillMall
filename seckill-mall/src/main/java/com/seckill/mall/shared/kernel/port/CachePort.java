@@ -24,4 +24,13 @@ public interface CachePort {
     Long decr(String key);
 
     Boolean exists(String key);
+
+    /**
+     * 设置 key 的过期时间
+     *
+     * @param key     缓存键
+     * @param timeout 过期时长
+     * @param unit    时间单位
+     */
+    void expire(String key, long timeout, TimeUnit unit);
 }

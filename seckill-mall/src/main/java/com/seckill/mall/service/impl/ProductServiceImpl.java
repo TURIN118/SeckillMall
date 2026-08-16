@@ -20,6 +20,7 @@ import com.seckill.mall.service.CategoryService;
 import com.seckill.mall.service.ProductAttributeService;
 import com.seckill.mall.service.ProductService;
 import com.seckill.mall.service.ProductSkuService;
+import com.seckill.mall.shared.kernel.port.CachePort;
 import com.seckill.mall.vo.ProductAttributeVO;
 import com.seckill.mall.vo.ProductSkuVO;
 import com.seckill.mall.vo.ProductVO;
@@ -27,7 +28,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,7 +86,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
     private final CategoryMapper categoryMapper;
     private final CategoryService categoryService;
-    private final StringRedisTemplate stringRedisTemplate;
+    private final CachePort cachePort;
     private final RedissonClient redissonClient;
     private final ObjectMapper objectMapper;
     private final ProductAttributeService productAttributeService;
@@ -168,7 +168,7 @@ public class ProductServiceImpl implements ProductService {
         String key = CACHE_KEY_PREFIX + id;
 
         for (int retry = 0; retry < MAX_RETRY; retry++) {
-            String cached = stringRedisTemplate.opsForValue().get(key);
+            String cached = cachePort.get(key);
 
             // 1. 缓存命中：区分空值标记与真实数据
             if (cached != null) {
@@ -193,7 +193,7 @@ public class ProductServiceImpl implements ProductService {
                 }
 
                 // 3. Double Check：拿到锁后再查一次缓存
-                cached = stringRedisTemplate.opsForValue().get(key);
+                cached = cachePort.get(key);
                 if (cached != null) {
                     if (NULL_MARKER.equals(cached)) {
                         throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
@@ -208,7 +208,7 @@ public class ProductServiceImpl implements ProductService {
                 Product product = productMapper.selectById(id);
                 if (product == null) {
                     // 数据库不存在 → 缓存空值标记防穿透
-                    stringRedisTemplate.opsForValue().set(key, NULL_MARKER, NULL_TTL_SECONDS, TimeUnit.SECONDS);
+                    cachePort.set(key, NULL_MARKER, NULL_TTL_SECONDS, TimeUnit.SECONDS);
                     throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
                 }
 
@@ -217,7 +217,7 @@ public class ProductServiceImpl implements ProductService {
                 enrichWithSkuInfo(vo, product);
                 // 5. 写入缓存：TTL = 30min + 随机偏移(1~5min)，防雪崩
                 long ttl = BASE_TTL_SECONDS + ThreadLocalRandom.current().nextInt(RANDOM_TTL_BOUND_SECONDS) + 1;
-                stringRedisTemplate.opsForValue().set(key, serialize(vo), ttl, TimeUnit.SECONDS);
+                cachePort.set(key, serialize(vo), ttl, TimeUnit.SECONDS);
                 return vo;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -432,7 +432,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private void evictCache(Long id) {
-        stringRedisTemplate.delete(CACHE_KEY_PREFIX + id);
+        cachePort.del(CACHE_KEY_PREFIX + id);
     }
 
     private Map<Long, String> buildCategoryNameMap(List<Product> products) {

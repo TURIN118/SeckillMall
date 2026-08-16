@@ -178,6 +178,26 @@ class ArchitectureRulesTest {
             .haveFullyQualifiedName("org.springframework.data.redis.core.StringRedisTemplate")
             .as("Controller 不应直接依赖 StringRedisTemplate，应通过 Service 访问缓存"));
 
+    // ============================================================
+    // D. Shared Kernel 保护规则
+    // ============================================================
+
+    /** 12. shared.kernel 不应依赖业务模块（service/controller/mapper/entity/dto/vo）
+     *      Shared Kernel 是最稳定的共享内核，不能被业务污染 */
+    @ArchTest
+    static final ArchRule shared_kernel_should_not_depend_on_business =
+        freeze(noClasses().that().resideInAPackage("..shared.kernel..")
+            .should().dependOnClassesThat().resideInAnyPackage("..service..", "..controller..", "..mapper..", "..entity..", "..dto..", "..vo..")
+            .as("shared.kernel 不应依赖业务模块，Shared Kernel 是最稳定的共享内核不能被业务污染"));
+
+    /** 13. shared.kernel.port 不应依赖 Spring/Redis/RabbitMQ 基础设施
+     *      Port 接口必须保持技术中立 */
+    @ArchTest
+    static final ArchRule shared_kernel_port_should_not_depend_on_infrastructure =
+        freeze(noClasses().that().resideInAPackage("..shared.kernel.port..")
+            .should().dependOnClassesThat().resideInAnyPackage("..spring..", "..redis..", "..amqp..")
+            .as("shared.kernel.port 不应依赖 Spring/Redis/RabbitMQ 基础设施，Port 接口必须保持技术中立"));
+
     /**
      * 用 FreezingArchRule 包装规则，启用 freeze 模式。
      *

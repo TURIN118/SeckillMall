@@ -16,7 +16,7 @@ import com.seckill.mall.entity.enums.ProductStatus;
 import com.seckill.mall.mapper.CartMapper;
 import com.seckill.mall.mapper.NormalOrderItemMapper;
 import com.seckill.mall.mapper.NormalOrderMapper;
-import com.seckill.mall.mapper.ProductMapper;
+
 import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.mapper.UserAddressMapper;
 
@@ -67,8 +67,6 @@ class OrderServiceTest {
     @Mock
     private SeckillOrderMapper seckillOrderMapper;
     @Mock
-    private ProductMapper productMapper;
-    @Mock
     private UserService userService;
     @Mock
     private EmailService emailService;
@@ -84,6 +82,8 @@ class OrderServiceTest {
     private RabbitTemplate rabbitTemplate;
     @Mock
     private ProductSkuService productSkuService;
+    @Mock
+    private ProductService productService;
     @Mock
     private ObjectMapper objectMapper;
     @Mock
@@ -182,7 +182,7 @@ class OrderServiceTest {
     @DisplayName("createNormalOrder：无规格商品立即购买成功，扣库存并写入订单+明细")
     void createNormalOrder_shouldCreateOrderAndDeductStock() {
         // given
-        given(productMapper.selectById(PRODUCT_ID)).willReturn(buildOnSaleProduct());
+        given(productService.getProductById(PRODUCT_ID)).willReturn(buildOnSaleProduct());
         given(userAddressMapper.selectById(ADDRESS_ID)).willReturn(buildAddress());
         // 扣减商品库存成功
         given(inventoryService.deductProductStock(any(), any())).willReturn(1);
@@ -212,7 +212,7 @@ class OrderServiceTest {
     @DisplayName("createNormalOrder：商品不存在抛 PRODUCT_NOT_FOUND")
     void createNormalOrder_shouldThrowWhenProductMissing() {
         // given
-        given(productMapper.selectById(PRODUCT_ID)).willReturn(null);
+        given(productService.getProductById(PRODUCT_ID)).willReturn(null);
 
         // when / then
         assertThatThrownBy(() -> orderService.createNormalOrder(
@@ -229,7 +229,7 @@ class OrderServiceTest {
         // given
         Product p = buildOnSaleProduct();
         p.setStock(0); // 库存为 0
-        given(productMapper.selectById(PRODUCT_ID)).willReturn(p);
+        given(productService.getProductById(PRODUCT_ID)).willReturn(p);
         given(userAddressMapper.selectById(ADDRESS_ID)).willReturn(buildAddress());
 
         // when / then

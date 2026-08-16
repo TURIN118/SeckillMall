@@ -20,7 +20,6 @@ import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.mapper.CartMapper;
 import com.seckill.mall.mapper.NormalOrderItemMapper;
 import com.seckill.mall.mapper.NormalOrderMapper;
-import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.mapper.UserAddressMapper;
 import com.seckill.mall.mq.message.OrderDelayMessage;
@@ -29,6 +28,7 @@ import com.seckill.mall.service.EmailService;
 import com.seckill.mall.service.InventoryService;
 import com.seckill.mall.service.OrderService;
 import com.seckill.mall.service.PaymentService;
+import com.seckill.mall.service.ProductService;
 import com.seckill.mall.service.ProductSkuService;
 import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.NormalOrderDetailVO;
@@ -78,7 +78,6 @@ public class OrderServiceImpl implements OrderService {
     private static final BigDecimal DEFAULT_FREIGHT = BigDecimal.ZERO;
 
     private final SeckillOrderMapper seckillOrderMapper;
-    private final ProductMapper productMapper;
     private final UserService userService;
     private final EmailService emailService;
     private final NormalOrderMapper normalOrderMapper;
@@ -87,6 +86,8 @@ public class OrderServiceImpl implements OrderService {
     private final UserAddressMapper userAddressMapper;
     private final RabbitTemplate rabbitTemplate;
     private final ProductSkuService productSkuService;
+    // Phase 6：消除跨模块 Mapper 依赖，改用 ProductService 查询商品
+    private final ProductService productService;
     private final ObjectMapper objectMapper;
     // 优惠券服务：普通订单创建/支付/取消时接入优惠券核销与回退
     private final CouponService couponService;
@@ -285,8 +286,7 @@ public class OrderServiceImpl implements OrderService {
         }
         // 3. 批量查询商品并校验在售 + 库存
         List<Long> productIds = carts.stream().map(Cart::getProductId).distinct().collect(Collectors.toList());
-        List<Product> products = productMapper.selectList(
-                new LambdaQueryWrapper<Product>().in(Product::getId, productIds));
+        List<Product> products = productService.getProductsByIds(productIds);
         Map<Long, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
         // 3.1 批量查询 SKU 信息（5.7.3）
@@ -623,7 +623,7 @@ public class OrderServiceImpl implements OrderService {
      * 加载在售商品，不存在或已下架抛异常。
      */
     private Product loadOnSaleProduct(Long productId) {
-        Product product = productMapper.selectById(productId);
+        Product product = productService.getProductById(productId);
         if (product == null) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
@@ -958,8 +958,7 @@ public class OrderServiceImpl implements OrderService {
         if (productIds == null || productIds.isEmpty()) {
             return java.util.Collections.emptyMap();
         }
-        List<Product> products = productMapper.selectList(
-                new LambdaQueryWrapper<Product>().in(Product::getId, productIds));
+        List<Product> products = productService.getProductsByIds(productIds);
         return products.stream().collect(Collectors.toMap(Product::getId, p -> p));
     }
 

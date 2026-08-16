@@ -162,4 +162,17 @@ public interface OrderService {
      * @throws com.seckill.mall.common.BusinessException 订单不存在/不属于当前用户/状态不允许删除
      */
     boolean deleteOrder(Long orderId, Long userId);
+
+    /**
+     * 校验用户是否通过普通订单购买了该商品（用于商品评价权限校验）。
+     * <p>
+     * 查询该商品的订单明细，关联订单表确认存在 PAID / SHIPPED / COMPLETED 状态订单。
+     * skuId = 0 时不校验 SKU 维度，仅校验商品维度。
+     *
+     * @param userId    用户 ID
+     * @param productId 商品 ID
+     * @param skuId     SKU ID（0 表示无规格）
+     * @return true=已购买
+     */
+    boolean hasUserPurchasedProduct(Long userId, Long productId, Long skuId);
 }

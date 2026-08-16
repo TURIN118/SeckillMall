@@ -12,6 +12,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 /**
  * 用户个人信息服务实现
  * <p>
@@ -75,6 +80,25 @@ public class UserServiceImpl implements UserService {
         }
         User user = userMapper.selectById(userId);
         return user == null ? null : user.getEmail();
+    }
+
+    @Override
+    public User getUserById(Long userId) {
+        return userMapper.selectById(userId);
+    }
+
+    @Override
+    public Map<Long, String> getUserDisplayNamesByIds(List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<User> users = userMapper.selectBatchIds(userIds);
+        return users.stream()
+                .collect(Collectors.toMap(
+                        User::getId,
+                        u -> u.getNickname() != null && !u.getNickname().isBlank()
+                                ? u.getNickname() : u.getUsername(),
+                        (a, b) -> a));
     }
 
     /** Entity → VO */

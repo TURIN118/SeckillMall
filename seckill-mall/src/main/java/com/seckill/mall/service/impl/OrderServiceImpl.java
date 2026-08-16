@@ -1127,4 +1127,27 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ErrorCode.ORDER_DELETE_FAILED);
         }
     }
+
+    @Override
+    public boolean hasUserPurchasedProduct(Long userId, Long productId, Long skuId) {
+        // 查询该商品的订单明细
+        List<NormalOrderItem> items = normalOrderItemMapper.selectList(
+                new LambdaQueryWrapper<NormalOrderItem>()
+                        .eq(NormalOrderItem::getProductId, productId)
+                        .eq(skuId != 0L, NormalOrderItem::getSkuId, skuId));
+        if (items.isEmpty()) {
+            return false;
+        }
+        // 收集订单 ID，查询订单状态是否为 PAID / SHIPPED / COMPLETED
+        List<Long> orderIds = items.stream()
+                .map(NormalOrderItem::getOrderId)
+                .distinct()
+                .collect(Collectors.toList());
+        List<NormalOrder> orders = normalOrderMapper.selectList(
+                new LambdaQueryWrapper<NormalOrder>()
+                        .eq(NormalOrder::getUserId, userId)
+                        .in(NormalOrder::getId, orderIds)
+                        .in(NormalOrder::getStatus, OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED));
+        return !orders.isEmpty();
+    }
 }

@@ -116,4 +116,15 @@ public interface SeckillOrderService {
      * @return true 表示删除成功（影响行数 > 0）
      */
     boolean logicalDeleteSeckillOrder(Long orderId);
+
+    /**
+     * 校验用户是否通过秒杀订单购买了该商品（用于商品评价权限校验）。
+     * <p>
+     * 查询秒杀订单 by userId + productId + status in (PAID, SHIPPED, COMPLETED)。
+     *
+     * @param userId    用户 ID
+     * @param productId 商品 ID
+     * @return true=已购买
+     */
+    boolean hasUserPurchasedSeckill(Long userId, Long productId);
 }

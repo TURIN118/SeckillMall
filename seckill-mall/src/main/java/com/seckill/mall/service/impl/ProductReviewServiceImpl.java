@@ -1,6 +1,5 @@
 package com.seckill.mall.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -10,21 +9,16 @@ import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.XssCleanUtil;
-import com.seckill.mall.entity.NormalOrder;
-import com.seckill.mall.entity.NormalOrderItem;
 import com.seckill.mall.entity.ProductReview;
 import com.seckill.mall.entity.ProductSku;
-import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.User;
-import com.seckill.mall.entity.enums.OrderStatus;
-import com.seckill.mall.mapper.NormalOrderItemMapper;
-import com.seckill.mall.mapper.NormalOrderMapper;
 import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.ProductReviewMapper;
 import com.seckill.mall.mapper.ProductSkuMapper;
-import com.seckill.mall.mapper.SeckillOrderMapper;
-import com.seckill.mall.mapper.UserMapper;
+import com.seckill.mall.service.OrderService;
 import com.seckill.mall.service.ProductReviewService;
+import com.seckill.mall.service.SeckillOrderService;
+import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.ProductReviewVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,13 +43,12 @@ import java.util.stream.Collectors;
 public class ProductReviewServiceImpl implements ProductReviewService {
 
     private final ProductReviewMapper productReviewMapper;
-    private final UserMapper userMapper;
     private final ProductMapper productMapper;
     private final ObjectMapper objectMapper;
     private final ProductSkuMapper productSkuMapper;
-    private final NormalOrderItemMapper normalOrderItemMapper;
-    private final NormalOrderMapper normalOrderMapper;
-    private final SeckillOrderMapper seckillOrderMapper;
+    private final UserService userService;
+    private final OrderService orderService;
+    private final SeckillOrderService seckillOrderService;
 
     @Override
     public PageResult<ProductReviewVO> listByProductId(Long productId, int pageNum, int pageSize) {
@@ -136,7 +129,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
         review.setStatus(1);
         productReviewMapper.insert(review);
 
-        User user = userMapper.selectById(userId);
+        User user = userService.getUserById(userId);
         ProductReviewVO vo = toVO(review, Collections.emptyMap());
         if (user != null) {
             vo.setUserName(user.getNickname() != null && !user.getNickname().isBlank()
@@ -148,8 +141,8 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     /**
      * 5.7.4 建议13：校验用户是否购买了该 SKU
      * <p>
-     * 查询 t_normal_order_item 关联 t_normal_order，确认存在已支付 / 已发货 / 已完成订单。
-     * 同时查询 t_seckill_order（秒杀订单），允许秒杀购买的商品也能评论。
+     * 委托 {@link OrderService#hasUserPurchasedProduct} 校验普通订单购买记录，
+     * 委托 {@link SeckillOrderService#hasUserPurchasedSeckill} 校验秒杀订单购买记录。
      * skuId = 0 时不校验 SKU 维度，仅校验商品维度。
      *
      * @param userId     用户 ID
@@ -158,34 +151,12 @@ public class ProductReviewServiceImpl implements ProductReviewService {
      * @return true=已购买
      */
     private boolean checkUserPurchasedSku(Long userId, Long productId, Long skuId) {
-        // 1. 查普通订单：查询该用户对该商品的订单明细，关联订单表确认状态
-        List<NormalOrderItem> items = normalOrderItemMapper.selectList(
-                new LambdaQueryWrapper<NormalOrderItem>()
-                        .eq(NormalOrderItem::getProductId, productId)
-                        .eq(skuId != 0L, NormalOrderItem::getSkuId, skuId));
-        if (!items.isEmpty()) {
-            // 收集订单 ID，查询订单状态是否为 PAID / SHIPPED / COMPLETED
-            List<Long> orderIds = items.stream()
-                    .map(NormalOrderItem::getOrderId)
-                    .distinct()
-                    .collect(Collectors.toList());
-            List<NormalOrder> orders = normalOrderMapper.selectList(
-                    new LambdaQueryWrapper<NormalOrder>()
-                            .eq(NormalOrder::getUserId, userId)
-                            .in(NormalOrder::getId, orderIds)
-                            .in(NormalOrder::getStatus, OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED));
-            if (!orders.isEmpty()) {
-                return true;
-            }
+        // 1. 查普通订单（包含 SKU 维度校验）
+        if (orderService.hasUserPurchasedProduct(userId, productId, skuId)) {
+            return true;
         }
-
         // 2. 查秒杀订单（秒杀订单没有 SKU 维度，只校验商品维度）
-        List<SeckillOrder> seckillOrders = seckillOrderMapper.selectList(
-                new LambdaQueryWrapper<SeckillOrder>()
-                        .eq(SeckillOrder::getUserId, userId)
-                        .eq(SeckillOrder::getProductId, productId)
-                        .in(SeckillOrder::getStatus, OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED));
-        return !seckillOrders.isEmpty();
+        return seckillOrderService.hasUserPurchasedSeckill(userId, productId);
     }
 
     /**
@@ -283,13 +254,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
         if (userIds.isEmpty()) {
             return Collections.emptyMap();
         }
-        List<User> users = userMapper.selectBatchIds(userIds);
-        return users.stream()
-                .collect(Collectors.toMap(
-                        User::getId,
-                        u -> u.getNickname() != null && !u.getNickname().isBlank()
-                                ? u.getNickname() : u.getUsername(),
-                        (a, b) -> a));
+        return userService.getUserDisplayNamesByIds(userIds);
     }
 
     private ProductReviewVO toVO(ProductReview review, Map<Long, String> userNameMap) {

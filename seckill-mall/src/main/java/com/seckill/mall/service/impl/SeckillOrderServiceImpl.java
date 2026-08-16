@@ -472,4 +472,14 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
         int rows = seckillOrderMapper.deleteById(orderId);
         return rows > 0;
     }
+
+    @Override
+    public boolean hasUserPurchasedSeckill(Long userId, Long productId) {
+        List<SeckillOrder> seckillOrders = seckillOrderMapper.selectList(
+                new LambdaQueryWrapper<SeckillOrder>()
+                        .eq(SeckillOrder::getUserId, userId)
+                        .eq(SeckillOrder::getProductId, productId)
+                        .in(SeckillOrder::getStatus, OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.COMPLETED));
+        return !seckillOrders.isEmpty();
+    }
 }

@@ -1,5 +1,6 @@
 package com.seckill.mall.service;
 
+import com.seckill.mall.entity.User;
 import com.seckill.mall.vo.UserVO;
 
 /**
@@ -40,4 +41,20 @@ public interface UserService {
      * @return 邮箱地址，用户不存在时返回 null
      */
     String getEmail(Long userId);
+
+    /**
+     * 根据 ID 查询用户实体（模块间内部调用用）。
+     *
+     * @param userId 用户 ID
+     * @return 用户实体，不存在返回 null
+     */
+    User getUserById(Long userId);
+
+    /**
+     * 批量查询用户显示名（nickname 优先，回退 username）。
+     *
+     * @param userIds 用户 ID 列表
+     * @return Map<userId, displayName>，空列表返回 emptyMap
+     */
+    java.util.Map<Long, String> getUserDisplayNamesByIds(java.util.List<Long> userIds);
 }

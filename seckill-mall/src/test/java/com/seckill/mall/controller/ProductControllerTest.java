@@ -7,6 +7,7 @@ import com.seckill.mall.dto.ProductCreateRequest;
 import com.seckill.mall.dto.ProductQueryRequest;
 import com.seckill.mall.security.JwtUtils;
 import com.seckill.mall.security.TokenBlacklistService;
+import com.seckill.mall.product.interfaces.web.ProductController;
 import com.seckill.mall.service.ProductService;
 import com.seckill.mall.vo.ProductVO;
 import org.junit.jupiter.api.DisplayName;

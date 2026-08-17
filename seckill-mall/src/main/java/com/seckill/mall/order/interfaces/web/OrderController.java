@@ -7,6 +7,10 @@ import com.seckill.mall.dto.BuyNowRequest;
 import com.seckill.mall.dto.CartCheckoutRequest;
 import com.seckill.mall.dto.NormalOrderPayRequest;
 import com.seckill.mall.dto.ShipRequest;
+import com.seckill.mall.order.api.OrderApi;
+import com.seckill.mall.order.api.command.ConfirmReceiptCommand;
+import com.seckill.mall.order.api.command.DeleteOrderCommand;
+import com.seckill.mall.order.api.command.ShipCommand;
 import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.service.OrderLifecycleService;
 import com.seckill.mall.service.OrderQueryService;
@@ -47,6 +51,7 @@ public class OrderController {
     private final OrderLifecycleService orderLifecycleService;
     private final SeckillOrderService seckillOrderService;
     private final SecurityUtils securityUtils;
+    private final OrderApi orderApi;
 
     // ==================== 秒杀订单（原有） ====================
 
@@ -186,8 +191,11 @@ public class OrderController {
     @PreAuthorize("hasRole('ADMIN')")
     public Result<Void> shipNormalOrder(@PathVariable Long orderId,
                                         @RequestBody @Valid ShipRequest request) {
-        Long userId = securityUtils.getCurrentUserId();
-        orderLifecycleService.shipNormalOrder(userId, orderId, request.getShippingCompany(), request.getShippingNo());
+        orderApi.ship(ShipCommand.builder()
+                .orderId(orderId)
+                .shippingCompany(request.getShippingCompany())
+                .shippingNo(request.getShippingNo())
+                .build());
         return Result.success("发货成功", null);
     }
 
@@ -195,8 +203,9 @@ public class OrderController {
     @OperationLog(module = "ORDER", action = "CONFIRM", targetIdSpEL = "#orderId", targetType = "ORDER")
     @PostMapping("/{orderId}/normal-confirm")
     public Result<Void> confirmNormalOrder(@PathVariable Long orderId) {
-        Long userId = securityUtils.getCurrentUserId();
-        orderLifecycleService.confirmNormalOrder(userId, orderId);
+        orderApi.confirmReceipt(ConfirmReceiptCommand.builder()
+                .orderId(orderId)
+                .build());
         return Result.success("确认收货成功", null);
     }
 
@@ -206,8 +215,9 @@ public class OrderController {
     @OperationLog(module = "ORDER", action = "DELETE", targetIdSpEL = "#orderId", targetType = "ORDER")
     @DeleteMapping("/{orderId}")
     public Result<Void> deleteOrder(@PathVariable Long orderId) {
-        Long userId = securityUtils.getCurrentUserId();
-        orderQueryService.deleteOrder(orderId, userId);
+        orderApi.deleteOrder(DeleteOrderCommand.builder()
+                .orderId(orderId)
+                .build());
         return Result.success("订单删除成功", null);
     }
 }

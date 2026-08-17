@@ -9,11 +9,16 @@ import com.seckill.mall.dto.NormalOrderPayRequest;
 import com.seckill.mall.dto.ShipRequest;
 import com.seckill.mall.order.api.OrderApi;
 import com.seckill.mall.order.api.OrderQueryApi;
+import com.seckill.mall.order.api.command.BuyNowCommand;
+import com.seckill.mall.order.api.command.CancelOrderCommand;
 import com.seckill.mall.order.api.command.ConfirmReceiptCommand;
+import com.seckill.mall.order.api.command.CreateOrderCommand;
 import com.seckill.mall.order.api.command.DeleteOrderCommand;
+import com.seckill.mall.order.api.command.PayOrderCommand;
 import com.seckill.mall.order.api.command.ShipCommand;
 import com.seckill.mall.order.api.dto.OrderListItemDTO;
 import com.seckill.mall.order.api.query.OrderListQuery;
+import com.seckill.mall.order.api.result.OrderCreateResult;
 import com.seckill.mall.order.application.facade.OrderApiConverter;
 import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.service.OrderLifecycleService;
@@ -111,9 +116,16 @@ public class OrderController {
     @PostMapping
     public Result<NormalOrderDetailVO> createByBuyNow(@Valid @RequestBody BuyNowRequest req) {
         Long userId = securityUtils.getCurrentUserId();
-        NormalOrderDetailVO vo = orderService.createNormalOrder(
-                userId, req.getProductId(), req.getSkuId(), req.getQuantity(),
-                req.getAddressId(), req.getRemark(), req.getUserCouponId());
+        OrderCreateResult result = orderApi.buyNow(BuyNowCommand.builder()
+                .productId(req.getProductId())
+                .skuId(req.getSkuId())
+                .quantity(req.getQuantity())
+                .addressId(req.getAddressId())
+                .remark(req.getRemark())
+                .userCouponId(req.getUserCouponId())
+                .build());
+        NormalOrderDetailVO vo = OrderApiConverter.toNormalOrderDetailVO(
+                orderQueryApi.getOrderDetail(userId, result.getOrderId()));
         return Result.success("下单成功", vo);
     }
 
@@ -122,8 +134,14 @@ public class OrderController {
     @PostMapping("/from-cart")
     public Result<NormalOrderDetailVO> createFromCart(@Valid @RequestBody CartCheckoutRequest req) {
         Long userId = securityUtils.getCurrentUserId();
-        NormalOrderDetailVO vo = orderService.createOrderFromCart(
-                userId, req.getAddressId(), req.getCartIds(), req.getRemark(), req.getUserCouponId());
+        OrderCreateResult result = orderApi.createOrder(CreateOrderCommand.builder()
+                .addressId(req.getAddressId())
+                .cartIds(req.getCartIds())
+                .remark(req.getRemark())
+                .userCouponId(req.getUserCouponId())
+                .build());
+        NormalOrderDetailVO vo = OrderApiConverter.toNormalOrderDetailVO(
+                orderQueryApi.getOrderDetail(userId, result.getOrderId()));
         return Result.success("下单成功", vo);
     }
 
@@ -140,7 +158,13 @@ public class OrderController {
     public Result<NormalOrderDetailVO> payNormal(@PathVariable Long orderId,
                                                  @Valid @RequestBody NormalOrderPayRequest req) {
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(orderLifecycleService.payNormalOrder(userId, orderId, req.getPayMethod()));
+        orderApi.payOrder(PayOrderCommand.builder()
+                .orderId(orderId)
+                .payMethod(req.getPayMethod())
+                .build());
+        NormalOrderDetailVO vo = OrderApiConverter.toNormalOrderDetailVO(
+                orderQueryApi.getOrderDetail(userId, orderId));
+        return Result.success(vo);
     }
 
     @Operation(summary = "取消普通订单（仅待支付，BUG-002）")
@@ -148,7 +172,12 @@ public class OrderController {
     @PostMapping("/{orderId}/cancel-normal")
     public Result<NormalOrderDetailVO> cancelNormal(@PathVariable Long orderId) {
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(orderLifecycleService.cancelNormalOrder(userId, orderId));
+        orderApi.cancelOrder(CancelOrderCommand.builder()
+                .orderId(orderId)
+                .build());
+        NormalOrderDetailVO vo = OrderApiConverter.toNormalOrderDetailVO(
+                orderQueryApi.getOrderDetail(userId, orderId));
+        return Result.success(vo);
     }
 
     // ==================== 统一订单列表（需求1 合并秒杀+普通） ====================

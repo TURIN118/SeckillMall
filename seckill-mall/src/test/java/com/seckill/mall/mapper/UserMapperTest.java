@@ -1,8 +1,9 @@
 package com.seckill.mall.mapper;
 
-import com.seckill.mall.entity.User;
-import com.seckill.mall.entity.enums.UserRole;
-import com.seckill.mall.entity.enums.UserStatus;
+import com.seckill.mall.identity.domain.UserRole;
+import com.seckill.mall.identity.domain.UserStatus;
+import com.seckill.mall.identity.infrastructure.entity.User;
+import com.seckill.mall.identity.infrastructure.mapper.UserMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

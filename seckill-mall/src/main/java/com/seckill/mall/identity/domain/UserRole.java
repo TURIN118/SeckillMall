@@ -1,23 +1,26 @@
-package com.seckill.mall.entity.enums;
+package com.seckill.mall.identity.domain;
 
 import com.baomidou.mybatisplus.annotation.IEnum;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * 创建人：@author WNJ
- * 项目名称：seckill-mall
- * 文件名称：LoginResult.java
- * 邮箱：nj651217@163.com
+ * 用户角色枚举。
+ *
+ * <p>从 {@code com.seckill.mall.entity.enums.UserRole} 迁移至 {@code identity.domain}。
+ *
+ * @author WNJ
+ * @since Phase I.3
  */
-public enum LoginResult implements IEnum<String> {
+public enum UserRole implements IEnum<String> {
 
-    SUCCESS("SUCCESS", "成功"),
-    FAILED("FAILED", "失败");
+    BUYER("BUYER", "买家"),
+    SELLER("SELLER", "卖家"),
+    ADMIN("ADMIN", "管理员");
 
     private final String code;
     private final String description;
 
-    LoginResult(String code, String description) {
+    UserRole(String code, String description) {
         this.code = code;
         this.description = description;
     }
@@ -36,12 +39,12 @@ public enum LoginResult implements IEnum<String> {
         return code;
     }
 
-    public static LoginResult fromCode(String code) {
-        for (LoginResult e : values()) {
+    public static UserRole fromCode(String code) {
+        for (UserRole e : values()) {
             if (e.code.equals(code)) {
                 return e;
             }
         }
-        throw new IllegalArgumentException("Unknown LoginResult code: " + code);
+        throw new IllegalArgumentException("Unknown UserRole code: " + code);
     }
 }

@@ -2,9 +2,9 @@ package com.seckill.mall.security;
 
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
-import com.seckill.mall.entity.User;
-import com.seckill.mall.entity.enums.UserRole;
-import com.seckill.mall.mapper.UserMapper;
+import com.seckill.mall.identity.domain.UserRole;
+import com.seckill.mall.identity.infrastructure.entity.User;
+import com.seckill.mall.identity.infrastructure.mapper.UserMapper;
 import com.seckill.mall.shared.kernel.CurrentUserContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;

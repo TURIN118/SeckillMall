@@ -1,24 +1,25 @@
-package com.seckill.mall.entity.enums;
+package com.seckill.mall.identity.domain;
 
 import com.baomidou.mybatisplus.annotation.IEnum;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * 创建人：@author WNJ
- * 项目名称：seckill-mall
- * 文件名称：UserRole.java
- * 邮箱：nj651217@163.com
+ * 用户状态枚举。
+ *
+ * <p>从 {@code com.seckill.mall.entity.enums.UserStatus} 迁移至 {@code identity.domain}。
+ *
+ * @author WNJ
+ * @since Phase I.3
  */
-public enum UserRole implements IEnum<String> {
+public enum UserStatus implements IEnum<String> {
 
-    BUYER("BUYER", "买家"),
-    SELLER("SELLER", "卖家"),
-    ADMIN("ADMIN", "管理员");
+    ACTIVE("ACTIVE", "启用"),
+    DISABLED("DISABLED", "禁用");
 
     private final String code;
     private final String description;
 
-    UserRole(String code, String description) {
+    UserStatus(String code, String description) {
         this.code = code;
         this.description = description;
     }
@@ -37,12 +38,12 @@ public enum UserRole implements IEnum<String> {
         return code;
     }
 
-    public static UserRole fromCode(String code) {
-        for (UserRole e : values()) {
+    public static UserStatus fromCode(String code) {
+        for (UserStatus e : values()) {
             if (e.code.equals(code)) {
                 return e;
             }
         }
-        throw new IllegalArgumentException("Unknown UserRole code: " + code);
+        throw new IllegalArgumentException("Unknown UserStatus code: " + code);
     }
 }

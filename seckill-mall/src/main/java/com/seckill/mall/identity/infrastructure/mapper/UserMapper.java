@@ -1,7 +1,7 @@
-package com.seckill.mall.mapper;
+package com.seckill.mall.identity.infrastructure.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.seckill.mall.entity.User;
+import com.seckill.mall.identity.infrastructure.entity.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
@@ -12,10 +12,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 创建人：@author WNJ
- * 项目名称：seckill-mall
- * 文件名称：UserMapper.java
- * 邮箱：nj651217@163.com
+ * 用户 Mapper。
+ *
+ * <p>从 {@code com.seckill.mall.mapper.UserMapper} 迁移至 {@code identity.infrastructure.mapper}。
+ * 仅在 identity 模块 infrastructure 层内部使用，不对外暴露。
+ *
+ * @author WNJ
+ * @since Phase I.3
  */
 @Mapper
 public interface UserMapper extends BaseMapper<User> {

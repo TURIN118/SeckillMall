@@ -2,7 +2,7 @@ package com.seckill.mall.controller;
 
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.WalletRechargeRequest;
-import com.seckill.mall.entity.User;
+import com.seckill.mall.identity.infrastructure.entity.User;
 import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.service.RechargeCardService;
 import com.seckill.mall.service.WalletService;

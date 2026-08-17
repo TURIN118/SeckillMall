@@ -1,4 +1,1 @@
-Method <com.seckill.mall.controller.AdminUserController.updateRole(java.lang.Long, com.seckill.mall.dto.UserRoleUpdateRequest)> calls method <com.seckill.mall.entity.enums.UserRole.fromCode(java.lang.String)> in (AdminUserController.java:62)
-Method <com.seckill.mall.controller.AdminUserController.updateStatus(java.lang.Long, com.seckill.mall.dto.UserStatusUpdateRequest)> calls method <com.seckill.mall.entity.enums.UserStatus.fromCode(java.lang.String)> in (AdminUserController.java:53)
-Method <com.seckill.mall.controller.WalletController.balance()> calls method <com.seckill.mall.entity.User.getBalance()> in (WalletController.java:57)
-Method <com.seckill.mall.controller.WalletController.balance()> calls method <com.seckill.mall.entity.User.getBalance()> in (WalletController.java:57)
+Method <com.seckill.mall.controller.WalletController.balance()> calls method <com.seckill.mall.identity.infrastructure.entity.User.getBalance()> in (WalletController.java:57)

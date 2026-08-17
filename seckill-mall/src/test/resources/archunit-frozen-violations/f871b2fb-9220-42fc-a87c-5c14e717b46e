@@ -1,1 +1,1 @@
-Field <com.seckill.mall.controller.AuthControllerTest.userMapper> has type <com.seckill.mall.mapper.UserMapper> in (AuthControllerTest.java:0)
+Field <com.seckill.mall.controller.AuthControllerTest.userMapper> has type <com.seckill.mall.identity.infrastructure.mapper.UserMapper> in (AuthControllerTest.java:0)

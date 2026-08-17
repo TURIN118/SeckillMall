@@ -1,7 +1,7 @@
 package com.seckill.mall.security;
 
-import com.seckill.mall.entity.User;
-import com.seckill.mall.entity.enums.UserRole;
+import com.seckill.mall.identity.domain.UserRole;
+import com.seckill.mall.identity.infrastructure.entity.User;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

@@ -14,7 +14,7 @@ import com.seckill.mall.product.api.SkuApi;
 import com.seckill.mall.product.api.command.DeductStockCommand;
 import com.seckill.mall.product.api.dto.ProductSnapshot;
 import com.seckill.mall.product.api.dto.SkuSnapshot;
-import com.seckill.mall.entity.UserAddress;
+import com.seckill.mall.identity.infrastructure.entity.UserAddress;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.product.domain.ProductStatus;
 import com.seckill.mall.exception.BusinessException;

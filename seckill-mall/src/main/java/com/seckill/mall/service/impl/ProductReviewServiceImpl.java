@@ -11,7 +11,7 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.XssCleanUtil;
 import com.seckill.mall.product.infrastructure.entity.ProductReview;
 import com.seckill.mall.product.infrastructure.entity.ProductSku;
-import com.seckill.mall.entity.User;
+import com.seckill.mall.identity.infrastructure.entity.User;
 import com.seckill.mall.product.infrastructure.mapper.ProductMapper;
 import com.seckill.mall.product.infrastructure.mapper.ProductReviewMapper;
 import com.seckill.mall.product.infrastructure.mapper.ProductSkuMapper;

@@ -1,6 +1,6 @@
 package com.seckill.mall.service;
 
-import com.seckill.mall.entity.User;
+import com.seckill.mall.identity.infrastructure.entity.User;
 import com.seckill.mall.vo.UserVO;
 
 /**

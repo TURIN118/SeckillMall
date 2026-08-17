@@ -2,7 +2,7 @@ package com.seckill.mall.service.impl;
 
 import com.seckill.mall.entity.RechargeCard;
 import com.seckill.mall.entity.SeckillOrder;
-import com.seckill.mall.entity.User;
+import com.seckill.mall.identity.infrastructure.entity.User;
 import com.seckill.mall.order.api.OrderQueryApi;
 import com.seckill.mall.order.api.result.OrderSnapshot;
 import com.seckill.mall.service.RechargeCardService;

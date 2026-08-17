@@ -8,7 +8,7 @@ import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.entity.RechargeCard;
-import com.seckill.mall.entity.User;
+import com.seckill.mall.identity.infrastructure.entity.User;
 import com.seckill.mall.entity.enums.RechargeCardStatus;
 import com.seckill.mall.mapper.RechargeCardMapper;
 import com.seckill.mall.service.RechargeCardService;

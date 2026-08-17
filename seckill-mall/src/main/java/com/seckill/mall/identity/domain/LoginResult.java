@@ -1,23 +1,25 @@
-package com.seckill.mall.entity.enums;
+package com.seckill.mall.identity.domain;
 
 import com.baomidou.mybatisplus.annotation.IEnum;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
- * 创建人：@author WNJ
- * 项目名称：seckill-mall
- * 文件名称：UserStatus.java
- * 邮箱：nj651217@163.com
+ * 登录结果枚举。
+ *
+ * <p>从 {@code com.seckill.mall.entity.enums.LoginResult} 迁移至 {@code identity.domain}。
+ *
+ * @author WNJ
+ * @since Phase I.3
  */
-public enum UserStatus implements IEnum<String> {
+public enum LoginResult implements IEnum<String> {
 
-    ACTIVE("ACTIVE", "启用"),
-    DISABLED("DISABLED", "禁用");
+    SUCCESS("SUCCESS", "成功"),
+    FAILED("FAILED", "失败");
 
     private final String code;
     private final String description;
 
-    UserStatus(String code, String description) {
+    LoginResult(String code, String description) {
         this.code = code;
         this.description = description;
     }
@@ -36,12 +38,12 @@ public enum UserStatus implements IEnum<String> {
         return code;
     }
 
-    public static UserStatus fromCode(String code) {
-        for (UserStatus e : values()) {
+    public static LoginResult fromCode(String code) {
+        for (LoginResult e : values()) {
             if (e.code.equals(code)) {
                 return e;
             }
         }
-        throw new IllegalArgumentException("Unknown UserStatus code: " + code);
+        throw new IllegalArgumentException("Unknown LoginResult code: " + code);
     }
 }

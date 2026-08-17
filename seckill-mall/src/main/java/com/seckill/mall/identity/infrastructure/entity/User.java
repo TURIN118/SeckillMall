@@ -1,4 +1,4 @@
-package com.seckill.mall.entity;
+package com.seckill.mall.identity.infrastructure.entity;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
@@ -7,18 +7,21 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.seckill.mall.entity.enums.UserRole;
-import com.seckill.mall.entity.enums.UserStatus;
+import com.seckill.mall.identity.domain.UserRole;
+import com.seckill.mall.identity.domain.UserStatus;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 创建人：@author WNJ
- * 项目名称：seckill-mall
- * 文件名称：User.java
- * 邮箱：nj651217@163.com
+ * 用户实体（t_user）。
+ *
+ * <p>从 {@code com.seckill.mall.entity.User} 迁移至 {@code identity.infrastructure.entity}。
+ * 仅在 identity 模块 infrastructure 层内部使用，不对外暴露。
+ *
+ * @author WNJ
+ * @since Phase I.3
  */
 @Data
 @TableName("t_user")

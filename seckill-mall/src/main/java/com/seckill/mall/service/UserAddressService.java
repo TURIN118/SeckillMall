@@ -1,6 +1,6 @@
 package com.seckill.mall.service;
 
-import com.seckill.mall.entity.UserAddress;
+import com.seckill.mall.identity.infrastructure.entity.UserAddress;
 import com.seckill.mall.vo.UserAddressVO;
 
 import java.util.List;

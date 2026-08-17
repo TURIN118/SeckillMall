@@ -12,7 +12,7 @@ import com.seckill.mall.entity.Category;
 import com.seckill.mall.entity.Coupon;
 import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.product.api.dto.ProductSnapshot;
-import com.seckill.mall.entity.User;
+import com.seckill.mall.identity.infrastructure.entity.User;
 import com.seckill.mall.entity.UserCoupon;
 import com.seckill.mall.entity.enums.CouponType;
 import com.seckill.mall.entity.enums.UserCouponStatus;

@@ -1,23 +1,24 @@
-package com.seckill.mall.mapper;
+package com.seckill.mall.identity.infrastructure.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.seckill.mall.entity.UserFavorite;
+import com.seckill.mall.identity.infrastructure.entity.UserFavorite;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 /**
- * 用户收藏夹 Mapper
- * <p>
- * 基于 MyBatis-Plus {@link BaseMapper}，复杂查询使用 Lambda Wrapper。
+ * 用户收藏夹 Mapper。
+ *
+ * <p>基于 MyBatis-Plus {@link BaseMapper}，复杂查询使用 Lambda Wrapper。
  * 提供 {@link #selectByUserAndProductIncludeDeleted} 与 {@link #restore}
  * 用于绕过 {@code @TableLogic} 处理唯一约束冲突场景下逻辑删除记录的恢复。
  *
- * 创建人：@author WNJ
- * 项目名称：seckill-mall
- * 文件名称：UserFavoriteMapper.java
- * 邮箱：nj651217@163.com
+ * <p>从 {@code com.seckill.mall.mapper.UserFavoriteMapper} 迁移至 {@code identity.infrastructure.mapper}。
+ * 仅在 identity 模块 infrastructure 层内部使用，不对外暴露。
+ *
+ * @author WNJ
+ * @since Phase I.3
  */
 @Mapper
 public interface UserFavoriteMapper extends BaseMapper<UserFavorite> {

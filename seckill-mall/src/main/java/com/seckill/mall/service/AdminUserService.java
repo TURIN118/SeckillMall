@@ -2,8 +2,8 @@ package com.seckill.mall.service;
 
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.UserListRequest;
-import com.seckill.mall.entity.enums.UserRole;
-import com.seckill.mall.entity.enums.UserStatus;
+import com.seckill.mall.identity.domain.UserRole;
+import com.seckill.mall.identity.domain.UserStatus;
 import com.seckill.mall.vo.LoginLogVO;
 import com.seckill.mall.vo.UserVO;
 

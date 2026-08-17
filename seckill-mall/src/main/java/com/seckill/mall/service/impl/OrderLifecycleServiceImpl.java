@@ -8,7 +8,7 @@ import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrderItem;
 import com.seckill.mall.product.api.InventoryApi;
 import com.seckill.mall.product.api.SkuApi;
 import com.seckill.mall.product.api.command.RestoreStockCommand;
-import com.seckill.mall.entity.UserAddress;
+import com.seckill.mall.identity.infrastructure.entity.UserAddress;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderItemMapper;

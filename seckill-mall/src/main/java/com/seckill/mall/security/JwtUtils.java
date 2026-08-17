@@ -1,6 +1,6 @@
 package com.seckill.mall.security;
 
-import com.seckill.mall.entity.enums.UserRole;
+import com.seckill.mall.identity.domain.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;

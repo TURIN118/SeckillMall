@@ -8,8 +8,8 @@ import com.seckill.mall.common.Result;
 import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.product.api.command.UpdateFavoriteCountCommand;
 import com.seckill.mall.product.api.dto.ProductSnapshot;
-import com.seckill.mall.entity.UserFavorite;
-import com.seckill.mall.mapper.UserFavoriteMapper;
+import com.seckill.mall.identity.infrastructure.entity.UserFavorite;
+import com.seckill.mall.identity.infrastructure.mapper.UserFavoriteMapper;
 
 import com.seckill.mall.service.UserFavoriteService;
 import com.seckill.mall.vo.FavoriteItemVO;

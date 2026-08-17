@@ -21,9 +21,7 @@ import com.seckill.mall.order.api.query.OrderListQuery;
 import com.seckill.mall.order.api.result.OrderCreateResult;
 import com.seckill.mall.order.application.facade.OrderApiConverter;
 import com.seckill.mall.security.SecurityUtils;
-import com.seckill.mall.service.OrderLifecycleService;
-import com.seckill.mall.service.OrderQueryService;
-import com.seckill.mall.service.OrderService;
+
 import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
@@ -58,9 +56,7 @@ import java.util.stream.Collectors;
 @PreAuthorize("hasAnyRole('BUYER', 'ADMIN', 'SELLER')")
 public class OrderController {
 
-    private final OrderService orderService;
-    private final OrderQueryService orderQueryService;
-    private final OrderLifecycleService orderLifecycleService;
+
     private final SeckillOrderService seckillOrderService;
     private final SecurityUtils securityUtils;
     private final OrderApi orderApi;

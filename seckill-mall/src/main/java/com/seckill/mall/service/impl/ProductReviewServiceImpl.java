@@ -15,7 +15,7 @@ import com.seckill.mall.entity.User;
 import com.seckill.mall.mapper.ProductMapper;
 import com.seckill.mall.mapper.ProductReviewMapper;
 import com.seckill.mall.mapper.ProductSkuMapper;
-import com.seckill.mall.service.OrderService;
+import com.seckill.mall.order.api.OrderQueryApi;
 import com.seckill.mall.service.ProductReviewService;
 import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.service.UserService;
@@ -47,7 +47,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     private final ObjectMapper objectMapper;
     private final ProductSkuMapper productSkuMapper;
     private final UserService userService;
-    private final OrderService orderService;
+    private final OrderQueryApi orderQueryApi;
     private final SeckillOrderService seckillOrderService;
 
     @Override
@@ -141,7 +141,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     /**
      * 5.7.4 建议13：校验用户是否购买了该 SKU
      * <p>
-     * 委托 {@link OrderService#hasUserPurchasedProduct} 校验普通订单购买记录，
+     * 委托 {@link OrderQueryApi#hasUserPurchased} 校验普通订单购买记录，
      * 委托 {@link SeckillOrderService#hasUserPurchasedSeckill} 校验秒杀订单购买记录。
      * skuId = 0 时不校验 SKU 维度，仅校验商品维度。
      *
@@ -152,7 +152,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
      */
     private boolean checkUserPurchasedSku(Long userId, Long productId, Long skuId) {
         // 1. 查普通订单（包含 SKU 维度校验）
-        if (orderService.hasUserPurchasedProduct(userId, productId, skuId)) {
+        if (orderQueryApi.hasUserPurchased(userId, productId, skuId)) {
             return true;
         }
         // 2. 查秒杀订单（秒杀订单没有 SKU 维度，只校验商品维度）

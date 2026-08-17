@@ -1,10 +1,10 @@
 package com.seckill.mall.service.impl;
 
-import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import com.seckill.mall.entity.RechargeCard;
 import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.User;
-import com.seckill.mall.service.OrderService;
+import com.seckill.mall.order.api.OrderQueryApi;
+import com.seckill.mall.order.api.result.OrderSnapshot;
 import com.seckill.mall.service.RechargeCardService;
 import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.service.UserService;
@@ -42,7 +42,7 @@ public class WalletServiceImpl implements WalletService {
 
     private final UserService userService;
     private final RechargeCardService rechargeCardService;
-    private final OrderService orderService;
+    private final OrderQueryApi orderQueryApi;
     private final SeckillOrderService seckillOrderService;
 
     @Override
@@ -70,10 +70,10 @@ public class WalletServiceImpl implements WalletService {
         }
 
         // 2. 查询普通订单中钱包支付的已支付订单作为消费记录（type=CONSUME，金额为负）
-        List<NormalOrder> normalOrders = orderService.getWalletPaidOrdersByUser(userId);
-        for (NormalOrder order : normalOrders) {
-            records.add(toConsumeVO(order.getId(), order.getPayAmount(),
-                    order.getPayTime(), order.getCreateTime(), currentBalance, "订单支付"));
+        List<OrderSnapshot> orderSnapshots = orderQueryApi.getWalletPaidOrders(userId);
+        for (OrderSnapshot snap : orderSnapshots) {
+            records.add(toConsumeVO(snap.getOrderId(), snap.getPayAmount(),
+                    snap.getPayTime(), snap.getCreateTime(), currentBalance, "订单支付"));
         }
 
         // 3. 查询秒杀订单中钱包支付的已支付订单作为消费记录

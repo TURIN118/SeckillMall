@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
  *     <li>payMethod ← NormalOrder.payMethod</li>
  *     <li>status ← NormalOrder.status.getCode()</li>
  *     <li>payTime ← NormalOrder.payTime</li>
+ *     <li>createTime ← NormalOrder.createTime</li>
  * </ul>
  *
  * @author wnj
@@ -54,4 +55,7 @@ public class OrderSnapshot {
 
     /** 支付时间 */
     private LocalDateTime payTime;
+
+    /** 下单时间 */
+    private LocalDateTime createTime;
 }

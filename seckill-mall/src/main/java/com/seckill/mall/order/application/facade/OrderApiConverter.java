@@ -336,6 +336,7 @@ public class OrderApiConverter {
                 .payMethod(entity.getPayMethod())
                 .status(entity.getStatus() != null ? entity.getStatus().getCode() : null)
                 .payTime(entity.getPayTime())
+                .createTime(entity.getCreateTime())
                 .build();
     }
 

@@ -223,6 +223,31 @@ class ArchitectureRulesTest {
             .should().dependOnClassesThat().resideInAPackage("..order.infrastructure.persistence.mapper..")
             .as("order.interfaces 不应直接依赖 Mapper，应通过 ApplicationService 访问数据"));
 
+    // ============================================================
+    // F. Product 模块包边界规则（Phase P.6 新增）
+    // ============================================================
+
+    /** 17. product.api 不应依赖 product.infrastructure（API 契约层不应依赖基础设施层） */
+    @ArchTest
+    static final ArchRule product_api_should_not_depend_on_infrastructure =
+        freeze(noClasses().that().resideInAPackage("..product.api..")
+            .should().dependOnClassesThat().resideInAPackage("..product.infrastructure..")
+            .as("product.api 不应依赖 product.infrastructure，API 契约层不应依赖基础设施层"));
+
+    /** 18. product.application 不应直接依赖 Mapper（Application 层应通过 Service/Repository 访问数据） */
+    @ArchTest
+    static final ArchRule product_application_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..product.application..")
+            .should().dependOnClassesThat().resideInAPackage("..product.infrastructure.mapper..")
+            .as("product.application 不应直接依赖 Mapper，应通过 Service/Repository 访问数据"));
+
+    /** 19. product.interfaces 不应直接依赖 Mapper（接口层应通过 ApplicationService 访问数据） */
+    @ArchTest
+    static final ArchRule product_interfaces_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..product.interfaces..")
+            .should().dependOnClassesThat().resideInAPackage("..product.infrastructure.mapper..")
+            .as("product.interfaces 不应直接依赖 Mapper，应通过 ApplicationService 访问数据"));
+
     /**
      * 用 FreezingArchRule 包装规则，启用 freeze 模式。
      *

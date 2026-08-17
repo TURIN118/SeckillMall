@@ -8,9 +8,13 @@ import com.seckill.mall.dto.CartCheckoutRequest;
 import com.seckill.mall.dto.NormalOrderPayRequest;
 import com.seckill.mall.dto.ShipRequest;
 import com.seckill.mall.order.api.OrderApi;
+import com.seckill.mall.order.api.OrderQueryApi;
 import com.seckill.mall.order.api.command.ConfirmReceiptCommand;
 import com.seckill.mall.order.api.command.DeleteOrderCommand;
 import com.seckill.mall.order.api.command.ShipCommand;
+import com.seckill.mall.order.api.dto.OrderListItemDTO;
+import com.seckill.mall.order.api.query.OrderListQuery;
+import com.seckill.mall.order.application.facade.OrderApiConverter;
 import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.service.OrderLifecycleService;
 import com.seckill.mall.service.OrderQueryService;
@@ -33,6 +37,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
@@ -52,6 +59,7 @@ public class OrderController {
     private final SeckillOrderService seckillOrderService;
     private final SecurityUtils securityUtils;
     private final OrderApi orderApi;
+    private final OrderQueryApi orderQueryApi;
 
     // ==================== 秒杀订单（原有） ====================
 
@@ -123,7 +131,7 @@ public class OrderController {
     @GetMapping("/{orderId}/detail")
     public Result<NormalOrderDetailVO> normalDetail(@PathVariable Long orderId) {
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(orderQueryService.getNormalOrderDetail(userId, orderId));
+        return Result.success(OrderApiConverter.toNormalOrderDetailVO(orderQueryApi.getOrderDetail(userId, orderId)));
     }
 
     @Operation(summary = "普通订单支付（支持钱包/模拟支付）")
@@ -152,15 +160,30 @@ public class OrderController {
             @RequestParam(required = false) String orderType,
             @RequestParam(required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        Long userId = securityUtils.getCurrentUserId();
-        return Result.success(orderQueryService.getUnifiedOrderList(userId, status, orderType, pageNum, pageSize));
+
+        OrderListQuery query = OrderListQuery.builder()
+                .status(status)
+                .orderType(orderType)
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .build();
+        PageResult<OrderListItemDTO> dtoPage = orderQueryApi.listOrders(query);
+        if (dtoPage == null || dtoPage.getList() == null) {
+            return Result.success(dtoPage == null ? null : new PageResult<>(null, 0, pageNum, pageSize, 0));
+        }
+        List<OrderListItemVO> voList = dtoPage.getList().stream()
+                .map(OrderApiConverter::toOrderListItemVO)
+                .collect(Collectors.toList());
+        PageResult<OrderListItemVO> voPage = new PageResult<>(voList, dtoPage.getTotal(),
+                dtoPage.getPageNum(), dtoPage.getPageSize(), dtoPage.getPages());
+        return Result.success(voPage);
     }
 
     @Operation(summary = "普通订单详情（normal-detail 别名，与 /detail 等价）")
     @GetMapping("/{orderId}/normal-detail")
     public Result<NormalOrderDetailVO> normalDetailAlias(@PathVariable Long orderId) {
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(orderQueryService.getNormalOrderDetail(userId, orderId));
+        return Result.success(OrderApiConverter.toNormalOrderDetailVO(orderQueryApi.getOrderDetail(userId, orderId)));
     }
 
     // ==================== 发货与确认收货（Bug2修复） ====================

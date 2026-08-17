@@ -13,6 +13,7 @@ import com.seckill.mall.order.api.result.OrderCreateResult;
 import com.seckill.mall.order.api.result.OrderPayResult;
 import com.seckill.mall.order.api.result.OrderSnapshot;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
+import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.vo.AdminOrderVO;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.NormalOrderItemVO;
@@ -392,5 +393,140 @@ public class OrderApiConverter {
         req.setSortBy(query.getSortBy());
         req.setSortOrder(query.getSortOrder());
         return req;
+    }
+
+    // ============================================================
+    // DTO → VO 反向转换（供 Controller 保持前端返回结构不变）
+    // ============================================================
+
+    /**
+     * 将 {@link OrderDetailDTO} 反向转换为 {@link NormalOrderDetailVO}。
+     *
+     * <p>供 Controller 切换到 {@code OrderQueryApi} 后保持前端返回结构不变。
+     *
+     * @param dto 订单详情 DTO
+     * @return 订单详情 VO
+     */
+    public static NormalOrderDetailVO toNormalOrderDetailVO(OrderDetailDTO dto) {
+        if (dto == null) return null;
+        NormalOrderDetailVO vo = new NormalOrderDetailVO();
+        vo.setOrder(toNormalOrderVO(dto.getOrder()));
+        vo.setItems(toNormalOrderItemVOList(dto.getItems()));
+        vo.setReceiverName(dto.getReceiverName());
+        vo.setReceiverPhone(dto.getReceiverPhone());
+        vo.setProvince(dto.getProvince());
+        vo.setCity(dto.getCity());
+        vo.setDistrict(dto.getDistrict());
+        vo.setDetailAddress(dto.getDetailAddress());
+        return vo;
+    }
+
+    /**
+     * 将 {@link OrderDTO} 反向转换为 {@link NormalOrderVO}。
+     *
+     * @param dto 订单基础信息 DTO
+     * @return 订单基础信息 VO
+     */
+    public static NormalOrderVO toNormalOrderVO(OrderDTO dto) {
+        if (dto == null) return null;
+        NormalOrderVO vo = new NormalOrderVO();
+        vo.setId(dto.getId());
+        vo.setOrderNo(dto.getOrderNo());
+        vo.setUserId(dto.getUserId());
+        vo.setAddressId(dto.getAddressId());
+        vo.setTotalAmount(dto.getTotalAmount());
+        vo.setFreightAmount(dto.getFreightAmount());
+        vo.setPayAmount(dto.getPayAmount());
+        vo.setStatus(dto.getStatus() != null ? OrderStatus.fromCode(dto.getStatus()) : null);
+        vo.setShippingCompany(dto.getShippingCompany());
+        vo.setShippingNo(dto.getShippingNo());
+        vo.setPayMethod(dto.getPayMethod());
+        vo.setTransactionId(dto.getTransactionId());
+        vo.setPayTime(dto.getPayTime());
+        vo.setPayExpireTime(dto.getPayExpireTime());
+        vo.setCancelTime(dto.getCancelTime());
+        vo.setCancelReason(dto.getCancelReason());
+        vo.setShipTime(dto.getShipTime());
+        vo.setConfirmTime(dto.getConfirmTime());
+        vo.setRemark(dto.getRemark());
+        vo.setUserCouponId(dto.getUserCouponId());
+        vo.setDiscountAmount(dto.getDiscountAmount());
+        vo.setCreateTime(dto.getCreateTime());
+        vo.setUpdateTime(dto.getUpdateTime());
+        return vo;
+    }
+
+    /**
+     * 将 {@link OrderItemDTO} 列表反向转换为 {@link NormalOrderItemVO} 列表。
+     *
+     * @param dtoList 订单明细 DTO 列表
+     * @return 订单明细 VO 列表
+     */
+    public static List<NormalOrderItemVO> toNormalOrderItemVOList(List<OrderItemDTO> dtoList) {
+        if (dtoList == null) return null;
+        return dtoList.stream().map(OrderApiConverter::toNormalOrderItemVO).collect(Collectors.toList());
+    }
+
+    /**
+     * 将 {@link OrderItemDTO} 反向转换为 {@link NormalOrderItemVO}。
+     *
+     * @param dto 订单明细 DTO
+     * @return 订单明细 VO
+     */
+    public static NormalOrderItemVO toNormalOrderItemVO(OrderItemDTO dto) {
+        if (dto == null) return null;
+        NormalOrderItemVO vo = new NormalOrderItemVO();
+        vo.setId(dto.getId());
+        vo.setOrderId(dto.getOrderId());
+        vo.setProductId(dto.getProductId());
+        vo.setSkuId(dto.getSkuId());
+        vo.setSkuAttributes(dto.getSkuAttributes());
+        vo.setProductName(dto.getProductName());
+        vo.setProductImage(dto.getProductImage());
+        vo.setUnitPrice(dto.getUnitPrice());
+        vo.setQuantity(dto.getQuantity());
+        vo.setSubtotal(dto.getSubtotal());
+        return vo;
+    }
+
+    /**
+     * 将 {@link OrderListItemDTO} 反向转换为 {@link OrderListItemVO}。
+     *
+     * @param dto 订单列表项 DTO
+     * @return 订单列表项 VO
+     */
+    public static OrderListItemVO toOrderListItemVO(OrderListItemDTO dto) {
+        if (dto == null) return null;
+        OrderListItemVO vo = new OrderListItemVO();
+        vo.setId(dto.getId());
+        vo.setOrderNo(dto.getOrderNo());
+        vo.setOrderType(dto.getOrderType());
+        vo.setStatus(dto.getStatus());
+        vo.setTotalAmount(dto.getTotalAmount());
+        vo.setPayMethod(dto.getPayMethod());
+        vo.setCreateTime(dto.getCreateTime());
+        vo.setPayTime(dto.getPayTime());
+        vo.setShipTime(dto.getShipTime());
+        if (dto.getItems() != null) {
+            vo.setItems(dto.getItems().stream().map(OrderApiConverter::toOrderItemSnapshot).collect(Collectors.toList()));
+        }
+        return vo;
+    }
+
+    /**
+     * 将 {@link OrderItemSnapshotDTO} 反向转换为 {@link OrderListItemVO.OrderItemSnapshot}。
+     *
+     * @param dto 商品快照 DTO
+     * @return 商品快照 VO
+     */
+    public static OrderListItemVO.OrderItemSnapshot toOrderItemSnapshot(OrderItemSnapshotDTO dto) {
+        if (dto == null) return null;
+        OrderListItemVO.OrderItemSnapshot snap = new OrderListItemVO.OrderItemSnapshot();
+        snap.setProductId(dto.getProductId());
+        snap.setProductName(dto.getProductName());
+        snap.setProductImage(dto.getProductImage());
+        snap.setUnitPrice(dto.getUnitPrice());
+        snap.setQuantity(dto.getQuantity());
+        return snap;
     }
 }

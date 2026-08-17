@@ -1,7 +1,9 @@
 package com.seckill.mall.product.interfaces.web;
 
 import com.seckill.mall.common.Result;
-import com.seckill.mall.service.ProductSkuService;
+import com.seckill.mall.product.api.SkuApi;
+import com.seckill.mall.product.api.dto.SkuSnapshot;
+import com.seckill.mall.product.application.facade.ProductApiConverter;
 import com.seckill.mall.vo.ProductSkuVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,11 +31,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductSkuController {
 
-    private final ProductSkuService productSkuService;
+    private final SkuApi skuApi;
 
     @Operation(summary = "查询商品所有启用SKU（前台用）")
     @GetMapping
     public Result<List<ProductSkuVO>> listEnabled(@PathVariable Long productId) {
-        return Result.success(productSkuService.listEnabledByProductId(productId));
+        List<SkuSnapshot> snapshots = skuApi.listEnabledByProductId(productId);
+        return Result.success(ProductApiConverter.toProductSkuVOList(snapshots));
     }
 }

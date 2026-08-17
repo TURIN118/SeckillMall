@@ -2,12 +2,14 @@ package com.seckill.mall.product.application.facade;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.ProductAttributeDTO;
 import com.seckill.mall.dto.ProductCreateRequest;
 import com.seckill.mall.dto.ProductQueryRequest;
 import com.seckill.mall.dto.ProductSkuDTO;
 import com.seckill.mall.dto.ProductUpdateRequest;
 import com.seckill.mall.product.api.command.CreateProductCommand;
+import com.seckill.mall.product.api.command.CreateReviewCommand;
 import com.seckill.mall.product.api.command.UpdateProductCommand;
 import com.seckill.mall.product.api.dto.AttributeDTO;
 import com.seckill.mall.product.api.dto.ProductSnapshot;
@@ -15,6 +17,7 @@ import com.seckill.mall.product.api.dto.ProductSummaryDTO;
 import com.seckill.mall.product.api.dto.ReviewDTO;
 import com.seckill.mall.product.api.dto.SkuSnapshot;
 import com.seckill.mall.product.api.query.ProductListQuery;
+import com.seckill.mall.product.api.query.ReviewListQuery;
 import com.seckill.mall.product.api.result.ProductDetailResult;
 import com.seckill.mall.product.domain.AttributeType;
 import com.seckill.mall.product.domain.ProductStatus;
@@ -30,6 +33,7 @@ import com.seckill.mall.vo.ProductVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -607,6 +611,464 @@ public class ProductApiConverter {
                     return v;
                 })
                 .collect(Collectors.toList());
+    }
+
+    // ============================================================
+    // 反向转换：ProductDetailResult → ProductVO（Result → VO）
+    // ============================================================
+
+    /**
+     * 将 {@link ProductDetailResult} 反向转换为 {@link ProductVO}。
+     *
+     * <p>供 Controller 切换到 {@code ProductApi} 后保持前端返回结构不变。
+     *
+     * @param result 商品详情结果
+     * @return 商品 VO
+     */
+    public static ProductVO toProductVO(ProductDetailResult result) {
+        if (result == null) {
+            return null;
+        }
+        ProductVO vo = new ProductVO();
+        vo.setId(result.getId());
+        vo.setProductName(result.getName());
+        vo.setDescription(result.getDescription());
+        vo.setOriginalPrice(result.getOriginalPrice());
+        vo.setStock(result.getStock());
+        vo.setMinPrice(result.getMinPrice());
+        vo.setMaxPrice(result.getMaxPrice());
+        vo.setTotalStock(result.getTotalStock());
+        vo.setSalesCount(result.getSalesCount());
+        vo.setCategoryId(result.getCategoryId());
+        vo.setDetailHtml(result.getDetailHtml());
+        vo.setStatus(parseProductStatus(result.getStatus()));
+        vo.setCreateTime(result.getCreateTime());
+        // images: String JSON → List<String>，并将 mainImage 插入首位
+        List<String> images = stringToImages(result.getImages());
+        if (result.getMainImage() != null) {
+            if (images == null) {
+                images = new ArrayList<>();
+            }
+            images.add(0, result.getMainImage());
+        }
+        vo.setImages(images);
+        // skus: List<SkuSnapshot> → List<ProductSkuVO>
+        vo.setSkus(toProductSkuVOList(result.getSkus()));
+        // attributes: List<AttributeDTO> → List<ProductAttributeVO>
+        vo.setAttributes(toProductAttributeVOList(result.getAttributes()));
+        // hasSku: 根据 skus 列表推断
+        vo.setHasSku(result.getSkus() != null && !result.getSkus().isEmpty());
+        return vo;
+    }
+
+    // ============================================================
+    // 反向转换：ProductSummaryDTO → ProductVO（DTO → VO）
+    // ============================================================
+
+    /**
+     * 将 {@link ProductSummaryDTO} 反向转换为 {@link ProductVO}。
+     *
+     * <p>供 Controller 列表接口保持前端返回结构不变。
+     *
+     * @param dto 商品摘要 DTO
+     * @return 商品 VO
+     */
+    public static ProductVO toProductVO(ProductSummaryDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        ProductVO vo = new ProductVO();
+        vo.setId(dto.getId());
+        vo.setProductName(dto.getName());
+        vo.setOriginalPrice(dto.getOriginalPrice());
+        vo.setMinPrice(dto.getMinPrice());
+        vo.setMaxPrice(dto.getMaxPrice());
+        vo.setTotalStock(dto.getTotalStock());
+        vo.setSalesCount(dto.getSalesCount());
+        vo.setCategoryId(dto.getCategoryId());
+        vo.setStatus(parseProductStatus(dto.getStatus()));
+        vo.setCreateTime(dto.getCreateTime());
+        // mainImage → images 列表
+        if (dto.getMainImage() != null) {
+            List<String> images = new ArrayList<>();
+            images.add(dto.getMainImage());
+            vo.setImages(images);
+        }
+        return vo;
+    }
+
+    /**
+     * 将 {@link PageResult}<{@link ProductSummaryDTO}> 反向转换为
+     * {@link PageResult}<{@link ProductVO}>。
+     *
+     * @param dtoPage DTO 分页结果
+     * @return VO 分页结果
+     */
+    public static PageResult<ProductVO> toProductVOPage(PageResult<ProductSummaryDTO> dtoPage) {
+        if (dtoPage == null) {
+            return null;
+        }
+        List<ProductVO> voList = dtoPage.getList() == null ? Collections.emptyList()
+                : dtoPage.getList().stream()
+                        .map(ProductApiConverter::toProductVO)
+                        .collect(Collectors.toList());
+        return PageResult.of(voList, dtoPage.getTotal(), dtoPage.getPageNum(), dtoPage.getPageSize());
+    }
+
+    // ============================================================
+    // 反向转换：SkuSnapshot → ProductSkuVO（DTO → VO）
+    // ============================================================
+
+    /**
+     * 将 {@link SkuSnapshot} 反向转换为 {@link ProductSkuVO}。
+     *
+     * @param snapshot SKU 快照
+     * @return SKU VO
+     */
+    public static ProductSkuVO toProductSkuVO(SkuSnapshot snapshot) {
+        if (snapshot == null) {
+            return null;
+        }
+        ProductSkuVO vo = new ProductSkuVO();
+        vo.setId(snapshot.getId());
+        vo.setSkuCode(snapshot.getSkuCode());
+        vo.setPrice(snapshot.getPrice());
+        vo.setStock(snapshot.getStock());
+        vo.setMainImage(snapshot.getMainImage());
+        vo.setAttributes(snapshot.getAttributes());
+        vo.setStatus(snapshot.getStatus());
+        return vo;
+    }
+
+    /**
+     * 将 {@link SkuSnapshot} 列表反向转换为 {@link ProductSkuVO} 列表。
+     *
+     * @param snapshots SKU 快照列表
+     * @return SKU VO 列表
+     */
+    public static List<ProductSkuVO> toProductSkuVOList(List<SkuSnapshot> snapshots) {
+        if (snapshots == null) {
+            return null;
+        }
+        return snapshots.stream()
+                .map(ProductApiConverter::toProductSkuVO)
+                .collect(Collectors.toList());
+    }
+
+    // ============================================================
+    // 反向转换：AttributeDTO → ProductAttributeVO（DTO → VO）
+    // ============================================================
+
+    /**
+     * 将 {@link AttributeDTO} 反向转换为 {@link ProductAttributeVO}。
+     *
+     * @param dto 属性 DTO
+     * @return 属性 VO
+     */
+    public static ProductAttributeVO toProductAttributeVO(AttributeDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        ProductAttributeVO vo = new ProductAttributeVO();
+        vo.setId(dto.getId());
+        vo.setCategoryAttributeId(dto.getCategoryAttributeId());
+        vo.setName(dto.getName());
+        vo.setType(dto.getType());
+        vo.setSortOrder(dto.getSortOrder());
+        if (dto.getValues() != null) {
+            vo.setValues(dto.getValues().stream()
+                    .map(v -> {
+                        ProductAttributeVO.AttributeValueVO avo = new ProductAttributeVO.AttributeValueVO();
+                        avo.setId(v.getId());
+                        avo.setValue(v.getValue());
+                        avo.setImageUrl(v.getImageUrl());
+                        avo.setSortOrder(v.getSortOrder());
+                        return avo;
+                    })
+                    .collect(Collectors.toList()));
+        }
+        return vo;
+    }
+
+    /**
+     * 将 {@link AttributeDTO} 列表反向转换为 {@link ProductAttributeVO} 列表。
+     *
+     * @param dtos 属性 DTO 列表
+     * @return 属性 VO 列表
+     */
+    public static List<ProductAttributeVO> toProductAttributeVOList(List<AttributeDTO> dtos) {
+        if (dtos == null) {
+            return null;
+        }
+        return dtos.stream()
+                .map(ProductApiConverter::toProductAttributeVO)
+                .collect(Collectors.toList());
+    }
+
+    // ============================================================
+    // 反向转换：ReviewDTO → ProductReviewVO（DTO → VO）
+    // ============================================================
+
+    /**
+     * 将 {@link ReviewDTO} 反向转换为 {@link ProductReviewVO}。
+     *
+     * <p>images 字段：DTO 为 JSON String，VO 为 List&lt;String&gt;，需反序列化。
+     *
+     * @param dto 评论 DTO
+     * @return 评论 VO
+     */
+    public static ProductReviewVO toProductReviewVO(ReviewDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        ProductReviewVO vo = new ProductReviewVO();
+        vo.setId(dto.getId());
+        vo.setProductId(dto.getProductId());
+        vo.setSkuId(dto.getSkuId());
+        vo.setSkuAttributes(dto.getSkuAttributes());
+        vo.setUserId(dto.getUserId());
+        vo.setOrderId(dto.getOrderId());
+        vo.setContent(dto.getContent());
+        vo.setRating(dto.getRating());
+        vo.setImages(stringToImages(dto.getImages()));
+        vo.setStatus(dto.getStatus());
+        vo.setReplyContent(dto.getReplyContent());
+        vo.setReplyTime(dto.getReplyTime());
+        vo.setCreateTime(dto.getCreateTime());
+        return vo;
+    }
+
+    /**
+     * 将 {@link PageResult}<{@link ReviewDTO}> 反向转换为
+     * {@link PageResult}<{@link ProductReviewVO}>。
+     *
+     * @param dtoPage DTO 分页结果
+     * @return VO 分页结果
+     */
+    public static PageResult<ProductReviewVO> toProductReviewVOPage(PageResult<ReviewDTO> dtoPage) {
+        if (dtoPage == null) {
+            return null;
+        }
+        List<ProductReviewVO> voList = dtoPage.getList() == null ? Collections.emptyList()
+                : dtoPage.getList().stream()
+                        .map(ProductApiConverter::toProductReviewVO)
+                        .collect(Collectors.toList());
+        return PageResult.of(voList, dtoPage.getTotal(), dtoPage.getPageNum(), dtoPage.getPageSize());
+    }
+
+    // ============================================================
+    // 正向转换：ProductQueryRequest → ProductListQuery（旧 DTO → Query）
+    // ============================================================
+
+    /**
+     * 将旧 {@link ProductQueryRequest} 转换为 API 层 {@link ProductListQuery}。
+     *
+     * @param req 旧商品查询请求
+     * @return API 层商品列表查询条件
+     */
+    public static ProductListQuery toProductListQuery(ProductQueryRequest req) {
+        if (req == null) {
+            return null;
+        }
+        return ProductListQuery.builder()
+                .categoryId(req.getCategoryId())
+                .status(req.getStatus())
+                .keyword(req.getKeyword())
+                .pageNum(req.getPageNum())
+                .pageSize(req.getPageSize())
+                .build();
+    }
+
+    // ============================================================
+    // 正向转换：ProductCreateRequest → CreateProductCommand（旧 DTO → Command）
+    // ============================================================
+
+    /**
+     * 将旧 {@link ProductCreateRequest} 转换为 API 层 {@link CreateProductCommand}。
+     *
+     * @param req 旧商品创建请求
+     * @return API 层新增商品命令
+     */
+    public static CreateProductCommand toCreateProductCommand(ProductCreateRequest req) {
+        if (req == null) {
+            return null;
+        }
+        return CreateProductCommand.builder()
+                .name(req.getProductName())
+                .description(req.getDescription())
+                .originalPrice(req.getOriginalPrice())
+                .stock(req.getStock())
+                .categoryId(req.getCategoryId())
+                .images(imagesToString(req.getImages()))
+                .mainImage(extractMainImage(req.getImages()))
+                .detailHtml(req.getDetailHtml())
+                .status(req.getStatus() != null ? req.getStatus().getCode() : null)
+                .skus(toSkuSnapshotListFromDTO(req.getSkus()))
+                .attributes(toAttributeDTOListFromOldDTO(req.getAttributes()))
+                .build();
+    }
+
+    // ============================================================
+    // 正向转换：ProductUpdateRequest → UpdateProductCommand（旧 DTO → Command）
+    // ============================================================
+
+    /**
+     * 将旧 {@link ProductUpdateRequest} 转换为 API 层 {@link UpdateProductCommand}。
+     *
+     * @param id  商品 ID
+     * @param req 旧商品更新请求
+     * @return API 层编辑商品命令
+     */
+    public static UpdateProductCommand toUpdateProductCommand(Long id, ProductUpdateRequest req) {
+        if (req == null) {
+            return null;
+        }
+        return UpdateProductCommand.builder()
+                .id(id)
+                .name(req.getProductName())
+                .description(req.getDescription())
+                .originalPrice(req.getOriginalPrice())
+                .stock(req.getStock())
+                .categoryId(req.getCategoryId())
+                .images(imagesToString(req.getImages()))
+                .mainImage(extractMainImage(req.getImages()))
+                .detailHtml(req.getDetailHtml())
+                .status(req.getStatus() != null ? req.getStatus().getCode() : null)
+                .skus(toSkuSnapshotListFromDTO(req.getSkus()))
+                .attributes(toAttributeDTOListFromOldDTO(req.getAttributes()))
+                .build();
+    }
+
+    // ============================================================
+    // 正向转换：ProductSkuDTO → SkuSnapshot（旧 DTO → DTO）
+    // ============================================================
+
+    /**
+     * 将旧 {@link ProductSkuDTO} 转换为 {@link SkuSnapshot}。
+     *
+     * @param dto 旧 SKU DTO
+     * @return SKU 快照
+     */
+    public static SkuSnapshot toSkuSnapshotFromDTO(ProductSkuDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        return SkuSnapshot.builder()
+                .id(dto.getId())
+                .skuCode(dto.getSkuCode())
+                .price(dto.getPrice())
+                .stock(dto.getStock())
+                .mainImage(dto.getMainImage())
+                .attributes(dto.getAttributes())
+                .status(dto.getStatus())
+                .build();
+    }
+
+    /**
+     * 将旧 {@link ProductSkuDTO} 列表转换为 {@link SkuSnapshot} 列表。
+     *
+     * @param dtos 旧 SKU DTO 列表
+     * @return SKU 快照列表
+     */
+    public static List<SkuSnapshot> toSkuSnapshotListFromDTO(List<ProductSkuDTO> dtos) {
+        if (dtos == null) {
+            return null;
+        }
+        return dtos.stream()
+                .map(ProductApiConverter::toSkuSnapshotFromDTO)
+                .collect(Collectors.toList());
+    }
+
+    // ============================================================
+    // 正向转换：ProductAttributeDTO → AttributeDTO（旧 DTO → DTO）
+    // ============================================================
+
+    /**
+     * 将旧 {@link ProductAttributeDTO} 转换为 {@link AttributeDTO}。
+     *
+     * @param dto 旧属性 DTO
+     * @return 属性 DTO
+     */
+    public static AttributeDTO toAttributeDTOFromOldDTO(ProductAttributeDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        AttributeDTO result = AttributeDTO.builder()
+                .id(dto.getId())
+                .categoryAttributeId(dto.getCategoryAttributeId())
+                .name(dto.getName())
+                .type(dto.getType())
+                .sortOrder(dto.getSortOrder())
+                .build();
+        if (dto.getValues() != null) {
+            result.setValues(dto.getValues().stream()
+                    .map(v -> AttributeDTO.AttributeValueDTO.builder()
+                            .id(v.getId())
+                            .value(v.getValue())
+                            .imageUrl(v.getImageUrl())
+                            .sortOrder(v.getSortOrder())
+                            .build())
+                    .collect(Collectors.toList()));
+        }
+        return result;
+    }
+
+    /**
+     * 将旧 {@link ProductAttributeDTO} 列表转换为 {@link AttributeDTO} 列表。
+     *
+     * @param dtos 旧属性 DTO 列表
+     * @return 属性 DTO 列表
+     */
+    public static List<AttributeDTO> toAttributeDTOListFromOldDTO(List<ProductAttributeDTO> dtos) {
+        if (dtos == null) {
+            return null;
+        }
+        return dtos.stream()
+                .map(ProductApiConverter::toAttributeDTOFromOldDTO)
+                .collect(Collectors.toList());
+    }
+
+    // ============================================================
+    // 正向转换：评论参数 → ReviewListQuery / CreateReviewCommand
+    // ============================================================
+
+    /**
+     * 构造 {@link ReviewListQuery}。
+     *
+     * @param productId 商品 ID
+     * @param pageNum   页码
+     * @param pageSize  每页大小
+     * @return 评论列表查询条件
+     */
+    public static ReviewListQuery toReviewListQuery(Long productId, Integer pageNum, Integer pageSize) {
+        return ReviewListQuery.builder()
+                .productId(productId)
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .build();
+    }
+
+    /**
+     * 构造 {@link CreateReviewCommand}。
+     *
+     * @param userId    用户 ID
+     * @param productId 商品 ID
+     * @param skuId     SKU ID
+     * @param content   评论内容
+     * @param rating    评分
+     * @param images    评论图片（JSON 字符串）
+     * @return 发表评论命令
+     */
+    public static CreateReviewCommand toCreateReviewCommand(Long userId, Long productId, Long skuId,
+                                                            String content, Integer rating, String images) {
+        return CreateReviewCommand.builder()
+                .userId(userId)
+                .productId(productId)
+                .skuId(skuId)
+                .content(content)
+                .rating(rating)
+                .images(images)
+                .build();
     }
 
     // ============================================================

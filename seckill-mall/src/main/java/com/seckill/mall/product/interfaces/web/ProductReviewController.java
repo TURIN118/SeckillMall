@@ -2,8 +2,12 @@ package com.seckill.mall.product.interfaces.web;
 
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.Result;
+import com.seckill.mall.product.api.ReviewApi;
+import com.seckill.mall.product.api.command.CreateReviewCommand;
+import com.seckill.mall.product.api.dto.ReviewDTO;
+import com.seckill.mall.product.api.query.ReviewListQuery;
+import com.seckill.mall.product.application.facade.ProductApiConverter;
 import com.seckill.mall.security.SecurityUtils;
-import com.seckill.mall.service.ProductReviewService;
 import com.seckill.mall.vo.ProductReviewVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,7 +39,7 @@ import org.springframework.web.util.HtmlUtils;
 @RequiredArgsConstructor
 public class ProductReviewController {
 
-    private final ProductReviewService productReviewService;
+    private final ReviewApi reviewApi;
     private final SecurityUtils securityUtils;
 
     @Operation(summary = "查商品评论分页（公开接口）")
@@ -44,7 +48,9 @@ public class ProductReviewController {
             @PathVariable Long productId,
             @RequestParam(required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        return Result.success(productReviewService.listByProductId(productId, pageNum, pageSize));
+        ReviewListQuery query = ProductApiConverter.toReviewListQuery(productId, pageNum, pageSize);
+        PageResult<ReviewDTO> dtoPage = reviewApi.listByProductId(query);
+        return Result.success(ProductApiConverter.toProductReviewVOPage(dtoPage));
     }
 
     @Operation(summary = "发表评论（需登录）")
@@ -54,8 +60,10 @@ public class ProductReviewController {
         Long userId = securityUtils.getCurrentUserId();
         // 安全修复（M5）：对评论内容做 HTML 转义，防止存储型 XSS
         String safeContent = HtmlUtils.htmlEscape(req.getContent());
-        return Result.success(productReviewService.create(
-                userId, req.getProductId(), req.getSkuId(), safeContent, req.getRating(), req.getImages()));
+        CreateReviewCommand cmd = ProductApiConverter.toCreateReviewCommand(
+                userId, req.getProductId(), req.getSkuId(), safeContent, req.getRating(), req.getImages());
+        ReviewDTO dto = reviewApi.createReview(cmd);
+        return Result.success(ProductApiConverter.toProductReviewVO(dto));
     }
 
     /**

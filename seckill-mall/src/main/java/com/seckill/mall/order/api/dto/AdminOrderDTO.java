@@ -58,6 +58,51 @@ public class AdminOrderDTO {
     /** 发货时间 */
     private LocalDateTime shipTime;
 
+    /** 关联用户名 */
+    private String username;
+
+    /** 秒杀活动 ID */
+    private Long seckillId;
+
+    /** 秒杀活动名称 */
+    private String seckillName;
+
+    /** 商品 ID */
+    private Long productId;
+
+    /** 商品名称 */
+    private String productName;
+
+    /** 秒杀价格 */
+    private BigDecimal seckillPrice;
+
+    /** 购买数量 */
+    private Integer quantity;
+
+    /** 物流公司 */
+    private String shippingCompany;
+
+    /** 快递单号 */
+    private String shippingNo;
+
+    /** 确认收货时间 */
+    private LocalDateTime confirmTime;
+
+    /** 支付过期时间 */
+    private LocalDateTime payExpireTime;
+
+    /** 交易流水号 */
+    private String transactionId;
+
+    /** 取消时间 */
+    private LocalDateTime cancelTime;
+
+    /** 取消原因 */
+    private String cancelReason;
+
+    /** 更新时间 */
+    private LocalDateTime updateTime;
+
     /** 商品快照列表 */
     private List<OrderItemSnapshotDTO> items;
 }

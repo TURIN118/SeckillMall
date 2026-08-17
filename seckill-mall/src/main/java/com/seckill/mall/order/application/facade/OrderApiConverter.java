@@ -309,6 +309,21 @@ public class OrderApiConverter {
                 .createTime(vo.getCreateTime())
                 .payTime(vo.getPayTime())
                 .shipTime(vo.getShipTime())
+                .username(vo.getUsername())
+                .seckillId(vo.getSeckillId())
+                .seckillName(vo.getSeckillName())
+                .productId(vo.getProductId())
+                .productName(vo.getProductName())
+                .seckillPrice(vo.getSeckillPrice())
+                .quantity(vo.getQuantity())
+                .shippingCompany(vo.getShippingCompany())
+                .shippingNo(vo.getShippingNo())
+                .confirmTime(vo.getConfirmTime())
+                .payExpireTime(vo.getPayExpireTime())
+                .transactionId(vo.getTransactionId())
+                .cancelTime(vo.getCancelTime())
+                .cancelReason(vo.getCancelReason())
+                .updateTime(vo.getUpdateTime())
                 .items(null)
                 .build();
     }
@@ -528,5 +543,77 @@ public class OrderApiConverter {
         snap.setUnitPrice(dto.getUnitPrice());
         snap.setQuantity(dto.getQuantity());
         return snap;
+    }
+
+    /**
+     * 将 {@link AdminOrderDTO} 反向转换为 {@link AdminOrderVO}。
+     *
+     * <p>供 AdminOrderController 切换到 {@code AdminOrderApi} 后保持前端返回结构不变。
+     *
+     * @param dto 管理员订单 DTO
+     * @return 管理员订单 VO
+     */
+    public static AdminOrderVO toAdminOrderVO(AdminOrderDTO dto) {
+        if (dto == null) return null;
+        AdminOrderVO vo = new AdminOrderVO();
+        vo.setId(dto.getId());
+        vo.setOrderNo(dto.getOrderNo());
+        vo.setOrderType(dto.getOrderType());
+        vo.setUserId(dto.getUserId());
+        vo.setUsername(dto.getUsername());
+        vo.setSeckillId(dto.getSeckillId());
+        vo.setSeckillName(dto.getSeckillName());
+        vo.setProductId(dto.getProductId());
+        vo.setProductName(dto.getProductName());
+        vo.setSeckillPrice(dto.getSeckillPrice());
+        vo.setQuantity(dto.getQuantity());
+        vo.setTotalAmount(dto.getTotalAmount());
+        vo.setStatus(dto.getStatus());
+        vo.setShippingCompany(dto.getShippingCompany());
+        vo.setShippingNo(dto.getShippingNo());
+        vo.setShipTime(dto.getShipTime());
+        vo.setConfirmTime(dto.getConfirmTime());
+        vo.setPayTime(dto.getPayTime());
+        vo.setPayExpireTime(dto.getPayExpireTime());
+        vo.setTransactionId(dto.getTransactionId());
+        vo.setPayMethod(dto.getPayMethod());
+        vo.setCancelTime(dto.getCancelTime());
+        vo.setCancelReason(dto.getCancelReason());
+        vo.setCreateTime(dto.getCreateTime());
+        vo.setUpdateTime(dto.getUpdateTime());
+        return vo;
+    }
+
+    /**
+     * 将旧 {@link AdminOrderQueryRequest} 转换为 API 层 {@link AdminOrderQuery}。
+     *
+     * <p>供 AdminOrderController 切换到 {@code AdminOrderApi} 后将前端请求转为 API 层查询条件。
+     *
+     * @param req 旧管理员订单查询请求
+     * @return API 层管理员订单查询条件
+     */
+    public static AdminOrderQuery toAdminOrderQuery(AdminOrderQueryRequest req) {
+        if (req == null) return null;
+        return AdminOrderQuery.builder()
+                .pageNum(req.getPageNum())
+                .pageSize(req.getPageSize())
+                .orderNo(req.getOrderNo())
+                .date(req.getDate())
+                .status(req.getStatus())
+                .orderType(req.getOrderType())
+                .userId(req.getUserId())
+                .productId(req.getProductId())
+                .seckillId(req.getSeckillId())
+                .startTime(req.getStartTime())
+                .endTime(req.getEndTime())
+                .startDate(req.getStartDate())
+                .endDate(req.getEndDate())
+                .minAmount(req.getMinAmount())
+                .maxAmount(req.getMaxAmount())
+                .payStartTime(req.getPayStartTime())
+                .payEndTime(req.getPayEndTime())
+                .sortBy(req.getSortBy())
+                .sortOrder(req.getSortOrder())
+                .build();
     }
 }

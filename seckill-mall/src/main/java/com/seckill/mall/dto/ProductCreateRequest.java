@@ -1,6 +1,6 @@
 package com.seckill.mall.dto;
 
-import com.seckill.mall.entity.enums.ProductStatus;
+import com.seckill.mall.product.domain.ProductStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;

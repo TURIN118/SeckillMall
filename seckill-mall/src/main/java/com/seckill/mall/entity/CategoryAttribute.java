@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.seckill.mall.entity.enums.AttributeType;
+import com.seckill.mall.product.domain.AttributeType;
 import com.seckill.mall.entity.enums.AttributeInputType;
 import lombok.Data;
 

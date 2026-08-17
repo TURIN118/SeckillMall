@@ -19,7 +19,7 @@ import org.springframework.test.context.TestPropertySource;
  * 屏蔽 Redis/RabbitMQ/Mail/Security/Redisson 等中间件自动配置，使用 H2 内存库。
  */
 @SpringBootApplication(
-        scanBasePackages = "com.seckill.mall.mapper",
+        scanBasePackages = {"com.seckill.mall.mapper", "com.seckill.mall.product.infrastructure.mapper"},
         exclude = {
                 DataSourceAutoConfiguration.class,
                 RedisAutoConfiguration.class,
@@ -30,7 +30,7 @@ import org.springframework.test.context.TestPropertySource;
                 SecurityFilterAutoConfiguration.class,
                 UserDetailsServiceAutoConfiguration.class
         })
-@MapperScan("com.seckill.mall.mapper")
+@MapperScan({"com.seckill.mall.mapper", "com.seckill.mall.product.infrastructure.mapper"})
 @Import(MetaObjectHandler.class)
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:seckill_mapper_test;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",

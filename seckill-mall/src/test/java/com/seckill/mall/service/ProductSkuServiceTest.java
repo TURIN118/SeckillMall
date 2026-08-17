@@ -1,10 +1,10 @@
 package com.seckill.mall.service;
 
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
-import com.seckill.mall.entity.Product;
-import com.seckill.mall.entity.ProductSku;
-import com.seckill.mall.mapper.ProductMapper;
-import com.seckill.mall.mapper.ProductSkuMapper;
+import com.seckill.mall.product.infrastructure.entity.Product;
+import com.seckill.mall.product.infrastructure.entity.ProductSku;
+import com.seckill.mall.product.infrastructure.mapper.ProductMapper;
+import com.seckill.mall.product.infrastructure.mapper.ProductSkuMapper;
 import com.seckill.mall.service.impl.ProductSkuServiceImpl;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.apache.ibatis.session.Configuration;

@@ -1,7 +1,7 @@
 package com.seckill.mall.service;
 
 import com.seckill.mall.dto.ProductSkuDTO;
-import com.seckill.mall.entity.ProductSku;
+import com.seckill.mall.product.infrastructure.entity.ProductSku;
 import com.seckill.mall.vo.ProductSkuVO;
 
 import java.math.BigDecimal;

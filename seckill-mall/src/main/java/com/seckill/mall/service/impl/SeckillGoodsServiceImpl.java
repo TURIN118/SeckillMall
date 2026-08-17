@@ -11,7 +11,7 @@ import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.SeckillCreateRequest;
-import com.seckill.mall.entity.Product;
+import com.seckill.mall.product.infrastructure.entity.Product;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.enums.SeckillStatus;
 import com.seckill.mall.mapper.SeckillGoodsMapper;

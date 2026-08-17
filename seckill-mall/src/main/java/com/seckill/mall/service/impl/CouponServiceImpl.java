@@ -10,7 +10,7 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.CouponCreateRequest;
 import com.seckill.mall.entity.Category;
 import com.seckill.mall.entity.Coupon;
-import com.seckill.mall.entity.Product;
+import com.seckill.mall.product.infrastructure.entity.Product;
 import com.seckill.mall.entity.User;
 import com.seckill.mall.entity.UserCoupon;
 import com.seckill.mall.entity.enums.CouponType;

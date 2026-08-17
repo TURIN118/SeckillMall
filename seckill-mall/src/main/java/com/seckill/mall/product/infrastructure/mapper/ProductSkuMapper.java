@@ -1,7 +1,7 @@
-package com.seckill.mall.mapper;
+package com.seckill.mall.product.infrastructure.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.seckill.mall.entity.ProductSku;
+import com.seckill.mall.product.infrastructure.entity.ProductSku;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.Result;
-import com.seckill.mall.entity.Product;
+import com.seckill.mall.product.infrastructure.entity.Product;
 import com.seckill.mall.entity.UserFavorite;
 import com.seckill.mall.mapper.UserFavoriteMapper;
 import com.seckill.mall.service.ProductService;

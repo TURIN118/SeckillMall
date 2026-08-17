@@ -7,11 +7,11 @@ import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.entity.Cart;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrderItem;
-import com.seckill.mall.entity.Product;
+import com.seckill.mall.product.infrastructure.entity.Product;
 import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.UserAddress;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
-import com.seckill.mall.entity.enums.ProductStatus;
+import com.seckill.mall.product.domain.ProductStatus;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderItemMapper;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderMapper;
 

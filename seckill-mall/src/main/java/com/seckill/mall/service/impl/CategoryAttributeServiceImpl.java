@@ -8,7 +8,7 @@ import com.seckill.mall.dto.CategoryAttributeDTO;
 import com.seckill.mall.entity.CategoryAttribute;
 import com.seckill.mall.entity.CategoryAttributeValue;
 import com.seckill.mall.entity.enums.AttributeInputType;
-import com.seckill.mall.entity.enums.AttributeType;
+import com.seckill.mall.product.domain.AttributeType;
 import com.seckill.mall.mapper.CategoryAttributeMapper;
 import com.seckill.mall.mapper.CategoryAttributeValueMapper;
 import com.seckill.mall.service.CategoryAttributeService;

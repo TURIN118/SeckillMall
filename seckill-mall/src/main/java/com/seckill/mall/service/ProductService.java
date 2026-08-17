@@ -4,7 +4,7 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.ProductCreateRequest;
 import com.seckill.mall.dto.ProductQueryRequest;
 import com.seckill.mall.dto.ProductUpdateRequest;
-import com.seckill.mall.entity.Product;
+import com.seckill.mall.product.infrastructure.entity.Product;
 import com.seckill.mall.vo.ProductVO;
 
 import java.util.List;

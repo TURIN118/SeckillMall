@@ -1,4 +1,4 @@
-package com.seckill.mall.entity.enums;
+package com.seckill.mall.product.domain;
 
 /**
  * 属性类型枚举

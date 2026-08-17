@@ -1,11 +1,11 @@
 package com.seckill.mall.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.seckill.mall.entity.Product;
-import com.seckill.mall.entity.ProductSku;
-import com.seckill.mall.entity.enums.ProductStatus;
-import com.seckill.mall.mapper.ProductMapper;
-import com.seckill.mall.mapper.ProductSkuMapper;
+import com.seckill.mall.product.infrastructure.entity.Product;
+import com.seckill.mall.product.infrastructure.entity.ProductSku;
+import com.seckill.mall.product.domain.ProductStatus;
+import com.seckill.mall.product.infrastructure.mapper.ProductMapper;
+import com.seckill.mall.product.infrastructure.mapper.ProductSkuMapper;
 import com.seckill.mall.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

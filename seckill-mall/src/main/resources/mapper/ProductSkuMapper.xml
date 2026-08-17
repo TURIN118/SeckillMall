@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.seckill.mall.mapper.ProductSkuMapper">
+<mapper namespace="com.seckill.mall.product.infrastructure.mapper.ProductSkuMapper">
 
     <!--
         M-D6 修复：显式列替代 SELECT *，避免表结构变更时结果集列数/顺序漂移，
@@ -12,7 +12,7 @@
         status, is_deleted, create_time, update_time
     </sql>
 
-    <select id="selectEnabledByProductId" resultType="com.seckill.mall.entity.ProductSku">
+    <select id="selectEnabledByProductId" resultType="com.seckill.mall.product.infrastructure.entity.ProductSku">
         SELECT <include refid="Base_Column_List"/> FROM t_product_sku
         WHERE product_id = #{productId}
           AND status = 1
@@ -20,7 +20,7 @@
         ORDER BY id ASC
     </select>
 
-    <select id="selectByAttributes" resultType="com.seckill.mall.entity.ProductSku">
+    <select id="selectByAttributes" resultType="com.seckill.mall.product.infrastructure.entity.ProductSku">
         SELECT <include refid="Base_Column_List"/> FROM t_product_sku
         WHERE product_id = #{productId}
           AND attributes = CAST(#{attributesJson} AS JSON)

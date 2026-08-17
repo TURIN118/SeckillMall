@@ -275,6 +275,11 @@ public class ProductServiceImpl implements ProductService {
             product.setOriginalPrice(req.getOriginalPrice());
         }
         if (req.getStock() != null) {
+            // 有 SKU 商品的库存由 SKU 维护，禁止直接设置 t_product.stock，避免覆盖聚合值
+            List<ProductSkuVO> existingSkus = productSkuService.listEnabledByProductId(id);
+            if (!existingSkus.isEmpty()) {
+                throw new BusinessException(ErrorCode.PARAM_ERROR, "SKU 商品库存必须通过 SKU 设置");
+            }
             product.setStock(req.getStock());
         }
         if (req.getImages() != null) {
@@ -441,22 +446,18 @@ public class ProductServiceImpl implements ProductService {
         // 保存 SKU
         if (skus != null && !skus.isEmpty()) {
             productSkuService.saveSkus(productId, skus);
-            // 有 SKU 时：t_product.original_price 设为最低 SKU 价格、stock 设为 SKU 库存之和
+            // 有 SKU 时：originalPrice 是商品定义字段（ProductService 负责），设为最低 SKU 价格。
+            // 聚合字段（stock/totalStock/minPrice/maxPrice）统一交给 refreshTotalStock 刷新，
+            // 避免与 ProductSkuServiceImpl 职责重叠的重复聚合写入
             BigDecimal minPrice = productSkuService.calculateMinPrice(productId);
-            Integer totalStock = productSkuService.calculateTotalStock(productId);
-            BigDecimal maxPrice = productSkuService.calculateMaxPrice(productId);
             product.setOriginalPrice(minPrice);
-            product.setStock(totalStock);
-            product.setMinPrice(minPrice);
-            product.setMaxPrice(maxPrice);
-            product.setTotalStock(totalStock);
             productMapper.updateById(product);
+            productSkuService.refreshTotalStock(productId);
         } else {
-            // 无 SKU 时：冗余字段与 originalPrice / stock 保持一致
-            product.setMinPrice(product.getOriginalPrice());
-            product.setMaxPrice(product.getOriginalPrice());
-            product.setTotalStock(product.getStock());
+            // 无 SKU：originalPrice 与 stock 由商品定义维护，保持不变。
+            // 聚合字段对齐（totalStock=stock，minPrice=maxPrice=originalPrice）交给 refreshTotalStock
             productMapper.updateById(product);
+            productSkuService.refreshTotalStock(productId);
         }
     }
 

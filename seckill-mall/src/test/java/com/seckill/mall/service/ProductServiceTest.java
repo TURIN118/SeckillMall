@@ -8,6 +8,8 @@ import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.ProductCreateRequest;
 import com.seckill.mall.dto.ProductQueryRequest;
+import com.seckill.mall.dto.ProductSkuDTO;
+import com.seckill.mall.dto.ProductUpdateRequest;
 import com.seckill.mall.entity.Category;
 import com.seckill.mall.entity.Product;
 import com.seckill.mall.entity.enums.ProductStatus;
@@ -18,12 +20,14 @@ import com.seckill.mall.service.ProductAttributeService;
 import com.seckill.mall.service.ProductSkuService;
 import com.seckill.mall.service.impl.ProductServiceImpl;
 import com.seckill.mall.shared.kernel.port.CachePort;
+import com.seckill.mall.vo.ProductSkuVO;
 import com.seckill.mall.vo.ProductVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -41,6 +45,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 
 /**
@@ -97,6 +102,24 @@ class ProductServiceTest {
         c.setName("智能手机");
         c.setStatus(1);
         return c;
+    }
+
+    private ProductSkuVO buildSkuVO() {
+        ProductSkuVO vo = new ProductSkuVO();
+        vo.setId(2001L);
+        vo.setPrice(new BigDecimal("8888"));
+        vo.setStock(50);
+        vo.setStatus(1);
+        return vo;
+    }
+
+    private ProductSkuDTO buildSkuDTO() {
+        ProductSkuDTO dto = new ProductSkuDTO();
+        dto.setPrice(new BigDecimal("8888"));
+        dto.setStock(50);
+        dto.setAttributes("{\"颜色\":\"黑\"}");
+        dto.setStatus(1);
+        return dto;
     }
 
     @Test
@@ -333,5 +356,70 @@ class ProductServiceTest {
         assertThat(vo.getProductName()).isEqualTo("new");
         assertThat(vo.getStatus()).isEqualTo(ProductStatus.ON_SALE);
         then(productMapper).should().insert(any(Product.class));
+    }
+
+    @Test
+    @DisplayName("updateProduct：有 SKU 商品传 req.stock 抛 PARAM_ERROR")
+    void updateProduct_shouldThrowWhenSkuProductSetStock() {
+        // given
+        Product existing = buildProduct();
+        given(productMapper.selectById(1L)).willReturn(existing);
+        given(productSkuService.listEnabledByProductId(1L)).willReturn(List.of(buildSkuVO()));
+        ProductUpdateRequest req = new ProductUpdateRequest();
+        req.setStock(50);
+
+        // when / then
+        assertThatThrownBy(() -> productService.updateProduct(1L, req))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.PARAM_ERROR);
+        then(productMapper).should(never()).updateById(any());
+    }
+
+    @Test
+    @DisplayName("updateProduct：无 SKU 商品可正常修改 stock")
+    void updateProduct_shouldUpdateStockWhenNoSku() {
+        // given
+        Product existing = buildProduct();
+        given(productMapper.selectById(1L)).willReturn(existing);
+        given(categoryMapper.selectById(101L)).willReturn(buildCategory());
+        given(productSkuService.listEnabledByProductId(1L)).willReturn(List.of());
+        given(productAttributeService.listByProductId(1L)).willReturn(List.of());
+        ProductUpdateRequest req = new ProductUpdateRequest();
+        req.setStock(80);
+
+        // when
+        ProductVO vo = productService.updateProduct(1L, req);
+
+        // then
+        assertThat(vo.getStock()).isEqualTo(80);
+        then(productMapper).should(atLeastOnce()).updateById(any(Product.class));
+    }
+
+    @Test
+    @DisplayName("createProduct：有 SKU 时委托 refreshTotalStock，不调用 calculateTotalStock")
+    void createProduct_withSkus_shouldDelegateToRefreshTotalStock() {
+        // given
+        given(categoryMapper.selectById(101L)).willReturn(buildCategory());
+        given(productSkuService.calculateMinPrice(1L)).willReturn(new BigDecimal("8888.00"));
+        given(productSkuService.listEnabledByProductId(1L)).willReturn(List.of(buildSkuVO()));
+        given(productAttributeService.listByProductId(1L)).willReturn(List.of());
+        Mockito.doAnswer(inv -> {
+            inv.getArgument(0, Product.class).setId(1L);
+            return 1;
+        }).when(productMapper).insert(any(Product.class));
+        ProductCreateRequest req = new ProductCreateRequest();
+        req.setProductName("iPhone");
+        req.setCategoryId(101L);
+        req.setOriginalPrice(new BigDecimal("9999.00"));
+        req.setStock(100);
+        req.setSkus(List.of(buildSkuDTO()));
+
+        // when
+        productService.createProduct(req);
+
+        // then
+        then(productSkuService).should().refreshTotalStock(1L);
+        then(productSkuService).should(never()).calculateTotalStock(anyLong());
     }
 }

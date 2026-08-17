@@ -147,15 +147,35 @@ public class ProductSkuServiceImpl implements ProductSkuService {
         if (productId == null) {
             return;
         }
-        Integer totalStock = calculateTotalStock(productId);
-        BigDecimal minPrice = calculateMinPrice(productId);
-        BigDecimal maxPrice = calculateMaxPrice(productId);
-        // 同步刷新 t_product 冗余字段，保持列表页展示一致性
-        productMapper.update(null, new LambdaUpdateWrapper<Product>()
-                .eq(Product::getId, productId)
-                .set(Product::getTotalStock, totalStock)
-                .set(Product::getMinPrice, minPrice)
-                .set(Product::getMaxPrice, maxPrice));
+        // 复用一次查询，避免 calculateTotalStock/Min/Max 各自查一次启用 SKU
+        List<ProductSkuVO> enabledSkus = listEnabledByProductId(productId);
+        if (!enabledSkus.isEmpty()) {
+            // 有启用 SKU：stock 与 totalStock 均为 Σ enabled SKU.stock（冗余聚合值），
+            // 同步刷新 minPrice/maxPrice 保持列表页展示一致性
+            Integer totalStock = enabledSkus.stream().mapToInt(ProductSkuVO::getStock).sum();
+            BigDecimal minPrice = enabledSkus.stream().map(ProductSkuVO::getPrice)
+                    .min(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
+            BigDecimal maxPrice = enabledSkus.stream().map(ProductSkuVO::getPrice)
+                    .max(BigDecimal::compareTo).orElse(BigDecimal.ZERO);
+            productMapper.update(null, new LambdaUpdateWrapper<Product>()
+                    .eq(Product::getId, productId)
+                    .set(Product::getStock, totalStock)
+                    .set(Product::getTotalStock, totalStock)
+                    .set(Product::getMinPrice, minPrice)
+                    .set(Product::getMaxPrice, maxPrice));
+        } else {
+            // 无启用 SKU：t_product.stock 为真实库存（由商品定义维护），不可覆盖。
+            // 仅对齐冗余字段：totalStock=stock，minPrice=maxPrice=originalPrice
+            Product product = productMapper.selectById(productId);
+            if (product == null) {
+                return;
+            }
+            productMapper.update(null, new LambdaUpdateWrapper<Product>()
+                    .eq(Product::getId, productId)
+                    .set(Product::getTotalStock, product.getStock())
+                    .set(Product::getMinPrice, product.getOriginalPrice())
+                    .set(Product::getMaxPrice, product.getOriginalPrice()));
+        }
     }
 
     private ProductSkuVO toVO(ProductSku sku) {

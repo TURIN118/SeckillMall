@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.seckill.mall.dto.AdminOrderQueryRequest;
 import com.seckill.mall.entity.SeckillOrder;
-import com.seckill.mall.entity.enums.OrderStatus;
+import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.vo.AdminOrderVO;
 import com.seckill.mall.vo.SeckillRankingVO;
 import org.apache.ibatis.annotations.Delete;

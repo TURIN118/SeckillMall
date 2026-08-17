@@ -1,6 +1,6 @@
 package com.seckill.mall.service;
 
-import com.seckill.mall.entity.NormalOrder;
+import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 
 import java.util.List;

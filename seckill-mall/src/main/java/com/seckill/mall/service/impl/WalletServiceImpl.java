@@ -1,6 +1,6 @@
 package com.seckill.mall.service.impl;
 
-import com.seckill.mall.entity.NormalOrder;
+import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import com.seckill.mall.entity.RechargeCard;
 import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.User;

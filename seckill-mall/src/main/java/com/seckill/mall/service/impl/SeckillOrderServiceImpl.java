@@ -10,7 +10,7 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.converter.SeckillOrderConverter;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.SeckillOrder;
-import com.seckill.mall.entity.enums.OrderStatus;
+import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;

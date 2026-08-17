@@ -2,13 +2,13 @@ package com.seckill.mall.service;
 
 
 import com.seckill.mall.common.ErrorCode;
-import com.seckill.mall.entity.NormalOrder;
-import com.seckill.mall.entity.NormalOrderItem;
+import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
+import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrderItem;
 import com.seckill.mall.entity.UserAddress;
-import com.seckill.mall.entity.enums.OrderStatus;
+import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.exception.BusinessException;
-import com.seckill.mall.mapper.NormalOrderItemMapper;
-import com.seckill.mall.mapper.NormalOrderMapper;
+import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderItemMapper;
+import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderMapper;
 import com.seckill.mall.service.impl.OrderLifecycleServiceImpl;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import org.junit.jupiter.api.BeforeAll;

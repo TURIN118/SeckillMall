@@ -1,7 +1,7 @@
-package com.seckill.mall.mapper;
+package com.seckill.mall.order.infrastructure.persistence.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.seckill.mall.entity.NormalOrder;
+import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

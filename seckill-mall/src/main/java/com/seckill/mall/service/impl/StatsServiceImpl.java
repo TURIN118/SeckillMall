@@ -1,6 +1,6 @@
 package com.seckill.mall.service.impl;
 
-import com.seckill.mall.entity.enums.OrderStatus;
+import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.service.ProductService;
 import com.seckill.mall.service.SeckillGoodsService;
 import com.seckill.mall.service.SeckillOrderService;

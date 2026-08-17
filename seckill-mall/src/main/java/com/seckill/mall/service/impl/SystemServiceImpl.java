@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.OperationLogQueryRequest;
-import com.seckill.mall.entity.enums.OrderStatus;
+import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.mapper.OperationLogMapper;
 import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.service.SystemHealthMonitor;

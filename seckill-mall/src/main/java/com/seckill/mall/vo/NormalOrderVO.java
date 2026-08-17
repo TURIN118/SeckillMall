@@ -1,6 +1,6 @@
 package com.seckill.mall.vo;
 
-import com.seckill.mall.entity.enums.OrderStatus;
+import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import lombok.Data;
 
 import java.math.BigDecimal;

@@ -198,6 +198,31 @@ class ArchitectureRulesTest {
             .should().dependOnClassesThat().resideInAnyPackage("..spring..", "..redis..", "..amqp..")
             .as("shared.kernel.port 不应依赖 Spring/Redis/RabbitMQ 基础设施，Port 接口必须保持技术中立"));
 
+    // ============================================================
+    // E. Order 模块包边界规则（Phase 3.7 新增）
+    // ============================================================
+
+    /** 14. order.api 不应依赖 order.infrastructure（API 契约层不应依赖基础设施层） */
+    @ArchTest
+    static final ArchRule order_api_should_not_depend_on_infrastructure =
+        freeze(noClasses().that().resideInAPackage("..order.api..")
+            .should().dependOnClassesThat().resideInAPackage("..order.infrastructure..")
+            .as("order.api 不应依赖 order.infrastructure，API 契约层不应依赖基础设施层"));
+
+    /** 15. order.application 不应直接依赖 Mapper（Application 层应通过 Service/Repository 访问数据） */
+    @ArchTest
+    static final ArchRule order_application_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..order.application..")
+            .should().dependOnClassesThat().resideInAPackage("..order.infrastructure.persistence.mapper..")
+            .as("order.application 不应直接依赖 Mapper，应通过 Service/Repository 访问数据"));
+
+    /** 16. order.interfaces 不应直接依赖 Mapper（接口层应通过 ApplicationService 访问数据） */
+    @ArchTest
+    static final ArchRule order_interfaces_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..order.interfaces..")
+            .should().dependOnClassesThat().resideInAPackage("..order.infrastructure.persistence.mapper..")
+            .as("order.interfaces 不应直接依赖 Mapper，应通过 ApplicationService 访问数据"));
+
     /**
      * 用 FreezingArchRule 包装规则，启用 freeze 模式。
      *

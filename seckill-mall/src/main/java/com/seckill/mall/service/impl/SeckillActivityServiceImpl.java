@@ -6,14 +6,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.dto.SeckillActivityCreateRequest;
-import com.seckill.mall.product.infrastructure.entity.Product;
+import com.seckill.mall.product.api.ProductApi;
+import com.seckill.mall.product.api.dto.ProductSnapshot;
 import com.seckill.mall.entity.SeckillActivity;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.enums.SeckillStatus;
 import com.seckill.mall.mapper.SeckillActivityMapper;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.security.SecurityUtils;
-import com.seckill.mall.service.ProductService;
+
 import com.seckill.mall.service.SeckillActivityService;
 import com.seckill.mall.service.SeckillGoodsService;
 import com.seckill.mall.vo.SeckillActivityVO;
@@ -45,7 +46,7 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
 
     private final SeckillActivityMapper seckillActivityMapper;
     private final SeckillGoodsMapper seckillGoodsMapper;
-    private final ProductService productService;
+    private final ProductApi productApi;
     private final SeckillGoodsService seckillGoodsService;
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
@@ -70,7 +71,7 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
                 .map(SeckillActivityCreateRequest.ActivityGoodsItem::getProductId)
                 .distinct()
                 .collect(Collectors.toList());
-        List<Product> products = productService.getProductsByIds(productIds);
+        List<ProductSnapshot> products = productApi.getProductsByIds(productIds);
         if (products.size() != productIds.size()) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND, "部分商品不存在");
         }
@@ -87,8 +88,8 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
         seckillActivityMapper.insert(activity);
 
         // 4. 批量创建场次下的秒杀商品
-        Map<Long, Product> productMap = products.stream()
-                .collect(Collectors.toMap(Product::getId, p -> p, (a, b) -> a));
+        Map<Long, ProductSnapshot> productMap = products.stream()
+                .collect(Collectors.toMap(ProductSnapshot::getId, p -> p, (a, b) -> a));
 
         List<SeckillGoods> goodsList = req.getGoodsItems().stream().map(item -> {
             SeckillGoods g = new SeckillGoods();
@@ -198,7 +199,7 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
         return seckillGoodsMapper.selectList(wrapper);
     }
 
-    private Map<Long, Product> buildProductMap(List<SeckillGoods> goodsList) {
+    private Map<Long, ProductSnapshot> buildProductMap(List<SeckillGoods> goodsList) {
         List<Long> productIds = goodsList.stream()
                 .map(SeckillGoods::getProductId)
                 .filter(java.util.Objects::nonNull)
@@ -207,13 +208,13 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
         if (productIds.isEmpty()) {
             return Collections.emptyMap();
         }
-        List<Product> products = productService.getProductsByIds(productIds);
-        return products.stream().collect(Collectors.toMap(Product::getId, p -> p, (a, b) -> a));
+        List<ProductSnapshot> products = productApi.getProductsByIds(productIds);
+        return products.stream().collect(Collectors.toMap(ProductSnapshot::getId, p -> p, (a, b) -> a));
     }
 
     private SeckillActivityVO toActivityVO(SeckillActivity activity,
                                             List<SeckillGoods> goodsList,
-                                            Map<Long, Product> productMap) {
+                                            Map<Long, ProductSnapshot> productMap) {
         SeckillActivityVO vo = new SeckillActivityVO();
         vo.setId(activity.getId());
         vo.setName(activity.getName());
@@ -236,7 +237,7 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
         return vo;
     }
 
-    private SeckillGoodsVO toGoodsVO(SeckillGoods goods, Map<Long, Product> productMap) {
+    private SeckillGoodsVO toGoodsVO(SeckillGoods goods, Map<Long, ProductSnapshot> productMap) {
         SeckillGoodsVO vo = new SeckillGoodsVO();
         vo.setId(goods.getId());
         vo.setProductId(goods.getProductId());
@@ -259,7 +260,7 @@ public class SeckillActivityServiceImpl implements SeckillActivityService {
         }
         vo.setPerLimit(goods.getPerLimit());
         vo.setCreateTime(goods.getCreateTime());
-        Product product = productMap.get(goods.getProductId());
+        ProductSnapshot product = productMap.get(goods.getProductId());
         vo.setSeckillName(goods.getSeckillName() != null ? goods.getSeckillName()
                 : (product != null ? product.getName() : null));
         vo.setImages(goods.getImages() != null && !goods.getImages().isBlank()

@@ -10,7 +10,8 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.CouponCreateRequest;
 import com.seckill.mall.entity.Category;
 import com.seckill.mall.entity.Coupon;
-import com.seckill.mall.product.infrastructure.entity.Product;
+import com.seckill.mall.product.api.ProductApi;
+import com.seckill.mall.product.api.dto.ProductSnapshot;
 import com.seckill.mall.entity.User;
 import com.seckill.mall.entity.UserCoupon;
 import com.seckill.mall.entity.enums.CouponType;
@@ -19,7 +20,7 @@ import com.seckill.mall.mapper.CouponMapper;
 import com.seckill.mall.mapper.UserCouponMapper;
 import com.seckill.mall.service.CategoryService;
 import com.seckill.mall.service.CouponService;
-import com.seckill.mall.service.ProductService;
+
 import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.AdminCouponRecordVO;
 import com.seckill.mall.vo.CouponVO;
@@ -69,7 +70,7 @@ public class CouponServiceImpl implements CouponService {
     private final CouponMapper couponMapper;
     private final UserCouponMapper userCouponMapper;
     private final UserService userService;
-    private final ProductService productService;
+    private final ProductApi productApi;
     private final CategoryService categoryService;
 
     // ==================== 后台管理 ====================
@@ -249,7 +250,7 @@ public class CouponServiceImpl implements CouponService {
                 .collect(Collectors.toList());
         // 按商品筛选：仅保留该商品可用的券（通用券 + 该商品分类券 + 该商品专属券）
         if (productId != null) {
-            Product product = productService.getProductById(productId);
+            ProductSnapshot product = productApi.getProductById(productId);
             Long productCategoryId = product == null ? null : product.getCategoryId();
             available = available.stream()
                     .filter(c -> isCouponApplicableToProduct(c, productId, productCategoryId))
@@ -451,7 +452,7 @@ public class CouponServiceImpl implements CouponService {
             if (coupon.getProductId() == null) {
                 return "仅限指定商品";
             }
-            Product product = productService.getProductById(coupon.getProductId());
+            ProductSnapshot product = productApi.getProductById(coupon.getProductId());
             String name = product == null ? "指定商品" : product.getName();
             return "仅限" + name;
         }

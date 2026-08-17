@@ -11,6 +11,11 @@ import com.seckill.mall.product.infrastructure.entity.Product;
 import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.UserAddress;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
+import com.seckill.mall.product.api.InventoryApi;
+import com.seckill.mall.product.api.ProductApi;
+import com.seckill.mall.product.api.SkuApi;
+import com.seckill.mall.product.api.command.DeductStockCommand;
+import com.seckill.mall.product.api.dto.ProductSnapshot;
 import com.seckill.mall.product.domain.ProductStatus;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderItemMapper;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderMapper;
@@ -61,15 +66,15 @@ class OrderServiceTest {
     @Mock
     private MessageBusPort messageBusPort;
     @Mock
-    private ProductSkuService productSkuService;
+    private SkuApi skuApi;
     @Mock
-    private ProductService productService;
+    private ProductApi productApi;
     @Mock
     private ObjectMapper objectMapper;
     @Mock
     private CouponUsageService couponUsageService;
     @Mock
-    private InventoryService inventoryService;
+    private InventoryApi inventoryApi;
     @Mock
     private CartService cartService;
     @Mock
@@ -107,15 +112,15 @@ class OrderServiceTest {
     private static final Long ADDRESS_ID = 7001L;
     private static final Long PRODUCT_ID = 1001L;
 
-    private Product buildOnSaleProduct() {
-        Product p = new Product();
-        p.setId(PRODUCT_ID);
-        p.setName("iPhone 15");
-        p.setMainImage("https://cdn.example.com/iphone15.jpg");
-        p.setOriginalPrice(new BigDecimal("6999.00"));
-        p.setStock(100);
-        p.setStatus(ProductStatus.ON_SALE);
-        return p;
+    private ProductSnapshot buildOnSaleProduct() {
+        return ProductSnapshot.builder()
+                .id(PRODUCT_ID)
+                .name("iPhone 15")
+                .mainImage("https://cdn.example.com/iphone15.jpg")
+                .originalPrice(new BigDecimal("6999.00"))
+                .stock(100)
+                .status(ProductStatus.ON_SALE.getCode())
+                .build();
     }
 
     private UserAddress buildAddress() {
@@ -135,10 +140,10 @@ class OrderServiceTest {
     @DisplayName("createNormalOrder：无规格商品立即购买成功，扣库存并写入订单+明细")
     void createNormalOrder_shouldCreateOrderAndDeductStock() {
         // given
-        given(productService.getProductById(PRODUCT_ID)).willReturn(buildOnSaleProduct());
+        given(productApi.getProductById(PRODUCT_ID)).willReturn(buildOnSaleProduct());
         given(userAddressService.getAddressById(ADDRESS_ID)).willReturn(buildAddress());
         // 扣减商品库存成功
-        given(inventoryService.deductProductStock(any(), any())).willReturn(1);
+        given(inventoryApi.deductProductStock(any(DeductStockCommand.class))).willReturn(1);
         // normalOrderMapper.insert 设置 id 后会被 assembleDetail 使用
         org.mockito.Mockito.doAnswer(invocation -> {
             NormalOrder o = invocation.getArgument(0);
@@ -165,7 +170,7 @@ class OrderServiceTest {
     @DisplayName("createNormalOrder：商品不存在抛 PRODUCT_NOT_FOUND")
     void createNormalOrder_shouldThrowWhenProductMissing() {
         // given
-        given(productService.getProductById(PRODUCT_ID)).willReturn(null);
+        given(productApi.getProductById(PRODUCT_ID)).willReturn(null);
 
         // when / then
         assertThatThrownBy(() -> orderService.createNormalOrder(
@@ -180,9 +185,9 @@ class OrderServiceTest {
     @DisplayName("createNormalOrder：库存不足抛 STOCK_EMPTY")
     void createNormalOrder_shouldThrowWhenStockInsufficient() {
         // given
-        Product p = buildOnSaleProduct();
+        ProductSnapshot p = buildOnSaleProduct();
         p.setStock(0); // 库存为 0
-        given(productService.getProductById(PRODUCT_ID)).willReturn(p);
+        given(productApi.getProductById(PRODUCT_ID)).willReturn(p);
         given(userAddressService.getAddressById(ADDRESS_ID)).willReturn(buildAddress());
 
         // when / then

@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrderItem;
+import com.seckill.mall.product.api.InventoryApi;
+import com.seckill.mall.product.api.SkuApi;
+import com.seckill.mall.product.api.command.RestoreStockCommand;
 import com.seckill.mall.entity.UserAddress;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.exception.BusinessException;
@@ -12,11 +15,9 @@ import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderItemM
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderMapper;
 import com.seckill.mall.service.CouponUsageService;
 import com.seckill.mall.service.EmailService;
-import com.seckill.mall.service.InventoryService;
 import com.seckill.mall.service.OrderLifecycleService;
 import com.seckill.mall.service.OrderQueryService;
 import com.seckill.mall.service.PaymentService;
-import com.seckill.mall.service.ProductSkuService;
 import com.seckill.mall.service.UserAddressService;
 import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.NormalOrderDetailVO;
@@ -65,8 +66,8 @@ public class OrderLifecycleServiceImpl implements OrderLifecycleService {
     private final NormalOrderItemMapper normalOrderItemMapper;
     private final CouponUsageService couponUsageService;
     private final PaymentService paymentService;
-    private final InventoryService inventoryService;
-    private final ProductSkuService productSkuService;
+    private final InventoryApi inventoryApi;
+    private final SkuApi skuApi;
     private final UserAddressService userAddressService;
     // Phase P1-1：支付成功后回查订单详情，委托至 OrderQueryService
     private final OrderQueryService orderQueryService;
@@ -338,9 +339,9 @@ public class OrderLifecycleServiceImpl implements OrderLifecycleService {
      * <p>
      * 遍历订单明细，对每项：
      * <ul>
-     *   <li>skuId != null && skuId != 0：调用 {@code inventoryService.rollbackSkuStock} 回补 SKU 库存，
+     *   <li>skuId != null && skuId != 0：调用 {@code inventoryApi.rollbackSkuStock} 回补 SKU 库存，
      *       并刷新 t_product.total_stock 冗余字段（建议3）</li>
-     *   <li>skuId == null || skuId == 0：委托 {@link InventoryService#rollbackProductStock} 回补 t_product.stock 与 sales_count</li>
+     *   <li>skuId == null || skuId == 0：委托 {@link InventoryApi#rollbackProductStock(RestoreStockCommand)} 回补 t_product.stock 与 sales_count</li>
      * </ul>
      *
      * @param items 订单明细列表
@@ -360,12 +361,12 @@ public class OrderLifecycleServiceImpl implements OrderLifecycleService {
             }
         }
         for (Map.Entry<Long, Integer> e : qtyBySku.entrySet()) {
-            // Phase 8：统一通过 InventoryService 入口回补 SKU 库存
-            inventoryService.rollbackSkuStock(e.getKey(), e.getValue());
+            // Phase P.5：统一通过 InventoryApi 入口回补 SKU 库存
+            inventoryApi.rollbackSkuStock(new RestoreStockCommand(null, e.getKey(), e.getValue()));
             // 建议3：同步刷新 t_product.total_stock
             Long productId = skuToProduct.get(e.getKey());
             if (productId != null) {
-                productSkuService.refreshTotalStock(productId);
+                skuApi.refreshTotalStock(productId);
             }
         }
         // 2. 回补无规格商品库存
@@ -379,7 +380,7 @@ public class OrderLifecycleServiceImpl implements OrderLifecycleService {
             }
         }
         for (Map.Entry<Long, Integer> e : qtyByProduct.entrySet()) {
-            inventoryService.rollbackProductStock(e.getKey(), e.getValue());
+            inventoryApi.rollbackProductStock(new RestoreStockCommand(e.getKey(), null, e.getValue()));
         }
     }
 

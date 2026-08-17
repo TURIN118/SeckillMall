@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seckill.mall.ai.assistant.dto.ProductSearchInput;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.ProductQueryRequest;
-import com.seckill.mall.service.ProductService;
+import com.seckill.mall.product.api.ProductApi;
+import com.seckill.mall.product.api.dto.ProductSummaryDTO;
+import com.seckill.mall.product.application.facade.ProductApiConverter;
 import com.seckill.mall.vo.ProductVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,11 +58,11 @@ public class ProductSearchTool {
     private static final int MAX_PAGE_SIZE = 50;
     private static final int DEFAULT_PAGE_SIZE = 10;
 
-    private final ProductService productService;
+    private final ProductApi productApi;
     private final ObjectMapper objectMapper;
 
-    public ProductSearchTool(ProductService productService, ObjectMapper objectMapper) {
-        this.productService = productService;
+    public ProductSearchTool(ProductApi productApi, ObjectMapper objectMapper) {
+        this.productApi = productApi;
         this.objectMapper = objectMapper;
     }
 
@@ -100,7 +102,8 @@ public class ProductSearchTool {
         req.setSortBy("sales");
         req.setSortOrder("desc");
 
-        return productService.listProducts(req);
+        PageResult<ProductSummaryDTO> dtoPage = productApi.listProducts(ProductApiConverter.toProductListQuery(req));
+        return ProductApiConverter.toProductVOPage(dtoPage);
     }
 
     /**

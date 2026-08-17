@@ -5,10 +5,12 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.Result;
-import com.seckill.mall.product.infrastructure.entity.Product;
+import com.seckill.mall.product.api.ProductApi;
+import com.seckill.mall.product.api.command.UpdateFavoriteCountCommand;
+import com.seckill.mall.product.api.dto.ProductSnapshot;
 import com.seckill.mall.entity.UserFavorite;
 import com.seckill.mall.mapper.UserFavoriteMapper;
-import com.seckill.mall.service.ProductService;
+
 import com.seckill.mall.service.UserFavoriteService;
 import com.seckill.mall.vo.FavoriteItemVO;
 import lombok.RequiredArgsConstructor;
@@ -45,7 +47,7 @@ import java.util.stream.Collectors;
 public class UserFavoriteServiceImpl implements UserFavoriteService {
 
     private final UserFavoriteMapper userFavoriteMapper;
-    private final ProductService productService;
+    private final ProductApi productApi;
 
     @Override
     public Result<List<FavoriteItemVO>> getFavoriteList(Long userId) {
@@ -62,9 +64,9 @@ public class UserFavoriteServiceImpl implements UserFavoriteService {
                 .map(UserFavorite::getProductId)
                 .distinct()
                 .collect(Collectors.toList());
-        List<Product> products = productService.getProductsByIds(productIds);
-        Map<Long, Product> productMap = products.stream()
-                .collect(Collectors.toMap(Product::getId, p -> p));
+        List<ProductSnapshot> products = productApi.getProductsByIds(productIds);
+        Map<Long, ProductSnapshot> productMap = products.stream()
+                .collect(Collectors.toMap(ProductSnapshot::getId, p -> p));
         // 3. 组装 VO
         List<FavoriteItemVO> voList = favorites.stream()
                 .map(fav -> toVO(fav, productMap.get(fav.getProductId())))
@@ -76,7 +78,7 @@ public class UserFavoriteServiceImpl implements UserFavoriteService {
     @Transactional(rollbackFor = Exception.class)
     public Result<Void> addFavorite(Long userId, Long productId) {
         // 校验商品存在
-        Product product = productService.getProductById(productId);
+        ProductSnapshot product = productApi.getProductById(productId);
         if (product == null) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
@@ -157,7 +159,10 @@ public class UserFavoriteServiceImpl implements UserFavoriteService {
      * @param delta     变化量（+1 或 -1）
      */
     private void updateProductFavoriteCount(Long productId, int delta) {
-        productService.updateFavoriteCount(productId, delta);
+        productApi.updateFavoriteCount(UpdateFavoriteCountCommand.builder()
+                .productId(productId)
+                .delta(delta)
+                .build());
     }
 
     /**
@@ -167,7 +172,7 @@ public class UserFavoriteServiceImpl implements UserFavoriteService {
      * @param product  商品（可能为 null，如商品被删除时）
      * @return 收藏项视图
      */
-    private FavoriteItemVO toVO(UserFavorite favorite, Product product) {
+    private FavoriteItemVO toVO(UserFavorite favorite, ProductSnapshot product) {
         FavoriteItemVO vo = new FavoriteItemVO();
         vo.setId(favorite.getId());
         vo.setProductId(favorite.getProductId());
@@ -177,7 +182,7 @@ public class UserFavoriteServiceImpl implements UserFavoriteService {
             vo.setOriginalPrice(product.getOriginalPrice());
             vo.setSalesCount(product.getSalesCount());
             vo.setFavoriteCount(product.getFavoriteCount());
-            vo.setProductStatus(product.getStatus() != null ? product.getStatus().getCode() : null);
+            vo.setProductStatus(product.getStatus());
         }
         return vo;
     }

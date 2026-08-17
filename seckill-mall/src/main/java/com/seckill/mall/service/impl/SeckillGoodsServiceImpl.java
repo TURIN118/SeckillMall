@@ -11,12 +11,13 @@ import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.SeckillCreateRequest;
-import com.seckill.mall.product.infrastructure.entity.Product;
+import com.seckill.mall.product.api.ProductApi;
+import com.seckill.mall.product.api.dto.ProductSnapshot;
 import com.seckill.mall.entity.SeckillGoods;
 import com.seckill.mall.entity.enums.SeckillStatus;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.security.SecurityUtils;
-import com.seckill.mall.service.ProductService;
+
 import com.seckill.mall.service.SeckillGoodsService;
 import com.seckill.mall.vo.SeckillGoodsVO;
 import lombok.RequiredArgsConstructor;
@@ -55,7 +56,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
     private static final int DEFAULT_PER_LIMIT = 1;
 
     private final SeckillGoodsMapper seckillGoodsMapper;
-    private final ProductService productService;
+    private final ProductApi productApi;
     private final RedisService redisService;
     private final RedissonClient redissonClient;
     private final ObjectMapper objectMapper;
@@ -74,7 +75,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
             return PageResult.of(Collections.emptyList(), result.getTotal(), num, size);
         }
 
-        Map<Long, Product> productMap = buildProductMap(records);
+        Map<Long, ProductSnapshot> productMap = buildProductMap(records);
         List<SeckillGoodsVO> voList = records.stream()
                 .map(g -> toVO(g, productMap))
                 .collect(Collectors.toList());
@@ -87,14 +88,14 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         if (goods == null) {
             throw new BusinessException(ErrorCode.SECKILL_NOT_FOUND);
         }
-        Product product = productService.getProductById(goods.getProductId());
+        ProductSnapshot product = productApi.getProductById(goods.getProductId());
         return toVO(goods, product == null ? Collections.emptyMap() : Map.of(product.getId(), product));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public SeckillGoodsVO createSeckill(SeckillCreateRequest req) {
-        Product product = productService.getProductById(req.getProductId());
+        ProductSnapshot product = productApi.getProductById(req.getProductId());
         if (product == null) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
@@ -138,7 +139,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "开始时间必须早于结束时间");
         }
         if (req.getProductId() != null) {
-            if (!productService.existsById(req.getProductId())) {
+            if (!productApi.existsById(req.getProductId())) {
                 throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
             }
             goods.setProductId(req.getProductId());
@@ -176,7 +177,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
             evictCache(id);
             preheatSeckill(id);
         });
-        Product product = productService.getProductById(goods.getProductId());
+        ProductSnapshot product = productApi.getProductById(goods.getProductId());
         return toVO(goods, product == null ? Collections.emptyMap() : Map.of(product.getId(), product));
     }
 
@@ -261,7 +262,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         redisService.del(RedisKeyConstants.seckillGoods(seckillId));
     }
 
-    private Map<Long, Product> buildProductMap(List<SeckillGoods> goodsList) {
+    private Map<Long, ProductSnapshot> buildProductMap(List<SeckillGoods> goodsList) {
         List<Long> productIds = goodsList.stream()
                 .map(SeckillGoods::getProductId)
                 .filter(java.util.Objects::nonNull)
@@ -270,12 +271,12 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         if (productIds.isEmpty()) {
             return Collections.emptyMap();
         }
-        List<Product> products = productService.getProductsByIds(productIds);
+        List<ProductSnapshot> products = productApi.getProductsByIds(productIds);
         return products.stream()
-                .collect(Collectors.toMap(Product::getId, p -> p, (a, b) -> a));
+                .collect(Collectors.toMap(ProductSnapshot::getId, p -> p, (a, b) -> a));
     }
 
-    private SeckillGoodsVO toVO(SeckillGoods goods, Map<Long, Product> productMap) {
+    private SeckillGoodsVO toVO(SeckillGoods goods, Map<Long, ProductSnapshot> productMap) {
         SeckillGoodsVO vo = new SeckillGoodsVO();
         vo.setId(goods.getId());
         vo.setProductId(goods.getProductId());
@@ -301,7 +302,7 @@ public class SeckillGoodsServiceImpl implements SeckillGoodsService {
         vo.setPerLimit(resolvePerLimit(goods));
         vo.setCreateTime(goods.getCreateTime());
 
-        Product product = productMap.get(goods.getProductId());
+        ProductSnapshot product = productMap.get(goods.getProductId());
         // 秒杀活动名称：优先用活动自身字段，fallback 到商品名称（向后兼容）
         vo.setSeckillName(goods.getSeckillName() != null ? goods.getSeckillName()
                 : (product != null ? product.getName() : null));

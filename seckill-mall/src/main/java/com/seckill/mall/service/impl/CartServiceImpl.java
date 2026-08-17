@@ -8,12 +8,13 @@ import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.entity.Cart;
-import com.seckill.mall.product.infrastructure.entity.Product;
-import com.seckill.mall.product.infrastructure.entity.ProductSku;
+import com.seckill.mall.product.api.ProductApi;
+import com.seckill.mall.product.api.SkuApi;
+import com.seckill.mall.product.api.command.UpdateCartCountCommand;
+import com.seckill.mall.product.api.dto.ProductSnapshot;
+import com.seckill.mall.product.api.dto.SkuSnapshot;
 import com.seckill.mall.mapper.CartMapper;
 import com.seckill.mall.service.CartService;
-import com.seckill.mall.service.ProductService;
-import com.seckill.mall.service.ProductSkuService;
 import com.seckill.mall.vo.CartItemVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,8 +60,8 @@ public class CartServiceImpl implements CartService {
     private static final int MAX_CART_QUANTITY = 999;
 
     private final CartMapper cartMapper;
-    private final ProductService productService;
-    private final ProductSkuService productSkuService;
+    private final ProductApi productApi;
+    private final SkuApi skuApi;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -78,16 +79,16 @@ public class CartServiceImpl implements CartService {
                 .map(Cart::getProductId)
                 .distinct()
                 .collect(Collectors.toList());
-        List<Product> products = productService.getProductsByIds(productIds);
-        Map<Long, Product> productMap = products.stream()
-                .collect(Collectors.toMap(Product::getId, p -> p));
+        List<ProductSnapshot> products = productApi.getProductsByIds(productIds);
+        Map<Long, ProductSnapshot> productMap = products.stream()
+                .collect(Collectors.toMap(ProductSnapshot::getId, p -> p));
         // 2.1 批量查询 SKU 信息（5.7.2：填充 skuId / skuAttributes / skuMainImage）
         List<Long> skuIds = carts.stream()
                 .map(Cart::getSkuId)
                 .filter(id -> id != null && id != 0L)
                 .distinct()
                 .collect(Collectors.toList());
-        Map<Long, ProductSku> skuMap = batchQuerySkus(skuIds);
+        Map<Long, SkuSnapshot> skuMap = batchQuerySkus(skuIds);
         // 3. 组装 VO（含商品展示信息与小计，含 SKU 信息）
         List<CartItemVO> voList = carts.stream()
                 .map(cart -> toVO(cart, productMap.get(cart.getProductId()),
@@ -97,20 +98,20 @@ public class CartServiceImpl implements CartService {
     }
 
     /**
-     * 批量查询 SKU，返回 id → ProductSku 映射。
+     * 批量查询 SKU，返回 id → SkuSnapshot 映射。
      * <p>
-     * 当前通过循环 getByIdEnabled 实现，性能优化可后续在 ProductSkuService
+     * 当前通过循环 getSkuById 实现，性能优化可后续在 SkuApi
      * 增加 listByIds 接口。购物车场景 SKU 数量有限，循环可接受。
      */
-    private Map<Long, ProductSku> batchQuerySkus(List<Long> skuIds) {
+    private Map<Long, SkuSnapshot> batchQuerySkus(List<Long> skuIds) {
         if (skuIds == null || skuIds.isEmpty()) {
             return Collections.emptyMap();
         }
-        List<ProductSku> skus = skuIds.stream()
-                .map(productSkuService::getByIdEnabled)
+        List<SkuSnapshot> skus = skuIds.stream()
+                .map(skuApi::getSkuById)
                 .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toList());
-        return skus.stream().collect(Collectors.toMap(ProductSku::getId, s -> s));
+        return skus.stream().collect(Collectors.toMap(SkuSnapshot::getId, s -> s));
     }
 
     @Override
@@ -120,7 +121,7 @@ public class CartServiceImpl implements CartService {
             throw new BusinessException(ErrorCode.CART_QUANTITY_INVALID);
         }
         // 校验商品存在
-        Product product = productService.getProductById(productId);
+        ProductSnapshot product = productApi.getProductById(productId);
         if (product == null) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
@@ -129,7 +130,7 @@ public class CartServiceImpl implements CartService {
         Long effectiveSkuId = (skuId == null || skuId == 0L) ? 0L : skuId;
         Integer availableStock = product.getStock();
         if (effectiveSkuId != 0L) {
-            ProductSku sku = productSkuService.getByIdEnabled(effectiveSkuId);
+            SkuSnapshot sku = skuApi.getSkuById(effectiveSkuId);
             if (sku == null) {
                 throw new BusinessException(ErrorCode.PARAM_ERROR, "SKU 不存在或已禁用");
             }
@@ -292,14 +293,14 @@ public class CartServiceImpl implements CartService {
     /**
      * 递增/递减商品加购计数（冗余计数维护）。
      * <p>
-     * Phase 15：委托 {@link ProductService#updateCartCount(Long, int)}，
+     * Phase P.5：委托 {@link ProductApi#updateCartCount(UpdateCartCountCommand)}，
      * 消除本类对 {@code ProductMapper} 的跨模块依赖。
      *
      * @param productId 商品 ID
      * @param delta     变化量（+1 或 -1）
      */
     private void updateProductCartCount(Long productId, int delta) {
-        productService.updateCartCount(productId, delta);
+        productApi.updateCartCount(new UpdateCartCountCommand(productId, delta));
     }
 
     /**
@@ -313,7 +314,7 @@ public class CartServiceImpl implements CartService {
      * @param sku     SKU（可能为 null，如无规格或 SKU 被删除时）
      * @return 购物车项视图
      */
-    private CartItemVO toVO(Cart cart, Product product, ProductSku sku) {
+    private CartItemVO toVO(Cart cart, ProductSnapshot product, SkuSnapshot sku) {
         CartItemVO vo = new CartItemVO();
         vo.setId(cart.getId());
         vo.setProductId(cart.getProductId());
@@ -330,7 +331,7 @@ public class CartServiceImpl implements CartService {
         if (product != null) {
             vo.setProductName(product.getName());
             vo.setMainImage(product.getMainImage());
-            vo.setProductStatus(product.getStatus() != null ? product.getStatus().getCode() : null);
+            vo.setProductStatus(product.getStatus());
             // 5.7.2：有 SKU 时价格取 SKU 价格、库存取 SKU 库存；否则取商品价格/库存
             BigDecimal unitPrice;
             Integer stock;

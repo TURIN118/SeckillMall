@@ -10,6 +10,7 @@ import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
+import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.service.impl.SeckillOrderServiceImpl;
 import com.seckill.mall.vo.SeckillOrderVO;
 import org.junit.jupiter.api.BeforeAll;
@@ -57,7 +58,7 @@ class SeckillOrderServiceTest {
     @Mock
     private SeckillGoodsMapper seckillGoodsMapper;
     @Mock
-    private ProductService productService;
+    private ProductApi productApi;
     @Mock
     private SeckillInventoryPort seckillInventoryPort;
     @Mock
@@ -122,7 +123,7 @@ class SeckillOrderServiceTest {
     void createSeckillOrder_shouldGenerateOrderNoAndInsert() {
         // given
         given(seckillGoodsMapper.selectById(SECKILL_ID)).willReturn(buildGoods());
-        given(productService.existsById(1001L)).willReturn(true);
+        given(productApi.existsById(1001L)).willReturn(true);
 
         // when
         SeckillOrder order = seckillOrderService.createSeckillOrder(SECKILL_ID, USER_ID, "req-1");
@@ -157,7 +158,7 @@ class SeckillOrderServiceTest {
     void createSeckillOrder_shouldThrowRepeatOnDuplicateKey() {
         // given
         given(seckillGoodsMapper.selectById(SECKILL_ID)).willReturn(buildGoods());
-        given(productService.existsById(1001L)).willReturn(true);
+        given(productApi.existsById(1001L)).willReturn(true);
         org.mockito.Mockito.doThrow(new DuplicateKeyException("uk_user_seckill"))
                 .when(seckillOrderMapper).insert(any(SeckillOrder.class));
 

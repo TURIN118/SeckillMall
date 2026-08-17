@@ -1,7 +1,7 @@
 package com.seckill.mall.service.impl;
 
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
-import com.seckill.mall.service.ProductService;
+import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.service.SeckillGoodsService;
 import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.service.StatsService;
@@ -59,7 +59,7 @@ public class StatsServiceImpl implements StatsService {
     private final UserService userService;
     private final SeckillOrderService seckillOrderService;
     private final SeckillGoodsService seckillGoodsService;
-    private final ProductService productService;
+    private final ProductApi productApi;
 
     @Override
     public StatsOverviewVO getOverview() {
@@ -75,7 +75,7 @@ public class StatsServiceImpl implements StatsService {
         vo.setSeckillCount(seckillGoodsService.countAll());
 
         // 商品总数
-        vo.setProductCount(productService.countAll());
+        vo.setProductCount(productApi.countAll());
 
         // 销售总额（仅统计 PAID/COMPLETED）
         BigDecimal sales = seckillOrderService.sumSalesAmount(

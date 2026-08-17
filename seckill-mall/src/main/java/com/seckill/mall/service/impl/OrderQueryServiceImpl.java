@@ -6,7 +6,8 @@ import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrderItem;
-import com.seckill.mall.product.infrastructure.entity.Product;
+import com.seckill.mall.product.api.ProductApi;
+import com.seckill.mall.product.api.dto.ProductSnapshot;
 import com.seckill.mall.entity.SeckillOrder;
 import com.seckill.mall.entity.UserAddress;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
@@ -14,7 +15,7 @@ import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderItemMapper;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderMapper;
 import com.seckill.mall.service.OrderQueryService;
-import com.seckill.mall.service.ProductService;
+
 import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.service.UserAddressService;
 import com.seckill.mall.vo.NormalOrderDetailVO;
@@ -53,7 +54,7 @@ public class OrderQueryServiceImpl implements OrderQueryService {
     private final NormalOrderMapper normalOrderMapper;
     private final NormalOrderItemMapper normalOrderItemMapper;
     private final UserAddressService userAddressService;
-    private final ProductService productService;
+    private final ProductApi productApi;
     private final SeckillOrderService seckillOrderService;
 
     // ==================== 普通订单详情查询 ====================
@@ -114,7 +115,7 @@ public class OrderQueryServiceImpl implements OrderQueryService {
                 .filter(java.util.Objects::nonNull)
                 .distinct()
                 .collect(Collectors.toList());
-        Map<Long, Product> skProductMap = batchQueryProducts(skProductIds);
+        Map<Long, ProductSnapshot> skProductMap = batchQueryProducts(skProductIds);
 
         // 5. 批量查询普通订单的明细（避免 N+1）
         List<Long> normalOrderIds = normalOrders.stream()
@@ -330,14 +331,14 @@ public class OrderQueryServiceImpl implements OrderQueryService {
     }
 
     /**
-     * 批量查询商品，返回 id → Product 映射。
+     * 批量查询商品，返回 id → ProductSnapshot 映射。
      */
-    private Map<Long, Product> batchQueryProducts(List<Long> productIds) {
+    private Map<Long, ProductSnapshot> batchQueryProducts(List<Long> productIds) {
         if (productIds == null || productIds.isEmpty()) {
             return java.util.Collections.emptyMap();
         }
-        List<Product> products = productService.getProductsByIds(productIds);
-        return products.stream().collect(Collectors.toMap(Product::getId, p -> p));
+        List<ProductSnapshot> products = productApi.getProductsByIds(productIds);
+        return products.stream().collect(Collectors.toMap(ProductSnapshot::getId, p -> p));
     }
 
     /**
@@ -360,7 +361,7 @@ public class OrderQueryServiceImpl implements OrderQueryService {
      * 秒杀订单仅含单个商品，items 列表只有一项；商品名称/主图取自商品快照，
      * 若商品已被删除则名称/主图为 null，不影响列表展示。
      */
-    private OrderListItemVO convertSeckillOrder(SeckillOrder order, Product product) {
+    private OrderListItemVO convertSeckillOrder(SeckillOrder order, ProductSnapshot product) {
         OrderListItemVO vo = new OrderListItemVO();
         vo.setId(order.getId());
         vo.setOrderNo(order.getOrderNo());

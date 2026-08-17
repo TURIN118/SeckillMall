@@ -3,7 +3,12 @@ package com.seckill.mall.controller;
 import com.seckill.mall.annotation.OperationLog;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.Result;
-import com.seckill.mall.service.ProductReviewService;
+import com.seckill.mall.product.api.ReviewApi;
+import com.seckill.mall.product.api.command.ReplyReviewCommand;
+import com.seckill.mall.product.api.command.UpdateReviewStatusCommand;
+import com.seckill.mall.product.api.dto.ReviewDTO;
+import com.seckill.mall.product.api.query.ReviewListQuery;
+import com.seckill.mall.product.application.facade.ProductApiConverter;
 import com.seckill.mall.vo.ProductReviewVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,7 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminReviewController {
 
-    private final ProductReviewService productReviewService;
+    private final ReviewApi reviewApi;
 
     @Operation(summary = "查所有评论（可按 status 筛选）")
     @GetMapping("/list")
@@ -42,7 +47,13 @@ public class AdminReviewController {
             @RequestParam(required = false) Integer status,
             @RequestParam(required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        return Result.success(productReviewService.listAll(status, pageNum, pageSize));
+        ReviewListQuery query = ReviewListQuery.builder()
+                .status(status)
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .build();
+        PageResult<ReviewDTO> dtoPage = reviewApi.listAllReviews(query);
+        return Result.success(ProductApiConverter.toProductReviewVOPage(dtoPage));
     }
 
     @Operation(summary = "回复评论")
@@ -50,7 +61,10 @@ public class AdminReviewController {
     @PutMapping("/{id}/reply")
     public Result<Void> reply(@PathVariable Long id,
                               @Validated @RequestBody ReplyRequest req) {
-        productReviewService.reply(id, req.getReplyContent());
+        reviewApi.replyReview(ReplyReviewCommand.builder()
+                .reviewId(id)
+                .replyContent(req.getReplyContent())
+                .build());
         return Result.success();
     }
 
@@ -59,7 +73,10 @@ public class AdminReviewController {
     @PutMapping("/{id}/status")
     public Result<Void> updateStatus(@PathVariable Long id,
                                      @Validated @RequestBody StatusRequest req) {
-        productReviewService.updateStatus(id, req.getStatus());
+        reviewApi.updateReviewStatus(UpdateReviewStatusCommand.builder()
+                .reviewId(id)
+                .status(req.getStatus())
+                .build());
         return Result.success();
     }
 

@@ -9,6 +9,8 @@ import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderItemMapper;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderMapper;
+import com.seckill.mall.product.api.InventoryApi;
+import com.seckill.mall.product.api.SkuApi;
 import com.seckill.mall.service.impl.OrderLifecycleServiceImpl;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import org.junit.jupiter.api.BeforeAll;
@@ -62,9 +64,9 @@ class OrderLifecycleServiceTest {
     @Mock
     private PaymentService paymentService;
     @Mock
-    private InventoryService inventoryService;
+    private InventoryApi inventoryApi;
     @Mock
-    private ProductSkuService productSkuService;
+    private SkuApi skuApi;
     @Mock
     private UserAddressService userAddressService;
     @Mock

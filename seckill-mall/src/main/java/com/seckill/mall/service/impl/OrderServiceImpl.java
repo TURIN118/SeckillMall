@@ -8,8 +8,12 @@ import com.seckill.mall.config.RabbitMQConfig;
 import com.seckill.mall.entity.Cart;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrderItem;
-import com.seckill.mall.product.infrastructure.entity.Product;
-import com.seckill.mall.product.infrastructure.entity.ProductSku;
+import com.seckill.mall.product.api.InventoryApi;
+import com.seckill.mall.product.api.ProductApi;
+import com.seckill.mall.product.api.SkuApi;
+import com.seckill.mall.product.api.command.DeductStockCommand;
+import com.seckill.mall.product.api.dto.ProductSnapshot;
+import com.seckill.mall.product.api.dto.SkuSnapshot;
 import com.seckill.mall.entity.UserAddress;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.product.domain.ProductStatus;
@@ -19,10 +23,7 @@ import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderMappe
 import com.seckill.mall.mq.message.OrderDelayMessage;
 import com.seckill.mall.service.CartService;
 import com.seckill.mall.service.CouponUsageService;
-import com.seckill.mall.service.InventoryService;
 import com.seckill.mall.service.OrderService;
-import com.seckill.mall.service.ProductService;
-import com.seckill.mall.service.ProductSkuService;
 import com.seckill.mall.service.UserAddressService;
 import com.seckill.mall.shared.kernel.port.MessageBusPort;
 import com.seckill.mall.vo.NormalOrderDetailVO;
@@ -69,14 +70,14 @@ public class OrderServiceImpl implements OrderService {
     private final NormalOrderMapper normalOrderMapper;
     private final NormalOrderItemMapper normalOrderItemMapper;
     private final MessageBusPort messageBusPort;
-    private final ProductSkuService productSkuService;
-    // Phase 6：消除跨模块 Mapper 依赖，改用 ProductService 查询商品
-    private final ProductService productService;
+    private final SkuApi skuApi;
+    // Phase P.5：消除跨模块 Service 依赖，改用 ProductApi 查询商品快照
+    private final ProductApi productApi;
     private final ObjectMapper objectMapper;
     // 优惠券核销服务：普通订单创建时接入优惠券抵扣（Phase P2-3 从 CouponService 拆分）
     private final CouponUsageService couponUsageService;
-    // Phase 4b-3：商品库存扣减/回补抽取至 InventoryService
-    private final InventoryService inventoryService;
+    // Phase P.5：商品库存扣减/回补改用 InventoryApi
+    private final InventoryApi inventoryApi;
     // Phase 7：消除剩余跨模块 Mapper 依赖，改用对应领域 Service 内部调用入口
     private final CartService cartService;
     private final UserAddressService userAddressService;
@@ -127,7 +128,7 @@ public class OrderServiceImpl implements OrderService {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "购买数量必须大于0");
         }
         // 1. 校验商品状态
-        Product product = loadOnSaleProduct(productId);
+        ProductSnapshot product = loadOnSaleProduct(productId);
         // 2. 校验收货地址归属
         checkAddressOwnership(userId, addressId);
 
@@ -136,7 +137,7 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal unitPrice;
         String skuAttributes;
         if (effectiveSkuId != 0L) {
-            ProductSku sku = productSkuService.getByIdEnabled(effectiveSkuId);
+            SkuSnapshot sku = skuApi.getSkuById(effectiveSkuId);
             if (sku == null) {
                 throw new BusinessException(ErrorCode.PARAM_ERROR, "SKU 不存在或已禁用");
             }
@@ -147,8 +148,8 @@ public class OrderServiceImpl implements OrderService {
                 throw new BusinessException(ErrorCode.STOCK_EMPTY);
             }
             // 扣减 SKU 库存（乐观锁）
-            // Phase 8：统一通过 InventoryService 入口操作 SKU 库存
-            if (!inventoryService.deductSkuStock(effectiveSkuId, quantity)) {
+            // Phase P.5：统一通过 InventoryApi 入口操作 SKU 库存
+            if (!inventoryApi.deductSkuStock(new DeductStockCommand(null, effectiveSkuId, quantity))) {
                 throw new BusinessException(ErrorCode.STOCK_EMPTY);
             }
             unitPrice = sku.getPrice();
@@ -158,7 +159,7 @@ public class OrderServiceImpl implements OrderService {
             if (product.getStock() == null || product.getStock() < quantity) {
                 throw new BusinessException(ErrorCode.STOCK_EMPTY);
             }
-            int updated = inventoryService.deductProductStock(productId, quantity);
+            int updated = inventoryApi.deductProductStock(new DeductStockCommand(productId, null, quantity));
             if (updated == 0) {
                 throw new BusinessException(ErrorCode.STOCK_EMPTY);
             }
@@ -209,28 +210,28 @@ public class OrderServiceImpl implements OrderService {
         }
         // 3. 批量查询商品并校验在售 + 库存
         List<Long> productIds = carts.stream().map(Cart::getProductId).distinct().collect(Collectors.toList());
-        List<Product> products = productService.getProductsByIds(productIds);
-        Map<Long, Product> productMap = products.stream()
-                .collect(Collectors.toMap(Product::getId, p -> p));
+        List<ProductSnapshot> products = productApi.getProductsByIds(productIds);
+        Map<Long, ProductSnapshot> productMap = products.stream()
+                .collect(Collectors.toMap(ProductSnapshot::getId, p -> p));
         // 3.1 批量查询 SKU 信息（5.7.3）
         List<Long> skuIds = carts.stream()
                 .map(Cart::getSkuId)
                 .filter(id -> id != null && id != 0L)
                 .distinct()
                 .collect(Collectors.toList());
-        Map<Long, ProductSku> skuMap = batchQuerySkus(skuIds);
+        Map<Long, SkuSnapshot> skuMap = batchQuerySkus(skuIds);
         for (Cart c : carts) {
-            Product p = productMap.get(c.getProductId());
+            ProductSnapshot p = productMap.get(c.getProductId());
             if (p == null) {
                 throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
             }
-            if (p.getStatus() != ProductStatus.ON_SALE) {
+            if (!ProductStatus.ON_SALE.getCode().equals(p.getStatus())) {
                 throw new BusinessException(ErrorCode.PARAM_ERROR, "商品[" + p.getName() + "]已下架");
             }
             // 5.7.3：校验 SKU 库存或商品库存
             Long cSkuId = c.getSkuId();
             if (cSkuId != null && cSkuId != 0L) {
-                ProductSku sku = skuMap.get(cSkuId);
+                SkuSnapshot sku = skuMap.get(cSkuId);
                 if (sku == null) {
                     throw new BusinessException(ErrorCode.PARAM_ERROR, "SKU 不存在或已禁用");
                 }
@@ -251,12 +252,12 @@ public class OrderServiceImpl implements OrderService {
         normalOrderMapper.insert(order);
 
         for (Cart c : carts) {
-            Product p = productMap.get(c.getProductId());
+            ProductSnapshot p = productMap.get(c.getProductId());
             Long cSkuId = c.getSkuId();
             BigDecimal unitPrice;
             String skuAttributes;
             if (cSkuId != null && cSkuId != 0L) {
-                ProductSku sku = skuMap.get(cSkuId);
+                SkuSnapshot sku = skuMap.get(cSkuId);
                 unitPrice = sku.getPrice();
                 skuAttributes = convertAttributesToReadable(sku.getAttributes());
             } else {
@@ -290,8 +291,8 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         for (Map.Entry<Long, Integer> e : qtyBySku.entrySet()) {
-            // Phase 8：统一通过 InventoryService 入口操作 SKU 库存
-            if (!inventoryService.deductSkuStock(e.getKey(), e.getValue())) {
+            // Phase P.5：统一通过 InventoryApi 入口操作 SKU 库存
+            if (!inventoryApi.deductSkuStock(new DeductStockCommand(null, e.getKey(), e.getValue()))) {
                 // 并发库存不足，事务回滚
                 throw new BusinessException(ErrorCode.STOCK_EMPTY);
             }
@@ -304,7 +305,7 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         for (Map.Entry<Long, Integer> e : qtyByProduct.entrySet()) {
-            int updated = inventoryService.deductProductStock(e.getKey(), e.getValue());
+            int updated = inventoryApi.deductProductStock(new DeductStockCommand(e.getKey(), null, e.getValue()));
             if (updated == 0) {
                 // 并发库存不足，事务回滚
                 throw new BusinessException(ErrorCode.STOCK_EMPTY);
@@ -322,17 +323,17 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 批量查询 SKU，返回 id → ProductSku 映射。
+     * 批量查询 SKU，返回 id → SkuSnapshot 映射。
      */
-    private Map<Long, ProductSku> batchQuerySkus(List<Long> skuIds) {
+    private Map<Long, SkuSnapshot> batchQuerySkus(List<Long> skuIds) {
         if (skuIds == null || skuIds.isEmpty()) {
             return new HashMap<>();
         }
-        List<ProductSku> skus = skuIds.stream()
-                .map(productSkuService::getByIdEnabled)
+        List<SkuSnapshot> skus = skuIds.stream()
+                .map(skuApi::getSkuById)
                 .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toList());
-        return skus.stream().collect(Collectors.toMap(ProductSku::getId, s -> s));
+        return skus.stream().collect(Collectors.toMap(SkuSnapshot::getId, s -> s));
     }
 
     /**
@@ -361,12 +362,12 @@ public class OrderServiceImpl implements OrderService {
     /**
      * 加载在售商品，不存在或已下架抛异常。
      */
-    private Product loadOnSaleProduct(Long productId) {
-        Product product = productService.getProductById(productId);
+    private ProductSnapshot loadOnSaleProduct(Long productId) {
+        ProductSnapshot product = productApi.getProductById(productId);
         if (product == null) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
-        if (product.getStatus() != ProductStatus.ON_SALE) {
+        if (!ProductStatus.ON_SALE.getCode().equals(product.getStatus())) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "商品已下架");
         }
         return product;
@@ -443,7 +444,7 @@ public class OrderServiceImpl implements OrderService {
     /**
      * 构造订单明细（保留下单时刻商品快照）。
      */
-    private NormalOrderItem buildOrderItem(Long orderId, Product product,
+    private NormalOrderItem buildOrderItem(Long orderId, ProductSnapshot product,
                                            BigDecimal unitPrice, Integer quantity) {
         NormalOrderItem item = new NormalOrderItem();
         item.setOrderId(orderId);

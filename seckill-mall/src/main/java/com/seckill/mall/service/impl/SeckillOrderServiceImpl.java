@@ -16,7 +16,7 @@ import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.service.EmailService;
 import com.seckill.mall.service.PaymentService;
-import com.seckill.mall.service.ProductService;
+import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.service.SeckillInventoryPort;
 import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.service.UserService;
@@ -67,7 +67,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
 
     private final SeckillOrderMapper seckillOrderMapper;
     private final SeckillGoodsMapper seckillGoodsMapper;
-    private final ProductService productService;
+    private final ProductApi productApi;
     private final SeckillInventoryPort seckillInventoryPort;
     private final UserService userService;
     private final EmailService emailService;
@@ -86,7 +86,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
         if (goods == null) {
             throw new BusinessException(ErrorCode.SECKILL_NOT_FOUND);
         }
-        if (!productService.existsById(goods.getProductId())) {
+        if (!productApi.existsById(goods.getProductId())) {
             throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
         }
 

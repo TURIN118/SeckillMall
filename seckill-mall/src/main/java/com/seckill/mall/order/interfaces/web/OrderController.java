@@ -1,4 +1,4 @@
-package com.seckill.mall.controller;
+package com.seckill.mall.order.interfaces.web;
 
 import com.seckill.mall.annotation.OperationLog;
 import com.seckill.mall.common.PageResult;

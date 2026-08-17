@@ -1,6 +1,7 @@
 package com.seckill.mall.controller;
 
 import com.seckill.mall.cache.RedisService;
+import com.seckill.mall.order.interfaces.web.OrderController;
 import com.seckill.mall.security.JwtUtils;
 import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.security.TokenBlacklistService;

@@ -473,6 +473,29 @@ class ArchitectureRulesTest {
             .should().dependOnClassesThat().resideInAPackage("..category.infrastructure.mapper..")
             .as("category.interfaces 不应直接依赖 Mapper，应通过 API 接口访问数据"));
 
+    // B. Banner 模块包边界规则（Phase B.6 新增）
+
+    /** 47. banner.api 不应依赖 banner.infrastructure（API 契约层不应依赖基础设施层，保持接口纯洁性） */
+    @ArchTest
+    static final ArchRule banner_api_should_not_depend_on_infrastructure =
+        freeze(noClasses().that().resideInAPackage("..banner.api..")
+            .should().dependOnClassesThat().resideInAPackage("..banner.infrastructure..")
+            .as("banner.api 不应依赖 banner.infrastructure，API 层保持接口纯洁性"));
+
+    /** 48. banner.application 不应直接依赖 Mapper（Application 层应通过 API 接口访问数据） */
+    @ArchTest
+    static final ArchRule banner_application_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..banner.application..")
+            .should().dependOnClassesThat().resideInAPackage("..banner.infrastructure.mapper..")
+            .as("banner.application 不应直接依赖 Mapper，应通过 API 接口访问数据"));
+
+    /** 49. banner.interfaces 不应直接依赖 Mapper（接口层应通过 API 接口访问数据） */
+    @ArchTest
+    static final ArchRule banner_interfaces_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..banner.interfaces..")
+            .should().dependOnClassesThat().resideInAPackage("..banner.infrastructure.mapper..")
+            .as("banner.interfaces 不应直接依赖 Mapper，应通过 API 接口访问数据"));
+
     /**
      * 用 FreezingArchRule 包装规则，启用 freeze 模式。
      *

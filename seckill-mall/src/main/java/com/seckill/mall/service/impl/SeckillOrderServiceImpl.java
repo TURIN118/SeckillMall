@@ -19,7 +19,7 @@ import com.seckill.mall.service.PaymentService;
 import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.service.SeckillInventoryPort;
 import com.seckill.mall.service.SeckillOrderService;
-import com.seckill.mall.service.UserService;
+import com.seckill.mall.identity.api.UserApi;
 import com.seckill.mall.vo.SeckillOrderVO;
 import com.seckill.mall.vo.SeckillRankingVO;
 import lombok.RequiredArgsConstructor;
@@ -69,7 +69,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
     private final SeckillGoodsMapper seckillGoodsMapper;
     private final ProductApi productApi;
     private final SeckillInventoryPort seckillInventoryPort;
-    private final UserService userService;
+    private final UserApi userApi;
     private final EmailService emailService;
     // Phase 4b-2：支付扣款逻辑抽取至 PaymentService（钱包扣款 + 模拟支付）
     private final PaymentService paymentService;
@@ -184,7 +184,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
         SeckillOrder paidOrder = seckillOrderMapper.selectById(orderId);
 
         // L8: 支付成功邮件：异步发送，失败不影响主流程，添加 try-catch 防止异常冒泡
-        String email = userService.getEmail(userId);
+        String email = userApi.getUserEmail(userId);
         if (email != null) {
             try {
                 emailService.sendPaySuccess(email, paidOrder.getOrderNo(), paidOrder.getTotalAmount(),
@@ -239,7 +239,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
         SeckillOrder cancelledOrder = seckillOrderMapper.selectById(orderId);
 
         // 订单取消邮件：异步发送，失败不影响主流程
-        String email = userService.getEmail(userId);
+        String email = userApi.getUserEmail(userId);
         if (email != null) {
             try {
                 emailService.sendOrderCancel(email, cancelledOrder.getOrderNo(), CANCEL_REASON_USER);
@@ -298,7 +298,7 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
         log.info("秒杀订单超时取消成功，orderNo={}, orderId={}", order.getOrderNo(), orderId);
 
         // 超时取消邮件：异步发送，失败不影响主流程
-        String email = userService.getEmail(order.getUserId());
+        String email = userApi.getUserEmail(order.getUserId());
         if (email != null) {
             try {
                 emailService.sendOrderCancel(email, order.getOrderNo(), CANCEL_REASON_TIMEOUT);

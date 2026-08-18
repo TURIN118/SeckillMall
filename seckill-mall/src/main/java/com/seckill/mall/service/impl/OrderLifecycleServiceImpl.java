@@ -19,7 +19,7 @@ import com.seckill.mall.service.OrderLifecycleService;
 import com.seckill.mall.service.OrderQueryService;
 import com.seckill.mall.service.PaymentService;
 import com.seckill.mall.service.UserAddressService;
-import com.seckill.mall.service.UserService;
+import com.seckill.mall.identity.api.UserApi;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.NormalOrderItemVO;
 import com.seckill.mall.vo.NormalOrderVO;
@@ -60,7 +60,7 @@ public class OrderLifecycleServiceImpl implements OrderLifecycleService {
     private static final String CANCEL_REASON_USER = "用户主动取消";
     private static final String CANCEL_REASON_TIMEOUT = "超时未支付，自动取消";
 
-    private final UserService userService;
+    private final UserApi userApi;
     private final EmailService emailService;
     private final NormalOrderMapper normalOrderMapper;
     private final NormalOrderItemMapper normalOrderItemMapper;
@@ -122,7 +122,7 @@ public class OrderLifecycleServiceImpl implements OrderLifecycleService {
         log.info("普通订单超时取消成功，orderNo={}, orderId={}", order.getOrderNo(), orderId);
 
         // 超时取消邮件：异步发送，失败不影响主流程
-        String email = userService.getEmail(order.getUserId());
+        String email = userApi.getUserEmail(order.getUserId());
         if (email != null) {
             try {
                 emailService.sendOrderCancel(email, order.getOrderNo(), CANCEL_REASON_TIMEOUT);
@@ -187,7 +187,7 @@ public class OrderLifecycleServiceImpl implements OrderLifecycleService {
         }
 
         // 邮件通知（异步，失败不影响主流程）
-        String email = userService.getEmail(userId);
+        String email = userApi.getUserEmail(userId);
         if (email != null) {
             try {
                 emailService.sendPaySuccess(email, order.getOrderNo(), order.getPayAmount(),
@@ -262,7 +262,7 @@ public class OrderLifecycleServiceImpl implements OrderLifecycleService {
                 order.getOrderNo(), userId, items.size());
 
         // 7. 取消邮件通知（异步，失败不影响主流程）
-        String email = userService.getEmail(userId);
+        String email = userApi.getUserEmail(userId);
         if (email != null) {
             try {
                 emailService.sendOrderCancel(email, order.getOrderNo(), CANCEL_REASON_USER);

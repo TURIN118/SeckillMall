@@ -12,7 +12,8 @@ import com.seckill.mall.entity.Category;
 import com.seckill.mall.entity.Coupon;
 import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.product.api.dto.ProductSnapshot;
-import com.seckill.mall.identity.infrastructure.entity.User;
+import com.seckill.mall.identity.api.UserApi;
+import com.seckill.mall.identity.api.dto.UserSnapshot;
 import com.seckill.mall.entity.UserCoupon;
 import com.seckill.mall.entity.enums.CouponType;
 import com.seckill.mall.entity.enums.UserCouponStatus;
@@ -20,8 +21,6 @@ import com.seckill.mall.mapper.CouponMapper;
 import com.seckill.mall.mapper.UserCouponMapper;
 import com.seckill.mall.service.CategoryService;
 import com.seckill.mall.service.CouponService;
-
-import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.AdminCouponRecordVO;
 import com.seckill.mall.vo.CouponVO;
 import com.seckill.mall.vo.UserCouponVO;
@@ -69,7 +68,7 @@ public class CouponServiceImpl implements CouponService {
 
     private final CouponMapper couponMapper;
     private final UserCouponMapper userCouponMapper;
-    private final UserService userService;
+    private final UserApi userApi;
     private final ProductApi productApi;
     private final CategoryService categoryService;
 
@@ -170,7 +169,7 @@ public class CouponServiceImpl implements CouponService {
             throw new BusinessException(ErrorCode.COUPON_DISABLED);
         }
         // 校验用户存在
-        User user = userService.getUserById(userId);
+        UserSnapshot user = userApi.getUserById(userId);
         if (user == null) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
@@ -221,7 +220,7 @@ public class CouponServiceImpl implements CouponService {
                 .map(UserCoupon::getUserId)
                 .distinct()
                 .collect(Collectors.toList());
-        Map<Long, String> usernameMap = userService.getUsernamesByIds(userIds);
+        Map<Long, String> usernameMap = userApi.getUsernamesByIds(userIds);
         // 查询优惠券名称
         Coupon coupon = couponMapper.selectById(couponId);
         String couponName = coupon == null ? null : coupon.getName();
@@ -353,7 +352,7 @@ public class CouponServiceImpl implements CouponService {
                         new LambdaQueryWrapper<Coupon>().in(Coupon::getId, couponIds))
                 .stream().collect(Collectors.toMap(Coupon::getId, c -> c));
         // 查询当前用户名（批量场景下仅一个用户，单查即可）
-        User user = userService.getUserById(userId);
+        UserSnapshot user = userApi.getUserById(userId);
         String username = user == null ? null : user.getUsername();
         return userCoupons.stream()
                 .map(uc -> toUserCouponVO(uc, couponMap.get(uc.getCouponId()), username))

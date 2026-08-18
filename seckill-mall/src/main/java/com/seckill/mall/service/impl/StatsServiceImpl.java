@@ -2,10 +2,10 @@ package com.seckill.mall.service.impl;
 
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.product.api.ProductApi;
+import com.seckill.mall.identity.api.UserApi;
 import com.seckill.mall.service.SeckillGoodsService;
 import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.service.StatsService;
-import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.OrderStatusItemVO;
 import com.seckill.mall.vo.SeckillOverviewVO;
 import com.seckill.mall.vo.SeckillRankingVO;
@@ -56,7 +56,7 @@ public class StatsServiceImpl implements StatsService {
      */
     private static final int RANKING_MAX_LIMIT = 50;
 
-    private final UserService userService;
+    private final UserApi userApi;
     private final SeckillOrderService seckillOrderService;
     private final SeckillGoodsService seckillGoodsService;
     private final ProductApi productApi;
@@ -66,7 +66,7 @@ public class StatsServiceImpl implements StatsService {
         StatsOverviewVO vo = new StatsOverviewVO();
 
         // 用户总数
-        vo.setUserCount(userService.countAll());
+        vo.setUserCount(userApi.countAll());
 
         // 订单总数
         vo.setOrderCount(seckillOrderService.countAll());
@@ -84,7 +84,7 @@ public class StatsServiceImpl implements StatsService {
 
         // 今日注册数 / 今日订单数
         LocalDate today = LocalDate.now();
-        Long todayUser = userService.countTodayRegistered(today);
+        Long todayUser = userApi.countTodayRegistered(today);
         vo.setTodayUserCount(todayUser == null ? 0L : todayUser);
 
         Long todayOrder = seckillOrderService.countTodayOrders(today);
@@ -99,7 +99,7 @@ public class StatsServiceImpl implements StatsService {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(n - 1L);
 
-        List<Map<String, Object>> rows = userService.selectUserTrend(startDate, endDate);
+        List<Map<String, Object>> rows = userApi.selectUserTrend(startDate, endDate);
         Map<String, Long> countByDate = indexByDate(rows);
 
         return fillTrend(startDate, n, countByDate);

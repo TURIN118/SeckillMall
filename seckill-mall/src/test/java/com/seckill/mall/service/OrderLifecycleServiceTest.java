@@ -4,6 +4,7 @@ package com.seckill.mall.service;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrderItem;
+import com.seckill.mall.identity.api.UserApi;
 import com.seckill.mall.identity.infrastructure.entity.UserAddress;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.exception.BusinessException;
@@ -52,7 +53,7 @@ class OrderLifecycleServiceTest {
     private static final Long PRODUCT_ID = 1001L;
 
     @Mock
-    private UserService userService;
+    private UserApi userApi;
     @Mock
     private EmailService emailService;
     @Mock
@@ -228,7 +229,7 @@ class OrderLifecycleServiceTest {
         given(normalOrderMapper.selectById(NORMAL_ORDER_ID)).willReturn(unpaid);
         given(normalOrderMapper.update(any(), any())).willReturn(1);
         given(normalOrderItemMapper.selectList(any())).willReturn(List.of(buildNormalOrderItem()));
-        given(userService.getEmail(USER_ID)).willReturn(null);
+        given(userApi.getUserEmail(USER_ID)).willReturn(null);
 
         // when
         boolean result = orderLifecycleService.timeoutCancelNormalOrder(NORMAL_ORDER_ID);

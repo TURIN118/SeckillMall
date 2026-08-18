@@ -11,14 +11,14 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.XssCleanUtil;
 import com.seckill.mall.product.infrastructure.entity.ProductReview;
 import com.seckill.mall.product.infrastructure.entity.ProductSku;
-import com.seckill.mall.identity.infrastructure.entity.User;
+import com.seckill.mall.identity.api.UserApi;
+import com.seckill.mall.identity.api.dto.UserSnapshot;
 import com.seckill.mall.product.infrastructure.mapper.ProductMapper;
 import com.seckill.mall.product.infrastructure.mapper.ProductReviewMapper;
 import com.seckill.mall.product.infrastructure.mapper.ProductSkuMapper;
 import com.seckill.mall.order.api.OrderQueryApi;
 import com.seckill.mall.service.ProductReviewService;
 import com.seckill.mall.service.SeckillOrderService;
-import com.seckill.mall.service.UserService;
 import com.seckill.mall.vo.ProductReviewVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +46,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     private final ProductMapper productMapper;
     private final ObjectMapper objectMapper;
     private final ProductSkuMapper productSkuMapper;
-    private final UserService userService;
+    private final UserApi userApi;
     private final OrderQueryApi orderQueryApi;
     private final SeckillOrderService seckillOrderService;
 
@@ -129,7 +129,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
         review.setStatus(1);
         productReviewMapper.insert(review);
 
-        User user = userService.getUserById(userId);
+        UserSnapshot user = userApi.getUserById(userId);
         ProductReviewVO vo = toVO(review, Collections.emptyMap());
         if (user != null) {
             vo.setUserName(user.getNickname() != null && !user.getNickname().isBlank()
@@ -254,7 +254,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
         if (userIds.isEmpty()) {
             return Collections.emptyMap();
         }
-        return userService.getUserDisplayNamesByIds(userIds);
+        return userApi.getUserDisplayNamesByIds(userIds);
     }
 
     private ProductReviewVO toVO(ProductReview review, Map<Long, String> userNameMap) {

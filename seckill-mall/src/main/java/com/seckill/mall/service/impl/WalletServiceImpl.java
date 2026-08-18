@@ -2,12 +2,12 @@ package com.seckill.mall.service.impl;
 
 import com.seckill.mall.entity.RechargeCard;
 import com.seckill.mall.entity.SeckillOrder;
-import com.seckill.mall.identity.infrastructure.entity.User;
+import com.seckill.mall.identity.api.UserApi;
+import com.seckill.mall.identity.api.dto.UserSnapshot;
 import com.seckill.mall.order.api.OrderQueryApi;
 import com.seckill.mall.order.api.result.OrderSnapshot;
 import com.seckill.mall.service.RechargeCardService;
 import com.seckill.mall.service.SeckillOrderService;
-import com.seckill.mall.service.UserService;
 import com.seckill.mall.service.WalletService;
 import com.seckill.mall.vo.WalletRecordVO;
 import lombok.RequiredArgsConstructor;
@@ -40,14 +40,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class WalletServiceImpl implements WalletService {
 
-    private final UserService userService;
+    private final UserApi userApi;
     private final RechargeCardService rechargeCardService;
     private final OrderQueryApi orderQueryApi;
     private final SeckillOrderService seckillOrderService;
 
     @Override
     public BigDecimal getBalance(Long userId) {
-        User user = userService.getUserById(userId);
+        UserSnapshot user = userApi.getUserById(userId);
         if (user == null || user.getBalance() == null) {
             return BigDecimal.ZERO;
         }
@@ -57,7 +57,7 @@ public class WalletServiceImpl implements WalletService {
     @Override
     public List<WalletRecordVO> listRecords(Long userId) {
         // 查询用户当前余额，用于填充每笔交易后的余额（简化：都填当前余额）
-        User user = userService.getUserById(userId);
+        UserSnapshot user = userApi.getUserById(userId);
         BigDecimal currentBalance = user == null || user.getBalance() == null
                 ? BigDecimal.ZERO : user.getBalance();
 

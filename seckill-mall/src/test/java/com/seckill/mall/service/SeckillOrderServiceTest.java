@@ -11,6 +11,7 @@ import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.product.api.ProductApi;
+import com.seckill.mall.identity.api.UserApi;
 import com.seckill.mall.service.impl.SeckillOrderServiceImpl;
 import com.seckill.mall.vo.SeckillOrderVO;
 import org.junit.jupiter.api.BeforeAll;
@@ -62,7 +63,7 @@ class SeckillOrderServiceTest {
     @Mock
     private SeckillInventoryPort seckillInventoryPort;
     @Mock
-    private UserService userService;
+    private UserApi userApi;
     @Mock
     private EmailService emailService;
     @Mock
@@ -183,7 +184,7 @@ class SeckillOrderServiceTest {
         given(seckillOrderMapper.selectById(ORDER_ID)).willReturn(order, paidOrder);
         // 乐观锁更新成功
         given(seckillOrderMapper.update(any(), any())).willReturn(1);
-        given(userService.getEmail(USER_ID)).willReturn("buyer@seckill.com");
+        given(userApi.getUserEmail(USER_ID)).willReturn("buyer@seckill.com");
 
         // when
         SeckillOrderVO paid = seckillOrderService.payOrder(USER_ID, ORDER_ID, "ALIPAY");
@@ -252,7 +253,7 @@ class SeckillOrderServiceTest {
         // 实现中 cancelOrder 会两次 selectById：首次返回 UNPAID，再次返回 CANCELLED
         given(seckillOrderMapper.selectById(ORDER_ID)).willReturn(order, cancelledOrder);
         given(seckillOrderMapper.update(any(), any())).willReturn(1);
-        given(userService.getEmail(USER_ID)).willReturn(null);
+        given(userApi.getUserEmail(USER_ID)).willReturn(null);
 
         // when
         SeckillOrderVO cancelled = seckillOrderService.cancelOrder(USER_ID, ORDER_ID);
@@ -286,7 +287,7 @@ class SeckillOrderServiceTest {
         SeckillOrder order = buildOrder(OrderStatus.UNPAID);
         given(seckillOrderMapper.selectById(ORDER_ID)).willReturn(order);
         given(seckillOrderMapper.update(any(), any())).willReturn(1);
-        given(userService.getEmail(USER_ID)).willReturn(null);
+        given(userApi.getUserEmail(USER_ID)).willReturn(null);
 
         // when
         boolean result = seckillOrderService.timeoutCancel(ORDER_ID);

@@ -1,4 +1,4 @@
-package com.seckill.mall.entity;
+package com.seckill.mall.coupon.infrastructure.entity;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.seckill.mall.entity.enums.UserCouponStatus;
+import com.seckill.mall.coupon.domain.UserCouponStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;

@@ -13,7 +13,7 @@ import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderItemMapper;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderMapper;
-import com.seckill.mall.service.CouponUsageService;
+import com.seckill.mall.coupon.api.CouponUsageApi;
 import com.seckill.mall.service.EmailService;
 import com.seckill.mall.service.OrderLifecycleService;
 import com.seckill.mall.service.OrderQueryService;
@@ -64,7 +64,7 @@ public class OrderLifecycleServiceImpl implements OrderLifecycleService {
     private final EmailService emailService;
     private final NormalOrderMapper normalOrderMapper;
     private final NormalOrderItemMapper normalOrderItemMapper;
-    private final CouponUsageService couponUsageService;
+    private final CouponUsageApi couponUsageApi;
     private final PaymentService paymentService;
     private final InventoryApi inventoryApi;
     private final SkuApi skuApi;
@@ -113,7 +113,10 @@ public class OrderLifecycleServiceImpl implements OrderLifecycleService {
         // 优惠券回退：超时取消时，若订单使用了优惠券则回退（USED → UNUSED，幂等）
         if (order.getUserCouponId() != null) {
             try {
-                couponUsageService.revertCoupon(order.getUserCouponId(), order.getUserId());
+                couponUsageApi.revertCoupon(com.seckill.mall.coupon.api.command.RevertCouponCommand.builder()
+                        .userCouponId(order.getUserCouponId())
+                        .userId(order.getUserId())
+                        .build());
             } catch (Exception e) {
                 log.error("超时取消订单后优惠券回退失败，orderId={}, userCouponId={}", orderId, order.getUserCouponId(), e);
             }
@@ -179,7 +182,11 @@ public class OrderLifecycleServiceImpl implements OrderLifecycleService {
         // 优惠券核销：支付成功后，若订单使用了优惠券则核销（UNUSED → USED）
         if (order.getUserCouponId() != null) {
             try {
-                couponUsageService.useCoupon(order.getUserCouponId(), userId, orderId);
+                couponUsageApi.useCoupon(com.seckill.mall.coupon.api.command.UseCouponCommand.builder()
+                        .userCouponId(order.getUserCouponId())
+                        .userId(userId)
+                        .orderId(orderId)
+                        .build());
             } catch (Exception e) {
                 // 核销失败不阻断支付主流程（支付已完成），仅记录日志由对账任务兜底
                 log.error("支付成功后优惠券核销失败，orderId={}, userCouponId={}", orderId, order.getUserCouponId(), e);
@@ -251,7 +258,10 @@ public class OrderLifecycleServiceImpl implements OrderLifecycleService {
         // 此处回退是兜底处理，revertCoupon 内部会校验状态，非 USED 时幂等返回。
         if (order.getUserCouponId() != null) {
             try {
-                couponUsageService.revertCoupon(order.getUserCouponId(), userId);
+                couponUsageApi.revertCoupon(com.seckill.mall.coupon.api.command.RevertCouponCommand.builder()
+                        .userCouponId(order.getUserCouponId())
+                        .userId(userId)
+                        .build());
             } catch (Exception e) {
                 // 回退失败不阻断取消主流程，仅记录日志由对账任务兜底
                 log.error("取消订单后优惠券回退失败，orderId={}, userCouponId={}", orderId, order.getUserCouponId(), e);

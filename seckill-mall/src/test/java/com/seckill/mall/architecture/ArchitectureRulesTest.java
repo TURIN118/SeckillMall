@@ -298,6 +298,31 @@ class ArchitectureRulesTest {
             .should().dependOnClassesThat().resideInAPackage("..cart.infrastructure.mapper..")
             .as("cart.interfaces 不应直接依赖 Mapper，应通过 ApplicationService 访问数据"));
 
+    // ============================================================
+    // I. Coupon 模块包边界规则（Phase CP.6 新增）
+    // ============================================================
+
+    /** 26. coupon.api 不应依赖 coupon.infrastructure（API 契约层不应依赖基础设施层） */
+    @ArchTest
+    static final ArchRule coupon_api_should_not_depend_on_infrastructure =
+        freeze(noClasses().that().resideInAPackage("..coupon.api..")
+            .should().dependOnClassesThat().resideInAPackage("..coupon.infrastructure..")
+            .as("coupon.api 不应依赖 coupon.infrastructure，API 契约层不应依赖基础设施层"));
+
+    /** 27. coupon.application 不应直接依赖 Mapper（Application 层应通过 Service/Repository 访问数据） */
+    @ArchTest
+    static final ArchRule coupon_application_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..coupon.application..")
+            .should().dependOnClassesThat().resideInAPackage("..coupon.infrastructure.mapper..")
+            .as("coupon.application 不应直接依赖 Mapper，应通过 Service/Repository 访问数据"));
+
+    /** 28. coupon.interfaces 不应直接依赖 Mapper（接口层应通过 ApplicationService 访问数据） */
+    @ArchTest
+    static final ArchRule coupon_interfaces_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..coupon.interfaces..")
+            .should().dependOnClassesThat().resideInAPackage("..coupon.infrastructure.mapper..")
+            .as("coupon.interfaces 不应直接依赖 Mapper，应通过 ApplicationService 访问数据"));
+
     /**
      * 用 FreezingArchRule 包装规则，启用 freeze 模式。
      *

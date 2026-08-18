@@ -61,7 +61,7 @@ class OrderLifecycleServiceTest {
     @Mock
     private NormalOrderItemMapper normalOrderItemMapper;
     @Mock
-    private CouponUsageService couponUsageService;
+    private com.seckill.mall.coupon.api.CouponUsageApi couponUsageApi;
     @Mock
     private PaymentService paymentService;
     @Mock

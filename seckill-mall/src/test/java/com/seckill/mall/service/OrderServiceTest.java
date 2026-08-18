@@ -72,7 +72,7 @@ class OrderServiceTest {
     @Mock
     private ObjectMapper objectMapper;
     @Mock
-    private CouponUsageService couponUsageService;
+    private com.seckill.mall.coupon.api.CouponUsageApi couponUsageApi;
     @Mock
     private InventoryApi inventoryApi;
     @Mock

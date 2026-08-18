@@ -23,7 +23,7 @@ import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderItemM
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderMapper;
 import com.seckill.mall.mq.message.OrderDelayMessage;
 
-import com.seckill.mall.service.CouponUsageService;
+import com.seckill.mall.coupon.api.CouponUsageApi;
 import com.seckill.mall.service.OrderService;
 import com.seckill.mall.service.UserAddressService;
 import com.seckill.mall.shared.kernel.port.MessageBusPort;
@@ -75,8 +75,8 @@ public class OrderServiceImpl implements OrderService {
     // Phase P.5：消除跨模块 Service 依赖，改用 ProductApi 查询商品快照
     private final ProductApi productApi;
     private final ObjectMapper objectMapper;
-    // 优惠券核销服务：普通订单创建时接入优惠券抵扣（Phase P2-3 从 CouponService 拆分）
-    private final CouponUsageService couponUsageService;
+    // 优惠券核销 API：普通订单创建时接入优惠券抵扣（Phase CP.5 从 CouponUsageService 切换）
+    private final CouponUsageApi couponUsageApi;
     // Phase P.5：商品库存扣减/回补改用 InventoryApi
     private final InventoryApi inventoryApi;
     // Phase C.5：消除跨模块 CartService/Cart entity 依赖，改用 CartApi + CartItemDTO
@@ -428,7 +428,14 @@ public class OrderServiceImpl implements OrderService {
             // payAmount 已在 buildNormalOrder 中设置为 totalAmount + freight
             return;
         }
-        BigDecimal discount = couponUsageService.calculateDiscount(userCouponId, userId, orderAmount, productIds);
+        BigDecimal discount = couponUsageApi.calculateDiscount(
+                com.seckill.mall.coupon.api.command.UseCouponCommand.builder()
+                        .userCouponId(userCouponId)
+                        .userId(userId)
+                        .orderAmount(orderAmount)
+                        .productIds(productIds)
+                        .build())
+                .getDiscount();
         order.setUserCouponId(userCouponId);
         order.setDiscountAmount(discount);
         // 实付金额 = 商品总额 + 运费 - 优惠金额

@@ -519,6 +519,29 @@ class ArchitectureRulesTest {
             .should().dependOnClassesThat().resideInAPackage("..mapper..")
             .as("ai 模块不应依赖旧分层 mapper，不应直接访问其他模块的数据访问层"));
 
+    // AN. Analytics 模块包边界规则（Phase AN.6 新增）
+
+    /** 53. analytics 模块不应依赖旧分层 Service（analytics 模块应通过其他模块的 API 接口访问，不直接依赖旧 Service） */
+    @ArchTest
+    static final ArchRule analytics_should_not_depend_on_legacy_service =
+        freeze(noClasses().that().resideInAPackage("..analytics..")
+            .should().dependOnClassesThat().resideInAPackage("..service..")
+            .as("analytics 模块不应依赖旧分层 service，应通过其他模块的 API 接口访问"));
+
+    /** 54. analytics 模块不应依赖旧分层 Entity（analytics 模块不应直接访问其他模块的持久化实体） */
+    @ArchTest
+    static final ArchRule analytics_should_not_depend_on_legacy_entity =
+        freeze(noClasses().that().resideInAPackage("..analytics..")
+            .should().dependOnClassesThat().resideInAPackage("..entity..")
+            .as("analytics 模块不应依赖旧分层 entity，不应直接访问其他模块的持久化实体"));
+
+    /** 55. analytics 模块不应依赖旧分层 Mapper（analytics 模块不应直接访问其他模块的数据访问层） */
+    @ArchTest
+    static final ArchRule analytics_should_not_depend_on_legacy_mapper =
+        freeze(noClasses().that().resideInAPackage("..analytics..")
+            .should().dependOnClassesThat().resideInAPackage("..mapper..")
+            .as("analytics 模块不应依赖旧分层 mapper，不应直接访问其他模块的数据访问层"));
+
     /**
      * 用 FreezingArchRule 包装规则，启用 freeze 模式。
      *

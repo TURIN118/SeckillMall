@@ -248,6 +248,31 @@ class ArchitectureRulesTest {
             .should().dependOnClassesThat().resideInAPackage("..product.infrastructure.mapper..")
             .as("product.interfaces 不应直接依赖 Mapper，应通过 ApplicationService 访问数据"));
 
+    // ============================================================
+    // G. Identity 模块包边界规则（Phase I.6 新增）
+    // ============================================================
+
+    /** 20. identity.api 不应依赖 identity.infrastructure（API 契约层不应依赖基础设施层） */
+    @ArchTest
+    static final ArchRule identity_api_should_not_depend_on_infrastructure =
+        freeze(noClasses().that().resideInAPackage("..identity.api..")
+            .should().dependOnClassesThat().resideInAPackage("..identity.infrastructure..")
+            .as("identity.api 不应依赖 identity.infrastructure，API 契约层不应依赖基础设施层"));
+
+    /** 21. identity.application 不应直接依赖 Mapper（Application 层应通过 Service/Repository 访问数据） */
+    @ArchTest
+    static final ArchRule identity_application_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..identity.application..")
+            .should().dependOnClassesThat().resideInAPackage("..identity.infrastructure.mapper..")
+            .as("identity.application 不应直接依赖 Mapper，应通过 Service/Repository 访问数据"));
+
+    /** 22. identity.interfaces 不应直接依赖 Mapper（接口层应通过 ApplicationService 访问数据） */
+    @ArchTest
+    static final ArchRule identity_interfaces_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..identity.interfaces..")
+            .should().dependOnClassesThat().resideInAPackage("..identity.infrastructure.mapper..")
+            .as("identity.interfaces 不应直接依赖 Mapper，应通过 ApplicationService 访问数据"));
+
     /**
      * 用 FreezingArchRule 包装规则，启用 freeze 模式。
      *

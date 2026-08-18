@@ -5,7 +5,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.config.RabbitMQConfig;
-import com.seckill.mall.cart.infrastructure.entity.Cart;
+import com.seckill.mall.cart.api.CartApi;
+import com.seckill.mall.cart.api.dto.CartItemDTO;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrderItem;
 import com.seckill.mall.product.api.InventoryApi;
@@ -21,7 +22,7 @@ import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderItemMapper;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderMapper;
 import com.seckill.mall.mq.message.OrderDelayMessage;
-import com.seckill.mall.service.CartService;
+
 import com.seckill.mall.service.CouponUsageService;
 import com.seckill.mall.service.OrderService;
 import com.seckill.mall.service.UserAddressService;
@@ -78,8 +79,8 @@ public class OrderServiceImpl implements OrderService {
     private final CouponUsageService couponUsageService;
     // Phase P.5：商品库存扣减/回补改用 InventoryApi
     private final InventoryApi inventoryApi;
-    // Phase 7：消除剩余跨模块 Mapper 依赖，改用对应领域 Service 内部调用入口
-    private final CartService cartService;
+    // Phase C.5：消除跨模块 CartService/Cart entity 依赖，改用 CartApi + CartItemDTO
+    private final CartApi cartApi;
     private final UserAddressService userAddressService;
 
     @Value("${seckill.pay-timeout-minutes:15}")
@@ -198,29 +199,29 @@ public class OrderServiceImpl implements OrderService {
         // 2. 查询购物车项并校验归属
         // L9: 若 cartIds 含重复 ID，selectList(in) 会去重返回，导致 carts.size() != cartIds.size() 误报错
         // 完整方案应在入口去重：cartIds = cartIds.stream().distinct().toList()
-        // Phase 7：改用 CartService 跨模块内部调用，消除 CartMapper 依赖
-        List<Cart> carts = cartService.getCartsByIds(cartIds);
+        // Phase C.5：改用 CartApi 跨模块调用，消除 Cart entity 依赖
+        List<CartItemDTO> carts = cartApi.getCartItemsByIds(cartIds);
         if (carts.size() != cartIds.size()) {
             throw new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND);
         }
-        for (Cart c : carts) {
+        for (CartItemDTO c : carts) {
             if (!userId.equals(c.getUserId())) {
                 throw new BusinessException(ErrorCode.CART_ITEM_FORBIDDEN);
             }
         }
         // 3. 批量查询商品并校验在售 + 库存
-        List<Long> productIds = carts.stream().map(Cart::getProductId).distinct().collect(Collectors.toList());
+        List<Long> productIds = carts.stream().map(CartItemDTO::getProductId).distinct().collect(Collectors.toList());
         List<ProductSnapshot> products = productApi.getProductsByIds(productIds);
         Map<Long, ProductSnapshot> productMap = products.stream()
                 .collect(Collectors.toMap(ProductSnapshot::getId, p -> p));
         // 3.1 批量查询 SKU 信息（5.7.3）
         List<Long> skuIds = carts.stream()
-                .map(Cart::getSkuId)
+                .map(CartItemDTO::getSkuId)
                 .filter(id -> id != null && id != 0L)
                 .distinct()
                 .collect(Collectors.toList());
         Map<Long, SkuSnapshot> skuMap = batchQuerySkus(skuIds);
-        for (Cart c : carts) {
+        for (CartItemDTO c : carts) {
             ProductSnapshot p = productMap.get(c.getProductId());
             if (p == null) {
                 throw new BusinessException(ErrorCode.PRODUCT_NOT_FOUND);
@@ -251,7 +252,7 @@ public class OrderServiceImpl implements OrderService {
         NormalOrder order = buildNormalOrder(userId, addressId, remark, BigDecimal.ZERO);
         normalOrderMapper.insert(order);
 
-        for (Cart c : carts) {
+        for (CartItemDTO c : carts) {
             ProductSnapshot p = productMap.get(c.getProductId());
             Long cSkuId = c.getSkuId();
             BigDecimal unitPrice;
@@ -278,14 +279,14 @@ public class OrderServiceImpl implements OrderService {
         order.setFreightAmount(DEFAULT_FREIGHT);
         order.setPayAmount(totalAmount.add(DEFAULT_FREIGHT));
         // 优惠券：计算优惠金额并抵扣实付金额
-        List<Long> orderProductIds = carts.stream().map(Cart::getProductId).distinct().collect(Collectors.toList());
+        List<Long> orderProductIds = carts.stream().map(CartItemDTO::getProductId).distinct().collect(Collectors.toList());
         applyCouponToOrder(order, userCouponId, userId, totalAmount, orderProductIds);
         normalOrderMapper.updateById(order);
 
         // 6. 扣库存（5.7.3：按 SKU 或商品聚合后乐观锁扣减）
         // 6.1 扣减 SKU 库存
         Map<Long, Integer> qtyBySku = new HashMap<>();
-        for (Cart c : carts) {
+        for (CartItemDTO c : carts) {
             if (c.getSkuId() != null && c.getSkuId() != 0L) {
                 qtyBySku.merge(c.getSkuId(), c.getQuantity(), Integer::sum);
             }
@@ -299,7 +300,7 @@ public class OrderServiceImpl implements OrderService {
         }
         // 6.2 扣减无规格商品库存
         Map<Long, Integer> qtyByProduct = new HashMap<>();
-        for (Cart c : carts) {
+        for (CartItemDTO c : carts) {
             if (c.getSkuId() == null || c.getSkuId() == 0L) {
                 qtyByProduct.merge(c.getProductId(), c.getQuantity(), Integer::sum);
             }
@@ -312,8 +313,8 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         // 7. 删除已结算购物车项（逻辑删除）
-        // Phase 7：改用 CartService 跨模块内部调用，消除 CartMapper 依赖
-        cartService.deleteCartsByIds(cartIds);
+        // Phase C.5：改用 CartApi 跨模块调用
+        cartApi.deleteCartItemsByIds(cartIds);
 
         log.info("购物车结算创建普通订单成功，orderNo={}, userId={}, cartIds={}, itemCount={}, userCouponId={}, discount={}",
                 order.getOrderNo(), userId, cartIds, carts.size(), userCouponId, order.getDiscountAmount());

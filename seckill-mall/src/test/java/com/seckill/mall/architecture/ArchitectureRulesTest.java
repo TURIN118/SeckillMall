@@ -273,6 +273,31 @@ class ArchitectureRulesTest {
             .should().dependOnClassesThat().resideInAPackage("..identity.infrastructure.mapper..")
             .as("identity.interfaces 不应直接依赖 Mapper，应通过 ApplicationService 访问数据"));
 
+    // ============================================================
+    // H. Cart 模块包边界规则（Phase C.6 新增）
+    // ============================================================
+
+    /** 23. cart.api 不应依赖 cart.infrastructure（API 契约层不应依赖基础设施层） */
+    @ArchTest
+    static final ArchRule cart_api_should_not_depend_on_infrastructure =
+        freeze(noClasses().that().resideInAPackage("..cart.api..")
+            .should().dependOnClassesThat().resideInAPackage("..cart.infrastructure..")
+            .as("cart.api 不应依赖 cart.infrastructure，API 契约层不应依赖基础设施层"));
+
+    /** 24. cart.application 不应直接依赖 Mapper（Application 层应通过 Service/Repository 访问数据） */
+    @ArchTest
+    static final ArchRule cart_application_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..cart.application..")
+            .should().dependOnClassesThat().resideInAPackage("..cart.infrastructure.mapper..")
+            .as("cart.application 不应直接依赖 Mapper，应通过 Service/Repository 访问数据"));
+
+    /** 25. cart.interfaces 不应直接依赖 Mapper（接口层应通过 ApplicationService 访问数据） */
+    @ArchTest
+    static final ArchRule cart_interfaces_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..cart.interfaces..")
+            .should().dependOnClassesThat().resideInAPackage("..cart.infrastructure.mapper..")
+            .as("cart.interfaces 不应直接依赖 Mapper，应通过 ApplicationService 访问数据"));
+
     /**
      * 用 FreezingArchRule 包装规则，启用 freeze 模式。
      *

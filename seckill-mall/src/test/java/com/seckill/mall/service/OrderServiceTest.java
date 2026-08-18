@@ -4,7 +4,7 @@ package com.seckill.mall.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
-import com.seckill.mall.cart.infrastructure.entity.Cart;
+import com.seckill.mall.cart.api.CartApi;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrderItem;
 import com.seckill.mall.product.infrastructure.entity.Product;
@@ -76,7 +76,7 @@ class OrderServiceTest {
     @Mock
     private InventoryApi inventoryApi;
     @Mock
-    private CartService cartService;
+    private CartApi cartApi;
     @Mock
     private UserAddressService userAddressService;
 
@@ -97,7 +97,7 @@ class OrderServiceTest {
         com.baomidou.mybatisplus.core.metadata.TableInfoHelper.initTableInfo(assistant, NormalOrder.class);
         com.baomidou.mybatisplus.core.metadata.TableInfoHelper.initTableInfo(assistant, NormalOrderItem.class);
         com.baomidou.mybatisplus.core.metadata.TableInfoHelper.initTableInfo(assistant, Product.class);
-        com.baomidou.mybatisplus.core.metadata.TableInfoHelper.initTableInfo(assistant, Cart.class);
+
     }
 
     @BeforeEach

@@ -1,6 +1,6 @@
 package com.seckill.mall.service;
 
-import com.seckill.mall.entity.CategoryAttributeValue;
+import com.seckill.mall.category.infrastructure.entity.CategoryAttributeValue;
 
 import java.util.List;
 

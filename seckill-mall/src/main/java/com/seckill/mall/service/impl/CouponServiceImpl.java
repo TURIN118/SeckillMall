@@ -8,7 +8,7 @@ import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.CouponCreateRequest;
-import com.seckill.mall.entity.Category;
+import com.seckill.mall.category.infrastructure.entity.Category;
 import com.seckill.mall.coupon.infrastructure.entity.Coupon;
 import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.product.api.dto.ProductSnapshot;

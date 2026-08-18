@@ -2,8 +2,8 @@ package com.seckill.mall.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.seckill.mall.entity.CategoryAttributeValue;
-import com.seckill.mall.mapper.CategoryAttributeValueMapper;
+import com.seckill.mall.category.infrastructure.entity.CategoryAttributeValue;
+import com.seckill.mall.category.infrastructure.mapper.CategoryAttributeValueMapper;
 import com.seckill.mall.service.CategoryAttributeValueService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-package com.seckill.mall.vo;
+package com.seckill.mall.payment.interfaces.vo;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;

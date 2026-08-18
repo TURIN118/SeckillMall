@@ -1,6 +1,6 @@
 package com.seckill.mall.service;
 
-import com.seckill.mall.vo.WalletRecordVO;
+import com.seckill.mall.payment.interfaces.vo.WalletRecordVO;
 
 import java.math.BigDecimal;
 import java.util.List;

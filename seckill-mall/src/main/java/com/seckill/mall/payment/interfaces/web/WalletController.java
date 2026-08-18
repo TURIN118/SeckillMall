@@ -1,12 +1,15 @@
-package com.seckill.mall.controller;
+package com.seckill.mall.payment.interfaces.web;
 
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.WalletRechargeRequest;
 import com.seckill.mall.identity.infrastructure.entity.User;
+import com.seckill.mall.payment.api.RechargeCardApi;
+import com.seckill.mall.payment.api.WalletApi;
+import com.seckill.mall.payment.api.command.RechargeCommand;
+import com.seckill.mall.payment.api.result.RechargeResult;
+import com.seckill.mall.payment.application.facade.PaymentApiConverter;
 import com.seckill.mall.security.SecurityUtils;
-import com.seckill.mall.service.RechargeCardService;
-import com.seckill.mall.service.WalletService;
-import com.seckill.mall.vo.WalletRecordVO;
+import com.seckill.mall.payment.interfaces.vo.WalletRecordVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -46,8 +49,8 @@ import java.util.List;
 @PreAuthorize("hasAnyRole('BUYER','ADMIN')")
 public class WalletController {
 
-    private final RechargeCardService rechargeCardService;
-    private final WalletService walletService;
+    private final RechargeCardApi rechargeCardApi;
+    private final WalletApi walletApi;
     private final SecurityUtils securityUtils;
 
     @Operation(summary = "查询当前用户余额")
@@ -62,15 +65,17 @@ public class WalletController {
     @PostMapping("/recharge")
     public Result<BigDecimal> recharge(@Valid @RequestBody WalletRechargeRequest req) {
         Long userId = securityUtils.getCurrentUserId();
-        BigDecimal newBalance = rechargeCardService.recharge(req.getCardNo(), req.getCardPassword(), userId);
-        return Result.success("充值成功", newBalance);
+        RechargeCommand command = PaymentApiConverter.toRechargeCommand(
+                req.getCardNo(), req.getCardPassword(), userId);
+        RechargeResult result = rechargeCardApi.recharge(command);
+        return Result.success("充值成功", result.getNewBalance());
     }
 
     @Operation(summary = "交易记录（充值记录）")
     @GetMapping("/records")
     public Result<List<WalletRecordVO>> records() {
         Long userId = securityUtils.getCurrentUserId();
-        List<WalletRecordVO> list = walletService.listRecords(userId);
+        List<WalletRecordVO> list = PaymentApiConverter.toVOList(walletApi.listRecords(userId));
         return Result.success(list);
     }
 }

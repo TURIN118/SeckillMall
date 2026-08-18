@@ -9,7 +9,7 @@ import com.seckill.mall.order.api.result.OrderSnapshot;
 import com.seckill.mall.service.RechargeCardService;
 import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.service.WalletService;
-import com.seckill.mall.vo.WalletRecordVO;
+import com.seckill.mall.payment.interfaces.vo.WalletRecordVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

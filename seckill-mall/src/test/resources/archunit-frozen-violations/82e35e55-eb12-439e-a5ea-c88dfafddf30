@@ -1,1 +1,0 @@
-Method <com.seckill.mall.controller.WalletController.balance()> calls method <com.seckill.mall.identity.infrastructure.entity.User.getBalance()> in (WalletController.java:57)

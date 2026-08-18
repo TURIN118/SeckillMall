@@ -2,8 +2,8 @@ package com.seckill.mall.service;
 
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.payment.infrastructure.entity.RechargeCard;
-import com.seckill.mall.vo.RechargeCardGenerateVO;
-import com.seckill.mall.vo.RechargeCardVO;
+import com.seckill.mall.payment.interfaces.vo.RechargeCardGenerateVO;
+import com.seckill.mall.payment.interfaces.vo.RechargeCardVO;
 
 import java.math.BigDecimal;
 import java.util.List;

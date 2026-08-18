@@ -1,11 +1,15 @@
-package com.seckill.mall.controller;
+package com.seckill.mall.payment.interfaces.web;
 
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.RechargeCardGenerateRequest;
-import com.seckill.mall.service.RechargeCardService;
-import com.seckill.mall.vo.RechargeCardGenerateVO;
-import com.seckill.mall.vo.RechargeCardVO;
+import com.seckill.mall.payment.api.RechargeCardApi;
+import com.seckill.mall.payment.api.command.DisableRechargeCardCommand;
+import com.seckill.mall.payment.api.command.GenerateRechargeCardCommand;
+import com.seckill.mall.payment.api.query.RechargeCardQuery;
+import com.seckill.mall.payment.application.facade.PaymentApiConverter;
+import com.seckill.mall.payment.interfaces.vo.RechargeCardGenerateVO;
+import com.seckill.mall.payment.interfaces.vo.RechargeCardVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -39,7 +43,7 @@ import java.util.List;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminRechargeCardController {
 
-    private final RechargeCardService rechargeCardService;
+    private final RechargeCardApi rechargeCardApi;
 
     @Operation(summary = "查询充值卡列表（分页，可按批次号筛选）")
     @GetMapping("/list")
@@ -47,19 +51,21 @@ public class AdminRechargeCardController {
                                                    @RequestParam(required = false, defaultValue = "10") Integer pageSize,
                                                    @RequestParam(required = false) String batchNo,
                                                    @RequestParam(required = false) String status) {
-        return Result.success(rechargeCardService.listPage(pageNum, pageSize, batchNo, status));
+        RechargeCardQuery query = PaymentApiConverter.toRechargeCardQuery(pageNum, pageSize, batchNo, status);
+        return Result.success(PaymentApiConverter.toRechargeCardVOPageResult(rechargeCardApi.listPage(query)));
     }
 
     @Operation(summary = "批量生成充值卡（返回明文卡密，仅此一次）")
     @PostMapping("/generate")
     public Result<List<RechargeCardGenerateVO>> generate(@Valid @RequestBody RechargeCardGenerateRequest req) {
-        return Result.success("生成成功", rechargeCardService.generate(req.getFaceValue(), req.getCount()));
+        GenerateRechargeCardCommand command = PaymentApiConverter.toGenerateCommand(req.getFaceValue(), req.getCount());
+        return Result.success("生成成功", PaymentApiConverter.toGenerateVOList(rechargeCardApi.generate(command)));
     }
 
     @Operation(summary = "禁用充值卡")
     @PutMapping("/{id}/disable")
     public Result<Void> disable(@PathVariable Long id) {
-        rechargeCardService.disable(id);
+        rechargeCardApi.disable(PaymentApiConverter.toDisableCommand(id));
         return Result.<Void>success("禁用成功", null);
     }
 }

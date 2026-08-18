@@ -1,7 +1,7 @@
 package com.seckill.mall.converter;
 
 import com.seckill.mall.payment.infrastructure.entity.RechargeCard;
-import com.seckill.mall.vo.RechargeCardVO;
+import com.seckill.mall.payment.interfaces.vo.RechargeCardVO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;

@@ -29,7 +29,7 @@ import com.seckill.mall.shared.kernel.port.CachePort;
 import com.seckill.mall.utils.DataMaskUtil;
 import com.seckill.mall.vo.LoginVO;
 import com.seckill.mall.vo.TokenVO;
-import com.seckill.mall.vo.UploadResultVO;
+import com.seckill.mall.upload.interfaces.vo.UploadResultVO;
 import com.seckill.mall.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

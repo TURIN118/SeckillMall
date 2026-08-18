@@ -1,6 +1,6 @@
 package com.seckill.mall.service;
 
-import com.seckill.mall.vo.UploadResultVO;
+import com.seckill.mall.upload.interfaces.vo.UploadResultVO;
 import org.springframework.web.multipart.MultipartFile;
 
 /**

@@ -5,7 +5,7 @@ import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.config.UploadProperties;
 import com.seckill.mall.service.StorageService;
 import com.seckill.mall.service.UploadService;
-import com.seckill.mall.vo.UploadResultVO;
+import com.seckill.mall.upload.interfaces.vo.UploadResultVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

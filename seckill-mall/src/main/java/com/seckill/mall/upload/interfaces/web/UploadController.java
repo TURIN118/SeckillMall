@@ -1,10 +1,11 @@
-package com.seckill.mall.controller;
+package com.seckill.mall.upload.interfaces.web;
 
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.Result;
-import com.seckill.mall.service.UploadService;
-import com.seckill.mall.vo.UploadResultVO;
+import com.seckill.mall.upload.api.UploadApi;
+import com.seckill.mall.upload.application.facade.UploadApiConverter;
+import com.seckill.mall.upload.interfaces.vo.UploadResultVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,7 @@ public class UploadController {
     /** bizType 合法取值：字母/数字/下划线/短横线，长度 1-32 */
     private static final Pattern BIZ_TYPE_PATTERN = Pattern.compile("^[A-Za-z0-9_-]{1,32}$");
 
-    private final UploadService uploadService;
+    private final UploadApi uploadApi;
 
     @Operation(summary = "通用图片上传")
     @PostMapping("/image")
@@ -53,6 +54,6 @@ public class UploadController {
         if (bizType != null && !BIZ_TYPE_PATTERN.matcher(bizType).matches()) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "bizType 格式非法");
         }
-        return Result.success("上传成功", uploadService.uploadImage(file, bizType, bizId));
+        return Result.success("上传成功", UploadApiConverter.toVO(uploadApi.uploadImage(file, bizType, bizId)));
     }
 }

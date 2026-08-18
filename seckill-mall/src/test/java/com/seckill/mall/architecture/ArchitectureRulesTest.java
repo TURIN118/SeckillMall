@@ -496,6 +496,29 @@ class ArchitectureRulesTest {
             .should().dependOnClassesThat().resideInAPackage("..banner.infrastructure.mapper..")
             .as("banner.interfaces 不应直接依赖 Mapper，应通过 API 接口访问数据"));
 
+    // AI. AI 模块包边界规则（Phase AI.6 新增）
+
+    /** 50. ai 模块不应依赖旧分层 Service（ai 模块应通过其他模块的 API 接口访问，不直接依赖旧 Service） */
+    @ArchTest
+    static final ArchRule ai_should_not_depend_on_legacy_service =
+        freeze(noClasses().that().resideInAPackage("..ai..")
+            .should().dependOnClassesThat().resideInAPackage("..service..")
+            .as("ai 模块不应依赖旧分层 service，应通过其他模块的 API 接口访问"));
+
+    /** 51. ai 模块不应依赖旧分层 Entity（ai 模块不应直接访问其他模块的持久化实体） */
+    @ArchTest
+    static final ArchRule ai_should_not_depend_on_legacy_entity =
+        freeze(noClasses().that().resideInAPackage("..ai..")
+            .should().dependOnClassesThat().resideInAPackage("..entity..")
+            .as("ai 模块不应依赖旧分层 entity，不应直接访问其他模块的持久化实体"));
+
+    /** 52. ai 模块不应依赖旧分层 Mapper（ai 模块不应直接访问其他模块的数据访问层） */
+    @ArchTest
+    static final ArchRule ai_should_not_depend_on_legacy_mapper =
+        freeze(noClasses().that().resideInAPackage("..ai..")
+            .should().dependOnClassesThat().resideInAPackage("..mapper..")
+            .as("ai 模块不应依赖旧分层 mapper，不应直接访问其他模块的数据访问层"));
+
     /**
      * 用 FreezingArchRule 包装规则，启用 freeze 模式。
      *

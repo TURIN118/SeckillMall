@@ -9,6 +9,7 @@ import com.seckill.mall.config.UploadProperties;
 import com.seckill.mall.dto.LoginRequest;
 import com.seckill.mall.dto.RegisterRequest;
 import com.seckill.mall.identity.infrastructure.mapper.UserMapper;
+import com.seckill.mall.identity.interfaces.web.AuthController;
 import com.seckill.mall.security.JwtUtils;
 import com.seckill.mall.security.TokenBlacklistService;
 import com.seckill.mall.security.TokenVersionService;

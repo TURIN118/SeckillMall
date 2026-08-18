@@ -1,4 +1,4 @@
-package com.seckill.mall.controller;
+package com.seckill.mall.identity.interfaces.web;
 
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;

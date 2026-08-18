@@ -5,9 +5,12 @@ import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.EmailUpdateRequest;
 import com.seckill.mall.dto.PhoneUpdateRequest;
+import com.seckill.mall.identity.api.AuthApi;
+import com.seckill.mall.identity.api.UserApi;
+import com.seckill.mall.identity.api.command.UpdateEmailCommand;
+import com.seckill.mall.identity.api.command.UpdatePhoneCommand;
+import com.seckill.mall.identity.application.facade.IdentityApiConverter;
 import com.seckill.mall.security.SecurityUtils;
-import com.seckill.mall.service.UserService;
-import com.seckill.mall.service.VerificationCodeService;
 import com.seckill.mall.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,18 +23,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 用户个人信息 Controller
- * <p>
- * 前缀 {@code /api/v1/users}，需登录（BUYER/ADMIN）。
- * 提供修改手机号/邮箱接口，均需先校验验证码。
- * <p>
- * M-D2 修复：移除对 {@code UserMapper} 的直接依赖，全部下沉到 {@link UserService}，
- * Controller 仅编排并返回 {@code Result<VO>}。
+ * 用户个人信息 Controller（Phase I.4-C 已切换到 {@link UserApi}/{@link AuthApi}）。
  *
- * 创建人：@author WNJ
- * 项目名称：seckill-mall
- * 文件名称：UserController.java
- * 邮箱：nj651217@163.com
+ * <p>前缀 {@code /api/v1/users}，需登录（BUYER/ADMIN）。
+ * 提供修改手机号/邮箱接口，均需先校验验证码。
+ *
+ * <p>Strangler Pattern：注入 {@link UserApi} + {@link AuthApi} 替代旧
+ * {@code UserService}/{@code VerificationCodeService}，通过 {@link IdentityApiConverter}
+ * 做旧 Request → Command、Snapshot → VO 转换，保持前端入参/出参结构不变。
+ *
+ * <p>创建人：@author WNJ
  */
 @Tag(name = "用户个人信息", description = "修改手机号/邮箱（需验证码校验）")
 @RestController
@@ -40,8 +41,8 @@ import org.springframework.web.bind.annotation.RestController;
 @PreAuthorize("hasAnyRole('BUYER','ADMIN')")
 public class UserController {
 
-    private final UserService userService;
-    private final VerificationCodeService verificationCodeService;
+    private final UserApi userApi;
+    private final AuthApi authApi;
     private final SecurityUtils securityUtils;
 
     @Operation(summary = "修改手机号（需验证码校验）")
@@ -49,11 +50,15 @@ public class UserController {
     public Result<UserVO> updatePhone(@Valid @RequestBody PhoneUpdateRequest req) {
         Long userId = securityUtils.getCurrentUserId();
         // 先校验验证码（target 为新手机号）
-        if (!verificationCodeService.verifyCode(req.getPhone(), req.getCode())) {
+        if (!authApi.verifyCode(req.getPhone(), req.getCode())) {
             throw new BusinessException(ErrorCode.VERIFICATION_CODE_INVALID);
         }
-        UserVO vo = userService.updatePhone(userId, req.getPhone());
-        return Result.success("手机号修改成功", vo);
+        UpdatePhoneCommand command = UpdatePhoneCommand.builder()
+                .userId(userId)
+                .phone(req.getPhone())
+                .build();
+        return Result.success("手机号修改成功",
+                IdentityApiConverter.toUserVO(userApi.updateUserPhone(command)));
     }
 
     @Operation(summary = "修改邮箱（需验证码校验）")
@@ -61,10 +66,14 @@ public class UserController {
     public Result<UserVO> updateEmail(@Valid @RequestBody EmailUpdateRequest req) {
         Long userId = securityUtils.getCurrentUserId();
         // 先校验验证码（target 为新邮箱）
-        if (!verificationCodeService.verifyCode(req.getEmail(), req.getCode())) {
+        if (!authApi.verifyCode(req.getEmail(), req.getCode())) {
             throw new BusinessException(ErrorCode.VERIFICATION_CODE_INVALID);
         }
-        UserVO vo = userService.updateEmail(userId, req.getEmail());
-        return Result.success("邮箱修改成功", vo);
+        UpdateEmailCommand command = UpdateEmailCommand.builder()
+                .userId(userId)
+                .email(req.getEmail())
+                .build();
+        return Result.success("邮箱修改成功",
+                IdentityApiConverter.toUserVO(userApi.updateUserEmail(command)));
     }
 }

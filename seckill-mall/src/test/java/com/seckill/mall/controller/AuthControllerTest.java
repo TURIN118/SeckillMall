@@ -8,17 +8,18 @@ import com.seckill.mall.common.GlobalExceptionHandler;
 import com.seckill.mall.config.UploadProperties;
 import com.seckill.mall.dto.LoginRequest;
 import com.seckill.mall.dto.RegisterRequest;
+import com.seckill.mall.identity.api.AuthApi;
+import com.seckill.mall.identity.api.UserApi;
+import com.seckill.mall.identity.api.command.LoginCommand;
+import com.seckill.mall.identity.api.command.RegisterCommand;
+import com.seckill.mall.identity.api.dto.UserSnapshot;
+import com.seckill.mall.identity.api.result.LoginResult;
 import com.seckill.mall.identity.infrastructure.mapper.UserMapper;
 import com.seckill.mall.identity.interfaces.web.AuthController;
 import com.seckill.mall.security.JwtUtils;
 import com.seckill.mall.security.TokenBlacklistService;
 import com.seckill.mall.security.TokenVersionService;
 import com.seckill.mall.security.UserStatusCacheService;
-import com.seckill.mall.service.AuthService;
-import com.seckill.mall.service.CaptchaService;
-import com.seckill.mall.service.UploadService;
-import com.seckill.mall.vo.LoginVO;
-import com.seckill.mall.vo.UserVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,23 +32,18 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 创建人：@author WNJ
- * 项目名称：seckill-mall
- * 文件名称：AuthControllerTest.java
- * 邮箱：nj651217@163.com
+ * AuthController 测试（Phase I.4-C 已切换到 mock {@link AuthApi}/{@link UserApi}）。
+ *
+ * <p>创建人：@author WNJ
  */
 @WebMvcTest(controllers = AuthController.class)
 @AutoConfigureMockMvc(addFilters = false)
-// 问题2修复：WebMvcConfig 依赖 UploadProperties，@WebMvcTest 不会自动加载
-// @ConfigurationProperties bean，需显式 Import 并提供测试属性，避免上下文初始化失败。
-// 同时提供 sign-secret 以通过 ReplayProtectionFilter 的 @PostConstruct 启动校验。
 @Import({UploadProperties.class, GlobalExceptionHandler.class})
 @TestPropertySource(properties = {
         "upload.base-dir=/tmp/test-upload",
@@ -62,12 +58,9 @@ class AuthControllerTest {
     private ObjectMapper objectMapper;
 
     @MockBean
-    private AuthService authService;
+    private AuthApi authApi;
     @MockBean
-    private CaptchaService captchaService;
-    // AuthController 还依赖 UploadService，需 mock 以完成构造器注入
-    @MockBean
-    private UploadService uploadService;
+    private UserApi userApi;
     // 安全 Filter 依赖：便于 OncePerRequestFilter 子类装配，addFilters=false 时不参与请求链
     @MockBean
     private JwtUtils jwtUtils;
@@ -101,7 +94,6 @@ class AuthControllerTest {
         req.setUsername("");
 
         // when / then
-        // M-S6 修复：参数校验失败现返回 400 而非 200
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
@@ -117,7 +109,6 @@ class AuthControllerTest {
         req.setPhone("123");
 
         // when / then
-        // M-S6 修复：参数校验失败现返回 400 而非 200
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
@@ -130,10 +121,11 @@ class AuthControllerTest {
     void register_shouldReturnSuccess() throws Exception {
         // given
         RegisterRequest req = validRegisterRequest();
-        UserVO vo = new UserVO();
-        vo.setId(1L);
-        vo.setUsername(req.getUsername());
-        given(authService.register(any(RegisterRequest.class))).willReturn(vo);
+        UserSnapshot snapshot = UserSnapshot.builder()
+                .id(1L)
+                .username(req.getUsername())
+                .build();
+        given(authApi.register(any(RegisterCommand.class))).willReturn(snapshot);
 
         // when / then
         mockMvc.perform(post("/api/v1/auth/register")
@@ -153,7 +145,6 @@ class AuthControllerTest {
         req.setPassword("pass123");
 
         // when / then
-        // M-S6 修复：参数校验失败现返回 400 而非 200
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
@@ -168,10 +159,12 @@ class AuthControllerTest {
         LoginRequest req = new LoginRequest();
         req.setUsername("buyer01");
         req.setPassword("buyer123");
-        LoginVO vo = new LoginVO();
-        vo.setAccessToken("access-token");
-        vo.setRefreshToken("refresh-token");
-        given(authService.login(any(LoginRequest.class), anyString(), any())).willReturn(vo);
+        LoginResult result = LoginResult.builder()
+                .accessToken("access-token")
+                .refreshToken("refresh-token")
+                .tokenType("Bearer")
+                .build();
+        given(authApi.login(any(LoginCommand.class))).willReturn(result);
 
         // when / then
         mockMvc.perform(post("/api/v1/auth/login")
@@ -188,13 +181,11 @@ class AuthControllerTest {
         // given
         LoginRequest req = new LoginRequest();
         req.setUsername("buyer01");
-        // 密码需满足 @Size(min=6) 校验，否则校验失败返回 400 而非业务异常 403
         req.setPassword("wrongpwd");
-        given(authService.login(any(LoginRequest.class), anyString(), any()))
+        given(authApi.login(any(LoginCommand.class)))
                 .willThrow(new BusinessException(ErrorCode.USERNAME_OR_PASSWORD_ERROR));
 
         // when / then
-        // M-S6 修复：USERNAME_OR_PASSWORD_ERROR 现返回 403 而非 200
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))

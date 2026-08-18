@@ -3,8 +3,8 @@ package com.seckill.mall.identity.interfaces.web;
 import com.seckill.mall.annotation.RateLimit;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.Result;
+import com.seckill.mall.identity.api.AuthApi;
 import com.seckill.mall.security.SecurityUtils;
-import com.seckill.mall.service.VerificationCodeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -24,15 +24,15 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
- * 验证码 Controller
- * <p>
- * 前缀 {@code /api/v1/verification}，发送与校验接口均可匿名访问
+ * 验证码 Controller（Phase I.4-C 已切换到 {@link AuthApi}）。
+ *
+ * <p>前缀 {@code /api/v1/verification}，发送与校验接口均可匿名访问
  * （在 {@code SecurityConfig} 白名单中配置）。
- * <p>
- * 创建人：@author WNJ
- * 项目名称：seckill-mall
- * 文件名称：VerificationCodeController.java
- * 邮箱：nj651217@163.com
+ *
+ * <p>Strangler Pattern：注入 {@link AuthApi} 替代旧 {@code VerificationCodeService}，
+ * 保留 {@link StringRedisTemplate} 用于每日限额检查（横切基础设施，过渡期保留）。
+ *
+ * <p>创建人：@author WNJ
  */
 @Slf4j
 @Tag(name = "验证码", description = "邮箱/短信验证码发送与校验")
@@ -80,7 +80,7 @@ public class VerificationCodeController {
                     + "return count",
             Long.class);
 
-    private final VerificationCodeService verificationCodeService;
+    private final AuthApi authApi;
     private final StringRedisTemplate stringRedisTemplate;
     private final SecurityUtils securityUtils;
 
@@ -116,7 +116,7 @@ public class VerificationCodeController {
             log.warn("邮箱验证码每日上限触发 email={}", email);
             return Result.error(ErrorCode.VERIFICATION_CODE_RATE_LIMIT);
         }
-        verificationCodeService.sendEmailCode(email);
+        authApi.sendEmailCode(email);
         return Result.<Void>success("发送成功", null);
     }
 
@@ -138,7 +138,7 @@ public class VerificationCodeController {
             log.warn("短信验证码每日上限触发 phone={}", phone);
             return Result.error(ErrorCode.VERIFICATION_CODE_RATE_LIMIT);
         }
-        verificationCodeService.sendSmsCode(phone);
+        authApi.sendSmsCode(phone);
         return Result.<Void>success("发送成功", null);
     }
 
@@ -152,7 +152,7 @@ public class VerificationCodeController {
         if (target == null || target.isEmpty() || code == null || code.isEmpty()) {
             return Result.error(ErrorCode.PARAM_ERROR);
         }
-        boolean ok = verificationCodeService.verifyCode(target, code);
+        boolean ok = authApi.verifyCode(target, code);
         if (!ok) {
             return Result.error(ErrorCode.VERIFICATION_CODE_INVALID);
         }

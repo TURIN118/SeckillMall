@@ -935,4 +935,157 @@ public class IdentityApiConverter {
                         .collect(Collectors.toList());
         return PageResult.of(voList, dtoPage.getTotal(), dtoPage.getPageNum(), dtoPage.getPageSize());
     }
+
+    // ============================================================
+    // 旧 Request → Command 转换（旧 DTO → API 层 Command，供 Controller 切换后保持前端入参兼容）
+    // ============================================================
+
+    /**
+     * 将旧 {@link RegisterRequest} 转换为 {@link RegisterCommand}。
+     *
+     * <p>字段映射：{@code captchaKey} → {@code captchaId}。
+     *
+     * @param req 旧注册请求
+     * @return 注册命令
+     */
+    public static RegisterCommand toRegisterCommand(RegisterRequest req) {
+        if (req == null) {
+            return null;
+        }
+        return RegisterCommand.builder()
+                .username(req.getUsername())
+                .password(req.getPassword())
+                .phone(req.getPhone())
+                .captchaId(req.getCaptchaKey())
+                .captchaCode(req.getCaptchaCode())
+                .build();
+    }
+
+    /**
+     * 将旧 {@link LoginRequest} 转换为 {@link LoginCommand}。
+     *
+     * <p>字段映射：{@code captchaKey} → {@code captchaId}。
+     *
+     * @param req      旧登录请求
+     * @param ip       客户端 IP
+     * @param userAgent User-Agent
+     * @return 登录命令
+     */
+    public static LoginCommand toLoginCommand(LoginRequest req, String ip, String userAgent) {
+        if (req == null) {
+            return null;
+        }
+        return LoginCommand.builder()
+                .username(req.getUsername())
+                .password(req.getPassword())
+                .captchaId(req.getCaptchaKey())
+                .captchaCode(req.getCaptchaCode())
+                .ip(ip)
+                .userAgent(userAgent)
+                .build();
+    }
+
+    /**
+     * 将旧 {@link ChangePasswordRequest} 转换为 {@link ChangePasswordCommand}。
+     *
+     * @param req 旧修改密码请求
+     * @return 修改密码命令
+     */
+    public static ChangePasswordCommand toChangePasswordCommand(ChangePasswordRequest req) {
+        if (req == null) {
+            return null;
+        }
+        return ChangePasswordCommand.builder()
+                .oldPassword(req.getOldPassword())
+                .newPassword(req.getNewPassword())
+                .build();
+    }
+
+    /**
+     * 将旧 {@link ProfileUpdateRequest} 转换为 {@link UpdateProfileCommand}。
+     *
+     * <p>字段映射：{@code avatar} → {@code avatarUrl}。
+     *
+     * @param req 旧资料更新请求
+     * @return 更新资料命令
+     */
+    public static UpdateProfileCommand toUpdateProfileCommand(ProfileUpdateRequest req) {
+        if (req == null) {
+            return null;
+        }
+        return UpdateProfileCommand.builder()
+                .nickname(req.getNickname())
+                .email(req.getEmail())
+                .phone(req.getPhone())
+                .avatarUrl(req.getAvatar())
+                .build();
+    }
+
+    /**
+     * 将旧 {@link RefreshTokenRequest} 转换为 {@link RefreshTokenCommand}。
+     *
+     * @param req 旧刷新令牌请求
+     * @return 刷新令牌命令
+     */
+    public static RefreshTokenCommand toRefreshTokenCommand(RefreshTokenRequest req) {
+        if (req == null) {
+            return null;
+        }
+        return RefreshTokenCommand.builder()
+                .refreshToken(req.getRefreshToken())
+                .build();
+    }
+
+    /**
+     * 将旧 {@link ForgotPasswordSendRequest} 转换为 {@link SendCodeCommand}。
+     *
+     * @param req 旧发送验证码请求
+     * @return 发送验证码命令
+     */
+    public static SendCodeCommand toSendCodeCommand(ForgotPasswordSendRequest req) {
+        if (req == null) {
+            return null;
+        }
+        return SendCodeCommand.builder()
+                .type(req.getType())
+                .account(req.getAccount())
+                .build();
+    }
+
+    /**
+     * 将旧 {@link ForgotPasswordResetRequest} 转换为 {@link ResetPasswordCommand}。
+     *
+     * @param req 旧重置密码请求
+     * @return 重置密码命令
+     */
+    public static ResetPasswordCommand toResetPasswordCommand(ForgotPasswordResetRequest req) {
+        if (req == null) {
+            return null;
+        }
+        return ResetPasswordCommand.builder()
+                .type(req.getType())
+                .account(req.getAccount())
+                .code(req.getCode())
+                .newPassword(req.getNewPassword())
+                .build();
+    }
+
+    /**
+     * 将旧 {@link UserListRequest} 转换为 {@link UserListQuery}。
+     *
+     * @param req 旧用户列表请求
+     * @return 用户列表查询条件
+     */
+    public static UserListQuery toUserListQuery(UserListRequest req) {
+        if (req == null) {
+            return null;
+        }
+        return UserListQuery.builder()
+                .pageNum(req.getPageNum())
+                .pageSize(req.getPageSize())
+                .role(req.getRole())
+                .status(req.getStatus())
+                .keyword(req.getKeyword())
+                .build();
+    }
 }

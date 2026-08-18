@@ -423,6 +423,31 @@ class ArchitectureRulesTest {
             .should().dependOnClassesThat().resideInAPackage("..system.infrastructure.mapper..")
             .as("system.interfaces 不应直接依赖 Mapper，应通过 API 接口访问数据"));
 
+    // ============================================================
+    // N. Upload 模块包边界规则（Phase U.6 新增）
+    // ============================================================
+
+    /** 41. upload.api 不应依赖 upload.infrastructure（API 契约层不应依赖基础设施层，保持接口纯洁性） */
+    @ArchTest
+    static final ArchRule upload_api_should_not_depend_on_infrastructure =
+        freeze(noClasses().that().resideInAPackage("..upload.api..")
+            .should().dependOnClassesThat().resideInAPackage("..upload.infrastructure..")
+            .as("upload.api 不应依赖 upload.infrastructure，API 层保持接口纯洁性"));
+
+    /** 42. upload.application 不应直接依赖 Mapper（Application 层应通过 API 接口访问数据） */
+    @ArchTest
+    static final ArchRule upload_application_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..upload.application..")
+            .should().dependOnClassesThat().resideInAPackage("..upload.infrastructure.mapper..")
+            .as("upload.application 不应直接依赖 Mapper，应通过 API 接口访问数据"));
+
+    /** 43. upload.interfaces 不应直接依赖 Mapper（接口层应通过 API 接口访问数据） */
+    @ArchTest
+    static final ArchRule upload_interfaces_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..upload.interfaces..")
+            .should().dependOnClassesThat().resideInAPackage("..upload.infrastructure.mapper..")
+            .as("upload.interfaces 不应直接依赖 Mapper，应通过 API 接口访问数据"));
+
     /**
      * 用 FreezingArchRule 包装规则，启用 freeze 模式。
      *

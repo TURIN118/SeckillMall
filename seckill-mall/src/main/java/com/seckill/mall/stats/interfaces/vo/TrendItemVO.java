@@ -1,4 +1,4 @@
-package com.seckill.mall.vo;
+package com.seckill.mall.stats.interfaces.vo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

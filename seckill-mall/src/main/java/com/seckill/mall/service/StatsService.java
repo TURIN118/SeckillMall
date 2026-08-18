@@ -1,10 +1,10 @@
 package com.seckill.mall.service;
 
-import com.seckill.mall.vo.OrderStatusItemVO;
+import com.seckill.mall.stats.interfaces.vo.OrderStatusItemVO;
 import com.seckill.mall.seckill.interfaces.vo.SeckillOverviewVO;
 import com.seckill.mall.seckill.interfaces.vo.SeckillRankingVO;
-import com.seckill.mall.vo.StatsOverviewVO;
-import com.seckill.mall.vo.TrendItemVO;
+import com.seckill.mall.stats.interfaces.vo.StatsOverviewVO;
+import com.seckill.mall.stats.interfaces.vo.TrendItemVO;
 
 import java.util.List;
 

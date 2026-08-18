@@ -1,6 +1,6 @@
 package com.seckill.mall.mapper;
 
-import com.seckill.mall.entity.SeckillOrder;
+import com.seckill.mall.seckill.infrastructure.entity.SeckillOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

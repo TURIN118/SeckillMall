@@ -13,7 +13,7 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.SeckillCreateRequest;
 import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.product.api.dto.ProductSnapshot;
-import com.seckill.mall.entity.SeckillGoods;
+import com.seckill.mall.seckill.infrastructure.entity.SeckillGoods;
 import com.seckill.mall.entity.enums.SeckillStatus;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.security.SecurityUtils;

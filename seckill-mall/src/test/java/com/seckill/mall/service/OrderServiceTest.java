@@ -8,7 +8,7 @@ import com.seckill.mall.cart.api.CartApi;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrderItem;
 import com.seckill.mall.product.infrastructure.entity.Product;
-import com.seckill.mall.entity.SeckillOrder;
+import com.seckill.mall.seckill.infrastructure.entity.SeckillOrder;
 import com.seckill.mall.identity.infrastructure.entity.UserAddress;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.product.api.InventoryApi;

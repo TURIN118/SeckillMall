@@ -1,7 +1,7 @@
 package com.seckill.mall.mq.producer;
 
 import com.seckill.mall.config.RabbitMQConfig;
-import com.seckill.mall.entity.SeckillOrder;
+import com.seckill.mall.seckill.infrastructure.entity.SeckillOrder;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mq.message.OrderDelayMessage;
 import com.seckill.mall.mq.message.SeckillOrderMessage;

@@ -3,7 +3,7 @@ package com.seckill.mall.scheduler;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.seckill.mall.cache.RedisKeyConstants;
 import com.seckill.mall.cache.RedisService;
-import com.seckill.mall.entity.SeckillGoods;
+import com.seckill.mall.seckill.infrastructure.entity.SeckillGoods;
 import com.seckill.mall.entity.enums.SeckillStatus;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import lombok.RequiredArgsConstructor;

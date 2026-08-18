@@ -1,6 +1,6 @@
 package com.seckill.mall.vo;
 
-import com.seckill.mall.entity.SeckillOrder;
+import com.seckill.mall.seckill.infrastructure.entity.SeckillOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import lombok.Data;
 

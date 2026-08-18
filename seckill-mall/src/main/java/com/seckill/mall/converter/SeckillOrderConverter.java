@@ -1,6 +1,6 @@
 package com.seckill.mall.converter;
 
-import com.seckill.mall.entity.SeckillOrder;
+import com.seckill.mall.seckill.infrastructure.entity.SeckillOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.vo.SeckillOrderVO;
 import org.mapstruct.AfterMapping;

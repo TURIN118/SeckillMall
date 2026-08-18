@@ -1,7 +1,7 @@
 package com.seckill.mall.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.seckill.mall.entity.SeckillActivity;
+import com.seckill.mall.seckill.infrastructure.entity.SeckillActivity;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

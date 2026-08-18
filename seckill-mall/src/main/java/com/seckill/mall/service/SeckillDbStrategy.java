@@ -2,7 +2,7 @@ package com.seckill.mall.service;
 
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
-import com.seckill.mall.entity.SeckillOrder;
+import com.seckill.mall.seckill.infrastructure.entity.SeckillOrder;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
 import lombok.RequiredArgsConstructor;

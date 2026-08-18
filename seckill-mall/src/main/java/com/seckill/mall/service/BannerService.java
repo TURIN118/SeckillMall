@@ -2,7 +2,7 @@ package com.seckill.mall.service;
 
 import com.seckill.mall.dto.BannerCreateRequest;
 import com.seckill.mall.dto.BannerUpdateRequest;
-import com.seckill.mall.vo.BannerVO;
+import com.seckill.mall.banner.interfaces.vo.BannerVO;
 
 import java.util.List;
 

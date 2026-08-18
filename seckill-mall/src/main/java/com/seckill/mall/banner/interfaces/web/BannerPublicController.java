@@ -1,8 +1,9 @@
-package com.seckill.mall.controller;
+package com.seckill.mall.banner.interfaces.web;
 
+import com.seckill.mall.banner.api.BannerApi;
+import com.seckill.mall.banner.application.facade.BannerApiConverter;
+import com.seckill.mall.banner.interfaces.vo.BannerVO;
 import com.seckill.mall.common.Result;
-import com.seckill.mall.service.BannerService;
-import com.seckill.mall.vo.BannerVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,8 @@ import java.util.List;
  * 轮播图前台公开 Controller
  * 前缀：/api/v1/banners，无需登录
  *
+ * Phase B.4 迁移：注入 BannerApi 替代 BannerService，通过 BannerApiConverter 适配 VO 契约。
+ *
  * 创建人：@author WNJ
  * 项目名称：seckill-mall
  * 文件名称：BannerPublicController.java
@@ -27,11 +30,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BannerPublicController {
 
-    private final BannerService bannerService;
+    private final BannerApi bannerApi;
 
     @Operation(summary = "查启用轮播图（前台首页）")
     @GetMapping("/active")
     public Result<List<BannerVO>> active() {
-        return Result.success(bannerService.listActive());
+        return Result.success(BannerApiConverter.toVOList(bannerApi.listActive()));
     }
 }

@@ -1,4 +1,4 @@
-package com.seckill.mall.entity;
+package com.seckill.mall.banner.infrastructure.entity;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;

@@ -3,8 +3,10 @@ package com.seckill.mall.service.impl;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.identity.api.UserApi;
-import com.seckill.mall.service.SeckillGoodsService;
-import com.seckill.mall.service.SeckillOrderService;
+import com.seckill.mall.seckill.api.SeckillGoodsApi;
+import com.seckill.mall.seckill.api.SeckillOrderApi;
+import com.seckill.mall.seckill.api.dto.SeckillRankingDTO;
+import com.seckill.mall.seckill.application.facade.SeckillApiConverter;
 import com.seckill.mall.service.StatsService;
 import com.seckill.mall.vo.OrderStatusItemVO;
 import com.seckill.mall.seckill.interfaces.vo.SeckillOverviewVO;
@@ -57,8 +59,8 @@ public class StatsServiceImpl implements StatsService {
     private static final int RANKING_MAX_LIMIT = 50;
 
     private final UserApi userApi;
-    private final SeckillOrderService seckillOrderService;
-    private final SeckillGoodsService seckillGoodsService;
+    private final SeckillOrderApi seckillOrderApi;
+    private final SeckillGoodsApi seckillGoodsApi;
     private final ProductApi productApi;
 
     @Override
@@ -69,16 +71,16 @@ public class StatsServiceImpl implements StatsService {
         vo.setUserCount(userApi.countAll());
 
         // 订单总数
-        vo.setOrderCount(seckillOrderService.countAll());
+        vo.setOrderCount(seckillOrderApi.countAll());
 
         // 秒杀活动数
-        vo.setSeckillCount(seckillGoodsService.countAll());
+        vo.setSeckillCount(seckillGoodsApi.countAll());
 
         // 商品总数
         vo.setProductCount(productApi.countAll());
 
         // 销售总额（仅统计 PAID/COMPLETED）
-        BigDecimal sales = seckillOrderService.sumSalesAmount(
+        BigDecimal sales = seckillOrderApi.sumSalesAmount(
                 List.of(OrderStatus.PAID, OrderStatus.COMPLETED));
         vo.setTotalSales(sales == null ? BigDecimal.ZERO : sales);
 
@@ -87,7 +89,7 @@ public class StatsServiceImpl implements StatsService {
         Long todayUser = userApi.countTodayRegistered(today);
         vo.setTodayUserCount(todayUser == null ? 0L : todayUser);
 
-        Long todayOrder = seckillOrderService.countTodayOrders(today);
+        Long todayOrder = seckillOrderApi.countTodayOrders(today);
         vo.setTodayOrderCount(todayOrder == null ? 0L : todayOrder);
 
         return vo;
@@ -112,7 +114,7 @@ public class StatsServiceImpl implements StatsService {
         LocalDate startDate = endDate.minusDays(n - 1L);
 
         // 复用现有 selectOrderTrend：按日期分组统计订单数（仅统计 PAID/COMPLETED）
-        List<Map<String, Object>> rows = seckillOrderService.selectOrderTrend(
+        List<Map<String, Object>> rows = seckillOrderApi.selectOrderTrend(
                 startDate, endDate, List.of(OrderStatus.PAID, OrderStatus.COMPLETED));
         Map<String, Long> countByDate = indexByDate(rows);
 
@@ -122,15 +124,16 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public List<SeckillRankingVO> getSeckillRanking(Integer limit) {
         int n = normalizeLimit(limit);
-        List<SeckillRankingVO> rows = seckillOrderService.selectSeckillRanking(
+        // Phase SK.5：切换到 SeckillOrderApi，返回 DTO 而非 VO，用 SeckillApiConverter 适配回 VO
+        List<SeckillRankingDTO> rows = seckillOrderApi.selectSeckillRanking(
                 List.of(OrderStatus.PAID, OrderStatus.COMPLETED), n);
-        return rows == null ? Collections.emptyList() : rows;
+        return rows == null ? Collections.emptyList() : SeckillApiConverter.toRankingVOList(rows);
     }
 
     @Override
     public List<OrderStatusItemVO> getOrderStatusDistribution() {
         // 复用现有 selectStatusDistribution：按 status 分组统计订单数（不限时间范围）
-        List<Map<String, Object>> rows = seckillOrderService.selectStatusDistribution(null, null);
+        List<Map<String, Object>> rows = seckillOrderApi.selectStatusDistribution(null, null);
 
         // 按状态码建立计数索引
         Map<String, Long> countByStatus = new HashMap<>();
@@ -159,19 +162,19 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public SeckillOverviewVO getSeckillOverview() {
         SeckillOverviewVO vo = new SeckillOverviewVO();
-        // Phase 14：秒杀活动计数逻辑下沉至 SeckillGoodsService，此处仅做异常兜底
+        // Phase 14：秒杀活动计数逻辑下沉至 SeckillGoodsApi，此处仅做异常兜底
         try {
-            vo.setActiveCount(Math.toIntExact(seckillGoodsService.countActive()));
+            vo.setActiveCount(Math.toIntExact(seckillGoodsApi.countActive()));
         } catch (Exception e) {
             log.debug("进行中秒杀数采集失败: {}", e.getMessage());
         }
         try {
-            vo.setPendingCount(Math.toIntExact(seckillGoodsService.countPending()));
+            vo.setPendingCount(Math.toIntExact(seckillGoodsApi.countPending()));
         } catch (Exception e) {
             log.debug("待开始秒杀数采集失败: {}", e.getMessage());
         }
         try {
-            vo.setCompletedToday(Math.toIntExact(seckillGoodsService.countCompletedToday()));
+            vo.setCompletedToday(Math.toIntExact(seckillGoodsApi.countCompletedToday()));
         } catch (Exception e) {
             log.debug("今日已完成秒杀数采集失败: {}", e.getMessage());
         }

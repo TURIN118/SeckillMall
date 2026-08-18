@@ -4,7 +4,7 @@ import com.rabbitmq.client.Channel;
 import com.seckill.mall.config.RabbitMQConfig;
 import com.seckill.mall.mq.message.OrderDelayMessage;
 import com.seckill.mall.order.api.OrderApi;
-import com.seckill.mall.service.SeckillOrderService;
+import com.seckill.mall.seckill.api.SeckillOrderApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -20,7 +20,7 @@ import java.io.IOException;
  * <p>混合消费者，同时处理普通订单和秒杀订单的超时取消：
  * <ul>
  *     <li>普通订单：调用 {@link OrderApi#timeoutCancel(Long)}（Phase 3.5 切换，替代旧 OrderLifecycleService）</li>
- *     <li>秒杀订单：调用 {@link SeckillOrderService#timeoutCancel(Long)}（保持不变）</li>
+ *     <li>秒杀订单：调用 {@link SeckillOrderApi#timeoutCancel(Long)}（Phase SK.5 切换，替代旧 SeckillOrderService）</li>
  * </ul>
  *
  * <p>{@link OrderDelayMessage} 保留在 {@code com.seckill.mall.mq.message}（共享消息，
@@ -39,7 +39,7 @@ public class OrderCancelConsumer {
     private static final String ORDER_TYPE_NORMAL = "NORMAL";
 
     private final OrderApi orderApi;
-    private final SeckillOrderService seckillOrderService;
+    private final SeckillOrderApi seckillOrderApi;
 
     @RabbitListener(queues = RabbitMQConfig.ORDER_CANCEL_QUEUE)
     public void handleOrderCancel(OrderDelayMessage message,
@@ -59,7 +59,7 @@ public class OrderCancelConsumer {
                 }
             } else {
                 // 秒杀订单超时取消（默认行为）
-                cancelled = seckillOrderService.timeoutCancel(message.getOrderId());
+                cancelled = seckillOrderApi.timeoutCancel(message.getOrderId());
                 if (cancelled) {
                     log.info("秒杀订单超时取消成功 orderId={} orderNo={}", message.getOrderId(), message.getOrderNo());
                 } else {

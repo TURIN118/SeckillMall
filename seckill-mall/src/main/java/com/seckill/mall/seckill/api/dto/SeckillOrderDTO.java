@@ -33,6 +33,9 @@ public class SeckillOrderDTO {
     /** 订单 ID */
     private Long id;
 
+    /** 订单号 */
+    private String orderNo;
+
     /** 用户 ID */
     private Long userId;
 

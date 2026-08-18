@@ -8,6 +8,8 @@ import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrderItem;
 import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.product.api.dto.ProductSnapshot;
+import com.seckill.mall.seckill.api.SeckillOrderApi;
+import com.seckill.mall.seckill.api.dto.SeckillOrderDTO;
 import com.seckill.mall.seckill.infrastructure.entity.SeckillOrder;
 import com.seckill.mall.identity.infrastructure.entity.UserAddress;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
@@ -55,6 +57,9 @@ public class OrderQueryServiceImpl implements OrderQueryService {
     private final NormalOrderItemMapper normalOrderItemMapper;
     private final UserAddressService userAddressService;
     private final ProductApi productApi;
+    // Phase SK.5：切换到 SeckillOrderApi（getSeckillOrdersForUnifiedList/logicalDeleteSeckillOrder）
+    private final SeckillOrderApi seckillOrderApi;
+    // 保留 SeckillOrderService：getSeckillOrderById 不在 API 中（API 不暴露 Entity）
     private final SeckillOrderService seckillOrderService;
 
     // ==================== 普通订单详情查询 ====================
@@ -89,11 +94,11 @@ public class OrderQueryServiceImpl implements OrderQueryService {
         // 此处添加 LIMIT 兜底（最多查 pageNum*pageSize 条），避免大用户量全表加载。
         // 完整方案应改为 DB 层分页（分别按页查询秒杀/普通订单后归并），此处先做限流保护。
         int maxLoad = num * size;
-        List<SeckillOrder> seckillOrders = java.util.Collections.emptyList();
+        List<SeckillOrderDTO> seckillOrders = java.util.Collections.emptyList();
         if (typeFilter == null || "SECKILL".equals(typeFilter)) {
-            // Phase 7：改用 SeckillOrderService 跨模块内部调用，消除 SeckillOrderMapper 依赖
-            // 原本在此处构造 LambdaQueryWrapper，现已下沉至 SeckillOrderServiceImpl#getSeckillOrdersForUnifiedList
-            seckillOrders = seckillOrderService.getSeckillOrdersForUnifiedList(userId, toStatusInt(statusFilter), maxLoad);
+            // Phase SK.5：改用 SeckillOrderApi 跨模块调用，返回 DTO 而非 Entity
+            // 原本在此处构造 LambdaQueryWrapper，现已下沉至 SeckillOrderApplicationService#getSeckillOrdersForUnifiedList
+            seckillOrders = seckillOrderApi.getSeckillOrdersForUnifiedList(userId, toStatusInt(statusFilter), maxLoad);
         }
 
         // 3. 查询普通订单（按 userId + status 过滤，按 createTime 降序）
@@ -111,7 +116,7 @@ public class OrderQueryServiceImpl implements OrderQueryService {
 
         // 4. 批量查询秒杀订单对应的商品快照（避免 N+1）
         List<Long> skProductIds = seckillOrders.stream()
-                .map(SeckillOrder::getProductId)
+                .map(SeckillOrderDTO::getProductId)
                 .filter(java.util.Objects::nonNull)
                 .distinct()
                 .collect(Collectors.toList());
@@ -125,7 +130,7 @@ public class OrderQueryServiceImpl implements OrderQueryService {
 
         // 6. 转换为 OrderListItemVO
         List<OrderListItemVO> allList = new ArrayList<>(seckillOrders.size() + normalOrders.size());
-        for (SeckillOrder sk : seckillOrders) {
+        for (SeckillOrderDTO sk : seckillOrders) {
             allList.add(convertSeckillOrder(sk, skProductMap.get(sk.getProductId())));
         }
         for (NormalOrder no : normalOrders) {
@@ -178,7 +183,7 @@ public class OrderQueryServiceImpl implements OrderQueryService {
             checkOrderDeletable(seckillOrder.getStatus());
             // 逻辑删除：@TableLogic 注解使 deleteById 自动 set is_deleted=1
             log.info("逻辑删除秒杀订单成功 orderId={} orderNo={} userId={}", orderId, seckillOrder.getOrderNo(), userId);
-            return seckillOrderService.logicalDeleteSeckillOrder(orderId);
+            return seckillOrderApi.logicalDeleteSeckillOrder(orderId);
         }
 
         // 2. 秒杀订单表未命中，尝试普通订单表
@@ -356,18 +361,21 @@ public class OrderQueryServiceImpl implements OrderQueryService {
     }
 
     /**
-     * 秒杀订单 → 统一订单列表项。
+     * 秒杀订单 DTO → 统一订单列表项。
      * <p>
      * 秒杀订单仅含单个商品，items 列表只有一项；商品名称/主图取自商品快照，
      * 若商品已被删除则名称/主图为 null，不影响列表展示。
+     * <p>
+     * Phase SK.5：参数从 SeckillOrder Entity 改为 SeckillOrderDTO，
+     * status 已是 String code，payAmount 对应原 totalAmount。
      */
-    private OrderListItemVO convertSeckillOrder(SeckillOrder order, ProductSnapshot product) {
+    private OrderListItemVO convertSeckillOrder(SeckillOrderDTO order, ProductSnapshot product) {
         OrderListItemVO vo = new OrderListItemVO();
         vo.setId(order.getId());
         vo.setOrderNo(order.getOrderNo());
         vo.setOrderType("SECKILL");
-        vo.setStatus(order.getStatus() != null ? order.getStatus().getCode() : null);
-        vo.setTotalAmount(order.getTotalAmount());
+        vo.setStatus(order.getStatus());
+        vo.setTotalAmount(order.getPayAmount());
         vo.setPayMethod(order.getPayMethod());
         vo.setCreateTime(order.getCreateTime());
         vo.setPayTime(order.getPayTime());

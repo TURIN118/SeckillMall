@@ -1,13 +1,15 @@
 package com.seckill.mall.controller;
 
 import com.seckill.mall.cache.RedisService;
+import com.seckill.mall.order.api.OrderApi;
+import com.seckill.mall.order.api.OrderQueryApi;
 import com.seckill.mall.order.interfaces.web.OrderController;
 import com.seckill.mall.security.JwtUtils;
 import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.security.TokenBlacklistService;
-import com.seckill.mall.service.OrderService;
-import com.seckill.mall.service.SeckillOrderService;
-import com.seckill.mall.seckill.interfaces.vo.SeckillOrderVO;
+import com.seckill.mall.seckill.api.SeckillOrderApi;
+import com.seckill.mall.seckill.api.command.SeckillPayCommand;
+import com.seckill.mall.seckill.api.dto.SeckillOrderDTO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -43,9 +46,11 @@ class OrderControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private OrderService orderService;
+    private OrderApi orderApi;
     @MockBean
-    private SeckillOrderService seckillOrderService;
+    private OrderQueryApi orderQueryApi;
+    @MockBean
+    private SeckillOrderApi seckillOrderApi;
     @MockBean
     private SecurityUtils securityUtils;
     // 安全 Filter 依赖
@@ -56,17 +61,17 @@ class OrderControllerTest {
     @MockBean
     private RedisService redisService;
 
-    private SeckillOrderVO buildPaidOrder() {
-        SeckillOrderVO order = new SeckillOrderVO();
-        order.setId(ORDER_ID);
-        order.setOrderNo("SK20260731120000");
-        order.setUserId(USER_ID);
-        order.setSeckillId(5001L);
-        order.setTotalAmount(new BigDecimal("5999.00"));
-        order.setStatus("PAID");
-        order.setPayTime(LocalDateTime.now());
-        order.setPayMethod("ALIPAY");
-        return order;
+    private SeckillOrderDTO buildPaidOrder() {
+        return SeckillOrderDTO.builder()
+                .id(ORDER_ID)
+                .orderNo("SK20260731120000")
+                .userId(USER_ID)
+                .seckillId(5001L)
+                .payAmount(new BigDecimal("5999.00"))
+                .status("PAID")
+                .payTime(LocalDateTime.now())
+                .payMethod("ALIPAY")
+                .build();
     }
 
     @Test
@@ -74,7 +79,7 @@ class OrderControllerTest {
     void pay_shouldReturnPaidOrder() throws Exception {
         // given
         given(securityUtils.getCurrentUserId()).willReturn(USER_ID);
-        given(seckillOrderService.payOrder(eq(USER_ID), eq(ORDER_ID), eq("ALIPAY")))
+        given(seckillOrderApi.payOrder(any(SeckillPayCommand.class)))
                 .willReturn(buildPaidOrder());
 
         // when / then
@@ -91,7 +96,7 @@ class OrderControllerTest {
     void detail_shouldReturnOrder() throws Exception {
         // given
         given(securityUtils.getCurrentUserId()).willReturn(USER_ID);
-        given(seckillOrderService.getOrderDetail(eq(USER_ID), eq(ORDER_ID)))
+        given(seckillOrderApi.getOrderDetail(eq(USER_ID), eq(ORDER_ID)))
                 .willReturn(buildPaidOrder());
 
         // when / then
@@ -107,7 +112,7 @@ class OrderControllerTest {
     void status_shouldReturnOrderStatus() throws Exception {
         // given
         given(securityUtils.getCurrentUserId()).willReturn(USER_ID);
-        given(seckillOrderService.getOrderStatus(eq(USER_ID), eq(ORDER_ID)))
+        given(seckillOrderApi.getOrderStatus(eq(USER_ID), eq(ORDER_ID)))
                 .willReturn("PAID");
 
         // when / then

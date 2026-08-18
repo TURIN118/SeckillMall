@@ -1,13 +1,13 @@
 package com.seckill.mall.service.impl;
 
 import com.seckill.mall.payment.infrastructure.entity.RechargeCard;
-import com.seckill.mall.seckill.infrastructure.entity.SeckillOrder;
+import com.seckill.mall.seckill.api.SeckillOrderApi;
+import com.seckill.mall.seckill.api.dto.SeckillOrderDTO;
 import com.seckill.mall.identity.api.UserApi;
 import com.seckill.mall.identity.api.dto.UserSnapshot;
 import com.seckill.mall.order.api.OrderQueryApi;
 import com.seckill.mall.order.api.result.OrderSnapshot;
 import com.seckill.mall.service.RechargeCardService;
-import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.service.WalletService;
 import com.seckill.mall.payment.interfaces.vo.WalletRecordVO;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +43,7 @@ public class WalletServiceImpl implements WalletService {
     private final UserApi userApi;
     private final RechargeCardService rechargeCardService;
     private final OrderQueryApi orderQueryApi;
-    private final SeckillOrderService seckillOrderService;
+    private final SeckillOrderApi seckillOrderApi;
 
     @Override
     public BigDecimal getBalance(Long userId) {
@@ -77,9 +77,10 @@ public class WalletServiceImpl implements WalletService {
         }
 
         // 3. 查询秒杀订单中钱包支付的已支付订单作为消费记录
-        List<SeckillOrder> seckillOrders = seckillOrderService.getWalletPaidOrdersByUser(userId);
-        for (SeckillOrder order : seckillOrders) {
-            records.add(toConsumeVO(order.getId(), order.getTotalAmount(),
+        // Phase SK.5：切换到 SeckillOrderApi，返回 DTO 而非 Entity（payAmount 对应原 totalAmount）
+        List<SeckillOrderDTO> seckillOrders = seckillOrderApi.getWalletPaidOrdersByUser(userId);
+        for (SeckillOrderDTO order : seckillOrders) {
+            records.add(toConsumeVO(order.getId(), order.getPayAmount(),
                     order.getPayTime(), order.getCreateTime(), currentBalance, "秒杀订单支付"));
         }
 

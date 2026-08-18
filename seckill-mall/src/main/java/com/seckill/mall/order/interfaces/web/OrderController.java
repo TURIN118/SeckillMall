@@ -22,7 +22,12 @@ import com.seckill.mall.order.api.result.OrderCreateResult;
 import com.seckill.mall.order.application.facade.OrderApiConverter;
 import com.seckill.mall.security.SecurityUtils;
 
-import com.seckill.mall.service.SeckillOrderService;
+import com.seckill.mall.seckill.api.SeckillOrderApi;
+import com.seckill.mall.seckill.api.command.SeckillPayCommand;
+import com.seckill.mall.seckill.api.command.SeckillShipCommand;
+import com.seckill.mall.seckill.api.dto.SeckillOrderDTO;
+import com.seckill.mall.seckill.api.query.SeckillOrderQuery;
+import com.seckill.mall.seckill.application.facade.SeckillApiConverter;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
 import com.seckill.mall.seckill.interfaces.vo.SeckillOrderVO;
@@ -57,7 +62,7 @@ import java.util.stream.Collectors;
 public class OrderController {
 
 
-    private final SeckillOrderService seckillOrderService;
+    private final SeckillOrderApi seckillOrderApi;
     private final SecurityUtils securityUtils;
     private final OrderApi orderApi;
     private final OrderQueryApi orderQueryApi;
@@ -71,14 +76,22 @@ public class OrderController {
             @RequestParam(required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(seckillOrderService.getOrderList(userId, status, pageNum, pageSize));
+        // Phase SK.5：切换到 SeckillOrderApi，返回 DTO 后用 SeckillApiConverter 适配回 VO
+        SeckillOrderQuery query = SeckillOrderQuery.builder()
+                .userId(userId)
+                .status(status)
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .build();
+        PageResult<SeckillOrderDTO> dtoPage = seckillOrderApi.listOrders(query);
+        return Result.success(SeckillApiConverter.toOrderVOPageResult(dtoPage));
     }
 
     @Operation(summary = "订单详情")
     @GetMapping("/{orderId}")
     public Result<SeckillOrderVO> detail(@PathVariable Long orderId) {
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(seckillOrderService.getOrderDetail(userId, orderId));
+        return Result.success(SeckillApiConverter.toVO(seckillOrderApi.getOrderDetail(userId, orderId)));
     }
 
     @Operation(summary = "确认支付（模拟支付）")
@@ -87,7 +100,12 @@ public class OrderController {
     public Result<SeckillOrderVO> pay(@PathVariable Long orderId,
                                       @RequestParam(defaultValue = "ALIPAY") String payMethod) {
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(seckillOrderService.payOrder(userId, orderId, payMethod));
+        SeckillPayCommand command = SeckillPayCommand.builder()
+                .userId(userId)
+                .orderId(orderId)
+                .payMethod(payMethod)
+                .build();
+        return Result.success(SeckillApiConverter.toVO(seckillOrderApi.payOrder(command)));
     }
 
     @Operation(summary = "取消订单（仅待支付）")
@@ -95,14 +113,14 @@ public class OrderController {
     @PostMapping("/{orderId}/cancel")
     public Result<SeckillOrderVO> cancel(@PathVariable Long orderId) {
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(seckillOrderService.cancelOrder(userId, orderId));
+        return Result.success(SeckillApiConverter.toVO(seckillOrderApi.cancelOrder(userId, orderId)));
     }
 
     @Operation(summary = "查询订单状态")
     @GetMapping("/{orderId}/status")
     public Result<String> status(@PathVariable Long orderId) {
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(seckillOrderService.getOrderStatus(userId, orderId));
+        return Result.success(seckillOrderApi.getOrderStatus(userId, orderId));
     }
 
     // ==================== 普通订单（需求5 立即购买 + 需求13 购物车结算） ====================
@@ -220,7 +238,13 @@ public class OrderController {
     public Result<Void> shipOrder(@PathVariable Long orderId,
                                   @RequestBody @Valid ShipRequest request) {
         Long userId = securityUtils.getCurrentUserId();
-        seckillOrderService.shipOrder(userId, orderId, request.getShippingCompany(), request.getShippingNo());
+        SeckillShipCommand command = SeckillShipCommand.builder()
+                .userId(userId)
+                .orderId(orderId)
+                .shippingCompany(request.getShippingCompany())
+                .shippingNo(request.getShippingNo())
+                .build();
+        seckillOrderApi.shipOrder(command);
         return Result.success("发货成功", null);
     }
 
@@ -229,7 +253,7 @@ public class OrderController {
     @PostMapping("/{orderId}/confirm")
     public Result<Void> confirmOrder(@PathVariable Long orderId) {
         Long userId = securityUtils.getCurrentUserId();
-        seckillOrderService.confirmOrder(userId, orderId);
+        seckillOrderApi.confirmOrder(userId, orderId);
         return Result.success("确认收货成功", null);
     }
 

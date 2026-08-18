@@ -3,6 +3,7 @@ package com.seckill.mall.service;
 
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrderItem;
+import com.seckill.mall.seckill.api.SeckillOrderApi;
 import com.seckill.mall.seckill.infrastructure.entity.SeckillOrder;
 import com.seckill.mall.identity.infrastructure.entity.UserAddress;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
@@ -10,6 +11,7 @@ import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderItemMapper;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderMapper;
+import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.service.impl.OrderQueryServiceImpl;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import org.junit.jupiter.api.BeforeAll;
@@ -56,7 +58,10 @@ class OrderQueryServiceTest {
     @Mock
     private UserAddressService userAddressService;
     @Mock
-    private ProductService productService;
+    private ProductApi productApi;
+    @Mock
+    private SeckillOrderApi seckillOrderApi;
+    // 保留 SeckillOrderService：getSeckillOrderById 不在 API 中（API 不暴露 Entity）
     @Mock
     private SeckillOrderService seckillOrderService;
 
@@ -152,7 +157,7 @@ class OrderQueryServiceTest {
     @DisplayName("getUnifiedOrderList：分页查询用户订单列表（空结果）")
     void getUnifiedOrderList_shouldReturnEmptyPage() {
         // given
-        given(seckillOrderService.getSeckillOrdersForUnifiedList(any(), any(), org.mockito.ArgumentMatchers.anyInt())).willReturn(Collections.emptyList());
+        given(seckillOrderApi.getSeckillOrdersForUnifiedList(any(), any(), org.mockito.ArgumentMatchers.anyInt())).willReturn(Collections.emptyList());
         given(normalOrderMapper.selectList(any())).willReturn(Collections.emptyList());
 
         // when
@@ -174,14 +179,14 @@ class OrderQueryServiceTest {
         cancelled.setUserId(USER_ID);
         cancelled.setStatus(OrderStatus.CANCELLED);
         given(seckillOrderService.getSeckillOrderById(ORDER_ID)).willReturn(cancelled);
-        given(seckillOrderService.logicalDeleteSeckillOrder(ORDER_ID)).willReturn(true);
+        given(seckillOrderApi.logicalDeleteSeckillOrder(ORDER_ID)).willReturn(true);
 
         // when
         boolean result = orderQueryService.deleteOrder(ORDER_ID, USER_ID);
 
         // then
         assertThat(result).isTrue();
-        then(seckillOrderService).should().logicalDeleteSeckillOrder(ORDER_ID);
+        then(seckillOrderApi).should().logicalDeleteSeckillOrder(ORDER_ID);
     }
 
     @Test

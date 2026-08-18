@@ -233,6 +233,7 @@ public class SeckillApiConverter {
         }
         return SeckillOrderDTO.builder()
                 .id(vo.getId())
+                .orderNo(vo.getOrderNo())
                 .userId(vo.getUserId())
                 .seckillId(vo.getSeckillId())
                 .productId(vo.getProductId())
@@ -266,6 +267,7 @@ public class SeckillApiConverter {
         }
         SeckillOrderVO vo = new SeckillOrderVO();
         vo.setId(dto.getId());
+        vo.setOrderNo(dto.getOrderNo());
         vo.setUserId(dto.getUserId());
         vo.setSeckillId(dto.getSeckillId());
         vo.setProductId(dto.getProductId());
@@ -304,6 +306,18 @@ public class SeckillApiConverter {
                 page.getPageSize());
     }
 
+    /** PageResult<SeckillOrderDTO> → PageResult<SeckillOrderVO>（Controller 层前端契约适配） */
+    public static PageResult<SeckillOrderVO> toOrderVOPageResult(PageResult<SeckillOrderDTO> page) {
+        if (page == null) {
+            return null;
+        }
+        return PageResult.of(
+                toOrderVOList(page.getList()),
+                page.getTotal(),
+                page.getPageNum(),
+                page.getPageSize());
+    }
+
     // ============================================================
     // SeckillOrder Entity → SeckillOrderDTO 转换
     // ============================================================
@@ -315,6 +329,7 @@ public class SeckillApiConverter {
         }
         return SeckillOrderDTO.builder()
                 .id(entity.getId())
+                .orderNo(entity.getOrderNo())
                 .userId(entity.getUserId())
                 .seckillId(entity.getSeckillId())
                 .productId(entity.getProductId())
@@ -364,6 +379,27 @@ public class SeckillApiConverter {
             return Collections.emptyList();
         }
         return voList.stream().map(SeckillApiConverter::toDTO).collect(Collectors.toList());
+    }
+
+    /** SeckillRankingDTO → SeckillRankingVO（stats 模块 Controller 前端契约适配） */
+    public static SeckillRankingVO toVO(SeckillRankingDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        SeckillRankingVO vo = new SeckillRankingVO();
+        vo.setSeckillId(dto.getSeckillId());
+        vo.setProductName(dto.getSeckillName());
+        vo.setSalesCount(dto.getSalesCount());
+        vo.setTotalAmount(dto.getSalesAmount());
+        return vo;
+    }
+
+    /** SeckillRankingDTO 列表 → SeckillRankingVO 列表 */
+    public static List<SeckillRankingVO> toRankingVOList(List<SeckillRankingDTO> dtoList) {
+        if (dtoList == null || dtoList.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return dtoList.stream().map(SeckillApiConverter::toVO).collect(Collectors.toList());
     }
 
     // ============================================================

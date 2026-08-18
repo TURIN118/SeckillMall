@@ -6,7 +6,7 @@ import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.OperationLogQueryRequest;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.mapper.OperationLogMapper;
-import com.seckill.mall.service.SeckillOrderService;
+import com.seckill.mall.seckill.api.SeckillOrderApi;
 import com.seckill.mall.service.SystemHealthMonitor;
 import com.seckill.mall.service.SystemService;
 import com.seckill.mall.vo.OperationLogVO;
@@ -43,7 +43,7 @@ public class SystemServiceImpl implements SystemService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private final SeckillOrderService seckillOrderService;
+    private final SeckillOrderApi seckillOrderApi;
     private final OperationLogMapper operationLogMapper;
     /**
      * 系统健康监控端口，负责 Redis/DB/MQ 健康检查与资源采集
@@ -112,7 +112,7 @@ public class SystemServiceImpl implements SystemService {
         LocalDate startDate = endDate.minusDays(n - 1L);
 
         // 仅统计 PAID/COMPLETED 订单
-        List<Map<String, Object>> rows = seckillOrderService.selectOrderTrend(
+        List<Map<String, Object>> rows = seckillOrderApi.selectOrderTrend(
                 startDate, endDate, List.of(OrderStatus.PAID, OrderStatus.COMPLETED));
 
         // 查询结果按日期建立索引，便于按天补零
@@ -158,7 +158,7 @@ public class SystemServiceImpl implements SystemService {
         LocalDateTime startLdt = parseDateTime(startTime, LocalDateTime.now().minusDays(30));
         LocalDateTime endLdt = parseDateTime(endTime, LocalDateTime.now());
 
-        List<Map<String, Object>> rows = seckillOrderService.selectStatusDistribution(startLdt, endLdt);
+        List<Map<String, Object>> rows = seckillOrderApi.selectStatusDistribution(startLdt, endLdt);
 
         // 按状态码建立计数索引
         Map<String, Long> countByStatus = new HashMap<>();

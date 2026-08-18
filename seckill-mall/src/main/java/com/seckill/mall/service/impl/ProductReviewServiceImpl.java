@@ -17,8 +17,8 @@ import com.seckill.mall.product.infrastructure.mapper.ProductMapper;
 import com.seckill.mall.product.infrastructure.mapper.ProductReviewMapper;
 import com.seckill.mall.product.infrastructure.mapper.ProductSkuMapper;
 import com.seckill.mall.order.api.OrderQueryApi;
+import com.seckill.mall.seckill.api.SeckillOrderApi;
 import com.seckill.mall.service.ProductReviewService;
-import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.vo.ProductReviewVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +48,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     private final ProductSkuMapper productSkuMapper;
     private final UserApi userApi;
     private final OrderQueryApi orderQueryApi;
-    private final SeckillOrderService seckillOrderService;
+    private final SeckillOrderApi seckillOrderApi;
 
     @Override
     public PageResult<ProductReviewVO> listByProductId(Long productId, int pageNum, int pageSize) {
@@ -142,7 +142,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
      * 5.7.4 建议13：校验用户是否购买了该 SKU
      * <p>
      * 委托 {@link OrderQueryApi#hasUserPurchased} 校验普通订单购买记录，
-     * 委托 {@link SeckillOrderService#hasUserPurchasedSeckill} 校验秒杀订单购买记录。
+     * 委托 {@link SeckillOrderApi#hasUserPurchasedSeckill} 校验秒杀订单购买记录。
      * skuId = 0 时不校验 SKU 维度，仅校验商品维度。
      *
      * @param userId     用户 ID
@@ -156,7 +156,7 @@ public class ProductReviewServiceImpl implements ProductReviewService {
             return true;
         }
         // 2. 查秒杀订单（秒杀订单没有 SKU 维度，只校验商品维度）
-        return seckillOrderService.hasUserPurchasedSeckill(userId, productId);
+        return seckillOrderApi.hasUserPurchasedSeckill(userId, productId);
     }
 
     /**

@@ -15,7 +15,7 @@ import com.seckill.mall.product.infrastructure.entity.Product;
 import com.seckill.mall.product.domain.ProductStatus;
 import com.seckill.mall.category.infrastructure.mapper.CategoryMapper;
 import com.seckill.mall.product.infrastructure.mapper.ProductMapper;
-import com.seckill.mall.service.CategoryService;
+import com.seckill.mall.category.api.CategoryApi;
 import com.seckill.mall.service.ProductAttributeService;
 import com.seckill.mall.service.ProductSkuService;
 import com.seckill.mall.service.impl.ProductServiceImpl;
@@ -64,7 +64,7 @@ class ProductServiceTest {
     @Mock
     private CategoryMapper categoryMapper;
     @Mock
-    private CategoryService categoryService;
+    private CategoryApi categoryApi;
     @Mock
     private CachePort cachePort;
     @Mock

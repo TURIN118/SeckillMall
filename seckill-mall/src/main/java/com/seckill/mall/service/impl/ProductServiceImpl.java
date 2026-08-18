@@ -16,7 +16,7 @@ import com.seckill.mall.product.infrastructure.entity.Product;
 import com.seckill.mall.product.domain.ProductStatus;
 import com.seckill.mall.category.infrastructure.mapper.CategoryMapper;
 import com.seckill.mall.product.infrastructure.mapper.ProductMapper;
-import com.seckill.mall.service.CategoryService;
+import com.seckill.mall.category.api.CategoryApi;
 import com.seckill.mall.service.ProductAttributeService;
 import com.seckill.mall.service.ProductService;
 import com.seckill.mall.service.ProductSkuService;
@@ -71,7 +71,7 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductMapper productMapper;
     private final CategoryMapper categoryMapper;
-    private final CategoryService categoryService;
+    private final CategoryApi categoryApi;
     private final CachePort cachePort;
     private final RedissonClient redissonClient;
     private final ObjectMapper objectMapper;
@@ -242,7 +242,7 @@ public class ProductServiceImpl implements ProductService {
         saveAttributesAndSkus(product, req.getAttributes(), req.getSkus());
 
         // 商品新增后分类树 productCount 需更新，失效分类树缓存
-        categoryService.evictCategoryCache();
+        categoryApi.evictCategoryCache();
         ProductVO vo = toProductVO(product, Map.of(req.getCategoryId(), getCategoryName(req.getCategoryId())));
         // 回填属性与 SKU 信息
         enrichWithSkuInfo(vo, product);
@@ -297,7 +297,7 @@ public class ProductServiceImpl implements ProductService {
         // 更新后删除缓存，保证后续读取一致
         evictCache(id);
         // 商品分类可能变更，失效分类树缓存以更新 productCount
-        categoryService.evictCategoryCache();
+        categoryApi.evictCategoryCache();
         ProductVO vo = toProductVO(product, Map.of(product.getCategoryId(), getCategoryName(product.getCategoryId())));
         // 回填属性与 SKU 信息
         enrichWithSkuInfo(vo, product);
@@ -318,7 +318,7 @@ public class ProductServiceImpl implements ProductService {
         productSkuService.deleteByProductId(id);
         evictCache(id);
         // 商品删除后分类树 productCount 需更新，失效分类树缓存
-        categoryService.evictCategoryCache();
+        categoryApi.evictCategoryCache();
     }
 
     @Override

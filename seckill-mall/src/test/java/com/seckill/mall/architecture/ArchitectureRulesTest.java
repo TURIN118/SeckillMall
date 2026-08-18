@@ -448,6 +448,31 @@ class ArchitectureRulesTest {
             .should().dependOnClassesThat().resideInAPackage("..upload.infrastructure.mapper..")
             .as("upload.interfaces 不应直接依赖 Mapper，应通过 API 接口访问数据"));
 
+    // ============================================================
+    // O. Category 模块包边界规则（Phase CA.6 新增）
+    // ============================================================
+
+    /** 44. category.api 不应依赖 category.infrastructure（API 契约层不应依赖基础设施层，保持接口纯洁性） */
+    @ArchTest
+    static final ArchRule category_api_should_not_depend_on_infrastructure =
+        freeze(noClasses().that().resideInAPackage("..category.api..")
+            .should().dependOnClassesThat().resideInAPackage("..category.infrastructure..")
+            .as("category.api 不应依赖 category.infrastructure，API 层保持接口纯洁性"));
+
+    /** 45. category.application 不应直接依赖 Mapper（Application 层应通过 API 接口访问数据） */
+    @ArchTest
+    static final ArchRule category_application_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..category.application..")
+            .should().dependOnClassesThat().resideInAPackage("..category.infrastructure.mapper..")
+            .as("category.application 不应直接依赖 Mapper，应通过 API 接口访问数据"));
+
+    /** 46. category.interfaces 不应直接依赖 Mapper（接口层应通过 API 接口访问数据） */
+    @ArchTest
+    static final ArchRule category_interfaces_should_not_depend_on_mapper =
+        freeze(noClasses().that().resideInAPackage("..category.interfaces..")
+            .should().dependOnClassesThat().resideInAPackage("..category.infrastructure.mapper..")
+            .as("category.interfaces 不应直接依赖 Mapper，应通过 API 接口访问数据"));
+
     /**
      * 用 FreezingArchRule 包装规则，启用 freeze 模式。
      *

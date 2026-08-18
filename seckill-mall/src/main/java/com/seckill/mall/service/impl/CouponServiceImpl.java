@@ -8,7 +8,8 @@ import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.CouponCreateRequest;
-import com.seckill.mall.category.infrastructure.entity.Category;
+import com.seckill.mall.category.api.CategoryApi;
+import com.seckill.mall.category.api.dto.CategoryDTO;
 import com.seckill.mall.coupon.infrastructure.entity.Coupon;
 import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.product.api.dto.ProductSnapshot;
@@ -19,7 +20,6 @@ import com.seckill.mall.coupon.domain.CouponType;
 import com.seckill.mall.coupon.domain.UserCouponStatus;
 import com.seckill.mall.coupon.infrastructure.mapper.CouponMapper;
 import com.seckill.mall.coupon.infrastructure.mapper.UserCouponMapper;
-import com.seckill.mall.service.CategoryService;
 import com.seckill.mall.service.CouponService;
 import com.seckill.mall.coupon.interfaces.vo.AdminCouponRecordVO;
 import com.seckill.mall.coupon.interfaces.vo.CouponVO;
@@ -70,7 +70,7 @@ public class CouponServiceImpl implements CouponService {
     private final UserCouponMapper userCouponMapper;
     private final UserApi userApi;
     private final ProductApi productApi;
-    private final CategoryService categoryService;
+    private final CategoryApi categoryApi;
 
     // ==================== 后台管理 ====================
 
@@ -443,8 +443,8 @@ public class CouponServiceImpl implements CouponService {
             if (coupon.getCategoryId() == null) {
                 return "仅限指定分类";
             }
-            Category category = categoryService.getCategoryById(coupon.getCategoryId());
-            String name = category == null ? "指定分类" : category.getName();
+            CategoryDTO category = categoryApi.getCategoryById(coupon.getCategoryId());
+            String name = category == null ? "指定分类" : category.getCategoryName();
             return "仅限" + name;
         }
         if (SCOPE_PRODUCT.equals(scope)) {

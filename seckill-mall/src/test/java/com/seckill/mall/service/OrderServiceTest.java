@@ -4,7 +4,7 @@ package com.seckill.mall.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
-import com.seckill.mall.entity.Cart;
+import com.seckill.mall.cart.infrastructure.entity.Cart;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrderItem;
 import com.seckill.mall.product.infrastructure.entity.Product;

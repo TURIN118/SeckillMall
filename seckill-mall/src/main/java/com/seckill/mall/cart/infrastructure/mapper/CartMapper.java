@@ -1,7 +1,7 @@
-package com.seckill.mall.mapper;
+package com.seckill.mall.cart.infrastructure.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.seckill.mall.entity.Cart;
+import com.seckill.mall.cart.infrastructure.entity.Cart;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;

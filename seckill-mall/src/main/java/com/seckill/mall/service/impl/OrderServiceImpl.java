@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.config.RabbitMQConfig;
-import com.seckill.mall.entity.Cart;
+import com.seckill.mall.cart.infrastructure.entity.Cart;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.NormalOrderItem;
 import com.seckill.mall.product.api.InventoryApi;

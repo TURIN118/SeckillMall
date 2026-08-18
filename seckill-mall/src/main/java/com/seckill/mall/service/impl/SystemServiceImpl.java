@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.OperationLogQueryRequest;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
-import com.seckill.mall.mapper.OperationLogMapper;
+import com.seckill.mall.system.infrastructure.mapper.OperationLogMapper;
 import com.seckill.mall.seckill.api.SeckillOrderApi;
 import com.seckill.mall.service.SystemHealthMonitor;
 import com.seckill.mall.service.SystemService;

@@ -1,8 +1,8 @@
-package com.seckill.mall.mapper;
+package com.seckill.mall.system.infrastructure.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.seckill.mall.entity.OperationLog;
+import com.seckill.mall.system.infrastructure.entity.OperationLog;
 import com.seckill.mall.vo.OperationLogVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

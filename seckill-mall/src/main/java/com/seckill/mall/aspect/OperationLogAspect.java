@@ -1,7 +1,7 @@
 package com.seckill.mall.aspect;
 
 import com.seckill.mall.dto.LoginRequest;
-import com.seckill.mall.entity.OperationLog;
+import com.seckill.mall.system.infrastructure.entity.OperationLog;
 import com.seckill.mall.identity.infrastructure.entity.User;
 import com.seckill.mall.identity.infrastructure.mapper.UserMapper;
 import com.seckill.mall.security.SecurityUtils;

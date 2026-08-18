@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.seckill.mall.mapper.OperationLogMapper">
+<mapper namespace="com.seckill.mall.system.infrastructure.mapper.OperationLogMapper">
 
-    <select id="selectOperationLogPage" resultType="com.seckill.mall.entity.OperationLog">
+    <select id="selectOperationLogPage" resultType="com.seckill.mall.system.infrastructure.entity.OperationLog">
         SELECT id, operator_id, module, action, target_id, target_type,
                detail, ip_address, create_time
         FROM t_operation_log

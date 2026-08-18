@@ -1,7 +1,7 @@
 package com.seckill.mall.aspect;
 
-import com.seckill.mall.entity.OperationLog;
-import com.seckill.mall.mapper.OperationLogMapper;
+import com.seckill.mall.system.infrastructure.entity.OperationLog;
+import com.seckill.mall.system.infrastructure.mapper.OperationLogMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;

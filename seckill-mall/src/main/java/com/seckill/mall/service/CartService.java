@@ -2,7 +2,7 @@ package com.seckill.mall.service;
 
 import com.seckill.mall.common.Result;
 import com.seckill.mall.cart.infrastructure.entity.Cart;
-import com.seckill.mall.vo.CartItemVO;
+import com.seckill.mall.cart.interfaces.vo.CartItemVO;
 
 import java.util.List;
 

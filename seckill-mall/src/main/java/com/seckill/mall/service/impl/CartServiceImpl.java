@@ -15,7 +15,7 @@ import com.seckill.mall.product.api.dto.ProductSnapshot;
 import com.seckill.mall.product.api.dto.SkuSnapshot;
 import com.seckill.mall.cart.infrastructure.mapper.CartMapper;
 import com.seckill.mall.service.CartService;
-import com.seckill.mall.vo.CartItemVO;
+import com.seckill.mall.cart.interfaces.vo.CartItemVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

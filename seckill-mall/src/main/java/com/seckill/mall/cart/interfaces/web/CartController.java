@@ -1,9 +1,16 @@
-package com.seckill.mall.controller;
+package com.seckill.mall.cart.interfaces.web;
 
+import com.seckill.mall.cart.api.CartApi;
+import com.seckill.mall.cart.api.command.AddToCartCommand;
+import com.seckill.mall.cart.api.command.BatchUpdateSelectedCommand;
+import com.seckill.mall.cart.api.command.RemoveCartItemCommand;
+import com.seckill.mall.cart.api.command.UpdateCartQuantityCommand;
+import com.seckill.mall.cart.api.command.UpdateSelectedCommand;
+import com.seckill.mall.cart.api.dto.CartItemDTO;
+import com.seckill.mall.cart.application.facade.CartApiConverter;
+import com.seckill.mall.cart.interfaces.vo.CartItemVO;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.security.SecurityUtils;
-import com.seckill.mall.service.CartService;
-import com.seckill.mall.vo.CartItemVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Min;
@@ -24,16 +31,16 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 购物车控制器
- * <p>
- * 前缀 {@code /api/v1/cart}，需登录且角色为 BUYER、SELLER 或 ADMIN。
+ * 购物车控制器（Phase C.4-C 已切换到 {@link CartApi}）。
+ *
+ * <p>前缀 {@code /api/v1/cart}，需登录且角色为 BUYER、SELLER 或 ADMIN。
  * 当前用户 ID 通过 {@link SecurityUtils#getCurrentUserId()} 获取，
  * 用户仅能操作属于自己的购物车项。
  *
- * 创建人：@author WNJ
- * 项目名称：seckill-mall
- * 文件名称：CartController.java
- * 邮箱：nj651217@163.com
+ * <p>Strangler Pattern：注入 {@link CartApi} 替代旧 {@code CartService}，
+ * 通过 {@link CartApiConverter} 做 DTO → VO 转换，保持前端出参结构不变。
+ *
+ * <p>创建人：@author WNJ
  */
 @Tag(name = "购物车管理", description = "购物车增删改查、选中状态与数量统计")
 @RestController
@@ -42,14 +49,15 @@ import java.util.List;
 @PreAuthorize("hasAnyRole('BUYER','SELLER','ADMIN')")
 public class CartController {
 
-    private final CartService cartService;
+    private final CartApi cartApi;
     private final SecurityUtils securityUtils;
 
     @Operation(summary = "获取购物车列表")
     @GetMapping("/list")
     public Result<List<CartItemVO>> list() {
         Long userId = securityUtils.getCurrentUserId();
-        return cartService.getCartList(userId);
+        List<CartItemDTO> dtoList = cartApi.getCartList(userId);
+        return Result.success(CartApiConverter.toVOList(dtoList));
     }
 
     @Operation(summary = "添加到购物车")
@@ -57,7 +65,14 @@ public class CartController {
     // 安全修复（M3）：添加 @Validated 触发请求体字段校验
     public Result<Void> add(@Validated @RequestBody AddToCartRequest req) {
         Long userId = securityUtils.getCurrentUserId();
-        return cartService.addToCart(userId, req.getProductId(), req.getSkuId(), req.getQuantity());
+        AddToCartCommand command = AddToCartCommand.builder()
+                .userId(userId)
+                .productId(req.getProductId())
+                .skuId(req.getSkuId())
+                .quantity(req.getQuantity())
+                .build();
+        cartApi.addToCart(command);
+        return Result.success();
     }
 
     @Operation(summary = "修改购物车项数量")
@@ -66,21 +81,33 @@ public class CartController {
     public Result<Void> updateQuantity(@PathVariable Long cartId,
                                        @Validated @RequestBody UpdateQuantityRequest req) {
         Long userId = securityUtils.getCurrentUserId();
-        return cartService.updateQuantity(userId, cartId, req.getQuantity());
+        UpdateCartQuantityCommand command = UpdateCartQuantityCommand.builder()
+                .userId(userId)
+                .cartId(cartId)
+                .quantity(req.getQuantity())
+                .build();
+        cartApi.updateQuantity(command);
+        return Result.success();
     }
 
     @Operation(summary = "删除购物车项")
     @DeleteMapping("/{cartId}")
     public Result<Void> remove(@PathVariable Long cartId) {
         Long userId = securityUtils.getCurrentUserId();
-        return cartService.removeFromCart(userId, cartId);
+        RemoveCartItemCommand command = RemoveCartItemCommand.builder()
+                .userId(userId)
+                .cartId(cartId)
+                .build();
+        cartApi.removeFromCart(command);
+        return Result.success();
     }
 
     @Operation(summary = "清空购物车")
     @DeleteMapping("/clear")
     public Result<Void> clear() {
         Long userId = securityUtils.getCurrentUserId();
-        return cartService.clearCart(userId);
+        cartApi.clearCart(userId);
+        return Result.success();
     }
 
     @Operation(summary = "更新单个购物车项选中状态")
@@ -88,21 +115,33 @@ public class CartController {
     public Result<Void> updateSelected(@PathVariable Long cartId,
                                        @RequestBody UpdateSelectedRequest req) {
         Long userId = securityUtils.getCurrentUserId();
-        return cartService.updateSelected(userId, cartId, req.getSelected());
+        UpdateSelectedCommand command = UpdateSelectedCommand.builder()
+                .userId(userId)
+                .cartId(cartId)
+                .selected(req.getSelected())
+                .build();
+        cartApi.updateSelected(command);
+        return Result.success();
     }
 
     @Operation(summary = "批量更新购物车项选中状态")
     @PutMapping("/batch-selected")
     public Result<Void> batchUpdateSelected(@RequestBody BatchUpdateSelectedRequest req) {
         Long userId = securityUtils.getCurrentUserId();
-        return cartService.batchUpdateSelected(userId, req.getCartIds(), req.getSelected());
+        BatchUpdateSelectedCommand command = BatchUpdateSelectedCommand.builder()
+                .userId(userId)
+                .cartIds(req.getCartIds())
+                .selected(req.getSelected())
+                .build();
+        cartApi.batchUpdateSelected(command);
+        return Result.success();
     }
 
     @Operation(summary = "获取购物车数量")
     @GetMapping("/count")
     public Result<Integer> count() {
         Long userId = securityUtils.getCurrentUserId();
-        return cartService.getCartCount(userId);
+        return Result.success(cartApi.getCartCount(userId));
     }
 
     /** 添加购物车请求体 */

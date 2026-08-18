@@ -1,4 +1,4 @@
-package com.seckill.mall.vo;
+package com.seckill.mall.cart.interfaces.vo;
 
 import lombok.Data;
 

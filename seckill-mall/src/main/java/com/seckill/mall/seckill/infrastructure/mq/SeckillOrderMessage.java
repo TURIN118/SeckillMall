@@ -1,4 +1,4 @@
-package com.seckill.mall.mq.message;
+package com.seckill.mall.seckill.infrastructure.mq;
 
 import lombok.Data;
 

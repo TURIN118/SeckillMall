@@ -17,8 +17,8 @@ import com.seckill.mall.security.SecurityUtils;
 
 import com.seckill.mall.service.SeckillActivityService;
 import com.seckill.mall.service.SeckillGoodsService;
-import com.seckill.mall.vo.SeckillActivityVO;
-import com.seckill.mall.vo.SeckillGoodsVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillActivityVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillGoodsVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;

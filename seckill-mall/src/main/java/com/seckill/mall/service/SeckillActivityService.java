@@ -1,7 +1,7 @@
 package com.seckill.mall.service;
 
 import com.seckill.mall.dto.SeckillActivityCreateRequest;
-import com.seckill.mall.vo.SeckillActivityVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillActivityVO;
 
 import java.util.List;
 

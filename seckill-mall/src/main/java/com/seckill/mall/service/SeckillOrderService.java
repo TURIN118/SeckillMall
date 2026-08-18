@@ -3,8 +3,8 @@ package com.seckill.mall.service;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.seckill.infrastructure.entity.SeckillOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
-import com.seckill.mall.vo.SeckillOrderVO;
-import com.seckill.mall.vo.SeckillRankingVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillOrderVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillRankingVO;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

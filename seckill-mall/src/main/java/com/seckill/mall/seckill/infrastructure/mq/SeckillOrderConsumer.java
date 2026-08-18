@@ -1,4 +1,4 @@
-package com.seckill.mall.mq.consumer;
+package com.seckill.mall.seckill.infrastructure.mq;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
@@ -14,11 +14,11 @@ import com.seckill.mall.product.infrastructure.mapper.ProductMapper;
 import com.seckill.mall.seckill.infrastructure.mapper.SeckillGoodsMapper;
 import com.seckill.mall.identity.infrastructure.mapper.UserMapper;
 import com.seckill.mall.mq.message.OrderDelayMessage;
-import com.seckill.mall.mq.message.SeckillOrderMessage;
-import com.seckill.mall.mq.message.SeckillResultMessage;
+import com.seckill.mall.seckill.infrastructure.mq.SeckillOrderMessage;
+import com.seckill.mall.seckill.infrastructure.mq.SeckillResultMessage;
 import com.seckill.mall.service.EmailService;
 import com.seckill.mall.service.SeckillOrderService;
-import com.seckill.mall.vo.SeckillResultVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillResultVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

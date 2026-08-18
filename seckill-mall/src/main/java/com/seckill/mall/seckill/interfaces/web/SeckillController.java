@@ -1,4 +1,4 @@
-package com.seckill.mall.controller;
+package com.seckill.mall.seckill.interfaces.web;
 
 import com.seckill.mall.annotation.OperationLog;
 import com.seckill.mall.annotation.RateLimit;
@@ -7,13 +7,21 @@ import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.SeckillActivityCreateRequest;
 import com.seckill.mall.dto.SeckillCreateRequest;
 import com.seckill.mall.security.SecurityUtils;
-import com.seckill.mall.service.SeckillActivityService;
-import com.seckill.mall.service.SeckillGoodsService;
-import com.seckill.mall.service.SeckillService;
+import com.seckill.mall.seckill.api.SeckillActivityApi;
+import com.seckill.mall.seckill.api.SeckillApi;
+import com.seckill.mall.seckill.api.SeckillGoodsApi;
+import com.seckill.mall.seckill.api.command.CreateActivityCommand;
+import com.seckill.mall.seckill.api.command.CreateSeckillGoodsCommand;
+import com.seckill.mall.seckill.api.command.SeckillCommand;
+import com.seckill.mall.seckill.api.dto.SeckillActivityDTO;
+import com.seckill.mall.seckill.api.dto.SeckillGoodsDTO;
+import com.seckill.mall.seckill.api.query.SeckillGoodsQuery;
+import com.seckill.mall.seckill.api.result.SeckillResult;
+import com.seckill.mall.seckill.application.facade.SeckillApiConverter;
+import com.seckill.mall.seckill.interfaces.vo.SeckillActivityVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillGoodsVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillResultVO;
 import com.seckill.mall.service.SeckillTokenService;
-import com.seckill.mall.vo.SeckillActivityVO;
-import com.seckill.mall.vo.SeckillGoodsVO;
-import com.seckill.mall.vo.SeckillResultVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -44,10 +52,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SeckillController {
 
-    private final SeckillGoodsService seckillGoodsService;
-    private final SeckillService seckillService;
+    private final SeckillApi seckillApi;
+    private final SeckillGoodsApi seckillGoodsApi;
+    private final SeckillActivityApi seckillActivityApi;
     private final SeckillTokenService seckillTokenService;
-    private final SeckillActivityService seckillActivityService;
     private final SecurityUtils securityUtils;
 
     @Operation(summary = "秒杀活动列表")
@@ -57,13 +65,20 @@ public class SeckillController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        return Result.success(seckillGoodsService.listSeckill(status, categoryId, pageNum, pageSize));
+        SeckillGoodsQuery query = SeckillGoodsQuery.builder()
+                .status(status)
+                .categoryId(categoryId)
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .build();
+        return Result.success(SeckillApiConverter.toGoodsVOPageResult(seckillGoodsApi.listSeckill(query)));
     }
 
     @Operation(summary = "秒杀活动详情")
     @GetMapping("/{seckillId}")
     public Result<SeckillGoodsVO> detail(@PathVariable Long seckillId) {
-        return Result.success(seckillGoodsService.getSeckillDetail(seckillId));
+        SeckillGoodsDTO dto = seckillGoodsApi.getSeckillDetail(seckillId);
+        return Result.success(SeckillApiConverter.toVO(dto));
     }
 
     @Operation(summary = "获取秒杀令牌")
@@ -75,7 +90,7 @@ public class SeckillController {
     @Operation(summary = "查询实时库存")
     @GetMapping("/{seckillId}/stock")
     public Result<Integer> stock(@PathVariable Long seckillId) {
-        return Result.success(seckillGoodsService.getStock(seckillId));
+        return Result.success(seckillGoodsApi.getStock(seckillId));
     }
 
     @Operation(summary = "执行秒杀")
@@ -90,7 +105,12 @@ public class SeckillController {
         // 使用 securityUtils.getCurrentUserId() 获取调用方身份，确保调用方身份可信。
         Long userId = securityUtils.getCurrentUserId();
         String token = headerToken != null ? headerToken : paramToken;
-        return Result.success(seckillService.doSeckill(seckillId, token));
+        SeckillCommand command = SeckillCommand.builder()
+                .seckillId(seckillId)
+                .seckillToken(token)
+                .build();
+        SeckillResult result = seckillApi.executeSeckill(command);
+        return Result.success(SeckillApiConverter.toVO(result));
     }
 
     @Operation(summary = "一键执行秒杀（无需预取token）")
@@ -100,7 +120,12 @@ public class SeckillController {
         Long userId = securityUtils.getCurrentUserId();
         // 内部自动获取token
         String token = seckillTokenService.getSeckillToken(seckillId, userId);
-        return Result.success(seckillService.doSeckill(seckillId, token));
+        SeckillCommand command = SeckillCommand.builder()
+                .seckillId(seckillId)
+                .seckillToken(token)
+                .build();
+        SeckillResult result = seckillApi.executeSeckill(command);
+        return Result.success(SeckillApiConverter.toVO(result));
     }
 
     @Operation(summary = "查询秒杀结果")
@@ -113,7 +138,8 @@ public class SeckillController {
         // Service 层 getSeckillResult 内部通过 securityUtils.getCurrentUserId() 获取调用方身份，
         // 并校验 result.userId == userId，不匹配则抛 FORBIDDEN。
         Long userId = securityUtils.getCurrentUserId();
-        return Result.success(seckillService.getSeckillResult(seckillId, requestId));
+        SeckillResult result = seckillApi.getSeckillResult(seckillId, requestId);
+        return Result.success(SeckillApiConverter.toVO(result));
     }
 
     @Operation(summary = "创建秒杀活动")
@@ -121,7 +147,9 @@ public class SeckillController {
     @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     @PostMapping("/admin")
     public Result<SeckillGoodsVO> create(@Valid @RequestBody SeckillCreateRequest req) {
-        return Result.success(seckillGoodsService.createSeckill(req));
+        CreateSeckillGoodsCommand command = SeckillApiConverter.toCommand(req);
+        SeckillGoodsDTO dto = seckillGoodsApi.createSeckill(command);
+        return Result.success(SeckillApiConverter.toVO(dto));
     }
 
     @Operation(summary = "编辑秒杀活动")
@@ -130,7 +158,9 @@ public class SeckillController {
     @PutMapping("/admin/{seckillId}")
     public Result<SeckillGoodsVO> update(@PathVariable Long seckillId,
                                          @Valid @RequestBody SeckillCreateRequest req) {
-        return Result.success(seckillGoodsService.updateSeckill(seckillId, req));
+        CreateSeckillGoodsCommand command = SeckillApiConverter.toCommand(req);
+        SeckillGoodsDTO dto = seckillGoodsApi.updateSeckill(seckillId, command);
+        return Result.success(SeckillApiConverter.toVO(dto));
     }
 
     @Operation(summary = "取消秒杀活动")
@@ -138,7 +168,7 @@ public class SeckillController {
     @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     @PutMapping("/admin/{seckillId}/cancel")
     public Result<Void> cancel(@PathVariable Long seckillId) {
-        seckillGoodsService.cancelSeckill(seckillId);
+        seckillGoodsApi.cancelSeckill(seckillId);
         return Result.success();
     }
 
@@ -149,19 +179,23 @@ public class SeckillController {
     @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     @PostMapping("/activities")
     public Result<SeckillActivityVO> createActivity(@Valid @RequestBody SeckillActivityCreateRequest req) {
-        return Result.success(seckillActivityService.createActivity(req));
+        CreateActivityCommand command = SeckillApiConverter.toCommand(req);
+        SeckillActivityDTO dto = seckillActivityApi.createActivity(command);
+        return Result.success(SeckillApiConverter.toVO(dto));
     }
 
     @Operation(summary = "查询所有秒杀场次列表")
     @GetMapping("/activities")
     public Result<List<SeckillActivityVO>> listActivities() {
-        return Result.success(seckillActivityService.listActivities());
+        List<SeckillActivityDTO> dtoList = seckillActivityApi.listActivities();
+        return Result.success(SeckillApiConverter.toActivityVOList(dtoList));
     }
 
     @Operation(summary = "查询秒杀场次详情")
     @GetMapping("/activities/{activityId}")
     public Result<SeckillActivityVO> getActivityDetail(@PathVariable Long activityId) {
-        return Result.success(seckillActivityService.getActivityDetail(activityId));
+        SeckillActivityDTO dto = seckillActivityApi.getActivityDetail(activityId);
+        return Result.success(SeckillApiConverter.toVO(dto));
     }
 
     @Operation(summary = "删除秒杀场次")
@@ -169,7 +203,7 @@ public class SeckillController {
     @PreAuthorize("hasAnyRole('ADMIN','SELLER')")
     @DeleteMapping("/activities/{activityId}")
     public Result<Void> deleteActivity(@PathVariable Long activityId) {
-        seckillActivityService.deleteActivity(activityId);
+        seckillActivityApi.deleteActivity(activityId);
         return Result.success();
     }
 }

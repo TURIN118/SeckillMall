@@ -6,7 +6,7 @@ import com.seckill.mall.dto.AdminOrderQueryRequest;
 import com.seckill.mall.seckill.infrastructure.entity.SeckillOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
 import com.seckill.mall.vo.AdminOrderVO;
-import com.seckill.mall.vo.SeckillRankingVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillRankingVO;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

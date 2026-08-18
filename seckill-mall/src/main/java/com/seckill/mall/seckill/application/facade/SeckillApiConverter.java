@@ -12,11 +12,11 @@ import com.seckill.mall.seckill.api.dto.SeckillRankingDTO;
 import com.seckill.mall.seckill.api.result.SeckillResult;
 import com.seckill.mall.seckill.domain.SeckillStatus;
 import com.seckill.mall.seckill.infrastructure.entity.SeckillOrder;
-import com.seckill.mall.vo.SeckillActivityVO;
-import com.seckill.mall.vo.SeckillGoodsVO;
-import com.seckill.mall.vo.SeckillOrderVO;
-import com.seckill.mall.vo.SeckillRankingVO;
-import com.seckill.mall.vo.SeckillResultVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillActivityVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillGoodsVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillOrderVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillRankingVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillResultVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

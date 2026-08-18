@@ -2,7 +2,7 @@ package com.seckill.mall.service;
 
 
 
-import com.seckill.mall.converter.SeckillOrderConverter;
+import com.seckill.mall.seckill.application.SeckillOrderConverter;
 import com.seckill.mall.seckill.infrastructure.entity.SeckillGoods;
 import com.seckill.mall.seckill.infrastructure.entity.SeckillOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
@@ -13,7 +13,7 @@ import com.seckill.mall.seckill.infrastructure.mapper.SeckillOrderMapper;
 import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.identity.api.UserApi;
 import com.seckill.mall.service.impl.SeckillOrderServiceImpl;
-import com.seckill.mall.vo.SeckillOrderVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillOrderVO;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

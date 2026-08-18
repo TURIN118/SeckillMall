@@ -1,8 +1,9 @@
-package com.seckill.mall.cache;
+package com.seckill.mall.seckill.infrastructure.cache;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.seckill.mall.cache.RedisKeyConstants;
 import com.seckill.mall.seckill.infrastructure.entity.SeckillGoods;
 import com.seckill.mall.seckill.infrastructure.mapper.SeckillGoodsMapper;
 import lombok.RequiredArgsConstructor;

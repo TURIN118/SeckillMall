@@ -1,5 +1,6 @@
-package com.seckill.mall.cache;
+package com.seckill.mall.seckill.infrastructure.cache;
 
+import com.seckill.mall.cache.RedisKeyConstants;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

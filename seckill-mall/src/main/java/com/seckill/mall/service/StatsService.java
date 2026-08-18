@@ -1,8 +1,8 @@
 package com.seckill.mall.service;
 
 import com.seckill.mall.vo.OrderStatusItemVO;
-import com.seckill.mall.vo.SeckillOverviewVO;
-import com.seckill.mall.vo.SeckillRankingVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillOverviewVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillRankingVO;
 import com.seckill.mall.vo.StatsOverviewVO;
 import com.seckill.mall.vo.TrendItemVO;
 

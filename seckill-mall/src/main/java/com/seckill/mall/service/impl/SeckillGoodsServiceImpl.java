@@ -19,7 +19,7 @@ import com.seckill.mall.seckill.infrastructure.mapper.SeckillGoodsMapper;
 import com.seckill.mall.security.SecurityUtils;
 
 import com.seckill.mall.service.SeckillGoodsService;
-import com.seckill.mall.vo.SeckillGoodsVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillGoodsVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBloomFilter;

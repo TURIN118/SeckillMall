@@ -1,4 +1,4 @@
-package com.seckill.mall.vo;
+package com.seckill.mall.seckill.interfaces.vo;
 
 import com.seckill.mall.seckill.infrastructure.entity.SeckillOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;

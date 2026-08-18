@@ -1,4 +1,4 @@
-package com.seckill.mall.scheduler;
+package com.seckill.mall.seckill.infrastructure.scheduler;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.seckill.mall.cache.RedisKeyConstants;

@@ -1,8 +1,8 @@
-package com.seckill.mall.converter;
+package com.seckill.mall.seckill.application;
 
 import com.seckill.mall.seckill.infrastructure.entity.SeckillOrder;
 import com.seckill.mall.order.infrastructure.persistence.entity.OrderStatus;
-import com.seckill.mall.vo.SeckillOrderVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillOrderVO;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

@@ -1,6 +1,6 @@
 package com.seckill.mall.service.impl;
 
-import com.seckill.mall.cache.SeckillLuaService;
+import com.seckill.mall.seckill.infrastructure.cache.SeckillLuaService;
 import com.seckill.mall.seckill.infrastructure.mapper.SeckillGoodsMapper;
 import com.seckill.mall.service.SeckillInventoryPort;
 import lombok.RequiredArgsConstructor;

@@ -7,7 +7,7 @@ import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.security.TokenBlacklistService;
 import com.seckill.mall.service.OrderService;
 import com.seckill.mall.service.SeckillOrderService;
-import com.seckill.mall.vo.SeckillOrderVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillOrderVO;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

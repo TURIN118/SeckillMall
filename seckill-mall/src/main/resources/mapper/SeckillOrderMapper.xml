@@ -221,7 +221,7 @@
 
     <!-- 秒杀排行榜 Top N：按销售额降序（销售额相同按销量降序）
          关联 t_seckill_goods 与 t_product 取商品名与秒杀价 -->
-    <select id="selectSeckillRanking" resultType="com.seckill.mall.vo.SeckillRankingVO">
+    <select id="selectSeckillRanking" resultType="com.seckill.mall.seckill.interfaces.vo.SeckillRankingVO">
         SELECT o.seckill_id     AS seckillId,
                p.name           AS productName,
                sg.seckill_price AS seckillPrice,

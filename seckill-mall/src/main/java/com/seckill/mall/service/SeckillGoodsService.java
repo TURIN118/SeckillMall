@@ -2,7 +2,7 @@ package com.seckill.mall.service;
 
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.SeckillCreateRequest;
-import com.seckill.mall.vo.SeckillGoodsVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillGoodsVO;
 
 /**
  * 创建人：@author WNJ

@@ -1,6 +1,6 @@
 package com.seckill.mall.service;
 
-import com.seckill.mall.vo.SeckillResultVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillResultVO;
 
 /**
  * 创建人：@author WNJ

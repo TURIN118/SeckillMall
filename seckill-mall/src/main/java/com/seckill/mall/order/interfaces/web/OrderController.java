@@ -25,7 +25,7 @@ import com.seckill.mall.security.SecurityUtils;
 import com.seckill.mall.service.SeckillOrderService;
 import com.seckill.mall.vo.NormalOrderDetailVO;
 import com.seckill.mall.vo.OrderListItemVO;
-import com.seckill.mall.vo.SeckillOrderVO;
+import com.seckill.mall.seckill.interfaces.vo.SeckillOrderVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

@@ -4,18 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seckill.mall.ai.assistant.dto.ProductSearchInput;
 import com.seckill.mall.common.PageResult;
-import com.seckill.mall.dto.ProductQueryRequest;
 import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.product.api.dto.ProductSummaryDTO;
-import com.seckill.mall.product.application.facade.ProductApiConverter;
-import com.seckill.mall.vo.ProductVO;
+import com.seckill.mall.product.api.query.ProductListQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.model.function.FunctionCallback;
 import org.springframework.ai.model.function.FunctionCallbackWrapper;
 import org.springframework.stereotype.Component;
-
-import java.math.BigDecimal;
 
 /**
  * AI 导购助手 function-calling 工具：商品搜索。
@@ -68,42 +64,37 @@ public class ProductSearchTool {
 
     /**
      * 实际执行商品搜索的业务方法。
-     * <p>将 {@link ProductSearchInput} 映射为 {@link ProductQueryRequest}，
-     * 调 {@link ProductService#listProducts} 返回 {@link PageResult}。
+     * <p>将 {@link ProductSearchInput} 映射为 {@link ProductListQuery}，
+     * 调 {@link ProductApi#listProducts} 返回 {@link PageResult}。
      *
      * @param input 工具入参
      * @return 分页商品结果
      */
-    public PageResult<ProductVO> searchProducts(ProductSearchInput input) {
+    public PageResult<ProductSummaryDTO> searchProducts(ProductSearchInput input) {
         log.info("AI 工具 searchProducts 调用：keyword={} categoryId={} price=[{},{}] page={}/{}",
                 input.getKeyword(), input.getCategoryId(),
                 input.getMinPrice(), input.getMaxPrice(),
                 input.getPageNum(), input.getPageSize());
 
-        ProductQueryRequest req = new ProductQueryRequest();
-        req.setKeyword(input.getKeyword());
-        req.setCategoryId(input.getCategoryId());
-        if (input.getMinPrice() != null) {
-            req.setMinPrice(BigDecimal.valueOf(input.getMinPrice()));
-        }
-        if (input.getMaxPrice() != null) {
-            req.setMaxPrice(BigDecimal.valueOf(input.getMaxPrice()));
-        }
         // 分页参数兜底：pageNum>=1，pageSize 在 [1, 50]
         int pageNum = input.getPageNum() == null || input.getPageNum() < 1 ? 1 : input.getPageNum();
         int pageSize = input.getPageSize() == null || input.getPageSize() < 1
                 ? DEFAULT_PAGE_SIZE
                 : Math.min(input.getPageSize(), MAX_PAGE_SIZE);
-        req.setPageNum(pageNum);
-        req.setPageSize(pageSize);
-        // 仅返回在售商品（导购场景不展示下架商品）
-        req.setStatus("ON_SALE");
-        // 按销量倒序展示热门商品
-        req.setSortBy("sales");
-        req.setSortOrder("desc");
 
-        PageResult<ProductSummaryDTO> dtoPage = productApi.listProducts(ProductApiConverter.toProductListQuery(req));
-        return ProductApiConverter.toProductVOPage(dtoPage);
+        // 直接用 ProductListQuery.builder 构建查询，消除旧分层 ProductQueryRequest 依赖。
+        // 注意：原 ProductQueryRequest 的 sortBy/sortOrder/minPrice/maxPrice 字段在
+        // ProductListQuery 中不存在（ProductApiConverter.toProductListQuery 也未映射），
+        // 原本就被丢弃，此处不再保留。
+        ProductListQuery query = ProductListQuery.builder()
+                .keyword(input.getKeyword())
+                .categoryId(input.getCategoryId())
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .status("ON_SALE")
+                .build();
+
+        return productApi.listProducts(query);
     }
 
     /**
@@ -114,7 +105,7 @@ public class ProductSearchTool {
      * @return FunctionCallback 实例
      */
     public FunctionCallback buildFunctionCallback() {
-        return FunctionCallbackWrapper.<ProductSearchInput, PageResult<ProductVO>>builder(
+        return FunctionCallbackWrapper.<ProductSearchInput, PageResult<ProductSummaryDTO>>builder(
                         input -> searchProducts(input))
                 .withName(TOOL_NAME)
                 .withDescription(TOOL_DESCRIPTION)
@@ -127,7 +118,7 @@ public class ProductSearchTool {
      * 将 {@link PageResult} 序列化为 JSON 字符串回传给大模型。
      * <p>序列化异常时返回错误提示字符串，避免工具调用整体失败。
      */
-    private String serializeResult(PageResult<ProductVO> result) {
+    private String serializeResult(PageResult<ProductSummaryDTO> result) {
         try {
             return objectMapper.writeValueAsString(result);
         } catch (JsonProcessingException e) {

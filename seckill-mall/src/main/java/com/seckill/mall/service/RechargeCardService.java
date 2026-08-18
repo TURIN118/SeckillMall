@@ -1,7 +1,7 @@
 package com.seckill.mall.service;
 
 import com.seckill.mall.common.PageResult;
-import com.seckill.mall.entity.RechargeCard;
+import com.seckill.mall.payment.infrastructure.entity.RechargeCard;
 import com.seckill.mall.vo.RechargeCardGenerateVO;
 import com.seckill.mall.vo.RechargeCardVO;
 

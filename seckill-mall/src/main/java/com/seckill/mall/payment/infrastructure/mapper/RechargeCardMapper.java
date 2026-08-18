@@ -1,7 +1,7 @@
-package com.seckill.mall.mapper;
+package com.seckill.mall.payment.infrastructure.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.seckill.mall.entity.RechargeCard;
+import com.seckill.mall.payment.infrastructure.entity.RechargeCard;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

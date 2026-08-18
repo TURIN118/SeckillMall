@@ -14,7 +14,7 @@ import com.seckill.mall.category.infrastructure.mapper.CategoryMapper;
 import com.seckill.mall.product.infrastructure.mapper.ProductMapper;
 import com.seckill.mall.service.CategoryService;
 import com.seckill.mall.shared.kernel.port.CachePort;
-import com.seckill.mall.vo.CategoryVO;
+import com.seckill.mall.category.interfaces.vo.CategoryVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

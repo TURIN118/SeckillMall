@@ -1,7 +1,7 @@
 package com.seckill.mall.service;
 
 import com.seckill.mall.dto.CategoryAttributeDTO;
-import com.seckill.mall.vo.CategoryAttributeVO;
+import com.seckill.mall.category.interfaces.vo.CategoryAttributeVO;
 
 import java.util.List;
 

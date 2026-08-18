@@ -13,7 +13,7 @@ import com.seckill.mall.category.infrastructure.mapper.CategoryAttributeMapper;
 import com.seckill.mall.category.infrastructure.mapper.CategoryAttributeValueMapper;
 import com.seckill.mall.service.CategoryAttributeService;
 import com.seckill.mall.service.CategoryAttributeValueService;
-import com.seckill.mall.vo.CategoryAttributeVO;
+import com.seckill.mall.category.interfaces.vo.CategoryAttributeVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

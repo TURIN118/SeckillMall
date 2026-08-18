@@ -1,5 +1,6 @@
 package com.seckill.mall.vo;
 
+import com.seckill.mall.category.interfaces.vo.CategoryAttributeVO;
 import com.seckill.mall.product.domain.ProductStatus;
 import lombok.Data;
 

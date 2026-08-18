@@ -4,7 +4,7 @@ import com.seckill.mall.dto.CategoryCreateRequest;
 import com.seckill.mall.dto.CategoryStatusUpdateRequest;
 import com.seckill.mall.dto.CategoryUpdateRequest;
 import com.seckill.mall.category.infrastructure.entity.Category;
-import com.seckill.mall.vo.CategoryVO;
+import com.seckill.mall.category.interfaces.vo.CategoryVO;
 
 import java.util.List;
 

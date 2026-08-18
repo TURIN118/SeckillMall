@@ -1,9 +1,10 @@
-package com.seckill.mall.controller;
+package com.seckill.mall.category.interfaces.web;
 
+import com.seckill.mall.category.api.CategoryAttributeApi;
+import com.seckill.mall.category.application.facade.CategoryApiConverter;
+import com.seckill.mall.category.interfaces.vo.CategoryAttributeVO;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.CategoryAttributeDTO;
-import com.seckill.mall.service.CategoryAttributeService;
-import com.seckill.mall.vo.CategoryAttributeVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,33 +30,38 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CategoryAttributeController {
 
-    private final CategoryAttributeService categoryAttributeService;
+    private final CategoryAttributeApi categoryAttributeApi;
 
     @Operation(summary = "获取分类的规格模板（含预设值）")
     @GetMapping("/{categoryId}/attributes")
     public Result<List<CategoryAttributeVO>> listByCategory(@PathVariable Long categoryId) {
-        return Result.success(categoryAttributeService.getAttributesByCategory(categoryId));
+        return Result.success(
+                CategoryApiConverter.toAttrVOList(categoryAttributeApi.getAttributesByCategory(categoryId)));
     }
 
     @Operation(summary = "创建分类规格属性")
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/attributes")
     public Result<CategoryAttributeVO> create(@Valid @RequestBody CategoryAttributeDTO dto) {
-        return Result.success(categoryAttributeService.createAttribute(dto));
+        com.seckill.mall.category.api.dto.CategoryAttributeDTO result =
+                categoryAttributeApi.createAttribute(dto);
+        return Result.success(CategoryApiConverter.toVO(result));
     }
 
     @Operation(summary = "更新分类规格属性")
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/attributes/{id}")
     public Result<CategoryAttributeVO> update(@PathVariable Long id, @Valid @RequestBody CategoryAttributeDTO dto) {
-        return Result.success(categoryAttributeService.updateAttribute(id, dto));
+        com.seckill.mall.category.api.dto.CategoryAttributeDTO result =
+                categoryAttributeApi.updateAttribute(id, dto);
+        return Result.success(CategoryApiConverter.toVO(result));
     }
 
     @Operation(summary = "删除分类规格属性")
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/attributes/{id}")
     public Result<Void> delete(@PathVariable Long id) {
-        categoryAttributeService.deleteAttribute(id);
+        categoryAttributeApi.deleteAttribute(id);
         return Result.success();
     }
 
@@ -64,6 +70,8 @@ public class CategoryAttributeController {
     @PostMapping("/attributes/{id}/values")
     public Result<CategoryAttributeVO> addValue(@PathVariable Long id,
                                                 @Valid @RequestBody CategoryAttributeDTO.CategoryAttributeValueDTO value) {
-        return Result.success(categoryAttributeService.addAttributeValue(id, value));
+        com.seckill.mall.category.api.dto.CategoryAttributeDTO result =
+                categoryAttributeApi.addAttributeValue(id, value);
+        return Result.success(CategoryApiConverter.toVO(result));
     }
 }

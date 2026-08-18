@@ -1,12 +1,14 @@
-package com.seckill.mall.controller;
+package com.seckill.mall.category.interfaces.web;
 
 import com.seckill.mall.annotation.OperationLog;
+import com.seckill.mall.category.api.CategoryApi;
+import com.seckill.mall.category.api.dto.CategoryDTO;
+import com.seckill.mall.category.application.facade.CategoryApiConverter;
+import com.seckill.mall.category.interfaces.vo.CategoryVO;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.CategoryCreateRequest;
 import com.seckill.mall.dto.CategoryStatusUpdateRequest;
 import com.seckill.mall.dto.CategoryUpdateRequest;
-import com.seckill.mall.service.CategoryService;
-import com.seckill.mall.vo.CategoryVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,12 +37,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CategoryController {
 
-    private final CategoryService categoryService;
+    private final CategoryApi categoryApi;
 
     @Operation(summary = "分类树")
     @GetMapping
     public Result<List<CategoryVO>> tree() {
-        return Result.success(categoryService.getCategoryTree());
+        return Result.success(CategoryApiConverter.toVOList(categoryApi.getCategoryTree()));
     }
 
     @Operation(summary = "新增分类")
@@ -48,7 +50,8 @@ public class CategoryController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public Result<CategoryVO> create(@Valid @RequestBody CategoryCreateRequest request) {
-        return Result.success("新增分类成功", categoryService.createCategory(request));
+        CategoryDTO dto = categoryApi.createCategory(request);
+        return Result.success("新增分类成功", CategoryApiConverter.toVO(dto));
     }
 
     @Operation(summary = "编辑分类")
@@ -57,7 +60,8 @@ public class CategoryController {
     @PutMapping("/{id}")
     public Result<CategoryVO> update(@PathVariable Long id,
                                      @Valid @RequestBody CategoryUpdateRequest request) {
-        return Result.success("编辑分类成功", categoryService.updateCategory(id, request));
+        CategoryDTO dto = categoryApi.updateCategory(id, request);
+        return Result.success("编辑分类成功", CategoryApiConverter.toVO(dto));
     }
 
     @Operation(summary = "删除分类")
@@ -65,7 +69,7 @@ public class CategoryController {
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
-        categoryService.deleteCategory(id);
+        categoryApi.deleteCategory(id);
         return Result.<Void>success("删除分类成功", null);
     }
 
@@ -75,7 +79,7 @@ public class CategoryController {
     @PutMapping("/{id}/status")
     public Result<Void> updateStatus(@PathVariable Long id,
                                      @Valid @RequestBody CategoryStatusUpdateRequest request) {
-        categoryService.updateCategoryStatus(id, request);
+        categoryApi.updateCategoryStatus(id, request);
         return Result.<Void>success("状态更新成功", null);
     }
 }

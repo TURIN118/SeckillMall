@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Category Attribute API 数据传输对象 - 分类规格模板。
  *
- * <p>对应 {@code com.seckill.mall.vo.CategoryAttributeVO} 的字段，用于模块间通信，
+ * <p>对应 {@code com.seckill.mall.category.interfaces.vo.CategoryAttributeVO} 的字段，用于模块间通信，
  * 替代直接暴露 CategoryAttribute Entity。供 CategoryAttributeApi 接口方法返回使用。
  *
  * <p>注意：本类与 {@code com.seckill.mall.dto.CategoryAttributeDTO}（请求对象）不同，
@@ -46,7 +46,7 @@ public class CategoryAttributeDTO {
     /**
      * 分类属性预设值 DTO。
      *
-     * <p>对应 {@code com.seckill.mall.vo.CategoryAttributeVO.CategoryAttributeValueVO} 的字段。
+     * <p>对应 {@code com.seckill.mall.category.interfaces.vo.CategoryAttributeVO.CategoryAttributeValueVO} 的字段。
      *
      * @author wnj
      * @since Phase CA.2

@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Category API 数据传输对象 - 分类树节点。
  *
- * <p>对应 {@code com.seckill.mall.vo.CategoryVO} 的字段，用于模块间通信，
+ * <p>对应 {@code com.seckill.mall.category.interfaces.vo.CategoryVO} 的字段，用于模块间通信，
  * 替代直接暴露 Category Entity。供 CategoryApi 接口方法返回使用。
  *
  * @author wnj

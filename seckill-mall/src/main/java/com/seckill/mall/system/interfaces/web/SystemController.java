@@ -1,15 +1,21 @@
-package com.seckill.mall.controller;
+package com.seckill.mall.system.interfaces.web;
 
 import com.seckill.mall.annotation.OperationLog;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.Result;
 import com.seckill.mall.dto.OperationLogQueryRequest;
-import com.seckill.mall.service.SystemService;
+import com.seckill.mall.system.api.SystemApi;
+import com.seckill.mall.system.api.dto.OperationLogDTO;
+import com.seckill.mall.system.api.dto.OrderStatusDistributionDTO;
+import com.seckill.mall.system.api.dto.OrderTrendDTO;
+import com.seckill.mall.system.api.dto.SystemHealthDTO;
+import com.seckill.mall.system.api.query.OperationLogQuery;
+import com.seckill.mall.system.application.facade.SystemApiConverter;
 
-import com.seckill.mall.vo.OperationLogVO;
-import com.seckill.mall.vo.OrderStatusDistributionVO;
-import com.seckill.mall.vo.OrderTrendVO;
-import com.seckill.mall.vo.SystemHealthVO;
+import com.seckill.mall.system.interfaces.vo.OperationLogVO;
+import com.seckill.mall.system.interfaces.vo.OrderStatusDistributionVO;
+import com.seckill.mall.system.interfaces.vo.OrderTrendVO;
+import com.seckill.mall.system.interfaces.vo.SystemHealthVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -54,13 +60,21 @@ public class SystemController {
     private static final DateTimeFormatter EXPORT_DATETIME_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private final SystemService systemService;
+    private final SystemApi systemApi;
 
 
     @Operation(summary = "操作日志列表（分页+模块筛选）")
     @GetMapping("/operation-logs")
     public Result<PageResult<OperationLogVO>> operationLogs(@Valid OperationLogQueryRequest req) {
-        return Result.success(systemService.getOperationLogs(req));
+        // 切换调用 SystemApi（Phase SY.4）：HTTP Request → API Query → DTO → VO（保持接口返回结构不变）
+        OperationLogQuery query = OperationLogQuery.builder()
+                .pageNum(req.getPageNum())
+                .pageSize(req.getPageSize())
+                .module(req.getModule())
+                .operatorId(req.getOperatorId())
+                .build();
+        PageResult<OperationLogDTO> dtoPage = systemApi.getOperationLogs(query);
+        return Result.success(SystemApiConverter.toVOPage(dtoPage));
     }
 
     @Operation(summary = "导出操作日志为 Excel（最多 10000 条）")
@@ -76,7 +90,9 @@ public class SystemController {
         final int EXPORT_LIMIT = 10000;
 
         // 1. 查询所有符合条件的日志（不分页，最多 10000 条）
-        List<OperationLogVO> logs = systemService.listAllForExport(module);
+        // 切换调用 SystemApi（Phase SY.4）：DTO → VO（保持 Excel 生成逻辑不变）
+        List<OperationLogDTO> dtoLogs = systemApi.listAllForExport(module);
+        List<OperationLogVO> logs = SystemApiConverter.toVOList(dtoLogs);
         if (logs.size() > EXPORT_LIMIT) {
             logs = logs.subList(0, EXPORT_LIMIT);
         }
@@ -162,13 +178,15 @@ public class SystemController {
     @Operation(summary = "系统健康检查")
     @GetMapping("/system/health")
     public Result<SystemHealthVO> systemHealth() {
-        return Result.success(systemService.getSystemHealth());
+        SystemHealthDTO dto = systemApi.getSystemHealth();
+        return Result.success(SystemApiConverter.toVO(dto));
     }
 
     @Operation(summary = "近N天订单趋势（按日期分组统计订单数与销售额）")
     @GetMapping("/dashboard/order-trend")
     public Result<OrderTrendVO> orderTrend(@RequestParam(required = false) Integer days) {
-        return Result.success(systemService.getOrderTrend(days));
+        OrderTrendDTO dto = systemApi.getOrderTrend(days);
+        return Result.success(SystemApiConverter.toVO(dto));
     }
 
     @Operation(summary = "订单状态分布（按状态分组统计数量与占比）")
@@ -176,6 +194,7 @@ public class SystemController {
     public Result<OrderStatusDistributionVO> orderStatusDistribution(
             @RequestParam(required = false) String startTime,
             @RequestParam(required = false) String endTime) {
-        return Result.success(systemService.getOrderStatusDistribution(startTime, endTime));
+        OrderStatusDistributionDTO dto = systemApi.getOrderStatusDistribution(startTime, endTime);
+        return Result.success(SystemApiConverter.toVO(dto));
     }
 }

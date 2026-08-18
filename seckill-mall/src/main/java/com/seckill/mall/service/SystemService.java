@@ -2,10 +2,10 @@ package com.seckill.mall.service;
 
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.dto.OperationLogQueryRequest;
-import com.seckill.mall.vo.OperationLogVO;
-import com.seckill.mall.vo.OrderStatusDistributionVO;
-import com.seckill.mall.vo.OrderTrendVO;
-import com.seckill.mall.vo.SystemHealthVO;
+import com.seckill.mall.system.interfaces.vo.OperationLogVO;
+import com.seckill.mall.system.interfaces.vo.OrderStatusDistributionVO;
+import com.seckill.mall.system.interfaces.vo.OrderTrendVO;
+import com.seckill.mall.system.interfaces.vo.SystemHealthVO;
 
 import java.util.List;
 

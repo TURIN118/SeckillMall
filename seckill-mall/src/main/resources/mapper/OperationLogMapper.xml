@@ -18,7 +18,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <select id="selectOperationLogVOPage" resultType="com.seckill.mall.vo.OperationLogVO">
+    <select id="selectOperationLogVOPage" resultType="com.seckill.mall.system.interfaces.vo.OperationLogVO">
         SELECT l.id, l.operator_id, u.username AS operator_name, l.module, l.action,
                l.target_id, l.target_type, l.detail, l.ip_address, l.create_time AS operation_time
         FROM t_operation_log l
@@ -34,7 +34,7 @@
         ORDER BY l.create_time DESC
     </select>
 
-    <select id="selectOperationLogVOList" resultType="com.seckill.mall.vo.OperationLogVO">
+    <select id="selectOperationLogVOList" resultType="com.seckill.mall.system.interfaces.vo.OperationLogVO">
         SELECT l.id, l.operator_id, u.username AS operator_name, l.module, l.action,
                l.target_id, l.target_type, l.detail, l.ip_address, l.create_time AS operation_time
         FROM t_operation_log l

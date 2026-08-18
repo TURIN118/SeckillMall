@@ -1,10 +1,10 @@
 package com.seckill.mall.service;
 
 import com.seckill.mall.common.PageResult;
+import com.seckill.mall.coupon.interfaces.vo.AdminCouponRecordVO;
+import com.seckill.mall.coupon.interfaces.vo.CouponVO;
+import com.seckill.mall.coupon.interfaces.vo.UserCouponVO;
 import com.seckill.mall.dto.CouponCreateRequest;
-import com.seckill.mall.vo.AdminCouponRecordVO;
-import com.seckill.mall.vo.CouponVO;
-import com.seckill.mall.vo.UserCouponVO;
 
 
 import java.util.List;

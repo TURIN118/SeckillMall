@@ -1,13 +1,21 @@
-package com.seckill.mall.controller;
+package com.seckill.mall.coupon.interfaces.web;
 
-import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.common.ErrorCode;
 import com.seckill.mall.common.PageResult;
 import com.seckill.mall.common.Result;
+import com.seckill.mall.coupon.api.CouponApi;
+import com.seckill.mall.coupon.api.command.CreateCouponCommand;
+import com.seckill.mall.coupon.api.command.DistributeCouponCommand;
+import com.seckill.mall.coupon.api.command.UpdateCouponCommand;
+import com.seckill.mall.coupon.api.command.UpdateCouponStatusCommand;
+import com.seckill.mall.coupon.api.dto.CouponDTO;
+import com.seckill.mall.coupon.api.dto.UserCouponDTO;
+import com.seckill.mall.coupon.api.query.CouponQuery;
+import com.seckill.mall.coupon.application.facade.CouponApiConverter;
+import com.seckill.mall.coupon.interfaces.vo.AdminCouponRecordVO;
+import com.seckill.mall.coupon.interfaces.vo.CouponVO;
 import com.seckill.mall.dto.CouponCreateRequest;
-import com.seckill.mall.service.CouponService;
-import com.seckill.mall.vo.AdminCouponRecordVO;
-import com.seckill.mall.vo.CouponVO;
+import com.seckill.mall.exception.BusinessException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,14 +34,14 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /**
- * 优惠券后台管理 Controller
+ * 优惠券后台管理 Controller（Phase CP.4 已切换到 {@link CouponApi}）。
  * <p>
  * 前缀 {@code /api/v1/admin/coupons}，需 ADMIN 角色。
  *
+ * <p>Strangler Pattern：注入 {@link CouponApi} 替代旧 {@code CouponService}，
+ * 通过 {@link CouponApiConverter} 做 DTO → VO 转换，保持前端出参结构不变。
+ *
  * 创建人：@author WNJ
- * 项目名称：seckill-mall
- * 文件名称：AdminCouponController.java
- * 邮箱：nj651217@163.com
  */
 @Tag(name = "优惠券后台管理", description = "优惠券 CRUD/启停/发放")
 @RestController
@@ -42,7 +50,7 @@ import java.util.Map;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminCouponController {
 
-    private final CouponService couponService;
+    private final CouponApi couponApi;
 
     @Operation(summary = "查询优惠券列表（分页）")
     @GetMapping("/list")
@@ -50,25 +58,36 @@ public class AdminCouponController {
                                              @RequestParam(required = false, defaultValue = "10") Integer pageSize,
                                              @RequestParam(required = false) String name,
                                              @RequestParam(required = false) Integer status) {
-        return Result.success(couponService.listPage(pageNum, pageSize, name, status));
+        CouponQuery query = CouponQuery.builder()
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .name(name)
+                .status(status)
+                .build();
+        PageResult<CouponDTO> pageResult = couponApi.adminListCoupons(query);
+        return Result.success(CouponApiConverter.toVOPageResult(pageResult));
     }
 
     @Operation(summary = "创建优惠券")
     @PostMapping("/create")
     public Result<CouponVO> create(@Valid @RequestBody CouponCreateRequest req) {
-        return Result.success("创建优惠券成功", couponService.create(req));
+        CreateCouponCommand command = CouponApiConverter.toCreateCommand(req);
+        CouponDTO dto = couponApi.createCoupon(command);
+        return Result.success("创建优惠券成功", CouponApiConverter.toVO(dto));
     }
 
     @Operation(summary = "编辑优惠券")
     @PutMapping("/{id}/update")
     public Result<CouponVO> update(@PathVariable Long id, @Valid @RequestBody CouponCreateRequest req) {
-        return Result.success("编辑优惠券成功", couponService.update(id, req));
+        UpdateCouponCommand command = CouponApiConverter.toUpdateCommand(id, req);
+        CouponDTO dto = couponApi.updateCoupon(command);
+        return Result.success("编辑优惠券成功", CouponApiConverter.toVO(dto));
     }
 
     @Operation(summary = "删除优惠券")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
-        couponService.delete(id);
+        couponApi.deleteCoupon(id);
         return Result.<Void>success("删除优惠券成功", null);
     }
 
@@ -80,7 +99,11 @@ public class AdminCouponController {
         if (status == null || (status != 0 && status != 1)) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "status 仅允许 0(停用) 或 1(启用)");
         }
-        couponService.updateStatus(id, status);
+        UpdateCouponStatusCommand command = UpdateCouponStatusCommand.builder()
+                .id(id)
+                .status(status)
+                .build();
+        couponApi.updateCouponStatus(command);
         return Result.<Void>success("状态更新成功", null);
     }
 
@@ -92,8 +115,12 @@ public class AdminCouponController {
         if (userId == null || userId <= 0) {
             throw new BusinessException(ErrorCode.PARAM_ERROR, "用户ID不能为空且必须为正数");
         }
+        DistributeCouponCommand command = DistributeCouponCommand.builder()
+                .couponId(id)
+                .userId(userId)
+                .build();
         // 返回被发放用户的用户名，前端展示用（避免显示数字ID）
-        String username = couponService.distribute(id, userId);
+        String username = couponApi.distributeCoupon(command);
         return Result.success("发放成功", username);
     }
 
@@ -103,6 +130,11 @@ public class AdminCouponController {
             @PathVariable Long id,
             @RequestParam(required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
-        return Result.success(couponService.listRecords(id, pageNum, pageSize));
+        CouponQuery query = CouponQuery.builder()
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .build();
+        PageResult<UserCouponDTO> pageResult = couponApi.adminListRecords(id, query);
+        return Result.success(CouponApiConverter.toAdminRecordVOPageResult(pageResult));
     }
 }

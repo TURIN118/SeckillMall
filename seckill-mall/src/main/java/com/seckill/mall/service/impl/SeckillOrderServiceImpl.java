@@ -15,7 +15,8 @@ import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.mapper.SeckillGoodsMapper;
 import com.seckill.mall.mapper.SeckillOrderMapper;
 import com.seckill.mall.service.EmailService;
-import com.seckill.mall.service.PaymentService;
+import com.seckill.mall.payment.api.PaymentApi;
+import com.seckill.mall.payment.api.command.PayCommand;
 import com.seckill.mall.product.api.ProductApi;
 import com.seckill.mall.service.SeckillInventoryPort;
 import com.seckill.mall.service.SeckillOrderService;
@@ -71,8 +72,8 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
     private final SeckillInventoryPort seckillInventoryPort;
     private final UserApi userApi;
     private final EmailService emailService;
-    // Phase 4b-2：支付扣款逻辑抽取至 PaymentService（钱包扣款 + 模拟支付）
-    private final PaymentService paymentService;
+    // Phase 4b-2：支付扣款逻辑抽取至 PaymentApi（钱包扣款 + 模拟支付）
+    private final PaymentApi paymentApi;
     // 问题4修复：使用 MapStruct Converter 替代手工 SeckillOrderVO.from()，统一转换逻辑
     private final SeckillOrderConverter seckillOrderConverter;
 
@@ -157,9 +158,13 @@ public class SeckillOrderServiceImpl implements SeckillOrderService {
         }
 
         // M12 修复：秒杀订单支付支持钱包扣款，与 payNormalOrder 保持一致
-        // Phase 4b-2：支付扣款逻辑统一委托至 PaymentService
+        // Phase 4b-2：支付扣款逻辑统一委托至 PaymentApi
         BigDecimal payAmount = order.getTotalAmount();
-        paymentService.pay(userId, payAmount, payMethod);
+        paymentApi.pay(PayCommand.builder()
+                .userId(userId)
+                .amount(payAmount)
+                .payMethod(payMethod)
+                .build());
 
         // H-C3 修复：状态判定下沉到 SQL 乐观锁，防并发双扣。
         // UPDATE ... SET status=PAID WHERE id=? AND status='UNPAID'

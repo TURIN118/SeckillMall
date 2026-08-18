@@ -63,7 +63,7 @@ class OrderLifecycleServiceTest {
     @Mock
     private com.seckill.mall.coupon.api.CouponUsageApi couponUsageApi;
     @Mock
-    private PaymentService paymentService;
+    private com.seckill.mall.payment.api.PaymentApi paymentApi;
     @Mock
     private InventoryApi inventoryApi;
     @Mock

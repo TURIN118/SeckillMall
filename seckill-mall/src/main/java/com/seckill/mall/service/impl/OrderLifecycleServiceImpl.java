@@ -14,10 +14,11 @@ import com.seckill.mall.exception.BusinessException;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderItemMapper;
 import com.seckill.mall.order.infrastructure.persistence.mapper.NormalOrderMapper;
 import com.seckill.mall.coupon.api.CouponUsageApi;
+import com.seckill.mall.payment.api.PaymentApi;
+import com.seckill.mall.payment.api.command.PayCommand;
 import com.seckill.mall.service.EmailService;
 import com.seckill.mall.service.OrderLifecycleService;
 import com.seckill.mall.service.OrderQueryService;
-import com.seckill.mall.service.PaymentService;
 import com.seckill.mall.service.UserAddressService;
 import com.seckill.mall.identity.api.UserApi;
 import com.seckill.mall.vo.NormalOrderDetailVO;
@@ -65,7 +66,7 @@ public class OrderLifecycleServiceImpl implements OrderLifecycleService {
     private final NormalOrderMapper normalOrderMapper;
     private final NormalOrderItemMapper normalOrderItemMapper;
     private final CouponUsageApi couponUsageApi;
-    private final PaymentService paymentService;
+    private final PaymentApi paymentApi;
     private final InventoryApi inventoryApi;
     private final SkuApi skuApi;
     private final UserAddressService userAddressService;
@@ -157,8 +158,12 @@ public class OrderLifecycleServiceImpl implements OrderLifecycleService {
 
         BigDecimal payAmount = order.getPayAmount();
 
-        // Phase 4b-2：支付扣款逻辑统一委托至 PaymentService
-        paymentService.pay(userId, payAmount, payMethod);
+        // Phase 4b-2：支付扣款逻辑统一委托至 PaymentApi
+        paymentApi.pay(PayCommand.builder()
+                .userId(userId)
+                .amount(payAmount)
+                .payMethod(payMethod)
+                .build());
 
         // H-C3 修复：状态判定下沉到 SQL 乐观锁，防并发双扣。
         // UPDATE ... SET status=PAID WHERE id=? AND status='UNPAID'

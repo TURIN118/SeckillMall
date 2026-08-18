@@ -69,7 +69,7 @@ class SeckillOrderServiceTest {
     @Mock
     private SeckillOrderConverter seckillOrderConverter;
     @Mock
-    private PaymentService paymentService;
+    private com.seckill.mall.payment.api.PaymentApi paymentApi;
 
     @InjectMocks
     private SeckillOrderServiceImpl seckillOrderService;

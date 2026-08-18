@@ -1,9 +1,9 @@
-package com.seckill.mall.mapper;
+package com.seckill.mall.seckill.infrastructure.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.seckill.mall.seckill.infrastructure.entity.SeckillGoods;
-import com.seckill.mall.entity.enums.SeckillStatus;
+import com.seckill.mall.seckill.domain.SeckillStatus;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

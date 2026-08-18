@@ -1,4 +1,4 @@
-package com.seckill.mall.mapper;
+package com.seckill.mall.seckill.infrastructure.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.seckill.mall.seckill.infrastructure.entity.SeckillActivity;

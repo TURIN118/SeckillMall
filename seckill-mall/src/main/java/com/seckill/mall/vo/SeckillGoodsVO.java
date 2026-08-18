@@ -1,6 +1,6 @@
 package com.seckill.mall.vo;
 
-import com.seckill.mall.entity.enums.SeckillStatus;
+import com.seckill.mall.seckill.domain.SeckillStatus;
 import lombok.Data;
 
 import java.math.BigDecimal;

@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.seckill.mall.seckill.infrastructure.entity.SeckillGoods;
-import com.seckill.mall.mapper.SeckillGoodsMapper;
+import com.seckill.mall.seckill.infrastructure.mapper.SeckillGoodsMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBloomFilter;

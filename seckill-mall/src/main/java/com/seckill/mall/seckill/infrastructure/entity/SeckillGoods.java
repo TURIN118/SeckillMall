@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.seckill.mall.entity.enums.SeckillStatus;
+import com.seckill.mall.seckill.domain.SeckillStatus;
 import lombok.Data;
 
 import java.math.BigDecimal;

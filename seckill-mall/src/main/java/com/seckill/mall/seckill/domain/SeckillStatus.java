@@ -1,4 +1,4 @@
-package com.seckill.mall.entity.enums;
+package com.seckill.mall.seckill.domain;
 
 import com.baomidou.mybatisplus.annotation.IEnum;
 import com.fasterxml.jackson.annotation.JsonCreator;

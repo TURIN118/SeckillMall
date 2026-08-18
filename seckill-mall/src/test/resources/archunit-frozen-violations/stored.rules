@@ -1,9 +1,9 @@
 #
-#Tue Aug 18 21:31:48 CST 2026
+#Tue Aug 18 22:14:05 CST 2026
 Controller\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ StringRedisTemplate\uFF0C\u5E94\u901A\u8FC7\ Service\ \u8BBF\u95EE\u7F13\u5B58=7e626fc8-a245-43a4-a155-fd8251d51c98
 Entity\ \u4E0D\u5E94\u4F9D\u8D56\ Controller\uFF0C\u6570\u636E\u5BF9\u8C61\u4E0D\u5E94\u4F9D\u8D56\u8868\u73B0\u5C42=4e810fc5-456c-4f22-a2b7-e7725ab5a6d2
-ai.gateway\ \u4E0D\u5E94\u4F9D\u8D56\ ai.assistant\uFF0CGateway\ \u662F\u5E95\u5C42\u4E0D\u5E94\u4F9D\u8D56\u4E0A\u5C42\ AI\ \u4E1A\u52A1=b316c616-2118-4112-8c60-1244c9c34d64
 Entity\ \u4E0D\u5E94\u4F9D\u8D56\ Service\uFF0C\u6570\u636E\u5BF9\u8C61\u4E0D\u5E94\u4F9D\u8D56\u4E1A\u52A1\u5C42=1b8cde44-2424-425d-b59e-bd0cf961beda
+ai.gateway\ \u4E0D\u5E94\u4F9D\u8D56\ ai.assistant\uFF0CGateway\ \u662F\u5E95\u5C42\u4E0D\u5E94\u4F9D\u8D56\u4E0A\u5C42\ AI\ \u4E1A\u52A1=b316c616-2118-4112-8c60-1244c9c34d64
 Controller\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ RedisTemplate\uFF0C\u5E94\u901A\u8FC7\ Service\ \u8BBF\u95EE\u7F13\u5B58=d32f44c3-6686-4566-96df-2fbb01bca0b5
 order.application\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ Mapper\uFF0C\u5E94\u901A\u8FC7\ Service/Repository\ \u8BBF\u95EE\u6570\u636E=9687f29c-ddc4-476f-9aec-4ef084dd5faa
 payment.application\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ Mapper\uFF0C\u5E94\u901A\u8FC7\ Service/Repository\ \u8BBF\u95EE\u6570\u636E=36b1a83f-c348-434b-8ddf-cd83ff43add5
@@ -18,6 +18,7 @@ payment.interfaces\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ Mapper\uFF0C\u5E94\u90
 cart.interfaces\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ Mapper\uFF0C\u5E94\u901A\u8FC7\ ApplicationService\ \u8BBF\u95EE\u6570\u636E=04cfa05c-e391-4f41-a978-06fa32b9fefa
 payment.api\ \u4E0D\u5E94\u4F9D\u8D56\ payment.infrastructure\uFF0CAPI\ \u5951\u7EA6\u5C42\u4E0D\u5E94\u4F9D\u8D56\u57FA\u7840\u8BBE\u65BD\u5C42=1ccfd0d1-c8ec-498e-bb26-90f576220d0b
 Entity\ \u4E0D\u5E94\u4F9D\u8D56\ DTO\uFF0C\u6570\u636E\u5E93\u5BF9\u8C61\u4E0D\u5E94\u4F9D\u8D56\u8F93\u5165\u5BF9\u8C61=529ab3c8-db1b-469f-a9d3-a0f3ebda2e60
+stats.api\ \u4E0D\u5E94\u4F9D\u8D56\ stats.infrastructure\uFF0CAPI\ \u5951\u7EA6\u5C42\u4E0D\u5E94\u4F9D\u8D56\u57FA\u7840\u8BBE\u65BD\u5C42=554ed552-e490-47e6-9b89-9582f8797ec4
 Controller\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ Mapper\uFF0C\u5E94\u901A\u8FC7\ Service\ \u8BBF\u95EE\u6570\u636E=f871b2fb-9220-42fc-a87c-5c14e717b46e
 order.api\ \u4E0D\u5E94\u4F9D\u8D56\ order.infrastructure\uFF0CAPI\ \u5951\u7EA6\u5C42\u4E0D\u5E94\u4F9D\u8D56\u57FA\u7840\u8BBE\u65BD\u5C42=eb386460-16b3-4286-9d63-602dcecb00b2
 DTO\ \u4E0D\u5E94\u4F9D\u8D56\ Entity\uFF0C\u8F93\u5165\u5BF9\u8C61\u4E0D\u5E94\u4F9D\u8D56\u6570\u636E\u5E93\u5BF9\u8C61=be625af8-f275-43c9-b664-bc455b4a2a83
@@ -27,10 +28,12 @@ product.api\ \u4E0D\u5E94\u4F9D\u8D56\ product.infrastructure\uFF0CAPI\ \u5951\u
 coupon.application\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ Mapper\uFF0C\u5E94\u901A\u8FC7\ Service/Repository\ \u8BBF\u95EE\u6570\u636E=013f00a9-c3e2-4b81-a03f-5577b9f5c8aa
 seckill.api\ \u4E0D\u5E94\u4F9D\u8D56\ seckill.infrastructure\uFF0CAPI\ \u5951\u7EA6\u5C42\u4E0D\u5E94\u4F9D\u8D56\u57FA\u7840\u8BBE\u65BD\u5C42=bfec1ca1-a2b5-414f-922a-d041bfdec9f0
 Service\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ RabbitTemplate\uFF0C\u5E94\u901A\u8FC7\ mq.producer\ \u5C01\u88C5=7cb1b29f-2e74-4f63-b7fa-6840b5fded15
+stats.application\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ Mapper\uFF0C\u5E94\u901A\u8FC7\ API\ \u63A5\u53E3\u8BBF\u95EE\u6570\u636E=73a34eac-e901-47e6-8df4-d89f0ddd2730
 identity.application\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ Mapper\uFF0C\u5E94\u901A\u8FC7\ Service/Repository\ \u8BBF\u95EE\u6570\u636E=15c04df6-43a3-4c65-bc30-ae51c123b225
 product.application\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ Mapper\uFF0C\u5E94\u901A\u8FC7\ Service/Repository\ \u8BBF\u95EE\u6570\u636E=7cff17a7-f2f3-4fc7-81ad-6ba7af2a1258
 Service\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ StringRedisTemplate\uFF0C\u5E94\u901A\u8FC7\ CachePort/RedisService\ \u5C01\u88C5=c03f308f-9605-4801-9fee-013f2e1eb02e
 seckill.application\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ Mapper\uFF0C\u5E94\u901A\u8FC7\ Service/Repository\ \u8BBF\u95EE\u6570\u636E=6d919fa3-aa6d-4ccd-a65c-480223bb0333
+stats.interfaces\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ Mapper\uFF0C\u5E94\u901A\u8FC7\ API\ \u63A5\u53E3\u8BBF\u95EE\u6570\u636E=291cbaad-4981-4927-932a-2cfc48b17a54
 identity.interfaces\ \u4E0D\u5E94\u76F4\u63A5\u4F9D\u8D56\ Mapper\uFF0C\u5E94\u901A\u8FC7\ ApplicationService\ \u8BBF\u95EE\u6570\u636E=960c5b0b-ea31-4e87-a223-eb8de0fd61b3
 ai.gateway\ \u4E0D\u5E94\u4F9D\u8D56\ ai.aigc\uFF0CGateway\ \u662F\u5E95\u5C42\u4E0D\u5E94\u4F9D\u8D56\u4E0A\u5C42\ AI\ \u4E1A\u52A1=7f691a07-430d-4496-af3f-7044ce8d9ace
 shared.kernel\ \u4E0D\u5E94\u4F9D\u8D56\u4E1A\u52A1\u6A21\u5757\uFF0CShared\ Kernel\ \u662F\u6700\u7A33\u5B9A\u7684\u5171\u4EAB\u5185\u6838\u4E0D\u80FD\u88AB\u4E1A\u52A1\u6C61\u67D3=e21b0fa5-546d-4509-a646-f171e2954238
